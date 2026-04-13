@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>UTOM · Video Tutor App</title>
+    <!-- Font Awesome 6 (professional icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f8f9fc;
+            padding-bottom: 70px;
+            overflow-x: hidden;
+        }
+
+        /* ===== WHITE TOP BAR (logo + icons) ===== */
+        .white-top-bar {
+            background: white;
+            padding: 0.9rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+        }
+        .logo-img {
+            height: 44px;
+            width: auto;
+            max-width: 140px;
+            object-fit: contain;
+        }
+        .logo-fallback {
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #000 30%, #F5B042 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .header-icons {
+            display: flex;
+            gap: 20px;
+            position: relative;
+        }
+        .header-icons i {
+            font-size: 1.35rem;
+            color: #2c2c2c;
+            transition: 0.2s;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+        }
+        .header-icons i:active {
+            background: #f0f0f0;
+            transform: scale(0.94);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background: #F5B042;
+            color: black;
+            font-size: 0.65rem;
+            font-weight: bold;
+            border-radius: 30px;
+            padding: 2px 6px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* ===== ORANGE / YELLOW HEADER BELOW ===== */
+        .orange-header {
+            background: linear-gradient(135deg, #F5B042 0%, #E89E2A 100%);
+            padding: 1rem 1.2rem 1.6rem 1.2rem;
+            border-radius: 0 0 32px 32px;
+            margin-bottom: 0.5rem;
+            color: #1e1e1e;
+        }
+        .welcome-badge {
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 0.2rem;
+        }
+        .welcome-badge small {
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0.85;
+            display: block;
+        }
+        .header-stats {
+            display: flex;
+            gap: 1.2rem;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .header-stats span i {
+            margin-right: 5px;
+        }
+
+        /* page containers */
+        .page-container {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .active-page {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* floating cards */
+        .floating-section {
+            margin-top: -20px;
+            padding: 0 0.8rem 0.8rem 0.8rem;
+            position: relative;
+            z-index: 5;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 0 0.5rem 0.8rem 0.5rem;
+        }
+        .floating-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            scrollbar-width: thin;
+            padding-bottom: 8px;
+        }
+        .float-card {
+            min-width: 250px;
+            width: 250px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 18px 30px -10px rgba(0,0,0,0.12);
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .card-thumb {
+            position: relative;
+            height: 140px;
+            background: #f0ede8;
+        }
+        .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .play-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.65);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #F5B042;
+        }
+        .card-info { padding: 12px 14px 16px; }
+        .card-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+        .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .badge { font-size: 0.7rem; padding: 4px 12px; border-radius: 30px; background: #F5B04220; }
+        .free-badge { background: #e6f7e6; color: #2e7d32; }
+        .btn-sm-yellow {
+            background: #F5B042;
+            border: none;
+            color: black;
+            font-weight: 700;
+            font-size: 0.7rem;
+            padding: 5px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        /* grid cards */
+        .grid-section {
+            padding: 1rem 1rem 0.5rem;
+        }
+        .grid-title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+            gap: 1rem;
+        }
+        .grid-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.04);
+            cursor: pointer;
+        }
+        .grid-img {
+            position: relative;
+            height: 100px;
+            background: #d9d2c5;
+        }
+        .grid-img img { width: 100%; height: 100%; object-fit: cover; }
+        .grid-play {
+            position: absolute;
+            bottom: 6px; right: 6px;
+            background: rgba(0,0,0,0.6);
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #F5B042;
+        }
+        .grid-content { padding: 10px 10px 12px; }
+        .grid-content h4 { font-size: 0.85rem; font-weight: 700; }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+        .price-tag { font-weight: 800; font-size: 0.8rem; color: #F5B042; }
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* profile card */
+        .profile-card {
+            background: white;
+            margin: 1rem;
+            border-radius: 32px;
+            padding: 1.5rem;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        }
+        .wallet-big {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            background: #F5B04220;
+            border-radius: 60px;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .btn-profile {
+            background: #F5B042;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: bold;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #F5B042;
+            color: #000;
+        }
+
+        /* modals */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background: white;
+            width: 85%;
+            max-width: 340px;
+            border-radius: 48px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .mobile-options button, .payment-method button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 60px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .payment-method {
+            margin-top: 15px;
+        }
+        .ussd-instructions {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 24px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        /* bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 14px;
+            border-top: 1px solid #f0f0f0;
+            z-index: 20;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            font-size: 0.7rem;
+            color: #6b6b6b;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .nav-item i { font-size: 1.3rem; }
+        .nav-item.active { color: #F5B042; font-weight: 600; }
+
+        @media (max-width: 480px) {
+            .float-card { min-width: 220px; width: 220px; }
+            .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .logo-img { height: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- WHITE TOP BAR: logo + search/notification/profile icons -->
+<div class="white-top-bar">
+    <div class="logo-area">
+        <img src="utom.png" alt="UTOM logo" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-fallback\'><i class=\'fas fa-chalkboard-user\'></i> UTOM</div>';">
+    </div>
+    <div class="header-icons">
+        <i class="fas fa-search" id="searchIcon"></i>
+        <i class="fas fa-bell" id="notifIcon"></i>
+        <span id="notifBadge" class="notification-badge" style="display: none;">0</span>
+        <i class="fas fa-user-circle" id="profileIcon"></i>
+    </div>
+</div>
+
+<!-- ORANGE / YELLOW HEADER BELOW -->
+<div class="orange-header">
+    <div class="welcome-badge">
+        📚 Learn & Grow <small>with expert tutors</small>
+    </div>
+    <div class="header-stats">
+        <span><i class="fas fa-video"></i> 200+ lessons</span>
+        <span><i class="fas fa-users"></i> 15k students</span>
+        <span><i class="fas fa-trophy"></i> certificate</span>
+    </div>
+</div>
+
+<!-- PAGE CONTAINERS -->
+<div id="homePage" class="page-container active-page">
+    <div class="floating-section">
+        <div class="section-header">
+            <h3><i class="fas fa-star" style="color:#F5B042; font-size: 1rem;"></i> Featured Tutors</h3>
+            <span>🔥 trending now</span>
+        </div>
+        <div class="floating-scroll" id="floatingContainer"></div>
+    </div>
+    <div class="grid-section">
+        <div class="grid-title">
+            <h3><i class="fas fa-play-circle" style="color:#F5B042;"></i> All lessons · 9+ picks</h3>
+            <button class="btn-sm-yellow" id="viewAllBtn">See all <i class="fas fa-arrow-right"></i></button>
+        </div>
+        <div class="video-grid" id="homeGrid"></div>
+    </div>
+</div>
+
+<div id="explorePage" class="page-container">
+    <div id="exploreModulesContainer"></div>
+</div>
+
+<div id="wishlistPage" class="page-container">
+    <div class="video-grid" id="wishlistGrid"></div>
+    <div id="emptyWishlistMsg" style="text-align:center; padding:2rem; color:gray;">❤️ No liked videos yet.</div>
+</div>
+
+<div id="mylearningPage" class="page-container">
+    <div class="video-grid" id="learningGrid"></div>
+    <div id="emptyLearningMsg" style="text-align:center; padding:2rem; color:gray;">📚 No enrolled courses yet.</div>
+</div>
+
+<div id="profilePage" class="page-container">
+    <div class="profile-card">
+        <div class="wallet-big" id="walletAmount">ZMW 0</div>
+        <div class="info-row"><span>Full name</span><span id="profileName">Alex Johnson</span></div>
+        <div class="info-row"><span>Email</span><span id="profileEmail">alex@utom.com</span></div>
+        <div class="info-row"><span>Phone</span><span id="profilePhone">+260 97XXXXXX</span></div>
+        <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
+        <button class="btn-profile" id="addFundsBtn"><i class="fas fa-wallet"></i> Add Funds to Wallet</button>
+        <button class="btn-profile btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+</div>
+
+<!-- PAYMENT MODAL (for paid videos) -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-credit-card"></i> Complete Payment</h3>
+        <p id="paymentAmount" style="font-weight: bold; margin: 10px 0;"></p>
+        <div class="mobile-options" id="providerOptions">
+            <button id="payMtn">📱 MTN Mobile Money</button>
+            <button id="payAirtel">📱 Airtel Money</button>
+            <button id="payZamtel">📱 Zamtel Kwacha</button>
+        </div>
+        <div id="paymentMethodContainer" style="display: none;">
+            <div class="payment-method">
+                <button id="onlinePaymentBtn">💻 Online Payment (Instant)</button>
+                <button id="ussdPaymentBtn">📞 Manual USSD Code</button>
+            </div>
+        </div>
+        <div id="ussdInfo" style="display: none;" class="ussd-instructions"></div>
+        <button id="closePaymentModal" style="margin-top: 12px; background:#ddd; border:none; padding:8px; border-radius:40px;">Cancel</button>
+    </div>
+</div>
+
+<!-- ADD FUNDS MODAL -->
+<div id="mobileMoneyModal" class="modal">
+    <div class="modal-content">
+        <h3>Add Funds to Wallet</h3>
+        <div class="mobile-options">
+            <button id="mtnOption">📱 MTN Mobile Money</button>
+            <button id="airtelOption">📱 Airtel Money</button>
+            <button id="zamtelOption">📱 Zamtel Kwacha</button>
+        </div>
+        <button id="closeFundsModal" style="margin-top: 12px; background:#ddd;">Cancel</button>
+    </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div class="bottom-nav">
+    <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></button>
+    <button class="nav-item" data-page="explore"><i class="fas fa-compass"></i><span>Explore</span></button>
+    <button class="nav-item" data-page="wishlist"><i class="fas fa-heart"></i><span>Wishlist</span></button>
+    <button class="nav-item" data-page="mylearning"><i class="fas fa-book-open"></i><span>My Learn</span></button>
+    <button class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></button>
+</div>
+
+<script>
+    // ----------------------------- FULL VIDEO DATABASE (modules, free & paid) -------------------------
+    const allVideos = [
+        { id: 1, title: "Fullstack Web Dev Bootcamp", instructor: "Dr. Sarah", thumbnail: "https://picsum.photos/id/26/400/200", price: 0, module: "Web Development", isFree: true },
+        { id: 2, title: "Data Science & AI Mastery", instructor: "Prof. Kim", thumbnail: "https://picsum.photos/id/0/400/200", price: 199, module: "Data Science", isFree: false },
+        { id: 3, title: "UI/UX Design Principles", instructor: "Michael Chen", thumbnail: "https://picsum.photos/id/20/400/200", price: 0, module: "Design", isFree: true },
+        { id: 4, title: "Mobile Dev (Flutter)", instructor: "Elena R.", thumbnail: "https://picsum.photos/id/106/400/200", price: 249, module: "Mobile", isFree: false },
+        { id: 5, title: "JavaScript Deep Dive", instructor: "Alex Rivera", thumbnail: "https://picsum.photos/id/1/300/180", price: 0, module: "Web Development", isFree: true },
+        { id: 6, title: "Python for Beginners", instructor: "Maria Gomez", thumbnail: "https://picsum.photos/id/2/300/180", price: 0, module: "Data Science", isFree: true },
+        { id: 7, title: "React & Next.js", instructor: "James Wu", thumbnail: "https://picsum.photos/id/3/300/180", price: 149, module: "Web Development", isFree: false },
+        { id: 8, title: "Cybersecurity Essentials", instructor: "Linda Park", thumbnail: "https://picsum.photos/id/4/300/180", price: 299, module: "Security", isFree: false },
+        { id: 9, title: "Digital Marketing 101", instructor: "Sophia Lee", thumbnail: "https://picsum.photos/id/5/300/180", price: 0, module: "Marketing", isFree: true },
+        { id: 10, title: "Cloud Computing (AWS)", instructor: "Omar H.", thumbnail: "https://picsum.photos/id/6/300/180", price: 399, module: "Cloud", isFree: false },
+        { id: 11, title: "Graphic Design with Figma", instructor: "Nina S.", thumbnail: "https://picsum.photos/id/7/300/180", price: 0, module: "Design", isFree: true },
+        { id: 12, title: "SQL & Database Mastery", instructor: "Carlos M.", thumbnail: "https://picsum.photos/id/8/300/180", price: 179, module: "Data", isFree: false },
+        { id: 13, title: "English Communication", instructor: "Emma Watson", thumbnail: "https://picsum.photos/id/9/300/180", price: 0, module: "Soft Skills", isFree: true },
+        { id: 14, title: "Leadership & Management", instructor: "John Doe", thumbnail: "https://picsum.photos/id/10/300/180", price: 39, module: "Business", isFree: false }
+    ];
+
+    // user state
+    let user = {
+        name: "Alex Johnson",
+        email: "alex@utom.com",
+        phone: "+260 97XXXXXX",
+        wallet: 0,
+        liked: [],
+        enrolled: []
+    };
+    let notifications = [];
+    let pendingVideo = null;
+    let selectedProvider = '';
+
+    // Load / save
+    function loadUserData() {
+        const saved = localStorage.getItem("utom_user");
+        if(saved) {
+            const parsed = JSON.parse(saved);
+            user = { ...user, ...parsed };
+        }
+        updateUIafterDataChange();
+    }
+    function saveUser() {
+        localStorage.setItem("utom_user", JSON.stringify(user));
+        updateUIafterDataChange();
+    }
+    function updateUIafterDataChange() {
+        document.getElementById("walletAmount").innerText = `ZMW ${user.wallet}`;
+        document.getElementById("profileName").innerText = user.name;
+        document.getElementById("profileEmail").innerText = user.email;
+        document.getElementById("profilePhone").innerText = user.phone;
+        renderWishlistPage();
+        renderLearningPage();
+        updateNotificationBadge();
+    }
+
+    // Notifications
+    function addNotification(msg) {
+        notifications.unshift(msg);
+        if(notifications.length > 10) notifications.pop();
+        updateNotificationBadge();
+        alert("🔔 " + msg);
+    }
+    function updateNotificationBadge() {
+        const badge = document.getElementById("notifBadge");
+        const count = notifications.length;
+        if(count > 0) {
+            badge.style.display = "inline-block";
+            badge.innerText = count > 9 ? "9+" : count;
+        } else {
+            badge.style.display = "none";
+        }
+    }
+
+    // Core enrollment (free or after payment)
+    function completeEnrollment(video) {
+        if(user.enrolled.includes(video.id)) {
+            addNotification(`You already own "${video.title}"`);
+            return false;
+        }
+        if(video.price === 0) {
+            user.enrolled.push(video.id);
+            addNotification(`🎉 Enrolled in free course: ${video.title}`);
+            saveUser();
+            return true;
+        } else {
+            if(user.wallet >= video.price) {
+                user.wallet -= video.price;
+                user.enrolled.push(video.id);
+                addNotification(`✅ Payment of ZMW ${video.price} successful. "${video.title}" added to My Learning.`);
+                saveUser();
+                return true;
+            } else {
+                addNotification(`❌ Insufficient balance. Add funds to wallet to buy "${video.title}" (ZMW ${video.price})`);
+                return false;
+            }
+        }
+    }
+
+    // PAYMENT MODAL LOGIC
+    const paymentModal = document.getElementById('paymentModal');
+    const providerOptionsDiv = document.getElementById('providerOptions');
+    const methodContainer = document.getElementById('paymentMethodContainer');
+    const ussdInfoDiv = document.getElementById('ussdInfo');
+    const paymentAmountSpan = document.getElementById('paymentAmount');
+
+    function openPaymentModal(video) {
+        pendingVideo = video;
+        paymentAmountSpan.innerText = `Amount: ZMW ${video.price}`;
+        providerOptionsDiv.style.display = 'block';
+        methodContainer.style.display = 'none';
+        ussdInfoDiv.style.display = 'none';
+        ussdInfoDiv.innerHTML = '';
+        selectedProvider = '';
+        paymentModal.classList.add('active');
+    }
+    function closePaymentModal() {
+        paymentModal.classList.remove('active');
+        pendingVideo = null;
+    }
+
+    document.getElementById('payMtn').onclick = () => { selectedProvider = 'MTN'; showPaymentMethod(); };
+    document.getElementById('payAirtel').onclick = () => { selectedProvider = 'Airtel'; showPaymentMethod(); };
+    document.getElementById('payZamtel').onclick = () => { selectedProvider = 'Zamtel'; showPaymentMethod(); };
+    function showPaymentMethod() {
+        providerOptionsDiv.style.display = 'none';
+        methodContainer.style.display = 'block';
+    }
+    document.getElementById('onlinePaymentBtn').onclick = () => {
+        if(!pendingVideo) return;
+        if(completeEnrollment(pendingVideo)) {
+            addNotification(`💳 ${selectedProvider} payment successful! Course added to My Learning.`);
+            closePaymentModal();
+            renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
+        } else {
+            closePaymentModal();
+        }
+        pendingVideo = null;
+    };
+    document.getElementById('ussdPaymentBtn').onclick = () => {
+        if(!pendingVideo) return;
+        let ussdCode = '';
+        if(selectedProvider === 'MTN') ussdCode = '*150#';
+        else if(selectedProvider === 'Airtel') ussdCode = '*115#';
+        else ussdCode = '*100#';
+        ussdInfoDiv.innerHTML = `
+            <strong>Manual USSD Payment</strong><br>
+            Dial ${ussdCode} on your phone, select "Make Payment", enter amount ZMW ${pendingVideo.price}, 
+            reference UTOM${pendingVideo.id}, and complete. After payment, click "I have paid" below.
+            <button id="confirmManualPayment" style="margin-top: 12px; background:#F5B042; border:none; padding:8px; border-radius:40px; width:100%;">✅ I have paid</button>
+        `;
+        ussdInfoDiv.style.display = 'block';
+        methodContainer.style.display = 'none';
+        document.getElementById('confirmManualPayment')?.addEventListener('click', () => {
+            if(completeEnrollment(pendingVideo)) {
+                addNotification(`💰 Manual payment via ${selectedProvider} confirmed. Course added!`);
+                closePaymentModal();
+                renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
+            } else {
+                closePaymentModal();
+            }
+            pendingVideo = null;
+        });
+    };
+    document.getElementById('closePaymentModal').addEventListener('click', closePaymentModal);
+
+    // CREATE VIDEO CARD (reusable)
+    function createVideoCard(video, isEnrolled = false, isLiked = false, showActions = true) {
+        const card = document.createElement('div');
+        card.className = 'grid-card';
+        const heartIcon = isLiked ? 'fas fa-heart' : 'far fa-heart';
+        card.innerHTML = `
+            <div class="grid-img">
+                <img src="${video.thumbnail}" alt="${video.title}" loading="lazy">
+                <div class="grid-play play-video" data-id="${video.id}"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="grid-content">
+                <h4>${video.title}</h4>
+                <div style="font-size:0.7rem; color:#666;">${video.instructor}</div>
+                <div class="price-row">
+                    <span class="price-tag">${video.price === 0 ? 'FREE' : `ZMW ${video.price}`}</span>
+                    <div style="display:flex; gap:6px;">
+                        ${showActions ? `<button class="icon-btn wishlist-btn" data-id="${video.id}"><i class="${heartIcon}"></i></button>` : ''}
+                        ${showActions ? (isEnrolled ? `<span style="font-size:0.7rem;">✅</span>` : `<button class="btn-sm-yellow buy-btn" data-id="${video.id}" data-price="${video.price}" data-free="${video.isFree}">${video.price === 0 ? 'Enroll' : 'Buy'}</button>`) : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        return card;
+    }
+
+    // Event handlers
+    function handlePlay(e) {
+        e.stopPropagation();
+        const id = e.currentTarget.getAttribute('data-id');
+        const video = allVideos.find(v => v.id == id);
+        alert(`🎬 Playing preview: "${video.title}" by ${video.instructor}\n Full course available after enrollment.`);
+    }
+    function handleBuy(e) {
+        e.stopPropagation();
+        const id = parseInt(e.currentTarget.getAttribute('data-id'));
+        const video = allVideos.find(v => v.id == id);
+        if(video.price === 0) {
+            if(completeEnrollment(video)) {
+                renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
+            }
+        } else {
+            openPaymentModal(video);
+        }
+    }
+    function handleWishlist(e) {
+        e.stopPropagation();
+        const id = parseInt(e.currentTarget.closest('.wishlist-btn').getAttribute('data-id'));
+        toggleWishlist(id);
+    }
+    function toggleWishlist(videoId) {
+        const idx = user.liked.indexOf(videoId);
+        if(idx === -1) {
+            user.liked.push(videoId);
+            addNotification(`❤️ Added to wishlist.`);
+        } else {
+            user.liked.splice(idx,1);
+            addNotification(`💔 Removed from wishlist.`);
+        }
+        saveUser();
+        renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
+    }
+    function attachVideoEvents() {
+        document.querySelectorAll('.play-video').forEach(btn => {
+            btn.removeEventListener('click', handlePlay);
+            btn.addEventListener('click', handlePlay);
+        });
+        document.querySelectorAll('.buy-btn').forEach(btn => {
+            btn.removeEventListener('click', handleBuy);
+            btn.addEventListener('click', handleBuy);
+        });
+        document.querySelectorAll('.wishlist-btn').forEach(btn => {
+            btn.removeEventListener('click', handleWishlist);
+            btn.addEventListener('click', handleWishlist);
+        });
+    }
+
+    // RENDER FUNCTIONS
+    function renderHome() {
+        const featured = allVideos.slice(0, 4);
+        const container = document.getElementById('floatingContainer');
+        container.innerHTML = '';
+        featured.forEach(v => {
+            const div = document.createElement('div');
+            div.className = 'float-card';
+            div.innerHTML = `
+                <div class="card-thumb"><img src="${v.thumbnail}"><div class="play-overlay play-video" data-id="${v.id}"><i class="fas fa-play"></i></div></div>
+                <div class="card-info"><h4>${v.title}</h4><div class="meta"><span class="badge ${v.isFree ? 'free-badge' : ''}">${v.isFree ? 'FREE' : 'PREMIUM'}</span><button class="btn-sm-yellow buy-btn" data-id="${v.id}" data-price="${v.price}" data-free="${v.isFree}">${v.isFree ? 'Enroll' : 'Buy'}</button></div></div>
+            `;
+            container.appendChild(div);
+        });
+        const homeGrid = document.getElementById('homeGrid');
+        homeGrid.innerHTML = '';
+        const homeVids = allVideos.slice(0, 9);
+        homeVids.forEach(v => {
+            const enrolled = user.enrolled.includes(v.id);
+            const liked = user.liked.includes(v.id);
+            homeGrid.appendChild(createVideoCard(v, enrolled, liked, true));
+        });
+        attachVideoEvents();
+    }
+
+    function renderExplore() {
+        const container = document.getElementById('exploreModulesContainer');
+        container.innerHTML = '';
+        const modules = [...new Map(allVideos.map(v => [v.module, v.module])).keys()];
+        modules.forEach(mod => {
+            const moduleVideos = allVideos.filter(v => v.module === mod);
+            const section = document.createElement('div');
+            section.innerHTML = `<h3 style="padding: 0.8rem 1rem 0.2rem;"><i class="fas fa-folder-open"></i> ${mod}</h3><div class="video-grid" id="grid-mod-${mod.replace(/\s/g,'')}"></div>`;
+            container.appendChild(section);
+            const gridDiv = section.querySelector(`.video-grid`);
+            moduleVideos.forEach(v => {
+                const enrolled = user.enrolled.includes(v.id);
+                const liked = user.liked.includes(v.id);
+                gridDiv.appendChild(createVideoCard(v, enrolled, liked, true));
+            });
+        });
+        attachVideoEvents();
+    }
+
+    function renderWishlistPage() {
+        const wishlistGrid = document.getElementById('wishlistGrid');
+        const emptyMsg = document.getElementById('emptyWishlistMsg');
+        const likedVideos = allVideos.filter(v => user.liked.includes(v.id));
+        if(likedVideos.length === 0) {
+            wishlistGrid.innerHTML = '';
+            emptyMsg.style.display = 'block';
+            return;
+        }
+        emptyMsg.style.display = 'none';
+        wishlistGrid.innerHTML = '';
+        likedVideos.forEach(v => {
+            const enrolled = user.enrolled.includes(v.id);
+            wishlistGrid.appendChild(createVideoCard(v, enrolled, true, true));
+        });
+        attachVideoEvents();
+    }
+
+    function renderLearningPage() {
+        const learningGrid = document.getElementById('learningGrid');
+        const emptyMsg = document.getElementById('emptyLearningMsg');
+        const enrolledVideos = allVideos.filter(v => user.enrolled.includes(v.id));
+        if(enrolledVideos.length === 0) {
+            learningGrid.innerHTML = '';
+            emptyMsg.style.display = 'block';
+            return;
+        }
+        emptyMsg.style.display = 'none';
+        learningGrid.innerHTML = '';
+        enrolledVideos.forEach(v => {
+            const liked = user.liked.includes(v.id);
+            learningGrid.appendChild(createVideoCard(v, true, liked, true));
+        });
+        attachVideoEvents();
+    }
+
+    // PAGE NAVIGATION
+    function showPage(pageId) {
+        const pages = ['home', 'explore', 'wishlist', 'mylearning', 'profile'];
+        pages.forEach(p => {
+            document.getElementById(p + 'Page').classList.remove('active-page');
+        });
+        document.getElementById(pageId + 'Page').classList.add('active-page');
+        if(pageId === 'home') renderHome();
+        if(pageId === 'explore') renderExplore();
+        if(pageId === 'wishlist') renderWishlistPage();
+        if(pageId === 'mylearning') renderLearningPage();
+        if(pageId === 'profile') updateUIafterDataChange();
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.getAttribute('data-page') === pageId) btn.classList.add('active');
+        });
+    }
+
+    // ADD FUNDS MODAL
+    const fundsModal = document.getElementById('mobileMoneyModal');
+    function addFunds(amount = 100) {
+        user.wallet += amount;
+        saveUser();
+        addNotification(`💰 Wallet funded with ZMW ${amount}. New balance: ZMW ${user.wallet}`);
+    }
+    document.getElementById('addFundsBtn').addEventListener('click', () => fundsModal.classList.add('active'));
+    document.getElementById('closeFundsModal').addEventListener('click', () => fundsModal.classList.remove('active'));
+    document.getElementById('mtnOption').addEventListener('click', () => { addFunds(100); fundsModal.classList.remove('active'); });
+    document.getElementById('airtelOption').addEventListener('click', () => { addFunds(100); fundsModal.classList.remove('active'); });
+    document.getElementById('zamtelOption').addEventListener('click', () => { addFunds(100); fundsModal.classList.remove('active'); });
+    document.getElementById('changePasswordBtn').addEventListener('click', () => alert("🔐 Password reset link sent to your email (demo)."));
+    document.getElementById('logoutBtn').addEventListener('click', () => { alert("Logged out (demo)."); localStorage.clear(); location.reload(); });
+
+    // TOP BAR ICONS
+    document.getElementById('searchIcon').addEventListener('click', () => {
+        let q = prompt("Search for videos:");
+        if(q) {
+            const results = allVideos.filter(v => v.title.toLowerCase().includes(q.toLowerCase()));
+            alert(`Found ${results.length} results: ${results.map(v=>v.title).join(", ")}`);
+        }
+    });
+    document.getElementById('notifIcon').addEventListener('click', () => {
+        if(notifications.length === 0) alert("📭 No new notifications.");
+        else alert("🔔 Notifications:\n" + notifications.join("\n"));
+    });
+    document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
+    document.getElementById('viewAllBtn').addEventListener('click', () => showPage('explore'));
+
+    // BOTTOM NAV
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => showPage(btn.getAttribute('data-page')));
+    });
+
+    // INIT
+    loadUserData();
+    renderHome();
+    showPage('home');
+    setTimeout(() => {
+        addNotification("✨ New video posted: 'Advanced Tailwind CSS' in Web Dev module!");
+    }, 1500);
+</script>
+</body>
+</html>
