@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM | Secure Access — Firebase</title>
+    <title>UTOM | Secure Access</title>
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase SDKs -->
@@ -435,7 +435,7 @@
     <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support</div>
 </div>
 
-<!-- FORGOT PASSWORD MODAL (Firebase reset email) -->
+<!-- FORGOT PASSWORD MODAL -->
 <div id="forgotModal" class="modal-overlay">
     <div class="modal-container">
         <h3><i class="fas fa-paper-plane" style="color:#F5B042;"></i> Reset password</h3>
@@ -454,7 +454,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
     import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -468,10 +468,26 @@
         measurementId: "G-STHFWDKVZN"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
+
+    // Redirect helper based on email
+    function redirectUser(user) {
+        if (!user) return;
+        if (user.email === 'admin@utom.com') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'user.html';
+        }
+    }
+
+    // Listen to auth state: if already logged in, redirect immediately
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            redirectUser(user);
+        }
+    });
 
     // DOM elements
     const loginPanel = document.getElementById('loginPanel');
@@ -504,7 +520,6 @@
     const resetEmailInput = document.getElementById('resetEmailInput');
     const resetErrorSpan = document.getElementById('resetError');
     
-    // Helper: set button loading state
     function setButtonLoading(button, isLoading, originalHtml) {
         if(isLoading) {
             button.disabled = true;
@@ -515,7 +530,6 @@
         }
     }
     
-    // UI panel toggles
     function showLoginPanel() {
         loginPanel.classList.remove('hidden-panel');
         signupPanel.classList.add('hidden-panel');
@@ -542,12 +556,11 @@
         forgotModal.classList.remove('active');
     }
     
-    // ----- SIGNUP with Firebase Auth + Realtime Database -----
+    // SIGNUP with Firebase
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
         signupSuccessSpan.style.display = 'none';
-        signupSuccessSpan.innerText = '';
         
         const fName = firstName.value.trim();
         const lName = lastName.value.trim();
@@ -557,7 +570,6 @@
         const confirmPwd = confirmPassword.value;
         const termsOk = termsCheckbox.checked;
         
-        // Validations
         if(!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
             signupErrorSpan.innerText = 'All fields are required.';
             return;
@@ -566,7 +578,7 @@
         if(!nameRegex.test(fName)) { signupErrorSpan.innerText = 'First name must contain only letters.'; return; }
         if(!nameRegex.test(lName)) { signupErrorSpan.innerText = 'Last name must contain only letters.'; return; }
         const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
-        if(!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number (8-20 digits).'; return; }
+        if(!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number.'; return; }
         const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
         if(!emailRegex.test(email)) { signupErrorSpan.innerText = 'Enter a valid email address.'; return; }
         if(pwd.length < 6) { signupErrorSpan.innerText = 'Password must be at least 6 characters.'; return; }
@@ -577,11 +589,8 @@
         setButtonLoading(registerBtn, true, originalText);
         
         try {
-            // 1. Create user with email/password
             const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
             const user = userCredential.user;
-            
-            // 2. Store additional user data in Realtime Database under /users/{uid}
             await set(ref(database, `users/${user.uid}`), {
                 firstName: fName,
                 lastName: lName,
@@ -589,36 +598,24 @@
                 email: email,
                 createdAt: serverTimestamp()
             });
-            
+            // After signup, user is automatically signed in. The onAuthStateChanged will redirect.
+            // But we can show a quick message before redirect happens.
             signupSuccessSpan.style.display = 'block';
-            signupSuccessSpan.innerText = 'Registration successful! Please login with your credentials.';
-            signupForm.reset();
-            termsCheckbox.checked = false;
-            
-            setTimeout(() => {
-                showLoginPanel();
-                loginEmail.value = email;
-                loginPassword.value = '';
-                loginErrorSpan.innerText = '';
-                signupSuccessSpan.style.display = 'none';
-            }, 1500);
+            signupSuccessSpan.innerText = 'Account created! Redirecting...';
+            // Redirect will be triggered by auth state change
         } catch (error) {
-            console.error(error);
             let errorMsg = error.message;
-            if (error.code === 'auth/email-already-in-use') {
-                errorMsg = 'Email already registered. Please login or use another email.';
-            } else if (error.code === 'auth/weak-password') {
-                errorMsg = 'Password should be at least 6 characters.';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMsg = 'Invalid email format.';
-            }
+            if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered.';
+            else if (error.code === 'auth/weak-password') errorMsg = 'Password too weak (min 6 characters).';
+            else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             signupErrorSpan.innerText = errorMsg;
-        } finally {
             setButtonLoading(registerBtn, false, originalText);
         }
+        // No need to reset loading here because redirect will happen; but if error, we already reset.
+        // In case of success, the page will redirect, so loading state may not matter.
     });
     
-    // ----- LOGIN with Firebase Auth -----
+    // LOGIN
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
@@ -628,31 +625,23 @@
             loginErrorSpan.innerText = 'Both email and password are required.';
             return;
         }
-        const originalLoginHtml = loginBtn.innerHTML;
-        setButtonLoading(loginBtn, true, originalLoginHtml);
+        const originalHtml = loginBtn.innerHTML;
+        setButtonLoading(loginBtn, true, originalHtml);
         
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            // Optionally fetch display name from DB, but we can show success
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-msg';
-            successDiv.innerText = `✓ Welcome back! Login successful.`;
-            loginErrorSpan.parentNode.insertBefore(successDiv, loginErrorSpan.nextSibling);
-            loginForm.reset();
-            setTimeout(() => successDiv.remove(), 2000);
+            await signInWithEmailAndPassword(auth, email, password);
+            // Redirect handled by onAuthStateChanged
         } catch (error) {
-            let errorMsg = 'Invalid email or password. Please try again or create an account.';
+            let errorMsg = 'Invalid email or password.';
             if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
             if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
             if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             loginErrorSpan.innerText = errorMsg;
-        } finally {
-            setButtonLoading(loginBtn, false, originalLoginHtml);
+            setButtonLoading(loginBtn, false, originalHtml);
         }
     });
     
-    // ----- FORGOT PASSWORD: Firebase sendPasswordResetEmail -----
+    // Forgot password
     forgotPwdBtn.addEventListener('click', openForgotModal);
     closeModalBtn.addEventListener('click', closeForgotModal);
     forgotModal.addEventListener('click', (e) => { if(e.target === forgotModal) closeForgotModal(); });
@@ -670,27 +659,21 @@
             return;
         }
         
-        const originalBtnText = sendResetLinkBtn.innerHTML;
-        setButtonLoading(sendResetLinkBtn, true, originalBtnText);
+        const originalText = sendResetLinkBtn.innerHTML;
+        setButtonLoading(sendResetLinkBtn, true, originalText);
         
         try {
             await sendPasswordResetEmail(auth, email);
-            // Show success inside modal
             resetErrorSpan.style.color = '#2b7e3a';
-            resetErrorSpan.innerText = '✅ Password reset email sent! Check your inbox.';
-            setTimeout(() => {
-                closeForgotModal();
-                resetErrorSpan.style.color = '#d9534f';
-                resetErrorSpan.innerText = '';
-            }, 2500);
+            resetErrorSpan.innerText = '✅ Reset email sent! Check your inbox.';
+            setTimeout(() => closeForgotModal(), 2000);
         } catch (error) {
             let errorMsg = 'Failed to send reset email.';
             if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
-            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
             resetErrorSpan.style.color = '#d9534f';
             resetErrorSpan.innerText = errorMsg;
         } finally {
-            setButtonLoading(sendResetLinkBtn, false, originalBtnText);
+            setButtonLoading(sendResetLinkBtn, false, originalText);
         }
     });
     
