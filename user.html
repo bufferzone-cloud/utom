@@ -3,1126 +3,739 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM · Learn & Grow</title>
+    <title>UTOM | Secure Access</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
         }
 
         body {
-            background: #f8f9fc;
-            padding-bottom: 70px;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            margin: 0;
         }
 
-        /* ===== TOP BAR ===== */
-        .top-bar {
-            background: white;
-            padding: 0.9rem 1.2rem;
+        .app-container {
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            border-bottom: 1px solid #f0f0f0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            gap: 1.5rem;
         }
 
         .logo-area {
-            display: flex;
-            align-items: center;
+            text-align: center;
+            animation: fadeSlideDown 0.5s ease-out;
+            width: 100%;
         }
 
         .logo-img {
-            height: 40px;
-            width: auto;
-            max-width: 130px;
-            object-fit: contain;
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
 
-        .logo-fallback {
+        .logo-placeholder {
+            font-size: 2.5rem;
             font-weight: 800;
-            font-size: 1.5rem;
+            letter-spacing: -1px;
             background: linear-gradient(135deg, #000 30%, #F5B042 80%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
 
-        .header-icons {
-            display: flex;
-            gap: 18px;
-            position: relative;
-        }
-
-        .header-icons i {
-            font-size: 1.3rem;
-            color: #2c2c2c;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 50%;
-            transition: 0.2s;
-        }
-
-        .header-icons i:active {
-            background: #f0f0f0;
-            transform: scale(0.94);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -4px;
-            right: -6px;
-            background: #F5B042;
-            color: black;
-            font-size: 0.6rem;
-            font-weight: bold;
-            border-radius: 30px;
-            padding: 2px 6px;
-            min-width: 18px;
-            text-align: center;
-        }
-
-        /* ===== WELCOME CARD ===== */
-        .welcome-card {
+        .form-card {
             background: white;
-            margin: 1rem 1rem 0.5rem;
-            padding: 1.2rem 1.5rem;
-            border-radius: 28px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.04);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid #f5e6d0;
-        }
-
-        .user-greeting h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
-
-        .user-greeting p {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .wallet-chip {
-            background: #F5B042;
-            padding: 8px 18px;
             border-radius: 40px;
-            font-weight: 700;
-            color: #000;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 1rem;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 1.8rem;
-            margin-top: 0.8rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.02);
             width: 100%;
-            padding-top: 0.8rem;
-            border-top: 1px dashed #ddd;
+            padding: 1.8rem 1.5rem 2rem;
+            transition: all 0.2s ease;
+            animation: fadeSlideDown 0.4s ease-out;
         }
 
-        .stats-row span {
-            font-size: 0.8rem;
-            color: #444;
+        .form-panel {
+            transition: opacity 0.2s ease;
         }
 
-        .stats-row i {
-            color: #F5B042;
-            margin-right: 5px;
-        }
-
-        /* Page containers */
-        .page-container {
+        .hidden-panel {
             display: none;
-            animation: fadeIn 0.25s ease;
         }
 
-        .active-page {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
-
-        /* Sections */
-        .floating-section {
-            padding: 0 0.8rem 0.8rem;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding: 0 0.5rem 0.8rem;
-        }
-
-        .floating-scroll {
-            display: flex;
-            overflow-x: auto;
-            gap: 1rem;
-            scrollbar-width: thin;
-            padding-bottom: 8px;
-        }
-
-        .float-card {
-            min-width: 250px;
-            background: white;
-            border-radius: 28px;
-            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.12);
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .card-thumb {
+        .input-icon-group {
             position: relative;
-            height: 140px;
-            background: #f0ede8;
-        }
-
-        .card-thumb img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            margin-bottom: 1.2rem;
         }
 
-        .play-overlay {
+        .input-icon-group i {
             position: absolute;
+            left: 18px;
             top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.6);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .pill-input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            font-size: 1rem;
+            border: 1.5px solid #e9e9ef;
+            border-radius: 999px;
+            background: #ffffff;
+            outline: none;
+            transition: all 0.2s ease;
+            color: #111;
+            font-weight: 500;
+        }
+
+        .pill-input:focus {
+            border-color: #F5B042;
+            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.2);
+        }
+
+        .pill-input:focus + i {
             color: #F5B042;
         }
 
-        .card-info {
-            padding: 12px 14px 16px;
-        }
-
-        .card-info h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .meta {
+        .double-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 8px;
+            gap: 0.8rem;
+            flex-wrap: wrap;
         }
 
-        .badge {
-            font-size: 0.7rem;
-            padding: 4px 12px;
-            border-radius: 30px;
-            background: #F5B04220;
+        .double-row .input-icon-group {
+            flex: 1;
+            min-width: 120px;
         }
 
-        .free-badge {
-            background: #e6f7e6;
-            color: #2e7d32;
-        }
-
-        .btn-sm-yellow {
+        .btn-yellow-black {
             background: #F5B042;
             border: none;
-            color: black;
+            color: #000000;
             font-weight: 700;
-            font-size: 0.7rem;
-            padding: 5px 12px;
-            border-radius: 40px;
+            font-size: 1rem;
+            padding: 14px 20px;
+            border-radius: 60px;
             cursor: pointer;
-        }
-
-        /* Grid */
-        .grid-section {
-            padding: 1rem 1rem 0.5rem;
-        }
-
-        .grid-title {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 1rem;
-        }
-
-        .grid-card {
-            background: white;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.04);
-            cursor: pointer;
-        }
-
-        .grid-img {
-            position: relative;
-            height: 100px;
-            background: #d9d2c5;
-        }
-
-        .grid-img img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .grid-play {
-            position: absolute;
-            bottom: 6px;
-            right: 6px;
-            background: rgba(0,0,0,0.6);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            letter-spacing: 0.3px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #F5B042;
+            gap: 10px;
         }
 
-        .grid-content {
-            padding: 10px 10px 12px;
+        .btn-yellow-black:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+            background: #ffb84d;
         }
 
-        .grid-content h4 {
-            font-size: 0.85rem;
-            font-weight: 700;
+        .btn-yellow-black:active {
+            transform: translateY(1px);
         }
 
-        .price-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 6px;
+        .btn-yellow-black:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .price-tag {
-            font-weight: 800;
-            font-size: 0.8rem;
-            color: #F5B042;
+        .btn-outline-dark {
+            background: transparent;
+            border: 2px solid #000000;
+            color: #000;
+            box-shadow: none;
         }
 
-        .icon-btn {
+        .btn-outline-dark:hover {
+            background: #00000008;
+            transform: translateY(-2px);
+        }
+
+        .text-link {
             background: none;
             border: none;
-            font-size: 0.85rem;
+            color: #000;
+            font-weight: 600;
+            text-decoration: underline;
             cursor: pointer;
-            padding: 5px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            padding: 6px 10px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        /* Profile card */
-        .profile-card {
-            background: white;
-            margin: 1rem;
-            border-radius: 32px;
-            padding: 1.5rem;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        .text-link:hover {
+            color: #F5B042;
+            text-decoration: none;
         }
 
-        .wallet-big {
-            font-size: 2.5rem;
-            font-weight: 800;
-            text-align: center;
-            background: #F5B04220;
-            border-radius: 60px;
-            padding: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .info-row {
+        .flex-between {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
+            align-items: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
-        .btn-profile {
-            background: #F5B042;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            border-radius: 60px;
-            font-weight: bold;
-            margin-top: 12px;
+        .terms-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1rem 0 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .terms-check label {
+            font-size: 0.85rem;
+            color: #2c2c2c;
+            font-weight: 500;
+        }
+
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            accent-color: #F5B042;
             cursor: pointer;
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 1.5px solid #F5B042;
-            color: #000;
-        }
-
-        /* Modals */
-        .modal {
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 200;
+            z-index: 1000;
             visibility: hidden;
             opacity: 0;
-            transition: 0.2s;
+            transition: visibility 0.2s, opacity 0.2s ease;
             padding: 1rem;
         }
 
-        .modal.active {
+        .modal-overlay.active {
             visibility: visible;
             opacity: 1;
         }
 
-        .modal-content {
+        .modal-container {
             background: white;
-            width: 85%;
-            max-width: 340px;
-            border-radius: 48px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .mobile-options button,
-        .payment-method button {
-            display: block;
+            max-width: 440px;
             width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            background: #f5f5f5;
-            border: none;
-            border-radius: 60px;
-            font-weight: bold;
-            cursor: pointer;
+            border-radius: 44px;
+            padding: 1.8rem;
+            box-shadow: 0 30px 45px rgba(0, 0, 0, 0.2);
+            transform: scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        .ussd-instructions {
-            background: #f9f9f9;
-            padding: 12px;
-            border-radius: 24px;
-            margin: 10px 0;
-            font-size: 0.85rem;
-            text-align: left;
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
         }
 
-        /* Bottom navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(10px);
+        .modal-container h3 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
             display: flex;
-            justify-content: space-around;
-            padding: 10px 0 14px;
-            border-top: 1px solid #f0f0f0;
-            z-index: 20;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 3px;
-            font-size: 0.7rem;
-            color: #6b6b6b;
-            background: none;
-            border: none;
-            cursor: pointer;
+            gap: 8px;
         }
 
-        .nav-item i {
-            font-size: 1.3rem;
+        .modal-container p {
+            color: #5a5a5a;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
         }
 
-        .nav-item.active {
-            color: #F5B042;
-            font-weight: 600;
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.2rem;
         }
 
-        /* Video modal */
-        .video-modal-content {
-            max-width: 500px;
-            padding: 0;
-            overflow: hidden;
+        .modal-buttons button {
+            flex: 1;
         }
 
-        .video-player-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            background: black;
+        .error-msg {
+            color: #d9534f;
+            font-size: 0.75rem;
+            margin-left: 20px;
+            margin-top: 2px;
+            min-height: 18px;
         }
 
-        .video-player-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .small-text {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.25rem;
+            color: #7a7a7a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
 
-        .video-modal-info {
-            padding: 1rem 1.2rem 1.5rem;
+        .fa-spinner {
+            animation: spin 1s linear infinite;
         }
 
-        @media (max-width: 480px) {
-            .welcome-card {
-                padding: 1rem;
-            }
-            .user-greeting h2 {
-                font-size: 1.1rem;
-            }
-            .wallet-chip {
-                padding: 6px 14px;
-                font-size: 0.9rem;
-            }
+        @keyframes fadeSlideDown {
+            0% { opacity: 0; transform: translateY(-12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 0.8rem; align-items: flex-start; padding-top: 1.8rem; }
+            .form-card { padding: 1.4rem 1.2rem 1.6rem; border-radius: 32px; }
+            .btn-yellow-black { padding: 12px 16px; font-size: 0.95rem; }
+            .logo-img { max-width: 150px; }
+            .pill-input { padding: 12px 16px 12px 44px; font-size: 0.95rem; }
+            .input-icon-group i { left: 16px; font-size: 1rem; }
+            .modal-container { padding: 1.5rem; }
+        }
+
+        @media (max-width: 380px) {
+            .flex-between { flex-direction: column; align-items: stretch; }
+            .text-link { justify-content: center; }
         }
     </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR ===== -->
-<div class="top-bar">
+<div class="app-container">
     <div class="logo-area">
-        <img src="utom.png" alt="UTOM" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-fallback\'><i class=\'fas fa-chalkboard-user\'></i> UTOM</div>';">
+        <img src="logo.png" alt="UTOM official logo" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
     </div>
-    <div class="header-icons">
-        <i class="fas fa-search" id="searchIcon"></i>
-        <i class="fas fa-bell" id="notifIcon"></i>
-        <span id="notifBadge" class="notification-badge" style="display: none;">0</span>
-        <i class="fas fa-user-circle" id="profileIcon"></i>
-    </div>
-</div>
 
-<!-- ===== WELCOME CARD ===== -->
-<div class="welcome-card" id="welcomeCard">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="background: #F5B04220; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <i class="fas fa-user-graduate" style="color: #F5B042; font-size: 1.5rem;"></i>
+    <div class="form-card">
+        <!-- LOGIN FORM -->
+        <div id="loginPanel" class="form-panel">
+            <form id="loginForm">
+                <div class="input-icon-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" class="pill-input" placeholder="Email address" autocomplete="email" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" class="pill-input" placeholder="Password" autocomplete="current-password" required>
+                </div>
+                <div id="loginError" class="error-msg"></div>
+                <button type="submit" class="btn-yellow-black" id="loginBtn"><i class="fas fa-arrow-right-to-bracket"></i> LOGIN</button>
+                <div class="flex-between">
+                    <button type="button" id="showSignupFromLoginBtn" class="btn-yellow-black btn-outline-dark" style="width: auto; padding: 10px 18px;"><i class="fas fa-user-plus"></i> CREATE ACCOUNT</button>
+                    <button type="button" id="forgotPwdBtn" class="text-link"><i class="fas fa-key"></i> Forgot password?</button>
+                </div>
+            </form>
         </div>
-        <div class="user-greeting">
-            <h2 id="greetingName">Welcome back!</h2>
-            <p id="greetingEmail">loading...</p>
-        </div>
-    </div>
-    <div class="wallet-chip" id="walletChip">
-        <i class="fas fa-wallet"></i> <span id="headerWallet">ZMW 0</span>
-    </div>
-    <div class="stats-row">
-        <span><i class="fas fa-video"></i> <span id="statVideos">0</span> lessons</span>
-        <span><i class="fas fa-users"></i> 2.5k students</span>
-        <span><i class="fas fa-trophy"></i> certificate</span>
-    </div>
-</div>
 
-<!-- ===== PAGE CONTAINERS ===== -->
-<div id="homePage" class="page-container active-page">
-    <div class="floating-section">
-        <div class="section-header">
-            <h3><i class="fas fa-star" style="color:#F5B042;"></i> Featured</h3>
-            <span>🔥 trending</span>
-        </div>
-        <div class="floating-scroll" id="floatingContainer"></div>
-    </div>
-    <div class="grid-section">
-        <div class="grid-title">
-            <h3><i class="fas fa-play-circle" style="color:#F5B042;"></i> All lessons</h3>
-            <button class="btn-sm-yellow" id="viewAllBtn">See all <i class="fas fa-arrow-right"></i></button>
-        </div>
-        <div class="video-grid" id="homeGrid"></div>
-    </div>
-</div>
-
-<div id="explorePage" class="page-container">
-    <div id="exploreModulesContainer"></div>
-</div>
-
-<div id="wishlistPage" class="page-container">
-    <div class="video-grid" id="wishlistGrid"></div>
-    <div id="emptyWishlistMsg" style="text-align:center; padding:2rem; color:gray;">❤️ No liked videos yet.</div>
-</div>
-
-<div id="mylearningPage" class="page-container">
-    <div class="video-grid" id="learningGrid"></div>
-    <div id="emptyLearningMsg" style="text-align:center; padding:2rem; color:gray;">📚 No enrolled courses yet.</div>
-</div>
-
-<div id="profilePage" class="page-container">
-    <div class="profile-card">
-        <div class="wallet-big" id="walletAmount">ZMW 0</div>
-        <div class="info-row"><span>Full name</span><span id="profileName"></span></div>
-        <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
-        <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
-        <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
-        <button class="btn-profile" id="addFundsBtn"><i class="fas fa-wallet"></i> Add Funds to Wallet</button>
-        <button class="btn-profile btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
-</div>
-
-<!-- ===== PAYMENT MODAL ===== -->
-<div id="paymentModal" class="modal">
-    <div class="modal-content">
-        <h3><i class="fas fa-credit-card"></i> Complete Payment</h3>
-        <p id="paymentAmount" style="font-weight: bold; margin: 10px 0;"></p>
-        <div class="mobile-options" id="providerOptions">
-            <button id="payMtn">📱 MTN Mobile Money</button>
-            <button id="payAirtel">📱 Airtel Money</button>
-            <button id="payZamtel">📱 Zamtel Kwacha</button>
-        </div>
-        <div id="paymentMethodContainer" style="display: none;">
-            <div class="payment-method">
-                <button id="onlinePaymentBtn">💻 Online Payment (Instant)</button>
-                <button id="ussdPaymentBtn">📞 Manual USSD Code</button>
-            </div>
-        </div>
-        <div id="ussdInfo" style="display: none;" class="ussd-instructions"></div>
-        <button id="closePaymentModal" style="margin-top: 12px; background:#ddd; border:none; padding:8px; border-radius:40px; width:100%;">Cancel</button>
-    </div>
-</div>
-
-<!-- ===== ADD FUNDS MODAL ===== -->
-<div id="mobileMoneyModal" class="modal">
-    <div class="modal-content">
-        <h3>Add Funds to Wallet</h3>
-        <div class="mobile-options">
-            <button id="mtnOption">📱 MTN Mobile Money</button>
-            <button id="airtelOption">📱 Airtel Money</button>
-            <button id="zamtelOption">📱 Zamtel Kwacha</button>
-        </div>
-        <button id="closeFundsModal" style="margin-top: 12px; background:#ddd; border:none; padding:8px; border-radius:40px; width:100%;">Cancel</button>
-    </div>
-</div>
-
-<!-- ===== VIDEO PLAYER MODAL ===== -->
-<div id="videoPlayerModal" class="modal">
-    <div class="modal-content video-modal-content">
-        <div class="video-player-container">
-            <video id="mainVideoPlayer" controls controlsList="nodownload"></video>
-        </div>
-        <div class="video-modal-info">
-            <h4 id="videoPlayerTitle"></h4>
-            <p id="videoPlayerInstructor"></p>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button id="downloadVideoBtn" class="btn-profile" style="margin:0;"><i class="fas fa-download"></i> Download</button>
-                <button id="closeVideoModalBtn" class="btn-profile btn-outline" style="margin:0;">Close</button>
-            </div>
+        <!-- SIGNUP FORM -->
+        <div id="signupPanel" class="form-panel hidden-panel">
+            <form id="signupForm">
+                <div class="double-row">
+                    <div class="input-icon-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="firstName" class="pill-input" placeholder="First name" required>
+                    </div>
+                    <div class="input-icon-group">
+                        <i class="fas fa-user-tag"></i>
+                        <input type="text" id="lastName" class="pill-input" placeholder="Last name" required>
+                    </div>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-phone-alt"></i>
+                    <input type="tel" id="phoneNumber" class="pill-input" placeholder="Phone number" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="signupEmail" class="pill-input" placeholder="Email address" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signupPassword" class="pill-input" placeholder="Create password" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-check-circle"></i>
+                    <input type="password" id="confirmPassword" class="pill-input" placeholder="Confirm password" required>
+                </div>
+                <div id="signupError" class="error-msg"></div>
+                <div class="terms-check">
+                    <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                    <label for="termsCheckbox">I agree to the <strong>Terms & Conditions</strong> and Privacy Policy.</label>
+                </div>
+                <button type="submit" class="btn-yellow-black" id="registerBtn"><i class="fas fa-user-check"></i> REGISTER</button>
+                <div class="flex-between" style="margin-top: 0.8rem;">
+                    <button type="button" id="backToLoginBtn" class="text-link"><i class="fas fa-chevron-left"></i> Back to Login</button>
+                </div>
+            </form>
         </div>
     </div>
+    <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support</div>
 </div>
 
-<!-- ===== BOTTOM NAVIGATION ===== -->
-<div class="bottom-nav">
-    <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></button>
-    <button class="nav-item" data-page="explore"><i class="fas fa-compass"></i><span>Explore</span></button>
-    <button class="nav-item" data-page="wishlist"><i class="fas fa-heart"></i><span>Wishlist</span></button>
-    <button class="nav-item" data-page="mylearning"><i class="fas fa-book-open"></i><span>My Learn</span></button>
-    <button class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></button>
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" class="modal-overlay">
+    <div class="modal-container">
+        <h3><i class="fas fa-paper-plane" style="color:#F5B042;"></i> Reset password</h3>
+        <p>Enter your email address and we'll send you a secure link to reset your password.</p>
+        <div class="input-icon-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="resetEmailInput" class="pill-input" placeholder="Your email address" autocomplete="email">
+        </div>
+        <div id="resetError" class="error-msg"></div>
+        <div class="modal-buttons">
+            <button id="closeModalBtn" class="btn-yellow-black btn-outline-dark" style="background:transparent;"><i class="fas fa-times"></i> Cancel</button>
+            <button id="sendResetLinkBtn" class="btn-yellow-black"><i class="fas fa-paper-plane"></i> Send link</button>
+        </div>
+    </div>
 </div>
 
 <script type="module">
-    // ========== FIREBASE & CONFIG ==========
+    // ========== FIREBASE CONFIG (EXACTLY AS WORKING TEST) ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { getDatabase, ref, set, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyCZEqWRAHW0tW6j0WfBf8lxj61oExa6BwY",
-        authDomain: "wizafoodcafe.firebaseapp.com",
-        databaseURL: "https://wizafoodcafe-default-rtdb.firebaseio.com",
-        projectId: "wizafoodcafe",
-        storageBucket: "wizafoodcafe.firebasestorage.app",
-        messagingSenderId: "248334218737",
-        appId: "1:248334218737:web:94fabd0bbdf75bb8410050"
+        apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+        authDomain: "utom-c4003.firebaseapp.com",
+        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+        projectId: "utom-c4003",
+        storageBucket: "utom-c4003.firebasestorage.app",
+        messagingSenderId: "878225874050",
+        appId: "1:878225874050:web:643626906bfd233eeae89b",
+        measurementId: "G-STHFWDKVZN"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // ========== GLOBAL STATE ==========
-    let currentUser = null;
-    let userData = { firstName: '', lastName: '', email: '', phone: '', wallet: 0, enrolled: [], liked: [] };
-    let allVideos = [];
-    let notifications = [];
-    let pendingVideo = null;
-    let selectedProvider = '';
+    // ========== DOM ELEMENTS ==========
+    const loginPanel = document.getElementById('loginPanel');
+    const signupPanel = document.getElementById('signupPanel');
+    const showSignupFromLogin = document.getElementById('showSignupFromLoginBtn');
+    const backToLoginBtn = document.getElementById('backToLoginBtn');
+    const forgotPwdBtn = document.getElementById('forgotPwdBtn');
+    const forgotModal = document.getElementById('forgotModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const sendResetLinkBtn = document.getElementById('sendResetLinkBtn');
+    const resetEmailInput = document.getElementById('resetEmailInput');
+    const resetError = document.getElementById('resetError');
+    
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const loginError = document.getElementById('loginError');
+    const signupError = document.getElementById('signupError');
 
-    // DOM Elements
-    const paymentModal = document.getElementById('paymentModal');
-    const fundsModal = document.getElementById('mobileMoneyModal');
-    const videoModal = document.getElementById('videoPlayerModal');
-    const videoPlayer = document.getElementById('mainVideoPlayer');
-    const videoPlayerTitle = document.getElementById('videoPlayerTitle');
-    const videoPlayerInstructor = document.getElementById('videoPlayerInstructor');
-    let currentPlayingVideo = null;
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const firstNameInput = document.getElementById('firstName');
+    const lastNameInput = document.getElementById('lastName');
+    const phoneInput = document.getElementById('phoneNumber');
+    const signupEmailInput = document.getElementById('signupEmail');
+    const signupPasswordInput = document.getElementById('signupPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const termsCheckbox = document.getElementById('termsCheckbox');
 
-    // ========== AUTH CHECK ==========
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = 'index.html'; return; }
-        if (user.email === 'admin@utom.com') { window.location.href = 'admin.html'; return; }
-        currentUser = user;
-        await loadUserData(user.uid);
-        setupRealtimeVideoListener();
-        setupUI();
-        showPage('home');
+    // ========== UI HELPERS ==========
+    function showLoginPanel() {
+        loginPanel.classList.remove('hidden-panel');
+        signupPanel.classList.add('hidden-panel');
+        clearErrors();
+    }
+
+    function showSignupPanel() {
+        signupPanel.classList.remove('hidden-panel');
+        loginPanel.classList.add('hidden-panel');
+        clearErrors();
+    }
+
+    function clearErrors() {
+        loginError.textContent = '';
+        signupError.textContent = '';
+        resetError.textContent = '';
+    }
+
+    function setLoading(button, isLoading, originalIconClass) {
+        if (isLoading) {
+            button.disabled = true;
+            const icon = button.querySelector('i');
+            if (icon) {
+                icon.className = 'fas fa-spinner fa-spin';
+            }
+        } else {
+            button.disabled = false;
+            const icon = button.querySelector('i');
+            if (icon && originalIconClass) {
+                icon.className = originalIconClass;
+            }
+        }
+    }
+
+    // Panel switching
+    showSignupFromLogin.addEventListener('click', showSignupPanel);
+    backToLoginBtn.addEventListener('click', showLoginPanel);
+
+    // Modal controls
+    function openForgotModal() {
+        resetEmailInput.value = '';
+        resetError.textContent = '';
+        forgotModal.classList.add('active');
+    }
+    function closeForgotModal() {
+        forgotModal.classList.remove('active');
+    }
+    forgotPwdBtn.addEventListener('click', openForgotModal);
+    closeModalBtn.addEventListener('click', closeForgotModal);
+    forgotModal.addEventListener('click', (e) => {
+        if (e.target === forgotModal) closeForgotModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && forgotModal.classList.contains('active')) {
+            closeForgotModal();
+        }
     });
 
-    // ========== LOAD USER DATA ==========
-    async function loadUserData(uid) {
-        const userRef = ref(db, `users/${uid}`);
-        const snap = await get(userRef);
-        if (snap.exists()) {
-            userData = { ...userData, ...snap.val() };
-            userData.enrolled = userData.enrolled || [];
-            userData.liked = userData.liked || [];
-            userData.wallet = userData.wallet || 0;
-        } else {
-            userData = {
-                firstName: currentUser.displayName?.split(' ')[0] || '',
-                lastName: currentUser.displayName?.split(' ')[1] || '',
-                email: currentUser.email,
-                phone: '',
+    // ========== LOGIN (with database read) ==========
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value.trim();
+        
+        if (!email) { loginError.textContent = 'Please enter your email address.'; return; }
+        if (!password) { loginError.textContent = 'Please enter your password.'; return; }
+        if (!email.includes('@') || !email.includes('.')) {
+            loginError.textContent = 'Please enter a valid email address.';
+            return;
+        }
+
+        clearErrors();
+        setLoading(loginBtn, true, 'fas fa-arrow-right-to-bracket');
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            
+            // READ user details from Realtime Database
+            const userRef = ref(db, 'users/' + user.uid);
+            const snapshot = await get(userRef);
+            if (snapshot.exists()) {
+                const userData = snapshot.val();
+                console.log('User data read successfully:', userData);
+                sessionStorage.setItem('utom_user_email', user.email);
+                sessionStorage.setItem('utom_user_uid', user.uid);
+                sessionStorage.setItem('utom_user_name', `${userData.firstName} ${userData.lastName}`);
+                sessionStorage.setItem('utom_user_phone', userData.phone);
+                sessionStorage.setItem('utom_user_wallet', userData.wallet);
+            } else {
+                console.warn('No user data found in database for uid:', user.uid);
+                sessionStorage.setItem('utom_user_email', user.email);
+                sessionStorage.setItem('utom_user_uid', user.uid);
+            }
+            
+            // Redirect based on email
+            if (email === 'admin@utom.com') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'user.html';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            let message = 'Login failed. Please try again.';
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                message = 'Invalid email or password.';
+            } else if (error.code === 'auth/too-many-requests') {
+                message = 'Too many attempts. Please try again later.';
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'Invalid email format.';
+            }
+            loginError.textContent = message;
+        } finally {
+            setLoading(loginBtn, false, 'fas fa-arrow-right-to-bracket');
+        }
+    });
+
+    // ========== SIGNUP (write user details to database - same as test) ==========
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstName = firstNameInput.value.trim();
+        const lastName = lastNameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const email = signupEmailInput.value.trim();
+        const password = signupPasswordInput.value;
+        const confirm = confirmPasswordInput.value;
+        const termsAccepted = termsCheckbox.checked;
+
+        // Validation
+        if (!firstName) { signupError.textContent = 'First name is required.'; return; }
+        if (!lastName) { signupError.textContent = 'Last name is required.'; return; }
+        if (!phone) { signupError.textContent = 'Phone number is required.'; return; }
+        if (!email) { signupError.textContent = 'Email address is required.'; return; }
+        if (!email.includes('@') || !email.includes('.')) { 
+            signupError.textContent = 'Please enter a valid email.'; 
+            return; 
+        }
+        if (email === 'admin@utom.com') { 
+            signupError.textContent = 'This email is reserved for admin.'; 
+            return; 
+        }
+        if (!password) { signupError.textContent = 'Please create a password.'; return; }
+        if (password.length < 6) { 
+            signupError.textContent = 'Password must be at least 6 characters.'; 
+            return; 
+        }
+        if (password !== confirm) { 
+            signupError.textContent = 'Passwords do not match.'; 
+            return; 
+        }
+        if (!termsAccepted) { 
+            signupError.textContent = 'You must accept the Terms & Conditions.'; 
+            return; 
+        }
+
+        clearErrors();
+        setLoading(registerBtn, true, 'fas fa-user-check');
+
+        try {
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            console.log('Auth user created:', user.uid);
+            
+            // WRITE complete user data to Realtime Database (exactly like test)
+            const userRef = ref(db, 'users/' + user.uid);
+            await set(userRef, {
+                firstName: firstName,
+                lastName: lastName,
+                phone: phone,
+                email: email,
                 wallet: 0,
                 enrolled: [],
-                liked: []
-            };
-            await set(userRef, userData);
-        }
-        updateWelcomeHeader();
-        updateProfileUI();
-    }
-
-    function updateWelcomeHeader() {
-        const name = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0];
-        document.getElementById('greetingName').innerText = `👋 ${name}`;
-        document.getElementById('greetingEmail').innerText = currentUser.email;
-        document.getElementById('headerWallet').innerText = `ZMW ${userData.wallet}`;
-        document.getElementById('walletAmount').innerText = `ZMW ${userData.wallet}`;
-        document.getElementById('profileName').innerText = name;
-        document.getElementById('profileEmail').innerText = currentUser.email;
-        document.getElementById('profilePhone').innerText = userData.phone || 'Not set';
-    }
-
-    function updateProfileUI() {
-        updateWelcomeHeader();
-    }
-
-    // ========== SAVE USER DATA ==========
-    async function saveUserData() {
-        if (!currentUser) return;
-        const userRef = ref(db, `users/${currentUser.uid}`);
-        await update(userRef, {
-            wallet: userData.wallet,
-            enrolled: userData.enrolled,
-            liked: userData.liked,
-            phone: userData.phone
-        });
-        updateWelcomeHeader();
-    }
-
-    // ========== REALTIME VIDEOS ==========
-    function setupRealtimeVideoListener() {
-        const videosRef = ref(db, 'videos');
-        onValue(videosRef, (snap) => {
-            const data = snap.val();
-            allVideos = data ? Object.entries(data).map(([id, v]) => ({ id, ...v })) : [];
-            document.getElementById('statVideos').innerText = allVideos.length;
-            renderHome();
-            renderExplore();
-            renderWishlistPage();
-            renderLearningPage();
-        });
-    }
-
-    // ========== NOTIFICATIONS ==========
-    function addNotification(msg) {
-        notifications.unshift(msg);
-        if (notifications.length > 10) notifications.pop();
-        const badge = document.getElementById('notifBadge');
-        badge.style.display = notifications.length ? 'inline-block' : 'none';
-        badge.innerText = notifications.length > 9 ? '9+' : notifications.length;
-        alert("🔔 " + msg);
-    }
-
-    // ========== ENROLLMENT ==========
-    async function completeEnrollment(video) {
-        if (userData.enrolled.includes(video.id)) {
-            addNotification(`You already own "${video.title}"`);
-            return false;
-        }
-        if (video.price === 0) {
-            userData.enrolled.push(video.id);
-            addNotification(`🎉 Enrolled in free course: ${video.title}`);
-            await saveUserData();
-            return true;
-        } else {
-            if (userData.wallet >= video.price) {
-                userData.wallet -= video.price;
-                userData.enrolled.push(video.id);
-                const txRef = push(ref(db, 'transactions'));
-                await set(txRef, {
-                    userId: currentUser.uid,
-                    userEmail: userData.email,
-                    userName: `${userData.firstName} ${userData.lastName}`,
-                    videoId: video.id,
-                    videoTitle: video.title,
-                    amount: video.price,
-                    date: new Date().toLocaleString(),
-                    paymentMethod: selectedProvider || 'Wallet',
-                    status: 'Completed'
-                });
-                addNotification(`✅ Payment of ZMW ${video.price} successful. "${video.title}" added.`);
-                await saveUserData();
-                return true;
-            } else {
-                addNotification(`❌ Insufficient balance. Add funds to buy "${video.title}" (ZMW ${video.price})`);
-                return false;
-            }
-        }
-    }
-
-    // ========== ADD FUNDS ==========
-    async function addFunds(amount = 100) {
-        userData.wallet += amount;
-        await saveUserData();
-        addNotification(`💰 Wallet funded with ZMW ${amount}. New balance: ZMW ${userData.wallet}`);
-    }
-
-    // ========== VIDEO PLAYER ==========
-    function playVideo(video) {
-        currentPlayingVideo = video;
-        videoPlayerTitle.innerText = video.title;
-        videoPlayerInstructor.innerText = video.instructor;
-        videoPlayer.src = video.videoUrl;
-        videoPlayer.load();
-        videoModal.classList.add('active');
-    }
-
-    function downloadVideo() {
-        if (!currentPlayingVideo) return;
-        const link = document.createElement('a');
-        link.href = currentPlayingVideo.videoUrl;
-        link.download = `${currentPlayingVideo.title}.mp4`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        addNotification(`📥 Download started: ${currentPlayingVideo.title}`);
-    }
-
-    // ========== RENDER FUNCTIONS ==========
-    function createVideoCard(video, isEnrolled, isLiked, showActions = true) {
-        const card = document.createElement('div');
-        card.className = 'grid-card';
-        const heartIcon = isLiked ? 'fas fa-heart' : 'far fa-heart';
-        card.innerHTML = `
-            <div class="grid-img">
-                <img src="${video.thumbnail || 'https://picsum.photos/300/180'}" alt="${escapeHtml(video.title)}" loading="lazy">
-                <div class="grid-play play-video" data-id="${video.id}"><i class="fas fa-play"></i></div>
-            </div>
-            <div class="grid-content">
-                <h4>${escapeHtml(video.title)}</h4>
-                <div style="font-size:0.7rem; color:#666;">${escapeHtml(video.instructor)}</div>
-                <div class="price-row">
-                    <span class="price-tag">${video.price === 0 ? 'FREE' : `ZMW ${video.price}`}</span>
-                    <div style="display:flex; gap:6px;">
-                        ${showActions ? `<button class="icon-btn wishlist-btn" data-id="${video.id}"><i class="${heartIcon}"></i></button>` : ''}
-                        ${showActions ? (isEnrolled ? `<span style="font-size:0.7rem;">✅</span>` : `<button class="btn-sm-yellow buy-btn" data-id="${video.id}" data-price="${video.price}">${video.price === 0 ? 'Enroll' : 'Buy'}</button>`) : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-        return card;
-    }
-
-    function attachVideoEvents() {
-        document.querySelectorAll('.play-video').forEach(btn => {
-            btn.removeEventListener('click', handlePlay);
-            btn.addEventListener('click', handlePlay);
-        });
-        document.querySelectorAll('.buy-btn').forEach(btn => {
-            btn.removeEventListener('click', handleBuy);
-            btn.addEventListener('click', handleBuy);
-        });
-        document.querySelectorAll('.wishlist-btn').forEach(btn => {
-            btn.removeEventListener('click', handleWishlist);
-            btn.addEventListener('click', handleWishlist);
-        });
-    }
-
-    async function handlePlay(e) {
-        e.stopPropagation();
-        const id = e.currentTarget.closest('[data-id]').getAttribute('data-id');
-        const video = allVideos.find(v => v.id === id);
-        if (video) playVideo(video);
-    }
-
-    async function handleBuy(e) {
-        e.stopPropagation();
-        const id = e.currentTarget.getAttribute('data-id');
-        const video = allVideos.find(v => v.id === id);
-        if (video.price === 0) {
-            if (await completeEnrollment(video)) {
-                renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
-            }
-        } else {
-            openPaymentModal(video);
-        }
-    }
-
-    async function handleWishlist(e) {
-        e.stopPropagation();
-        const id = e.currentTarget.closest('.wishlist-btn').getAttribute('data-id');
-        const idx = userData.liked.indexOf(id);
-        if (idx === -1) {
-            userData.liked.push(id);
-            addNotification(`❤️ Added to wishlist.`);
-        } else {
-            userData.liked.splice(idx, 1);
-            addNotification(`💔 Removed from wishlist.`);
-        }
-        await saveUserData();
-        renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
-    }
-
-    function renderHome() {
-        const featured = allVideos.slice(0, 4);
-        const container = document.getElementById('floatingContainer');
-        container.innerHTML = '';
-        featured.forEach(v => {
-            const div = document.createElement('div');
-            div.className = 'float-card';
-            div.innerHTML = `
-                <div class="card-thumb"><img src="${v.thumbnail}"><div class="play-overlay play-video" data-id="${v.id}"><i class="fas fa-play"></i></div></div>
-                <div class="card-info"><h4>${escapeHtml(v.title)}</h4><div class="meta"><span class="badge ${v.price===0 ? 'free-badge' : ''}">${v.price===0 ? 'FREE' : 'PREMIUM'}</span><button class="btn-sm-yellow buy-btn" data-id="${v.id}">${v.price===0 ? 'Enroll' : 'Buy'}</button></div></div>
-            `;
-            container.appendChild(div);
-        });
-        const homeGrid = document.getElementById('homeGrid');
-        homeGrid.innerHTML = '';
-        const homeVids = allVideos.slice(0, 9);
-        homeVids.forEach(v => {
-            const enrolled = userData.enrolled.includes(v.id);
-            const liked = userData.liked.includes(v.id);
-            homeGrid.appendChild(createVideoCard(v, enrolled, liked, true));
-        });
-        attachVideoEvents();
-    }
-
-    function renderExplore() {
-        const container = document.getElementById('exploreModulesContainer');
-        container.innerHTML = '';
-        const modules = [...new Set(allVideos.map(v => v.module))];
-        modules.forEach(mod => {
-            const moduleVideos = allVideos.filter(v => v.module === mod);
-            const section = document.createElement('div');
-            section.innerHTML = `<h3 style="padding: 0.8rem 1rem 0.2rem;"><i class="fas fa-folder-open"></i> ${escapeHtml(mod)}</h3><div class="video-grid" id="grid-mod-${mod.replace(/\s/g,'')}"></div>`;
-            container.appendChild(section);
-            const gridDiv = section.querySelector('.video-grid');
-            moduleVideos.forEach(v => {
-                const enrolled = userData.enrolled.includes(v.id);
-                const liked = userData.liked.includes(v.id);
-                gridDiv.appendChild(createVideoCard(v, enrolled, liked, true));
+                liked: [],
+                createdAt: serverTimestamp(),
+                uid: user.uid
             });
-        });
-        attachVideoEvents();
-    }
+            console.log('Database write successful for user:', user.uid);
 
-    function renderWishlistPage() {
-        const grid = document.getElementById('wishlistGrid');
-        const emptyMsg = document.getElementById('emptyWishlistMsg');
-        const likedVids = allVideos.filter(v => userData.liked.includes(v.id));
-        if (likedVids.length === 0) {
-            grid.innerHTML = '';
-            emptyMsg.style.display = 'block';
-            return;
-        }
-        emptyMsg.style.display = 'none';
-        grid.innerHTML = '';
-        likedVids.forEach(v => {
-            const enrolled = userData.enrolled.includes(v.id);
-            grid.appendChild(createVideoCard(v, enrolled, true, true));
-        });
-        attachVideoEvents();
-    }
+            // Store session info
+            sessionStorage.setItem('utom_user_email', email);
+            sessionStorage.setItem('utom_user_uid', user.uid);
+            sessionStorage.setItem('utom_user_name', `${firstName} ${lastName}`);
+            sessionStorage.setItem('utom_user_phone', phone);
+            sessionStorage.setItem('utom_user_wallet', '0');
 
-    function renderLearningPage() {
-        const grid = document.getElementById('learningGrid');
-        const emptyMsg = document.getElementById('emptyLearningMsg');
-        const enrolledVids = allVideos.filter(v => userData.enrolled.includes(v.id));
-        if (enrolledVids.length === 0) {
-            grid.innerHTML = '';
-            emptyMsg.style.display = 'block';
-            return;
-        }
-        emptyMsg.style.display = 'none';
-        grid.innerHTML = '';
-        enrolledVids.forEach(v => {
-            const liked = userData.liked.includes(v.id);
-            grid.appendChild(createVideoCard(v, true, liked, true));
-        });
-        attachVideoEvents();
-    }
+            // Clear form
+            firstNameInput.value = '';
+            lastNameInput.value = '';
+            phoneInput.value = '';
+            signupEmailInput.value = '';
+            signupPasswordInput.value = '';
+            confirmPasswordInput.value = '';
+            termsCheckbox.checked = false;
 
-    // ========== PAYMENT MODAL ==========
-    function openPaymentModal(video) {
-        pendingVideo = video;
-        document.getElementById('paymentAmount').innerText = `Amount: ZMW ${video.price}`;
-        document.getElementById('providerOptions').style.display = 'block';
-        document.getElementById('paymentMethodContainer').style.display = 'none';
-        document.getElementById('ussdInfo').style.display = 'none';
-        selectedProvider = '';
-        paymentModal.classList.add('active');
-    }
-
-    function closePaymentModal() {
-        paymentModal.classList.remove('active');
-        pendingVideo = null;
-    }
-
-    // ========== PAGE NAVIGATION ==========
-    function showPage(pageId) {
-        document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
-        document.getElementById(pageId + 'Page').classList.add('active-page');
-        document.querySelectorAll('.nav-item').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.page === pageId) btn.classList.add('active');
-        });
-        if (pageId === 'home') renderHome();
-        if (pageId === 'explore') renderExplore();
-        if (pageId === 'wishlist') renderWishlistPage();
-        if (pageId === 'mylearning') renderLearningPage();
-        if (pageId === 'profile') updateProfileUI();
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // ========== UI SETUP ==========
-    function setupUI() {
-        // Bottom nav
-        document.querySelectorAll('.nav-item').forEach(btn => {
-            btn.addEventListener('click', () => showPage(btn.dataset.page));
-        });
-
-        // Payment modal
-        document.getElementById('payMtn').onclick = () => { selectedProvider = 'MTN'; showPaymentMethod(); };
-        document.getElementById('payAirtel').onclick = () => { selectedProvider = 'Airtel'; showPaymentMethod(); };
-        document.getElementById('payZamtel').onclick = () => { selectedProvider = 'Zamtel'; showPaymentMethod(); };
-        function showPaymentMethod() {
-            document.getElementById('providerOptions').style.display = 'none';
-            document.getElementById('paymentMethodContainer').style.display = 'block';
-        }
-        document.getElementById('onlinePaymentBtn').onclick = async () => {
-            if (!pendingVideo) return;
-            if (await completeEnrollment(pendingVideo)) {
-                closePaymentModal();
-                renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
-            } else {
-                closePaymentModal();
+            // Redirect to user page
+            window.location.href = 'user.html';
+        } catch (error) {
+            console.error('Signup error details:', error);
+            let message = 'Registration failed.';
+            if (error.code === 'auth/email-already-in-use') {
+                message = 'This email is already registered.';
+            } else if (error.code === 'auth/weak-password') {
+                message = 'Password is too weak.';
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'Invalid email format.';
+            } else if (error.code === 'permission_denied') {
+                message = 'Database permission denied. Check your Firebase rules.';
             }
-        };
-        document.getElementById('ussdPaymentBtn').onclick = () => {
-            if (!pendingVideo) return;
-            let code = selectedProvider === 'MTN' ? '*150#' : (selectedProvider === 'Airtel' ? '*115#' : '*100#');
-            document.getElementById('ussdInfo').innerHTML = `
-                <strong>Manual USSD Payment</strong><br>
-                Dial ${code}, select "Make Payment", amount ZMW ${pendingVideo.price}, ref UTOM${pendingVideo.id}. Then click "I have paid".
-                <button id="confirmManualPayment" style="margin-top:12px; background:#F5B042; border:none; padding:8px; border-radius:40px; width:100%;">✅ I have paid</button>
-            `;
-            document.getElementById('ussdInfo').style.display = 'block';
-            document.getElementById('paymentMethodContainer').style.display = 'none';
-            document.getElementById('confirmManualPayment')?.addEventListener('click', async () => {
-                if (await completeEnrollment(pendingVideo)) {
-                    closePaymentModal();
-                    renderHome(); renderExplore(); renderWishlistPage(); renderLearningPage();
+            signupError.textContent = message;
+        } finally {
+            setLoading(registerBtn, false, 'fas fa-user-check');
+        }
+    });
+
+    // ========== FORGOT PASSWORD ==========
+    sendResetLinkBtn.addEventListener('click', async () => {
+        const email = resetEmailInput.value.trim();
+        if (!email) {
+            resetError.textContent = 'Please enter your email address.';
+            return;
+        }
+        if (!email.includes('@') || !email.includes('.')) {
+            resetError.textContent = 'Please enter a valid email.';
+            return;
+        }
+
+        clearErrors();
+        setLoading(sendResetLinkBtn, true, 'fas fa-paper-plane');
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert(`Password reset link sent to ${email}. Check your inbox.`);
+            closeForgotModal();
+            loginEmail.value = email;
+        } catch (error) {
+            console.error('Reset error:', error);
+            let message = 'Failed to send reset email.';
+            if (error.code === 'auth/user-not-found') {
+                message = 'No account found with this email.';
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'Invalid email format.';
+            }
+            resetError.textContent = message;
+        } finally {
+            setLoading(sendResetLinkBtn, false, 'fas fa-paper-plane');
+        }
+    });
+
+    // ========== AUTO-REDIRECT IF ALREADY LOGGED IN ==========
+    window.addEventListener('load', () => {
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                if (user.email === 'admin@utom.com') {
+                    window.location.href = 'admin.html';
                 } else {
-                    closePaymentModal();
+                    window.location.href = 'user.html';
                 }
-            });
-        };
-        document.getElementById('closePaymentModal').addEventListener('click', closePaymentModal);
-
-        // Funds modal
-        document.getElementById('addFundsBtn').addEventListener('click', () => fundsModal.classList.add('active'));
-        document.getElementById('closeFundsModal').addEventListener('click', () => fundsModal.classList.remove('active'));
-        document.getElementById('mtnOption').addEventListener('click', async () => { await addFunds(100); fundsModal.classList.remove('active'); });
-        document.getElementById('airtelOption').addEventListener('click', async () => { await addFunds(100); fundsModal.classList.remove('active'); });
-        document.getElementById('zamtelOption').addEventListener('click', async () => { await addFunds(100); fundsModal.classList.remove('active'); });
-
-        // Video modal
-        document.getElementById('closeVideoModalBtn').addEventListener('click', () => {
-            videoModal.classList.remove('active');
-            videoPlayer.pause();
-        });
-        document.getElementById('downloadVideoBtn').addEventListener('click', downloadVideo);
-
-        // Profile
-        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
-            if (currentUser) {
-                await sendPasswordResetEmail(auth, currentUser.email);
-                alert('Password reset email sent.');
             }
         });
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await signOut(auth);
-            window.location.href = 'index.html';
-        });
-
-        // Top icons
-        document.getElementById('searchIcon').addEventListener('click', () => {
-            const q = prompt("Search videos:");
-            if (q) {
-                const results = allVideos.filter(v => v.title.toLowerCase().includes(q.toLowerCase()));
-                alert(`Found ${results.length} results: ${results.map(v=>v.title).join(", ")}`);
-            }
-        });
-        document.getElementById('notifIcon').addEventListener('click', () => {
-            if (notifications.length === 0) alert("No notifications.");
-            else alert("Notifications:\n" + notifications.join("\n"));
-        });
-        document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
-        document.getElementById('viewAllBtn').addEventListener('click', () => showPage('explore'));
-
-        // Close modals on overlay click
-        document.querySelectorAll('.modal').forEach(m => {
-            m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); });
-        });
-    }
+    });
 </script>
 </body>
 </html>
