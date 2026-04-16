@@ -560,7 +560,6 @@
             }
         }
 
-        /* Thumbnail preview in upload form */
         .thumbnail-preview {
             margin-top: 10px;
             display: flex;
@@ -652,7 +651,6 @@
                 </div>
                 <div class="form-row video-source-group" id="linkGroup">
                     <input type="url" id="videoUrlInput" placeholder="https://... (YouTube/Vimeo embed or direct MP4)">
-                    <!-- For link mode, fallback thumbnail URL -->
                     <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail image URL (optional)" style="margin-top: 8px;">
                 </div>
                 <div class="form-row video-source-group" id="uploadGroup" style="display: none;">
@@ -779,7 +777,6 @@
 </div>
 
 <!-- ========== MODALS ========== -->
-<!-- User Details Modal -->
 <div id="userDetailsModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -791,7 +788,6 @@
     </div>
 </div>
 
-<!-- Transaction Details Modal -->
 <div id="txModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -802,36 +798,34 @@
 
 <!-- ========== FIREBASE & CLOUDINARY INTEGRATION ========== -->
 <script type="module">
-    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
     import { getDatabase, ref, set, push, update, remove, onValue, get } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
-    // Your Firebase configuration
+    // ========== FIREBASE CONFIG (UTOM PROJECT - SAME AS USER & INDEX) ==========
     const firebaseConfig = {
-        apiKey: "AIzaSyCZEqWRAHW0tW6j0WfBf8lxj61oExa6BwY",
-        authDomain: "wizafoodcafe.firebaseapp.com",
-        databaseURL: "https://wizafoodcafe-default-rtdb.firebaseio.com",
-        projectId: "wizafoodcafe",
-        storageBucket: "wizafoodcafe.firebasestorage.app",
-        messagingSenderId: "248334218737",
-        appId: "1:248334218737:web:94fabd0bbdf75bb8410050"
+        apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+        authDomain: "utom-c4003.firebaseapp.com",
+        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+        projectId: "utom-c4003",
+        storageBucket: "utom-c4003.firebasestorage.app",
+        messagingSenderId: "878225874050",
+        appId: "1:878225874050:web:643626906bfd233eeae89b"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Cloudinary configuration - YOUR ACTUAL CREDENTIALS
+    // Cloudinary configuration (preserved from original admin)
     const CLOUD_NAME = 'dd3lcymrk';
     const UPLOAD_PRESET = 'h3eyhc2o';
 
-    // ========== SECURITY CHECK: Only admin@utom.com ==========
+    // ========== SECURITY CHECK: Only admin email (must start with admin@) ==========
     onAuthStateChanged(auth, (user) => {
         if (!user) {
             window.location.href = 'index.html';
-        } else if (user.email !== 'admin@utom.com') {
+        } else if (!user.email || !user.email.startsWith('admin@')) {
             alert('Access denied. Admin only.');
             signOut(auth).then(() => window.location.href = 'index.html');
         } else {
@@ -839,10 +833,10 @@
         }
     });
 
-    // ========== GLOBAL STATE & REFERENCES ==========
+    // ========== GLOBAL STATE ==========
     let currentUser = null;
-    let videosRef, usersRef, modulesRef, transactionsRef, settingsRef;
     let videos = [], users = [], modules = [], transactions = [], settings = { appActive: true, paymentMethod: 'MTN Mobile Money' };
+    let videosRef, usersRef, modulesRef, transactionsRef, settingsRef, bannedUsersRef, maintenanceRef;
 
     function initAdminPanel() {
         currentUser = auth.currentUser;
@@ -851,6 +845,8 @@
         modulesRef = ref(db, 'modules');
         transactionsRef = ref(db, 'transactions');
         settingsRef = ref(db, 'settings');
+        bannedUsersRef = ref(db, 'bannedUsers');
+        maintenanceRef = ref(db, 'system/maintenance');
 
         loadModules();
         loadSettings();
@@ -928,20 +924,26 @@
 
     function renderUsers() {
         const container = document.getElementById('usersListContainer');
-        container.innerHTML = users.map(u => `
-            <div class="user-row">
-                <div><strong>${escapeHtml(u.firstName || '')} ${escapeHtml(u.lastName || '')}</strong><br><span style="font-size:0.7rem;">${escapeHtml(u.email)}</span></div>
-                <div>📞 ${escapeHtml(u.phone || 'N/A')}</div>
-                <div class="user-actions">
-                    ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
-                    <button class="view-user" data-uid="${u.uid}" style="background:none; border:none;"><i class="fas fa-info-circle"></i></button>
+        // Check banned status from bannedUsers node
+        Promise.all(users.map(async (u) => {
+            const bannedSnap = await get(ref(db, `bannedUsers/${u.uid}`));
+            return { ...u, banned: bannedSnap.val() === true };
+        })).then(usersWithBan => {
+            container.innerHTML = usersWithBan.map(u => `
+                <div class="user-row">
+                    <div><strong>${escapeHtml(u.firstName || '')} ${escapeHtml(u.lastName || '')}</strong><br><span style="font-size:0.7rem;">${escapeHtml(u.email)}</span></div>
+                    <div>📞 ${escapeHtml(u.phone || 'N/A')}</div>
+                    <div class="user-actions">
+                        ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
+                        <button class="view-user" data-uid="${u.uid}" style="background:none; border:none;"><i class="fas fa-info-circle"></i></button>
+                    </div>
                 </div>
-            </div>
-        `).join('');
-        document.querySelectorAll('.view-user').forEach(btn => btn.addEventListener('click', () => {
-            const user = users.find(u => u.uid === btn.dataset.uid);
-            if (user) showUserDetailsModal(user);
-        }));
+            `).join('');
+            document.querySelectorAll('.view-user').forEach(btn => btn.addEventListener('click', () => {
+                const user = users.find(u => u.uid === btn.dataset.uid);
+                if (user) showUserDetailsModal(user);
+            }));
+        });
     }
 
     function renderModulesAccordion() {
@@ -1073,9 +1075,8 @@
             return;
         }
         const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
-        // Cloudinary transformation: so_(seconds) to get frame, then jpg format
         const baseUrl = videoUrl.replace('/upload/', '/upload/so_' + offset + '/');
-        const thumbUrl = baseUrl.replace(/\.[^/.]+$/, '.jpg'); // change extension to jpg
+        const thumbUrl = baseUrl.replace(/\.[^/.]+$/, '.jpg');
         document.getElementById('generatedThumbnailUrl').value = thumbUrl;
         document.getElementById('thumbnailPreviewImg').src = thumbUrl;
         document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
@@ -1102,7 +1103,6 @@
             thumbnail = document.getElementById('generatedThumbnailUrl').value;
             if (!videoUrl) return alert('Please upload a video first');
             if (!thumbnail) {
-                // If thumbnail not generated, fallback to default offset
                 const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
                 thumbnail = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
             }
@@ -1206,7 +1206,6 @@
                     document.getElementById('cloudinaryVideoUrl').value = result.info.secure_url;
                     document.getElementById('cloudinaryVideoPublicId').value = result.info.public_id;
                     document.getElementById('uploadStatus').innerHTML = `<span style="color:green;"><i class="fas fa-check-circle"></i> Uploaded: ${result.info.original_filename}</span>`;
-                    // Auto-generate thumbnail with default offset
                     const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
                     const thumbUrl = result.info.secure_url.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
                     document.getElementById('generatedThumbnailUrl').value = thumbUrl;
@@ -1219,21 +1218,27 @@
         });
     }
 
-    // ========== MODALS & SETTINGS ==========
+    // ========== MODALS & SETTINGS (with correct ban/maintenance nodes) ==========
     function showUserDetailsModal(user) {
-        document.getElementById('userModalTable').innerHTML = `
-            <tr><td>Name</td><td>${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
-            <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
-            <tr><td>Phone</td><td>${escapeHtml(user.phone || 'N/A')}</td></tr>
-            <tr><td>Status</td><td>${user.banned ? '<span style="color:red;">Banned</span>' : 'Active'}</td></tr>
-        `;
-        const modal = document.getElementById('userDetailsModal');
-        modal.style.display = 'flex';
-        modal.dataset.uid = user.uid;
-        document.getElementById('userModalBanBtn').onclick = () => {
-            update(ref(db, `users/${user.uid}`), { banned: !user.banned });
-            modal.style.display = 'none';
-        };
+        get(ref(db, `bannedUsers/${user.uid}`)).then(snap => {
+            const isBanned = snap.val() === true;
+            document.getElementById('userModalTable').innerHTML = `
+                <tr><td>Name</td><td>${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
+                <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
+                <tr><td>Phone</td><td>${escapeHtml(user.phone || 'N/A')}</td></tr>
+                <tr><td>Status</td><td>${isBanned ? '<span style="color:red;">Banned</span>' : 'Active'}</td></tr>
+            `;
+            const modal = document.getElementById('userDetailsModal');
+            modal.style.display = 'flex';
+            modal.dataset.uid = user.uid;
+            const banBtn = document.getElementById('userModalBanBtn');
+            banBtn.onclick = () => {
+                if (isBanned) remove(ref(db, `bannedUsers/${user.uid}`));
+                else set(ref(db, `bannedUsers/${user.uid}`), true);
+                modal.style.display = 'none';
+                renderUsers();
+            };
+        });
     }
 
     function showTxModal(tx) {
@@ -1250,7 +1255,11 @@
     }
 
     function setupSettingsHandlers() {
-        document.getElementById('appToggle').addEventListener('click', () => update(settingsRef, { appActive: !settings.appActive }));
+        document.getElementById('appToggle').addEventListener('click', async () => {
+            const newState = !settings.appActive;
+            await set(maintenanceRef, !newState); // maintenance ON when appActive OFF
+            await set(settingsRef, { ...settings, appActive: newState });
+        });
         document.getElementById('paymentMethodSelect').addEventListener('change', (e) => update(settingsRef, { paymentMethod: e.target.value }));
         document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
     }
@@ -1260,14 +1269,17 @@
         document.getElementById('paymentMethodSelect').value = settings.paymentMethod;
     }
 
-    function updateBannedList() {
-        const banned = users.filter(u => u.banned);
-        document.getElementById('bannedUsersList').innerHTML = banned.map(u => `
+    async function updateBannedList() {
+        const bannedSnap = await get(bannedUsersRef);
+        const bannedUids = bannedSnap.val() ? Object.keys(bannedSnap.val()) : [];
+        const bannedUsersList = users.filter(u => bannedUids.includes(u.uid));
+        const container = document.getElementById('bannedUsersList');
+        container.innerHTML = bannedUsersList.map(u => `
             <div>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email}) 
                 <button class="unban-btn" data-uid="${u.uid}" style="background:none; border:none; color:#F5B042;">Unban</button>
             </div>
         `).join('') || 'No banned users';
-        document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => update(ref(db, `users/${btn.dataset.uid}`), { banned: false })));
+        document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => remove(ref(db, `bannedUsers/${btn.dataset.uid}`)).then(() => renderUsers())));
     }
 
     // ========== NAVIGATION & HELPERS ==========
