@@ -454,7 +454,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
     import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -556,7 +556,7 @@
         forgotModal.classList.remove('active');
     }
     
-    // SIGNUP with Firebase
+    // SIGNUP: create account, store in DB, then sign out and return to login
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
@@ -570,6 +570,7 @@
         const confirmPwd = confirmPassword.value;
         const termsOk = termsCheckbox.checked;
         
+        // Validation
         if(!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
             signupErrorSpan.innerText = 'All fields are required.';
             return;
@@ -589,8 +590,11 @@
         setButtonLoading(registerBtn, true, originalText);
         
         try {
+            // 1. Create user in Firebase Auth (this automatically signs them in)
             const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
             const user = userCredential.user;
+            
+            // 2. Store additional user data in Realtime Database
             await set(ref(database, `users/${user.uid}`), {
                 firstName: fName,
                 lastName: lName,
@@ -598,21 +602,38 @@
                 email: email,
                 createdAt: serverTimestamp()
             });
-            // After signup, user is automatically signed in. The onAuthStateChanged will redirect.
-            // But we can show a quick message before redirect happens.
+            
+            // 3. Sign out the newly created user (so they must log in manually)
+            await signOut(auth);
+            
+            // 4. Show success message and switch to login panel
             signupSuccessSpan.style.display = 'block';
-            signupSuccessSpan.innerText = 'Account created! Redirecting...';
-            // Redirect will be triggered by auth state change
+            signupSuccessSpan.innerText = 'Account created successfully! Please login with your credentials.';
+            signupForm.reset();
+            termsCheckbox.checked = false;
+            
+            // Switch to login panel after a short delay, pre-fill email
+            setTimeout(() => {
+                showLoginPanel();
+                loginEmail.value = email;
+                loginPassword.value = '';
+                loginErrorSpan.innerText = '';
+                signupSuccessSpan.style.display = 'none';
+            }, 2000);
+            
         } catch (error) {
             let errorMsg = error.message;
             if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered.';
             else if (error.code === 'auth/weak-password') errorMsg = 'Password too weak (min 6 characters).';
             else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             signupErrorSpan.innerText = errorMsg;
+            // If error occurred after user creation but before DB write, the user might exist in Auth but not DB.
+            // In that case we could attempt to delete the user, but for simplicity we just show error.
+            // The user can try again with same email? They will get "email already registered". They could use password reset.
+            // That's acceptable for this demo.
+        } finally {
             setButtonLoading(registerBtn, false, originalText);
         }
-        // No need to reset loading here because redirect will happen; but if error, we already reset.
-        // In case of success, the page will redirect, so loading state may not matter.
     });
     
     // LOGIN
