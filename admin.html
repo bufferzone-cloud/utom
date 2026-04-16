@@ -238,55 +238,6 @@
             padding: 8px 12px;
             border-radius: 60px;
         }
-        /* Modules */
-        .modules-grid-2x2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.8rem;
-        }
-        .module-folder {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-        }
-        .module-header {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 12px;
-            background: #FEF5E8;
-            cursor: pointer;
-            font-weight: 700;
-        }
-        .module-videos {
-            display: none;
-            padding: 10px;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .module-videos.show { display: flex; }
-        .module-video-card {
-            width: calc(50% - 5px);
-            background: white;
-            border-radius: 16px;
-            padding: 8px;
-            cursor: pointer;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .module-video-card img {
-            width: 55px;
-            height: 55px;
-            object-fit: cover;
-            border-radius: 14px;
-        }
-        .delete-mini {
-            background: none;
-            border: none;
-            color: #d9534f;
-            cursor: pointer;
-        }
         /* Users (card style) */
         .user-card {
             background: #fef9f0;
@@ -354,6 +305,15 @@
             font-weight: 600;
             cursor: pointer;
             margin: 0 3px;
+        }
+        .revoke-cert-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.7rem;
         }
         /* Transaction rows */
         .tx-row {
@@ -431,15 +391,6 @@
         .cert-title { font-size: 2rem; font-weight: 300; letter-spacing: 2px; }
         .cert-name { font-size: 2rem; font-weight: 800; font-family: 'Georgia', serif; margin: 1rem 0; }
         .cert-details { margin: 1rem 0; font-size: 1rem; color: #555; }
-        .revoke-cert-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
         /* Toggle Switch */
         .toggle-switch {
             width: 44px;
@@ -478,8 +429,7 @@
             border: 1px solid #ddd;
         }
         @media (max-width: 550px) {
-            .modules-grid-2x2 { grid-template-columns: 1fr; }
-            .module-video-card { width: 100%; }
+            .modal-content { width: 95%; padding: 1rem; }
         }
     </style>
 </head>
@@ -527,6 +477,15 @@
     <div class="modal-content">
         <span class="close-modal" id="closeCertModal">&times;</span>
         <div id="certificateViewContent"></div>
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div id="txModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Transaction Details</h3>
+        <table class="modal-table" id="txModalTable"></table>
     </div>
 </div>
 
@@ -630,7 +589,7 @@
     <div class="card-glass">
         <h3>💰 Pending Purchase Approvals</h3>
         <div class="data-table">
-            <table id="pendingTable" style="width:100%;">
+            <table id="pendingTable">
                 <thead>
                     <tr><th>User</th><th>Video</th><th>Amount</th><th>Provider</th><th>Screenshot</th><th>Action</th></tr>
                 </thead>
@@ -640,7 +599,7 @@
     </div>
 </div>
 
-<!-- CERTIFICATES SECTION (Admin can view/revoke) -->
+<!-- CERTIFICATES SECTION -->
 <div id="certificatesSection" class="section">
     <div class="card-glass">
         <h3>🎓 Issue Certificate</h3>
@@ -698,6 +657,7 @@
 
     let currentAdmin = null;
     let videos = [], users = [], modules = [], transactions = [], pendingPayments = [], certificates = [];
+    let notifications = [];
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'index.html'; return; }
@@ -712,10 +672,10 @@
     function setupRealtime() {
         onValue(ref(db, 'videos'), snap => { videos = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : []; renderHomeScrolls(); renderPostedGrid(); updateStats(); });
         onValue(ref(db, 'users'), snap => { users = snap.val() ? Object.entries(snap.val()).map(([uid,d])=>({uid,...d})) : []; renderUsers(); updateStats(); });
-        onValue(ref(db, 'modules'), snap => { modules = snap.val() || ['Web Dev','Data Science','Design','Marketing']; if(!Array.isArray(modules)) modules = Object.values(modules); updateModuleSelects(); renderModulesAccordion(); });
+        onValue(ref(db, 'modules'), snap => { modules = snap.val() || ['Web Dev','Data Science','Design','Marketing']; if(!Array.isArray(modules)) modules = Object.values(modules); updateModuleSelects(); });
         onValue(ref(db, 'transactions'), snap => { transactions = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : []; renderAccount(); updateStats(); });
         onValue(ref(db, 'pendingPurchases'), snap => { pendingPayments = []; if(snap.exists()) Object.entries(snap.val()).forEach(([uid,reqs])=>Object.entries(reqs).forEach(([rid,req])=>pendingPayments.push({userId:uid,reqId:rid,...req}))); renderPendingPayments(); updateStats(); });
-        onValue(ref(db, 'certificates'), snap => { certificates = snap.val() ? Object.entries(snap.val()).flatMap(([uid,certs])=>Object.values(certs).map(c=>({...c,userId:uid,certId:Object.keys(certs).find(k=>certs[k]===c)}))) : []; renderCertificatesList(); });
+        onValue(ref(db, 'certificates'), snap => { certificates = snap.val() ? Object.entries(snap.val()).flatMap(([uid,certs])=>Object.entries(certs).map(([cid,c])=>({...c,userId:uid,certId:cid}))) : []; renderCertificatesList(); });
         onValue(ref(db, 'system/maintenance'), snap => document.getElementById('appToggle').classList.toggle('active', snap.val()===true));
     }
 
@@ -747,7 +707,7 @@
         </div>`;
     }
     function attachVideoActions() {
-        document.querySelectorAll('.play-video-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); const url=btn.dataset.url; const title=btn.dataset.title; const instructor=btn.dataset.instructor; const desc=btn.dataset.desc; openVideoPlayer(url,title,instructor,desc); }));
+        document.querySelectorAll('.play-video-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); openVideoPlayer(btn.dataset.url,btn.dataset.title,btn.dataset.instructor,btn.dataset.desc); }));
         document.querySelectorAll('.edit-video-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); const vid=videos.find(v=>v.id===btn.dataset.id); if(vid) populateEditForm(vid); }));
         document.querySelectorAll('.delete-video-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); if(confirm('Delete?')) remove(ref(db,`videos/${btn.dataset.id}`)); }));
     }
@@ -761,7 +721,7 @@
             let videoId = url.split('/').pop();
             embedHtml = `<iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allowfullscreen></iframe>`;
         } else {
-            embedHtml = `<video controls autoplay style="width:100%; max-height:60vh;"><source src="${url}" type="video/mp4">Your browser does not support video.</video>`;
+            embedHtml = `<video controls autoplay style="width:100%; max-height:60vh;"><source src="${url}" type="video/mp4"></video>`;
         }
         container.innerHTML = embedHtml;
         document.getElementById('modalVideoTitle').innerText = title;
@@ -770,7 +730,6 @@
         document.getElementById('videoPlayerModal').style.display = 'flex';
     }
 
-    // Users (card style)
     async function renderUsers() {
         const container = document.getElementById('usersListContainer');
         const search = document.getElementById('userSearch')?.value.toLowerCase() || '';
@@ -783,10 +742,9 @@
             container.appendChild(card);
         }
         document.querySelectorAll('.ban-btn').forEach(btn=>btn.addEventListener('click',async()=>{ const uid=btn.dataset.uid; const shouldBan=btn.dataset.ban==='true'; if(shouldBan) await set(ref(db,`bannedUsers/${uid}`),true); else await remove(ref(db,`bannedUsers/${uid}`)); renderUsers(); updateStats(); }));
-        document.querySelectorAll('.certificate-give-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.getElementById('certUserSelect').value=btn.dataset.uid; document.getElementById('certModule').focus(); alert(`Issue certificate to ${btn.dataset.name}`); }));
+        document.querySelectorAll('.certificate-give-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.getElementById('certUserSelect').value=btn.dataset.uid; document.getElementById('certModule').focus(); addNotification(`Ready to issue certificate to ${btn.dataset.name}`); }));
     }
 
-    // Pending payments approval
     function renderPendingPayments() {
         const tbody = document.getElementById('pendingTbody'); tbody.innerHTML='';
         if(pendingPayments.length===0){ tbody.innerHTML='<tr><td colspan="6">No pending payments</td></tr>'; return; }
@@ -801,14 +759,13 @@
             else scrCell.innerText='No screenshot';
             const actionCell=row.insertCell(5);
             const approve=document.createElement('button'); approve.innerText='Approve'; approve.className='small-btn'; approve.style.background='#10b981';
-            approve.onclick=async()=>{ await set(ref(db,`approvedPurchases/${p.userId}/${p.videoId}`),{approvedAt:Date.now(),videoTitle:p.videoTitle,amount:p.amount}); const txRef=push(ref(db,'transactions')); await set(txRef,{userId:p.userId,videoId:p.videoId,videoTitle:p.videoTitle,amount:p.amount,paymentMethod:p.provider,status:'Approved',date:new Date().toLocaleString()}); await remove(ref(db,`pendingPurchases/${p.userId}/${p.reqId}`)); alert(`Approved ${p.videoTitle}`); renderPendingPayments(); updateStats(); };
+            approve.onclick=async()=>{ await set(ref(db,`approvedPurchases/${p.userId}/${p.videoId}`),{approvedAt:Date.now(),videoTitle:p.videoTitle,amount:p.amount}); const txRef=push(ref(db,'transactions')); await set(txRef,{userId:p.userId,videoId:p.videoId,videoTitle:p.videoTitle,amount:p.amount,paymentMethod:p.provider,status:'Approved',date:new Date().toLocaleString()}); await remove(ref(db,`pendingPurchases/${p.userId}/${p.reqId}`)); addNotification(`Approved ${p.videoTitle}`); renderPendingPayments(); updateStats(); };
             const reject=document.createElement('button'); reject.innerText='Reject'; reject.className='small-btn'; reject.style.background='#ef4444';
-            reject.onclick=async()=>{ await remove(ref(db,`pendingPurchases/${p.userId}/${p.reqId}`)); alert(`Rejected ${p.videoTitle}`); renderPendingPayments(); };
+            reject.onclick=async()=>{ await remove(ref(db,`pendingPurchases/${p.userId}/${p.reqId}`)); addNotification(`Rejected ${p.videoTitle}`); renderPendingPayments(); };
             actionCell.appendChild(approve); actionCell.appendChild(reject);
         }
     }
 
-    // Certificates (view & revoke)
     function renderCertificatesList() {
         const container = document.getElementById('certificatesList');
         container.innerHTML = certificates.map(cert => `
@@ -840,7 +797,7 @@
         if(!uid || !moduleName || !instructor) { alert('Select user and fill module/instructor'); return; }
         const certRef = push(ref(db, `certificates/${uid}`));
         await set(certRef, { module: moduleName, instructor, issuedAt: Date.now() });
-        alert('Certificate issued!');
+        addNotification(`Certificate issued!`);
         document.getElementById('certModule').value = '';
         document.getElementById('certInstructor').value = '';
     });
@@ -849,16 +806,6 @@
         select.innerHTML = '<option value="">Select User</option>' + users.map(u=>`<option value="${u.uid}">${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email})</option>`).join('');
     }
     setInterval(updateUserSelect, 3000);
-
-    // Modules Accordion
-    function renderModulesAccordion() {
-        const container = document.getElementById('modulesAccordionContainer');
-        if(!container) return;
-        container.innerHTML = modules.map(mod => `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> <strong>${escapeHtml(mod)}</strong> (${videos.filter(v=>v.module===mod).length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${videos.filter(v=>v.module===mod).map(v=>`<div class="module-video-card" data-id="${v.id}"><img src="${v.thumbnail||'https://picsum.photos/100/100'}"><div><strong>${escapeHtml(v.title)}</strong><div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div></div><button class="play-video-btn-mini" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-desc="${escapeHtml(v.description||'')}"><i class="fas fa-play"></i></button><button class="delete-mini" onclick="event.stopPropagation(); window.deleteVideoById('${v.id}')"><i class="fas fa-trash-alt"></i></button></div>`).join('')||'No videos'}</div></div>`).join('');
-        document.querySelectorAll('.module-header').forEach(h=>h.addEventListener('click',()=>{ h.nextElementSibling.classList.toggle('show'); const icon=h.querySelector('.fa-chevron-down'); icon.style.transform = h.nextElementSibling.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)'; }));
-        document.querySelectorAll('.play-video-btn-mini').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); openVideoPlayer(btn.dataset.url,btn.dataset.title,btn.dataset.instructor,btn.dataset.desc); }));
-    }
-    window.deleteVideoById = (id) => { if(confirm('Delete?')) remove(ref(db,`videos/${id}`)); };
 
     function renderAccount() {
         const total = transactions.reduce((s,t)=>s+(t.amount||0),0);
@@ -891,13 +838,78 @@
         let videoUrl, thumbnail; const source=document.querySelector('input[name="videoSource"]:checked').value;
         if(source==='link'){ videoUrl=document.getElementById('videoUrlInput').value.trim(); thumbnail=document.getElementById('linkThumbnailUrl').value.trim()||'https://picsum.photos/300/180'; if(!videoUrl) return alert('Enter video URL'); }
         else{ videoUrl=document.getElementById('cloudinaryVideoUrl').value; thumbnail=document.getElementById('generatedThumbnailUrl').value; if(!videoUrl) return alert('Upload video first'); if(!thumbnail){ const offset=parseFloat(document.getElementById('thumbnailOffset').value)||3; thumbnail=videoUrl.replace('/upload/','/upload/so_'+offset+'/').replace(/\.[^/.]+$/,'.jpg'); } }
-        await set(push(videosRef), { title,instructor,price,thumbnail,module,description:desc,videoUrl,createdAt:Date.now(),views:0 });
+        await set(push(ref(db,'videos')), { title,instructor,price,thumbnail,module,description:desc,videoUrl,createdAt:Date.now(),views:0 });
         alert('Video published!');
         document.getElementById('dynamicPostForm').classList.remove('show');
         document.getElementById('bigPostBtn').style.display='block';
         document.getElementById('homePostForm').reset();
     }
-    function populateEditForm(video) { /* similar to original, keep */ }
+    function populateEditForm(video) {
+        document.getElementById('videoTitle').value = video.title;
+        document.getElementById('instructorName').value = video.instructor;
+        document.getElementById('priceType').value = video.price > 0 ? 'paid' : 'free';
+        document.getElementById('paidAmount').value = video.price;
+        document.getElementById('paidAmount').style.display = video.price > 0 ? 'block' : 'none';
+        document.getElementById('videoDesc').value = video.description || '';
+        document.getElementById('moduleSelectHome').value = video.module;
+        if (video.videoUrl && !video.videoUrl.includes('cloudinary')) {
+            document.querySelector('input[value="link"]').checked = true;
+            document.getElementById('videoUrlInput').value = video.videoUrl;
+            document.getElementById('linkThumbnailUrl').value = video.thumbnail || '';
+            document.getElementById('linkGroup').style.display = 'block';
+            document.getElementById('uploadGroup').style.display = 'none';
+        } else {
+            document.querySelector('input[value="upload"]').checked = true;
+            document.getElementById('cloudinaryVideoUrl').value = video.videoUrl;
+            document.getElementById('generatedThumbnailUrl').value = video.thumbnail;
+            document.getElementById('linkGroup').style.display = 'none';
+            document.getElementById('uploadGroup').style.display = 'block';
+            if (video.thumbnail) {
+                document.getElementById('thumbnailPreviewImg').src = video.thumbnail;
+                document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+            }
+        }
+        document.getElementById('dynamicPostForm').classList.add('show');
+        document.getElementById('bigPostBtn').style.display = 'none';
+        const form = document.getElementById('homePostForm');
+        const originalSubmit = form.onsubmit;
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const sourceType = document.querySelector('input[name="videoSource"]:checked').value;
+            let videoUrl, thumbnail;
+            if (sourceType === 'link') {
+                videoUrl = document.getElementById('videoUrlInput').value.trim();
+                thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || 'https://picsum.photos/300/180';
+            } else {
+                videoUrl = document.getElementById('cloudinaryVideoUrl').value;
+                thumbnail = document.getElementById('generatedThumbnailUrl').value;
+                if (!thumbnail) {
+                    const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                    thumbnail = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+                }
+            }
+            await update(ref(db, `videos/${video.id}`), {
+                title: document.getElementById('videoTitle').value.trim(),
+                instructor: document.getElementById('instructorName').value.trim(),
+                price: document.getElementById('priceType').value === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0,
+                thumbnail, module: document.getElementById('moduleSelectHome').value,
+                description: document.getElementById('videoDesc').value.trim(), videoUrl
+            });
+            form.onsubmit = originalSubmit;
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
+        };
+    }
+
+    function addNotification(msg) {
+        notifications.unshift(msg);
+        if(notifications.length > 10) notifications.pop();
+        const badge = document.getElementById('notifCount');
+        badge.style.display = notifications.length ? 'inline-block' : 'none';
+        badge.innerText = notifications.length > 9 ? '9+' : notifications.length;
+        const dropdown = document.getElementById('notifDropdown');
+        dropdown.innerHTML = notifications.map(n => `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n)}</div>`).join('');
+    }
 
     function setupUI() {
         document.querySelectorAll('.nav-five-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=btn.dataset.section; document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section')); document.getElementById(id+'Section').classList.add('active-section'); document.querySelectorAll('.nav-five-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(id==='posted') renderPostedGrid(); if(id==='users') renderUsers(); if(id==='payments') renderPendingPayments(); if(id==='certificates'){ renderCertificatesList(); updateUserSelect(); } if(id==='account') renderAccount(); }));
@@ -909,18 +921,18 @@
         document.getElementById('homePostForm').addEventListener('submit',e=>{ e.preventDefault(); publishVideo(); });
         document.getElementById('cloudinaryUploadBtn').addEventListener('click',()=>{ cloudinary.openUploadWidget({ cloudName:CLOUD_NAME, uploadPreset:UPLOAD_PRESET, sources:['local','url'], resourceType:'video', maxFileSize:50000000 }, (err,res)=>{ if(!err && res?.event==='success'){ document.getElementById('cloudinaryVideoUrl').value=res.info.secure_url; document.getElementById('uploadStatus').innerHTML='<span style="color:green;">Uploaded</span>'; const offset=parseFloat(document.getElementById('thumbnailOffset').value)||3; const thumbUrl=res.info.secure_url.replace('/upload/','/upload/so_'+offset+'/').replace(/\.[^/.]+$/,'.jpg'); document.getElementById('generatedThumbnailUrl').value=thumbUrl; document.getElementById('thumbnailPreviewImg').src=thumbUrl; document.getElementById('thumbnailPreviewContainer').style.display='flex'; } else if(err) document.getElementById('uploadStatus').innerHTML='<span style="color:red;">Upload failed</span>'; }); });
         document.getElementById('generateThumbnailBtn').addEventListener('click',()=>{ const url=document.getElementById('cloudinaryVideoUrl').value; if(!url){ alert('Upload video first'); return; } const offset=parseFloat(document.getElementById('thumbnailOffset').value)||3; const thumbUrl=url.replace('/upload/','/upload/so_'+offset+'/').replace(/\.[^/.]+$/,'.jpg'); document.getElementById('generatedThumbnailUrl').value=thumbUrl; document.getElementById('thumbnailPreviewImg').src=thumbUrl; document.getElementById('thumbnailPreviewContainer').style.display='flex'; });
-        document.getElementById('appToggle').addEventListener('click',async()=>{ const cur=document.getElementById('appToggle').classList.contains('active'); await set(ref(db,'system/maintenance'),!cur); document.getElementById('appToggle').classList.toggle('active'); });
+        document.getElementById('appToggle').addEventListener('click',async()=>{ const cur=document.getElementById('appToggle').classList.contains('active'); await set(ref(db,'system/maintenance'),!cur); document.getElementById('appToggle').classList.toggle('active'); addNotification(`Maintenance mode ${!cur ? 'ON' : 'OFF'}`); });
         document.getElementById('paymentMethodSelect').addEventListener('change',async(e)=>await set(ref(db,'settings/paymentMethod'),e.target.value));
         document.getElementById('logoutBtn').addEventListener('click',async()=>{ await signOut(auth); window.location.href='index.html'; });
         document.getElementById('searchVideoInput')?.addEventListener('input',renderPostedGrid);
         document.getElementById('filterModuleSelect')?.addEventListener('change',renderPostedGrid);
         document.getElementById('filterPriceSelect')?.addEventListener('change',renderPostedGrid);
         document.getElementById('userSearch')?.addEventListener('input',()=>renderUsers());
+        document.getElementById('notifBell').addEventListener('click',()=>{ const dd=document.getElementById('notifDropdown'); dd.classList.toggle('show'); setTimeout(()=>dd.classList.remove('show'),5000); });
         document.querySelectorAll('.close-modal').forEach(el=>el.onclick=()=>document.querySelectorAll('.modal').forEach(m=>m.style.display='none'));
         window.addEventListener('click',e=>{ if(e.target.classList.contains('modal')) e.target.style.display='none'; });
-        window.deleteVideoById = (id) => { if(confirm('Delete?')) remove(ref(db,`videos/${id}`)); };
     }
-    function refreshAll() { renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderModulesAccordion(); renderAccount(); renderPendingPayments(); renderCertificatesList(); }
+    function refreshAll() { renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderAccount(); renderPendingPayments(); renderCertificatesList(); }
     function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 </script>
 </body>
