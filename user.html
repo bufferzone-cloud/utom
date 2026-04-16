@@ -2,88 +2,700 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTOM | Debug Write</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>UTOM | Secure Access — Firebase</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js",
+                "firebase/database": "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js"
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 2rem; max-width: 500px; margin: auto; }
-        input, button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.75rem; }
-        .error { color: red; }
-        .success { color: green; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            margin: 0;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo-area {
+            text-align: center;
+            animation: fadeSlideDown 0.5s ease-out;
+            width: 100%;
+        }
+
+        .logo-img {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            filter: none;
+            transition: none;
+            pointer-events: none;
+        }
+
+        .logo-placeholder {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #000 30%, #F5B042 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.02);
+            width: 100%;
+            padding: 1.8rem 1.5rem 2rem;
+            transition: all 0.2s ease;
+            animation: fadeSlideDown 0.4s ease-out;
+        }
+
+        .form-panel {
+            transition: opacity 0.2s ease;
+        }
+
+        .hidden-panel {
+            display: none;
+        }
+
+        .input-icon-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 1.2rem;
+        }
+
+        .input-icon-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .pill-input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            font-size: 1rem;
+            border: 1.5px solid #e9e9ef;
+            border-radius: 999px;
+            background: #ffffff;
+            outline: none;
+            transition: all 0.2s ease;
+            color: #111;
+            font-weight: 500;
+        }
+
+        .pill-input:focus {
+            border-color: #F5B042;
+            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.2);
+        }
+
+        .pill-input:focus + i {
+            color: #F5B042;
+        }
+
+        .double-row {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .double-row .input-icon-group {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-yellow-black {
+            background: #F5B042;
+            border: none;
+            color: #000000;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 14px 20px;
+            border-radius: 60px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-yellow-black:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+            background: #ffb84d;
+        }
+
+        .btn-yellow-black:active {
+            transform: translateY(1px);
+        }
+
+        .btn-yellow-black:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-outline-dark {
+            background: transparent;
+            border: 2px solid #000000;
+            color: #000;
+            box-shadow: none;
+        }
+
+        .btn-outline-dark:hover {
+            background: #00000008;
+            transform: translateY(-2px);
+        }
+
+        .text-link {
+            background: none;
+            border: none;
+            color: #000;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            padding: 6px 10px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .text-link i {
+            font-size: 0.8rem;
+        }
+
+        .text-link:hover {
+            color: #F5B042;
+            text-decoration: none;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .terms-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1rem 0 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .terms-check label {
+            font-size: 0.85rem;
+            color: #2c2c2c;
+            font-weight: 500;
+        }
+
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            accent-color: #F5B042;
+            cursor: pointer;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s ease;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-container {
+            background: white;
+            max-width: 440px;
+            width: 100%;
+            border-radius: 44px;
+            padding: 1.8rem;
+            box-shadow: 0 30px 45px rgba(0, 0, 0, 0.2);
+            transform: scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-container h3 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-container p {
+            color: #5a5a5a;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.2rem;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        .error-msg {
+            color: #d9534f;
+            font-size: 0.75rem;
+            margin-left: 20px;
+            margin-top: 2px;
+            min-height: 18px;
+        }
+
+        .success-msg {
+            color: #2b7e3a;
+            font-size: 0.75rem;
+            margin-left: 20px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .small-text {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.25rem;
+            color: #7a7a7a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes fadeSlideDown {
+            0% { opacity: 0; transform: translateY(-12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 0.8rem; align-items: flex-start; padding-top: 1.8rem; }
+            .form-card { padding: 1.4rem 1.2rem 1.6rem; border-radius: 32px; }
+            .btn-yellow-black { padding: 12px 16px; font-size: 0.95rem; }
+            .logo-img { max-width: 150px; }
+            .pill-input { padding: 12px 16px 12px 44px; font-size: 0.95rem; }
+            .input-icon-group i { left: 16px; font-size: 1rem; }
+            .modal-container { padding: 1.5rem; }
+        }
+
+        @media (max-width: 380px) {
+            .flex-between { flex-direction: column; align-items: stretch; }
+            .text-link { justify-content: center; }
+        }
     </style>
 </head>
 <body>
-    <h2>Signup Test</h2>
-    <form id="signupForm">
-        <input type="text" id="firstName" placeholder="First name" required>
-        <input type="text" id="lastName" placeholder="Last name" required>
-        <input type="tel" id="phone" placeholder="Phone" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password (min 6 chars)" required>
-        <button type="submit">Register & Write to DB</button>
-    </form>
-    <div id="message"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-        import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+<div class="app-container">
+    <div class="logo-area">
+        <img src="logo.png" alt="UTOM official logo" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
-            authDomain: "utom-c4003.firebaseapp.com",
-            databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
-            projectId: "utom-c4003",
-            storageBucket: "utom-c4003.firebasestorage.app",
-            messagingSenderId: "878225874050",
-            appId: "1:878225874050:web:643626906bfd233eeae89b",
-            measurementId: "G-STHFWDKVZN"
-        };
+    <div class="form-card">
+        <!-- LOGIN FORM -->
+        <div id="loginPanel" class="form-panel">
+            <form id="loginForm">
+                <div class="input-icon-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" class="pill-input" placeholder="Email address" autocomplete="email" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" class="pill-input" placeholder="Password" autocomplete="current-password" required>
+                </div>
+                <div id="loginError" class="error-msg"></div>
+                <button type="submit" class="btn-yellow-black" id="loginBtn"><i class="fas fa-arrow-right-to-bracket"></i> LOGIN</button>
+                <div class="flex-between">
+                    <button type="button" id="showSignupFromLoginBtn" class="btn-yellow-black btn-outline-dark" style="width: auto; padding: 10px 18px;"><i class="fas fa-user-plus"></i> CREATE ACCOUNT</button>
+                    <button type="button" id="forgotPwdBtn" class="text-link"><i class="fas fa-key"></i> Forgot password?</button>
+                </div>
+            </form>
+        </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        <!-- SIGNUP FORM (Registration) -->
+        <div id="signupPanel" class="form-panel hidden-panel">
+            <form id="signupForm">
+                <div class="double-row">
+                    <div class="input-icon-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="firstName" class="pill-input" placeholder="First name" required>
+                    </div>
+                    <div class="input-icon-group">
+                        <i class="fas fa-user-tag"></i>
+                        <input type="text" id="lastName" class="pill-input" placeholder="Last name" required>
+                    </div>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-phone-alt"></i>
+                    <input type="tel" id="phoneNumber" class="pill-input" placeholder="Phone number" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="signupEmail" class="pill-input" placeholder="Email address" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signupPassword" class="pill-input" placeholder="Create password" required>
+                </div>
+                <div class="input-icon-group">
+                    <i class="fas fa-check-circle"></i>
+                    <input type="password" id="confirmPassword" class="pill-input" placeholder="Confirm password" required>
+                </div>
+                <div id="signupError" class="error-msg"></div>
+                <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
+                <div class="terms-check">
+                    <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                    <label for="termsCheckbox">I agree to the <strong>Terms & Conditions</strong> and Privacy Policy.</label>
+                </div>
+                <button type="submit" class="btn-yellow-black" id="registerBtn"><i class="fas fa-user-check"></i> REGISTER</button>
+                <div class="flex-between" style="margin-top: 0.8rem;">
+                    <button type="button" id="backToLoginBtn" class="text-link"><i class="fas fa-chevron-left"></i> Back to Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support</div>
+</div>
 
-        const form = document.getElementById('signupForm');
-        const messageDiv = document.getElementById('message');
+<!-- FORGOT PASSWORD MODAL (Firebase reset email) -->
+<div id="forgotModal" class="modal-overlay">
+    <div class="modal-container">
+        <h3><i class="fas fa-paper-plane" style="color:#F5B042;"></i> Reset password</h3>
+        <p>Enter your email address and we'll send you a secure link to reset your password.</p>
+        <div class="input-icon-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="resetEmailInput" class="pill-input" placeholder="Your email address" autocomplete="email">
+        </div>
+        <div id="resetError" class="error-msg"></div>
+        <div class="modal-buttons">
+            <button id="closeModalBtn" class="btn-yellow-black btn-outline-dark" style="background:transparent;"><i class="fas fa-times"></i> Cancel</button>
+            <button id="sendResetLinkBtn" class="btn-yellow-black"><i class="fas fa-paper-plane"></i> Send reset email</button>
+        </div>
+    </div>
+</div>
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName = document.getElementById('lastName').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
-            messageDiv.innerHTML = '<span style="color:blue;">⏳ Creating account...</span>';
+    const firebaseConfig = {
+        apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+        authDomain: "utom-c4003.firebaseapp.com",
+        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+        projectId: "utom-c4003",
+        storageBucket: "utom-c4003.firebasestorage.app",
+        messagingSenderId: "878225874050",
+        appId: "1:878225874050:web:643626906bfd233eeae89b",
+        measurementId: "G-STHFWDKVZN"
+    };
 
-            try {
-                // 1. Create Auth user
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                console.log("Auth user created:", user.uid);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
-                // 2. Write to Realtime Database
-                const userRef = ref(db, 'users/' + user.uid);
-                await set(userRef, {
-                    firstName,
-                    lastName,
-                    phone,
-                    email,
-                    wallet: 0,
-                    enrolled: [],
-                    liked: [],
-                    createdAt: serverTimestamp(),
-                    uid: user.uid
-                });
-                console.log("Database write successful");
-
-                messageDiv.innerHTML = '<span class="success">✅ Success! User written to database.</span>';
-                form.reset();
-            } catch (error) {
-                console.error("Full error object:", error);
-                messageDiv.innerHTML = `<span class="error">❌ Error: ${error.message} (code: ${error.code})</span>`;
+    // DOM elements
+    const loginPanel = document.getElementById('loginPanel');
+    const signupPanel = document.getElementById('signupPanel');
+    const showSignupBtn = document.getElementById('showSignupFromLoginBtn');
+    const backToLoginBtn = document.getElementById('backToLoginBtn');
+    
+    const loginForm = document.getElementById('loginForm');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginErrorSpan = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    const signupForm = document.getElementById('signupForm');
+    const firstName = document.getElementById('firstName');
+    const lastName = document.getElementById('lastName');
+    const phoneNumber = document.getElementById('phoneNumber');
+    const signupEmail = document.getElementById('signupEmail');
+    const signupPassword = document.getElementById('signupPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const signupErrorSpan = document.getElementById('signupError');
+    const signupSuccessSpan = document.getElementById('signupSuccessMsg');
+    const registerBtn = document.getElementById('registerBtn');
+    
+    const forgotModal = document.getElementById('forgotModal');
+    const forgotPwdBtn = document.getElementById('forgotPwdBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const sendResetLinkBtn = document.getElementById('sendResetLinkBtn');
+    const resetEmailInput = document.getElementById('resetEmailInput');
+    const resetErrorSpan = document.getElementById('resetError');
+    
+    // Helper: set button loading state
+    function setButtonLoading(button, isLoading, originalHtml) {
+        if(isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
+    }
+    
+    // UI panel toggles
+    function showLoginPanel() {
+        loginPanel.classList.remove('hidden-panel');
+        signupPanel.classList.add('hidden-panel');
+        signupSuccessSpan.style.display = 'none';
+        signupErrorSpan.innerText = '';
+        loginErrorSpan.innerText = '';
+    }
+    
+    function showSignupPanel() {
+        loginPanel.classList.add('hidden-panel');
+        signupPanel.classList.remove('hidden-panel');
+        loginErrorSpan.innerText = '';
+        signupErrorSpan.innerText = '';
+        signupSuccessSpan.style.display = 'none';
+    }
+    
+    function openForgotModal() {
+        forgotModal.classList.add('active');
+        resetEmailInput.value = '';
+        resetErrorSpan.innerText = '';
+    }
+    
+    function closeForgotModal() {
+        forgotModal.classList.remove('active');
+    }
+    
+    // ----- SIGNUP with Firebase Auth + Realtime Database -----
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        signupErrorSpan.innerText = '';
+        signupSuccessSpan.style.display = 'none';
+        signupSuccessSpan.innerText = '';
+        
+        const fName = firstName.value.trim();
+        const lName = lastName.value.trim();
+        const phone = phoneNumber.value.trim();
+        const email = signupEmail.value.trim();
+        const pwd = signupPassword.value;
+        const confirmPwd = confirmPassword.value;
+        const termsOk = termsCheckbox.checked;
+        
+        // Validations
+        if(!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
+            signupErrorSpan.innerText = 'All fields are required.';
+            return;
+        }
+        const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s\-']+$/;
+        if(!nameRegex.test(fName)) { signupErrorSpan.innerText = 'First name must contain only letters.'; return; }
+        if(!nameRegex.test(lName)) { signupErrorSpan.innerText = 'Last name must contain only letters.'; return; }
+        const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
+        if(!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number (8-20 digits).'; return; }
+        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if(!emailRegex.test(email)) { signupErrorSpan.innerText = 'Enter a valid email address.'; return; }
+        if(pwd.length < 6) { signupErrorSpan.innerText = 'Password must be at least 6 characters.'; return; }
+        if(pwd !== confirmPwd) { signupErrorSpan.innerText = 'Passwords do not match.'; return; }
+        if(!termsOk) { signupErrorSpan.innerText = 'You must agree to the Terms & Conditions.'; return; }
+        
+        const originalText = registerBtn.innerHTML;
+        setButtonLoading(registerBtn, true, originalText);
+        
+        try {
+            // 1. Create user with email/password
+            const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
+            const user = userCredential.user;
+            
+            // 2. Store additional user data in Realtime Database under /users/{uid}
+            await set(ref(database, `users/${user.uid}`), {
+                firstName: fName,
+                lastName: lName,
+                phone: phone,
+                email: email,
+                createdAt: serverTimestamp()
+            });
+            
+            signupSuccessSpan.style.display = 'block';
+            signupSuccessSpan.innerText = 'Registration successful! Please login with your credentials.';
+            signupForm.reset();
+            termsCheckbox.checked = false;
+            
+            setTimeout(() => {
+                showLoginPanel();
+                loginEmail.value = email;
+                loginPassword.value = '';
+                loginErrorSpan.innerText = '';
+                signupSuccessSpan.style.display = 'none';
+            }, 1500);
+        } catch (error) {
+            console.error(error);
+            let errorMsg = error.message;
+            if (error.code === 'auth/email-already-in-use') {
+                errorMsg = 'Email already registered. Please login or use another email.';
+            } else if (error.code === 'auth/weak-password') {
+                errorMsg = 'Password should be at least 6 characters.';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMsg = 'Invalid email format.';
             }
-        });
-    </script>
+            signupErrorSpan.innerText = errorMsg;
+        } finally {
+            setButtonLoading(registerBtn, false, originalText);
+        }
+    });
+    
+    // ----- LOGIN with Firebase Auth -----
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginErrorSpan.innerText = '';
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if(!email || !password) {
+            loginErrorSpan.innerText = 'Both email and password are required.';
+            return;
+        }
+        const originalLoginHtml = loginBtn.innerHTML;
+        setButtonLoading(loginBtn, true, originalLoginHtml);
+        
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            // Optionally fetch display name from DB, but we can show success
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-msg';
+            successDiv.innerText = `✓ Welcome back! Login successful.`;
+            loginErrorSpan.parentNode.insertBefore(successDiv, loginErrorSpan.nextSibling);
+            loginForm.reset();
+            setTimeout(() => successDiv.remove(), 2000);
+        } catch (error) {
+            let errorMsg = 'Invalid email or password. Please try again or create an account.';
+            if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+            if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
+            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
+            loginErrorSpan.innerText = errorMsg;
+        } finally {
+            setButtonLoading(loginBtn, false, originalLoginHtml);
+        }
+    });
+    
+    // ----- FORGOT PASSWORD: Firebase sendPasswordResetEmail -----
+    forgotPwdBtn.addEventListener('click', openForgotModal);
+    closeModalBtn.addEventListener('click', closeForgotModal);
+    forgotModal.addEventListener('click', (e) => { if(e.target === forgotModal) closeForgotModal(); });
+    
+    sendResetLinkBtn.addEventListener('click', async () => {
+        const email = resetEmailInput.value.trim();
+        resetErrorSpan.innerText = '';
+        if(!email) {
+            resetErrorSpan.innerText = 'Please enter your email address.';
+            return;
+        }
+        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if(!emailRegex.test(email)) {
+            resetErrorSpan.innerText = 'Enter a valid email address.';
+            return;
+        }
+        
+        const originalBtnText = sendResetLinkBtn.innerHTML;
+        setButtonLoading(sendResetLinkBtn, true, originalBtnText);
+        
+        try {
+            await sendPasswordResetEmail(auth, email);
+            // Show success inside modal
+            resetErrorSpan.style.color = '#2b7e3a';
+            resetErrorSpan.innerText = '✅ Password reset email sent! Check your inbox.';
+            setTimeout(() => {
+                closeForgotModal();
+                resetErrorSpan.style.color = '#d9534f';
+                resetErrorSpan.innerText = '';
+            }, 2500);
+        } catch (error) {
+            let errorMsg = 'Failed to send reset email.';
+            if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
+            resetErrorSpan.style.color = '#d9534f';
+            resetErrorSpan.innerText = errorMsg;
+        } finally {
+            setButtonLoading(sendResetLinkBtn, false, originalBtnText);
+        }
+    });
+    
+    showSignupBtn.addEventListener('click', showSignupPanel);
+    backToLoginBtn.addEventListener('click', showLoginPanel);
+</script>
 </body>
 </html>
