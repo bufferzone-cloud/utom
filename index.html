@@ -591,7 +591,7 @@
         }
     });
 
-    // ========== SIGNUP (with complete user data) ==========
+    // ========== SIGNUP (WITH DETAILED LOGGING) ==========
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const firstName = firstNameInput.value.trim();
@@ -633,25 +633,33 @@
         setLoading(registerBtn, true);
 
         try {
+            console.log('📝 Starting signup for:', email);
+            
             // Create user in Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+            console.log('✅ Auth user created, UID:', user.uid);
             
-            // Save COMPLETE user data to Realtime Database
-            const userRef = ref(db, 'users/' + user.uid);
-            await set(userRef, {
+            // Prepare complete user data
+            const userData = {
                 firstName: firstName,
                 lastName: lastName,
                 phone: phone,
                 email: email,
-                wallet: 0,                // ← Added for user page
-                enrolled: [],             // ← Added for user page
-                liked: [],                // ← Added for user page
+                wallet: 0,
+                enrolled: [],
+                liked: [],
                 createdAt: serverTimestamp(),
                 uid: user.uid
-            });
-
-            // Store session info (optional, user page uses onAuthStateChanged)
+            };
+            console.log('💾 Attempting to save to database:', userData);
+            
+            // Save to Realtime Database
+            const userRef = ref(db, 'users/' + user.uid);
+            await set(userRef, userData);
+            console.log('✅ Database write successful for UID:', user.uid);
+            
+            // Store minimal session info (user page uses onAuthStateChanged)
             sessionStorage.setItem('utom_user_email', email);
             sessionStorage.setItem('utom_user_uid', user.uid);
             sessionStorage.setItem('utom_user_name', `${firstName} ${lastName}`);
@@ -668,7 +676,7 @@
             // Redirect to user page
             window.location.href = 'user.html';
         } catch (error) {
-            console.error('Signup error:', error);
+            console.error('❌ Signup error:', error.code, error.message);
             let message = 'Registration failed.';
             if (error.code === 'auth/email-already-in-use') {
                 message = 'This email is already registered.';
@@ -676,6 +684,10 @@
                 message = 'Password is too weak.';
             } else if (error.code === 'auth/invalid-email') {
                 message = 'Invalid email format.';
+            } else if (error.code === 'PERMISSION_DENIED') {
+                message = 'Database permission denied. Check Firebase rules.';
+            } else {
+                message = error.message;
             }
             signupError.textContent = message;
         } finally {
