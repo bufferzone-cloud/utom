@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>UTOM · Admin Studio</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Cloudinary Upload Widget -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <style>
+        /* ========== RESET & BASE ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f4f7fc;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-size: 0.85rem;
+            padding-bottom: 80px;
+        }
+
+        /* ========== TOP BAR ========== */
+        .top-brand {
+            background: white;
+            padding: 0.6rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #F5B042;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-img {
+            width: 32px;
+            height: 32px;
+            background: #F5B042;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #E89E2A, #F5B042);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .badge-tutor {
+            background: #F5B04220;
+            padding: 4px 10px;
+            border-radius: 30px;
+            color: #F5B042;
+            font-weight: 600;
+        }
+
+        /* ========== NOTIFICATION BELL ========== */
+        .notif-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #6c6f78;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -8px;
+            right: -10px;
+            background: #e63946;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: white;
+            border-radius: 20px;
+            width: 260px;
+            max-height: 350px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 100;
+        }
+
+        .notif-dropdown.show {
+            display: block;
+        }
+
+        .notif-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.75rem;
+        }
+
+        /* ========== BOTTOM NAVIGATION ========== */
+        .nav-five {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+            border-top: 1px solid rgba(245, 176, 66, 0.3);
+            z-index: 1000;
+        }
+
+        .nav-five-btn {
+            background: transparent;
+            border: none;
+            padding: 5px 4px;
+            border-radius: 40px;
+            font-size: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            color: #6c6f78;
+            min-width: 48px;
+        }
+
+        .nav-five-btn i {
+            font-size: 1.1rem;
+        }
+
+        .nav-five-btn.active i {
+            color: #F5B042;
+            text-shadow: 0 0 6px rgba(245, 176, 66, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* ========== SECTIONS ========== */
+        .section {
+            display: none;
+            animation: fade 0.2s;
+        }
+
+        .section.active-section {
+            display: block;
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .card-glass {
+            background: white;
+            border-radius: 24px;
+            padding: 0.9rem;
+            margin: 0.7rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        /* ========== HERO PLAYER ========== */
+        .hero-player {
+            background: #0a0a0a;
+            border-radius: 24px;
+            margin: 0.7rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .hero-player.show-hero {
+            display: block;
+        }
+
+        .hero-thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .hero-info {
+            padding: 0.8rem;
+            color: white;
+            background: linear-gradient(to top, #000000cc, transparent);
+        }
+
+        .hero-close {
+            float: right;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        /* ========== VIDEO CARDS ========== */
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 0.8rem;
+            padding: 0.2rem 0 0.6rem;
+            scrollbar-width: thin;
+        }
+
+        .video-card-grid {
+            min-width: 150px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .video-card-grid:hover {
+            transform: translateY(-2px);
+        }
+
+        .video-card-grid img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .card-info {
+            padding: 8px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 0.5rem;
+            margin: 5px 0;
+            font-size: 0.6rem;
+            background: #fef5e8;
+            padding: 3px 6px;
+            border-radius: 30px;
+            justify-content: space-between;
+        }
+
+        /* ========== POST VIDEO FORM ========== */
+        .btn-big-post {
+            background: #F5B042;
+            border: none;
+            width: 100%;
+            padding: 10px;
+            border-radius: 60px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .toggle-form {
+            background: #fffef7;
+            border-radius: 24px;
+            margin: 0.6rem 0 0.8rem;
+            padding: 0.8rem;
+            display: none;
+            border: 1px solid #ffe1b3;
+        }
+
+        .toggle-form.show {
+            display: block;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 8px 12px;
+            border-radius: 40px;
+            border: 1.5px solid #e9edf2;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .btn-yellow {
+            background: #F5B042;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #F5B042;
+            padding: 6px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #f9f9fc;
+            padding: 8px 12px;
+            border-radius: 60px;
+        }
+
+        /* ========== MODULES GRID ========== */
+        .modules-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+
+        .module-folder {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #FEF5E8;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .module-videos {
+            display: none;
+            padding: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .module-videos.show {
+            display: flex;
+        }
+
+        .module-video-card {
+            width: calc(50% - 5px);
+            background: white;
+            border-radius: 16px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .module-video-card img {
+            width: 55px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 14px;
+        }
+
+        .delete-mini {
+            background: none;
+            border: none;
+            color: #d9534f;
+            cursor: pointer;
+        }
+
+        /* ========== USERS LIST ========== */
+        .user-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            gap: 8px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge-banned {
+            background: #e6394620;
+            color: #e63946;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+        }
+
+        /* ========== MODALS ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 450px;
+            width: 100%;
+            border-radius: 32px;
+            padding: 1.5rem;
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.2s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 18px;
+            top: 16px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .modal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .modal-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        .modal-table td:first-child {
+            font-weight: 600;
+            width: 35%;
+        }
+
+        .highlight-amount {
+            color: #F5B042;
+            font-weight: 800;
+        }
+
+        /* ========== TOGGLE SWITCH ========== */
+        .toggle-switch {
+            width: 44px;
+            height: 22px;
+            background: #ccc;
+            border-radius: 30px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .toggle-switch.active {
+            background: #F5B042;
+        }
+
+        .toggle-switch:after {
+            content: "";
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            transition: 0.2s;
+        }
+
+        .toggle-switch.active:after {
+            left: 23px;
+        }
+
+        /* ========== UTILITIES ========== */
+        .videos-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .search-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-mini {
+            display: flex;
+            justify-content: space-between;
+            background: #F5B04210;
+            border-radius: 40px;
+            padding: 0.4rem 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .earnings-big {
+            font-size: 1.8rem;
+        }
+
+        .transaction-row-click {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        @media (max-width: 550px) {
+            .modules-grid-2x2 {
+                grid-template-columns: 1fr;
+            }
+            .module-video-card {
+                width: 100%;
+            }
+        }
+
+        /* Thumbnail preview in upload form */
+        .thumbnail-preview {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .thumbnail-preview img {
+            width: 80px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== TOP BAR ========== -->
+<div class="top-brand">
+    <div class="logo-area">
+        <div class="logo-img">
+            <i class="fas fa-chalkboard-user"></i>
+        </div>
+        <div class="logo-text">UTOM Studio</div>
+    </div>
+    <div style="display: flex; gap: 0.8rem; align-items: center;">
+        <div class="notif-bell" id="notifBell">
+            <i class="fas fa-bell"></i>
+            <span id="notifCount" class="notif-badge" style="display: none;">0</span>
+            <div id="notifDropdown" class="notif-dropdown"></div>
+        </div>
+        <div class="badge-tutor"><i class="fas fa-crown"></i> Admin</div>
+    </div>
+</div>
+
+<!-- ========== BOTTOM NAVIGATION ========== -->
+<div class="nav-five">
+    <button class="nav-five-btn active" data-section="home"><i class="fas fa-home"></i> HOME</button>
+    <button class="nav-five-btn" data-section="posted"><i class="fas fa-video"></i> POSTED</button>
+    <button class="nav-five-btn" data-section="users"><i class="fas fa-users"></i> USERS</button>
+    <button class="nav-five-btn" data-section="modules"><i class="fas fa-folder-tree"></i> MODULES</button>
+    <button class="nav-five-btn" data-section="account"><i class="fas fa-coins"></i> ACCOUNT</button>
+    <button class="nav-five-btn" data-section="settings"><i class="fas fa-cog"></i> SETTINGS</button>
+</div>
+
+<!-- ========== HERO PLAYER ========== -->
+<div id="heroPlayer" class="hero-player">
+    <img id="heroThumb" class="hero-thumb" alt="video thumbnail">
+    <div class="hero-info">
+        <button class="hero-close" id="closeHeroBtn"><i class="fas fa-times"></i> Close</button>
+        <h3 id="heroTitle"></h3>
+        <p id="heroInstructor"></p>
+        <p id="heroDesc"></p>
+        <div id="heroVideoLink" style="margin-top: 8px;"></div>
+    </div>
+</div>
+
+<!-- ========== HOME SECTION ========== -->
+<div id="homeSection" class="section active-section">
+    <div class="post-video-top" style="margin: 0.7rem 0.7rem 0.2rem;">
+        <button id="bigPostBtn" class="btn-big-post"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
+        <div id="dynamicPostForm" class="toggle-form">
+            <h4>Upload new video</h4>
+            <form id="homePostForm">
+                <div class="form-row">
+                    <input type="text" id="videoTitle" placeholder="Title *" required>
+                    <input type="text" id="instructorName" placeholder="Instructor *" required>
+                </div>
+                <div class="form-row">
+                    <select id="priceType">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid (ZMW)</option>
+                    </select>
+                    <input type="number" id="paidAmount" placeholder="Amount ZMW" step="1" style="display: none;">
+                </div>
+                <div class="form-row">
+                    <select id="moduleSelectHome"></select>
+                    <input type="text" id="newModuleNameHome" placeholder="+ New module">
+                    <button type="button" id="quickAddModuleBtn" class="btn-yellow">Create</button>
+                </div>
+                <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
+
+                <!-- Video source selection -->
+                <div class="form-row">
+                    <div class="radio-group">
+                        <label><input type="radio" name="videoSource" value="link" checked> <i class="fas fa-link"></i> Video Link</label>
+                        <label><input type="radio" name="videoSource" value="upload"> <i class="fas fa-cloud-upload-alt"></i> Cloudinary Upload</label>
+                    </div>
+                </div>
+                <div class="form-row video-source-group" id="linkGroup">
+                    <input type="url" id="videoUrlInput" placeholder="https://... (YouTube/Vimeo embed or direct MP4)">
+                    <!-- For link mode, fallback thumbnail URL -->
+                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail image URL (optional)" style="margin-top: 8px;">
+                </div>
+                <div class="form-row video-source-group" id="uploadGroup" style="display: none;">
+                    <button type="button" id="cloudinaryUploadBtn" class="btn-yellow" style="width:100%;">
+                        <i class="fas fa-cloud-upload-alt"></i> Choose Video (Max 50MB)
+                    </button>
+                    <input type="hidden" id="cloudinaryVideoUrl">
+                    <input type="hidden" id="cloudinaryVideoPublicId">
+                    <small id="uploadStatus" style="display:block; margin-top:5px;"></small>
+
+                    <!-- Thumbnail frame selection -->
+                    <div style="margin-top: 12px;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 5px;">
+                            <i class="fas fa-image"></i> Thumbnail frame (seconds):
+                        </label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="thumbnailOffset" placeholder="e.g., 5" value="3" min="0" step="0.5" style="width: 100px;">
+                            <button type="button" id="generateThumbnailBtn" class="btn-outline" style="width: auto;">
+                                <i class="fas fa-sync-alt"></i> Generate Preview
+                            </button>
+                        </div>
+                        <input type="hidden" id="generatedThumbnailUrl">
+                        <div id="thumbnailPreviewContainer" class="thumbnail-preview" style="display: none;">
+                            <img id="thumbnailPreviewImg" src="" alt="Thumbnail preview">
+                            <span style="font-size: 0.75rem; color: green;"><i class="fas fa-check-circle"></i> Thumbnail ready</span>
+                        </div>
+                        <small style="color: #666;">Cloudinary will generate the thumbnail from the chosen frame.</small>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" id="cancelPostBtn" class="btn-outline">Cancel</button>
+                    <button type="submit" class="btn-yellow">PUBLISH</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-glass">
+        <div class="stats-mini">
+            <span><i class="fas fa-video"></i> <span id="statVideos">0</span></span>
+            <span><i class="fas fa-users"></i> <span id="statUsers">0</span></span>
+            <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
+        </div>
+        <h3>🔥 Trending Paid</h3>
+        <div class="horizontal-scroll" id="homePaidScroll"></div>
+        <h3>🎁 Free picks</h3>
+        <div class="horizontal-scroll" id="homeFreeScroll"></div>
+    </div>
+</div>
+
+<!-- ========== POSTED SECTION ========== -->
+<div id="postedSection" class="section">
+    <div class="card-glass">
+        <h2>My Content Library</h2>
+        <div class="search-filter">
+            <input type="text" id="searchVideoInput" placeholder="Search...">
+            <select id="filterModuleSelect"><option value="all">All modules</option></select>
+            <select id="filterPriceSelect"><option value="all">All prices</option><option value="free">Free</option><option value="paid">Paid</option></select>
+        </div>
+        <div id="postedVideosGrid" class="videos-grid"></div>
+    </div>
+</div>
+
+<!-- ========== USERS SECTION ========== -->
+<div id="usersSection" class="section">
+    <div class="card-glass">
+        <h3>👥 Registered Learners</h3>
+        <div id="usersListContainer"></div>
+    </div>
+</div>
+
+<!-- ========== MODULES SECTION ========== -->
+<div id="modulesSection" class="section">
+    <div class="card-glass">
+        <h3>📁 Course Modules</h3>
+        <div style="display: flex; gap: 0.5rem; margin: 0.6rem 0; flex-wrap: wrap;">
+            <input type="text" id="newGlobalModule" placeholder="Module name">
+            <button id="globalAddModuleBtn" class="btn-yellow">+ Add</button>
+        </div>
+        <div id="modulesAccordionContainer" class="modules-grid-2x2"></div>
+    </div>
+</div>
+
+<!-- ========== ACCOUNT SECTION ========== -->
+<div id="accountSection" class="section">
+    <div class="card-glass" style="text-align: center;">
+        <div class="earnings-big" id="totalEarningsSpan">ZMW 0</div>
+        <div>Total revenue</div>
+        <hr>
+        <h4>📜 Transaction history</h4>
+        <div id="transactionHistoryList"></div>
+    </div>
+</div>
+
+<!-- ========== SETTINGS SECTION ========== -->
+<div id="settingsSection" class="section">
+    <div class="card-glass">
+        <h3>⚙️ App Settings</h3>
+        <div style="margin: 0.8rem 0; padding: 0.5rem; background: #fef5e8; border-radius: 20px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span><strong>🌍 App Active Mode</strong><br><small>If OFF, users cannot interact</small></span>
+                <div id="appToggle" class="toggle-switch active"></div>
+            </div>
+        </div>
+        <div style="margin: 0.8rem 0;">
+            <strong><i class="fas fa-credit-card"></i> Default Payment Method</strong>
+            <select id="paymentMethodSelect" class="btn-outline" style="width: 100%; margin-top: 6px;">
+                <option value="MTN Mobile Money">MTN Mobile Money</option>
+                <option value="Airtel Money">Airtel Money</option>
+                <option value="Visa Card">Visa Card</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+        </div>
+        <div style="margin: 0.8rem 0;">
+            <strong><i class="fas fa-user-slash"></i> Banned Users</strong>
+            <div id="bannedUsersList" style="margin-top: 6px; font-size: 0.75rem;"></div>
+        </div>
+        <button id="logoutBtn" class="btn-yellow" style="width: 100%; margin-top: 8px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+<!-- User Details Modal -->
+<div id="userDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3><i class="fas fa-user-circle"></i> User Profile</h3>
+        <table class="modal-table" id="userModalTable"></table>
+        <div class="modal-buttons" style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button id="userModalBanBtn" class="btn-outline"><i class="fas fa-ban"></i> Toggle Ban</button>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Details Modal -->
+<div id="txModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3><i class="fas fa-receipt"></i> Payment Details</h3>
+        <table class="modal-table" id="txModalTable"></table>
+    </div>
+</div>
+
+<!-- ========== FIREBASE & CLOUDINARY INTEGRATION ========== -->
+<script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { getDatabase, ref, set, push, update, remove, onValue, get } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+
+    // Your Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyCZEqWRAHW0tW6j0WfBf8lxj61oExa6BwY",
+        authDomain: "wizafoodcafe.firebaseapp.com",
+        databaseURL: "https://wizafoodcafe-default-rtdb.firebaseio.com",
+        projectId: "wizafoodcafe",
+        storageBucket: "wizafoodcafe.firebasestorage.app",
+        messagingSenderId: "248334218737",
+        appId: "1:248334218737:web:94fabd0bbdf75bb8410050"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Cloudinary configuration - YOUR ACTUAL CREDENTIALS
+    const CLOUD_NAME = 'dd3lcymrk';
+    const UPLOAD_PRESET = 'h3eyhc2o';
+
+    // ========== SECURITY CHECK: Only admin@utom.com ==========
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = 'index.html';
+        } else if (user.email !== 'admin@utom.com') {
+            alert('Access denied. Admin only.');
+            signOut(auth).then(() => window.location.href = 'index.html');
+        } else {
+            initAdminPanel();
+        }
+    });
+
+    // ========== GLOBAL STATE & REFERENCES ==========
+    let currentUser = null;
+    let videosRef, usersRef, modulesRef, transactionsRef, settingsRef;
+    let videos = [], users = [], modules = [], transactions = [], settings = { appActive: true, paymentMethod: 'MTN Mobile Money' };
+
+    function initAdminPanel() {
+        currentUser = auth.currentUser;
+        videosRef = ref(db, 'videos');
+        usersRef = ref(db, 'users');
+        modulesRef = ref(db, 'modules');
+        transactionsRef = ref(db, 'transactions');
+        settingsRef = ref(db, 'settings');
+
+        loadModules();
+        loadSettings();
+        setupRealtimeListeners();
+        setupNavigation();
+        setupPostForm();
+        setupModals();
+        setupSettingsHandlers();
+        setupCloudinaryUpload();
+        refreshAllUI();
+    }
+
+    // ========== REALTIME LISTENERS ==========
+    function setupRealtimeListeners() {
+        onValue(videosRef, (snapshot) => {
+            videos = snapshot.val() ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data })) : [];
+            renderHomeScrolls();
+            renderPostedGrid();
+            renderModulesAccordion();
+            updateQuickStats();
+        });
+        onValue(usersRef, (snapshot) => {
+            users = snapshot.val() ? Object.entries(snapshot.val()).map(([uid, data]) => ({ uid, ...data })) : [];
+            renderUsers();
+            updateBannedList();
+            updateQuickStats();
+        });
+        onValue(modulesRef, (snapshot) => {
+            modules = snapshot.val() || ['Web Dev', 'Data Science', 'Design', 'Marketing'];
+            if (!Array.isArray(modules)) modules = Object.values(modules);
+            updateModuleSelect();
+            updateFilterModules();
+            renderModulesAccordion();
+        });
+        onValue(transactionsRef, (snapshot) => {
+            transactions = snapshot.val() ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data })) : [];
+            renderAccount();
+            updateQuickStats();
+        });
+        onValue(settingsRef, (snapshot) => {
+            settings = snapshot.val() || { appActive: true, paymentMethod: 'MTN Mobile Money' };
+            updateSettingsUI();
+        });
+    }
+
+    function loadModules() {
+        get(modulesRef).then(snapshot => {
+            if (!snapshot.exists()) set(modulesRef, ['Web Dev', 'Data Science', 'Design', 'Marketing']);
+        });
+    }
+    function loadSettings() {
+        get(settingsRef).then(snapshot => {
+            if (!snapshot.exists()) set(settingsRef, { appActive: true, paymentMethod: 'MTN Mobile Money' });
+        });
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function renderHomeScrolls() {
+        document.getElementById('homePaidScroll').innerHTML = videos.filter(v => v.price > 0).map(v => buildVideoCard(v)).join('');
+        document.getElementById('homeFreeScroll').innerHTML = videos.filter(v => v.price === 0).map(v => buildVideoCard(v)).join('');
+    }
+
+    function renderPostedGrid() {
+        const searchTerm = document.getElementById('searchVideoInput')?.value.toLowerCase() || '';
+        const moduleFilter = document.getElementById('filterModuleSelect')?.value || 'all';
+        const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
+        let filtered = videos.filter(v => 
+            (v.title.toLowerCase().includes(searchTerm) || v.instructor.toLowerCase().includes(searchTerm)) &&
+            (moduleFilter === 'all' || v.module === moduleFilter) &&
+            (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
+        );
+        document.getElementById('postedVideosGrid').innerHTML = filtered.map(v => buildVideoCard(v, true)).join('') || '<div>No videos</div>';
+        attachVideoActions();
+    }
+
+    function renderUsers() {
+        const container = document.getElementById('usersListContainer');
+        container.innerHTML = users.map(u => `
+            <div class="user-row">
+                <div><strong>${escapeHtml(u.firstName || '')} ${escapeHtml(u.lastName || '')}</strong><br><span style="font-size:0.7rem;">${escapeHtml(u.email)}</span></div>
+                <div>📞 ${escapeHtml(u.phone || 'N/A')}</div>
+                <div class="user-actions">
+                    ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
+                    <button class="view-user" data-uid="${u.uid}" style="background:none; border:none;"><i class="fas fa-info-circle"></i></button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.view-user').forEach(btn => btn.addEventListener('click', () => {
+            const user = users.find(u => u.uid === btn.dataset.uid);
+            if (user) showUserDetailsModal(user);
+        }));
+    }
+
+    function renderModulesAccordion() {
+        const container = document.getElementById('modulesAccordionContainer');
+        container.innerHTML = modules.map(mod => {
+            const moduleVideos = videos.filter(v => v.module === mod);
+            return `
+                <div class="module-folder">
+                    <div class="module-header">
+                        <span><i class="fas fa-folder"></i> <strong>${escapeHtml(mod)}</strong> (${moduleVideos.length})</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="module-videos">
+                        ${moduleVideos.map(v => `
+                            <div class="module-video-card" onclick="window.showHero(${JSON.stringify(v).replace(/"/g, '&quot;')})">
+                                <img src="${v.thumbnail || 'https://picsum.photos/100/100'}">
+                                <div style="flex:1;"><strong>${escapeHtml(v.title)}</strong><div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div></div>
+                                <button class="delete-mini" onclick="event.stopPropagation(); window.deleteVideoById('${v.id}')"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        `).join('') || 'No videos'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.querySelectorAll('.module-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const videosDiv = header.nextElementSibling;
+                videosDiv.classList.toggle('show');
+                const icon = header.querySelector('.fa-chevron-down');
+                icon.style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+        });
+    }
+
+    function renderAccount() {
+        const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        document.getElementById('totalEarningsSpan').innerHTML = `ZMW ${total}`;
+        const container = document.getElementById('transactionHistoryList');
+        container.innerHTML = transactions.map(t => `
+            <div class="transaction-row-click" data-txid="${t.id}">
+                <span><strong>${escapeHtml(t.userName || 'User')}</strong></span>
+                <span>${escapeHtml(t.videoTitle)}</span>
+                <span class="highlight-amount">ZMW ${t.amount}</span>
+                <span>${t.date}</span>
+                <i class="fas fa-info-circle"></i>
+            </div>
+        `).join('') || 'No transactions';
+        document.querySelectorAll('.transaction-row-click').forEach(row => row.addEventListener('click', () => {
+            const tx = transactions.find(t => t.id === row.dataset.txid);
+            if (tx) showTxModal(tx);
+        }));
+    }
+
+    function buildVideoCard(v, withActions = false) {
+        return `
+            <div class="video-card-grid" onclick="window.showHero(${JSON.stringify(v).replace(/"/g, '&quot;')})">
+                <img src="${v.thumbnail || 'https://picsum.photos/300/180'}" onerror="this.src='https://picsum.photos/300/180'">
+                <div class="card-info">
+                    <h4>${escapeHtml(v.title)}</h4>
+                    <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
+                    <div class="stats-row">
+                        <span><i class="fas fa-eye"></i> ${v.views || 0}</span>
+                        <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
+                    </div>
+                    ${withActions ? `
+                        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+                            <button class="edit-video-btn" data-id="${v.id}" style="background:none; border:none;"><i class="fas fa-edit"></i></button>
+                            <button class="delete-video-btn" data-id="${v.id}" style="background:none; border:none; color:#d9534f;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function attachVideoActions() {
+        document.querySelectorAll('.edit-video-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const video = videos.find(v => v.id === btn.dataset.id);
+            if (video) populateEditForm(video);
+        }));
+        document.querySelectorAll('.delete-video-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Delete this video?')) remove(ref(db, `videos/${btn.dataset.id}`));
+        }));
+    }
+
+    // ========== VIDEO POSTING ==========
+    function setupPostForm() {
+        document.getElementById('bigPostBtn').onclick = () => {
+            document.getElementById('dynamicPostForm').classList.add('show');
+            document.getElementById('bigPostBtn').style.display = 'none';
+            document.getElementById('homePostForm').reset();
+            document.getElementById('paidAmount').style.display = 'none';
+            document.getElementById('cloudinaryVideoUrl').value = '';
+            document.getElementById('generatedThumbnailUrl').value = '';
+            document.getElementById('thumbnailPreviewContainer').style.display = 'none';
+            document.getElementById('uploadStatus').innerText = '';
+        };
+        document.getElementById('cancelPostBtn').onclick = () => {
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
+        };
+        document.getElementById('priceType').addEventListener('change', function() {
+            document.getElementById('paidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
+        });
+        document.querySelectorAll('input[name="videoSource"]').forEach(radio => radio.addEventListener('change', function() {
+            document.getElementById('linkGroup').style.display = this.value === 'link' ? 'block' : 'none';
+            document.getElementById('uploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
+        }));
+        document.getElementById('quickAddModuleBtn').addEventListener('click', () => {
+            const newModule = document.getElementById('newModuleNameHome').value.trim();
+            if (newModule && !modules.includes(newModule)) {
+                set(modulesRef, [...modules, newModule]);
+                document.getElementById('newModuleNameHome').value = '';
+            }
+        });
+        document.getElementById('homePostForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            publishVideo();
+        });
+        document.getElementById('generateThumbnailBtn').addEventListener('click', generateThumbnail);
+    }
+
+    function generateThumbnail() {
+        const videoUrl = document.getElementById('cloudinaryVideoUrl').value;
+        if (!videoUrl) {
+            alert('Please upload a video first.');
+            return;
+        }
+        const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+        // Cloudinary transformation: so_(seconds) to get frame, then jpg format
+        const baseUrl = videoUrl.replace('/upload/', '/upload/so_' + offset + '/');
+        const thumbUrl = baseUrl.replace(/\.[^/.]+$/, '.jpg'); // change extension to jpg
+        document.getElementById('generatedThumbnailUrl').value = thumbUrl;
+        document.getElementById('thumbnailPreviewImg').src = thumbUrl;
+        document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+    }
+
+    async function publishVideo() {
+        const title = document.getElementById('videoTitle').value.trim();
+        const instructor = document.getElementById('instructorName').value.trim();
+        if (!title || !instructor) return alert('Title and instructor required');
+
+        const priceType = document.getElementById('priceType').value;
+        const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0;
+        const module = document.getElementById('moduleSelectHome').value;
+        const description = document.getElementById('videoDesc').value.trim();
+        
+        let videoUrl, thumbnail;
+        const sourceType = document.querySelector('input[name="videoSource"]:checked').value;
+        if (sourceType === 'link') {
+            videoUrl = document.getElementById('videoUrlInput').value.trim();
+            thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || 'https://picsum.photos/300/180';
+            if (!videoUrl) return alert('Please enter a video URL');
+        } else {
+            videoUrl = document.getElementById('cloudinaryVideoUrl').value;
+            thumbnail = document.getElementById('generatedThumbnailUrl').value;
+            if (!videoUrl) return alert('Please upload a video first');
+            if (!thumbnail) {
+                // If thumbnail not generated, fallback to default offset
+                const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                thumbnail = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+            }
+        }
+
+        const newVideoRef = push(videosRef);
+        const videoData = {
+            title, instructor, price, thumbnail, module, description, videoUrl,
+            createdAt: new Date().toISOString(),
+            views: 0
+        };
+
+        try {
+            await set(newVideoRef, videoData);
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
+            alert('Video published!');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    function populateEditForm(video) {
+        document.getElementById('videoTitle').value = video.title;
+        document.getElementById('instructorName').value = video.instructor;
+        document.getElementById('priceType').value = video.price > 0 ? 'paid' : 'free';
+        document.getElementById('paidAmount').value = video.price;
+        document.getElementById('paidAmount').style.display = video.price > 0 ? 'block' : 'none';
+        document.getElementById('videoDesc').value = video.description || '';
+        document.getElementById('moduleSelectHome').value = video.module;
+        
+        if (video.videoUrl && !video.videoUrl.includes('cloudinary')) {
+            document.querySelector('input[value="link"]').checked = true;
+            document.getElementById('videoUrlInput').value = video.videoUrl;
+            document.getElementById('linkThumbnailUrl').value = video.thumbnail || '';
+            document.getElementById('linkGroup').style.display = 'block';
+            document.getElementById('uploadGroup').style.display = 'none';
+        } else {
+            document.querySelector('input[value="upload"]').checked = true;
+            document.getElementById('cloudinaryVideoUrl').value = video.videoUrl;
+            document.getElementById('generatedThumbnailUrl').value = video.thumbnail;
+            document.getElementById('linkGroup').style.display = 'none';
+            document.getElementById('uploadGroup').style.display = 'block';
+            if (video.thumbnail) {
+                document.getElementById('thumbnailPreviewImg').src = video.thumbnail;
+                document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+            }
+        }
+
+        document.getElementById('dynamicPostForm').classList.add('show');
+        document.getElementById('bigPostBtn').style.display = 'none';
+
+        const form = document.getElementById('homePostForm');
+        const originalSubmit = form.onsubmit;
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const sourceType = document.querySelector('input[name="videoSource"]:checked').value;
+            let videoUrl, thumbnail;
+            if (sourceType === 'link') {
+                videoUrl = document.getElementById('videoUrlInput').value.trim();
+                thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || 'https://picsum.photos/300/180';
+            } else {
+                videoUrl = document.getElementById('cloudinaryVideoUrl').value;
+                thumbnail = document.getElementById('generatedThumbnailUrl').value;
+                if (!thumbnail) {
+                    const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                    thumbnail = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+                }
+            }
+            const updatedData = {
+                title: document.getElementById('videoTitle').value.trim(),
+                instructor: document.getElementById('instructorName').value.trim(),
+                price: document.getElementById('priceType').value === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0,
+                thumbnail,
+                module: document.getElementById('moduleSelectHome').value,
+                description: document.getElementById('videoDesc').value.trim(),
+                videoUrl
+            };
+            await update(ref(db, `videos/${video.id}`), updatedData);
+            form.onsubmit = originalSubmit;
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
+        };
+    }
+
+    window.deleteVideoById = (id) => { if (confirm('Delete?')) remove(ref(db, `videos/${id}`)); };
+
+    // ========== CLOUDINARY UPLOAD ==========
+    function setupCloudinaryUpload() {
+        document.getElementById('cloudinaryUploadBtn').addEventListener('click', () => {
+            cloudinary.openUploadWidget({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url', 'camera'],
+                maxFileSize: 50000000,
+                resourceType: 'video',
+                clientAllowedFormats: ['mp4', 'webm', 'mov'],
+                styles: { palette: { window: "#FFFFFF", windowBorder: "#F5B042", tabIcon: "#F5B042", link: "#F5B042", action: "#F5B042" } }
+            }, (error, result) => {
+                if (!error && result?.event === 'success') {
+                    document.getElementById('cloudinaryVideoUrl').value = result.info.secure_url;
+                    document.getElementById('cloudinaryVideoPublicId').value = result.info.public_id;
+                    document.getElementById('uploadStatus').innerHTML = `<span style="color:green;"><i class="fas fa-check-circle"></i> Uploaded: ${result.info.original_filename}</span>`;
+                    // Auto-generate thumbnail with default offset
+                    const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                    const thumbUrl = result.info.secure_url.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+                    document.getElementById('generatedThumbnailUrl').value = thumbUrl;
+                    document.getElementById('thumbnailPreviewImg').src = thumbUrl;
+                    document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+                } else if (error) {
+                    document.getElementById('uploadStatus').innerHTML = `<span style="color:red;">Upload failed: ${error.message}</span>`;
+                }
+            });
+        });
+    }
+
+    // ========== MODALS & SETTINGS ==========
+    function showUserDetailsModal(user) {
+        document.getElementById('userModalTable').innerHTML = `
+            <tr><td>Name</td><td>${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
+            <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
+            <tr><td>Phone</td><td>${escapeHtml(user.phone || 'N/A')}</td></tr>
+            <tr><td>Status</td><td>${user.banned ? '<span style="color:red;">Banned</span>' : 'Active'}</td></tr>
+        `;
+        const modal = document.getElementById('userDetailsModal');
+        modal.style.display = 'flex';
+        modal.dataset.uid = user.uid;
+        document.getElementById('userModalBanBtn').onclick = () => {
+            update(ref(db, `users/${user.uid}`), { banned: !user.banned });
+            modal.style.display = 'none';
+        };
+    }
+
+    function showTxModal(tx) {
+        document.getElementById('txModalTable').innerHTML = `
+            <tr><td>Transaction ID</td><td>${tx.id}</td></tr>
+            <tr><td>User</td><td>${escapeHtml(tx.userName)} (${escapeHtml(tx.userEmail)})</td></tr>
+            <tr><td>Video</td><td>${escapeHtml(tx.videoTitle)}</td></tr>
+            <tr><td>Amount</td><td class="highlight-amount">ZMW ${tx.amount}</td></tr>
+            <tr><td>Payment Method</td><td>${tx.paymentMethod || 'Mobile Money'}</td></tr>
+            <tr><td>Date</td><td>${tx.date}</td></tr>
+            <tr><td>Status</td><td>${tx.status || 'Completed'}</td></tr>
+        `;
+        document.getElementById('txModal').style.display = 'flex';
+    }
+
+    function setupSettingsHandlers() {
+        document.getElementById('appToggle').addEventListener('click', () => update(settingsRef, { appActive: !settings.appActive }));
+        document.getElementById('paymentMethodSelect').addEventListener('change', (e) => update(settingsRef, { paymentMethod: e.target.value }));
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
+    }
+
+    function updateSettingsUI() {
+        document.getElementById('appToggle').classList.toggle('active', settings.appActive);
+        document.getElementById('paymentMethodSelect').value = settings.paymentMethod;
+    }
+
+    function updateBannedList() {
+        const banned = users.filter(u => u.banned);
+        document.getElementById('bannedUsersList').innerHTML = banned.map(u => `
+            <div>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email}) 
+                <button class="unban-btn" data-uid="${u.uid}" style="background:none; border:none; color:#F5B042;">Unban</button>
+            </div>
+        `).join('') || 'No banned users';
+        document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => update(ref(db, `users/${btn.dataset.uid}`), { banned: false })));
+    }
+
+    // ========== NAVIGATION & HELPERS ==========
+    function setupNavigation() {
+        const sections = {
+            home: document.getElementById('homeSection'), posted: document.getElementById('postedSection'),
+            users: document.getElementById('usersSection'), modules: document.getElementById('modulesSection'),
+            account: document.getElementById('accountSection'), settings: document.getElementById('settingsSection')
+        };
+        document.querySelectorAll('.nav-five-btn').forEach(btn => btn.addEventListener('click', () => {
+            const id = btn.dataset.section;
+            Object.values(sections).forEach(s => s.classList.remove('active-section'));
+            sections[id].classList.add('active-section');
+            document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (id === 'posted') renderPostedGrid();
+            if (id === 'users') renderUsers();
+            if (id === 'modules') renderModulesAccordion();
+            if (id === 'account') renderAccount();
+            closeHero();
+        }));
+    }
+
+    window.showHero = (video) => {
+        document.getElementById('heroThumb').src = video.thumbnail || 'https://picsum.photos/400/200';
+        document.getElementById('heroTitle').innerText = video.title;
+        document.getElementById('heroInstructor').innerText = video.instructor;
+        document.getElementById('heroDesc').innerText = video.description || '';
+        document.getElementById('heroVideoLink').innerHTML = video.videoUrl ? 
+            `<a href="${video.videoUrl}" target="_blank" style="color:#F5B042;"><i class="fas fa-play-circle"></i> Watch Video</a>` : '';
+        document.getElementById('heroPlayer').classList.add('show-hero');
+        document.getElementById('heroPlayer').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    function closeHero() { document.getElementById('heroPlayer').classList.remove('show-hero'); }
+
+    function setupModals() {
+        document.getElementById('closeHeroBtn').onclick = closeHero;
+        document.querySelectorAll('.close-modal').forEach(el => el.onclick = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'));
+        window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
+    }
+
+    function updateQuickStats() {
+        document.getElementById('statVideos').innerText = videos.length;
+        document.getElementById('statUsers').innerText = users.length;
+        document.getElementById('statEarnings').innerText = `ZMW ${transactions.reduce((s, t) => s + (t.amount || 0), 0)}`;
+    }
+
+    function updateModuleSelect() {
+        const select = document.getElementById('moduleSelectHome');
+        if (select) select.innerHTML = modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    }
+
+    function updateFilterModules() {
+        const filter = document.getElementById('filterModuleSelect');
+        if (filter) filter.innerHTML = '<option value="all">All modules</option>' + modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    }
+
+    function refreshAllUI() {
+        renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderModulesAccordion(); renderAccount(); updateBannedList();
+    }
+
+    function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+    document.getElementById('globalAddModuleBtn')?.addEventListener('click', () => {
+        const newModule = document.getElementById('newGlobalModule').value.trim();
+        if (newModule && !modules.includes(newModule)) set(modulesRef, [...modules, newModule]);
+        document.getElementById('newGlobalModule').value = '';
+    });
+
+    document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
+    document.getElementById('filterModuleSelect')?.addEventListener('change', renderPostedGrid);
+    document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
+</script>
+</body>
+</html>
