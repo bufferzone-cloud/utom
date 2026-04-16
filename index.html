@@ -434,22 +434,21 @@
 </div>
 
 <script type="module">
-    // ========== NEW FIREBASE IMPORTS & CONFIG ==========
+    // ========== FIREBASE IMPORTS (using your exact config) ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-    import { getDatabase, ref, set, serverTimestamp, get, child } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+    import { getDatabase, ref, set, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
-    // Your new Firebase configuration (utom-c4003)
+    // Your provided Firebase configuration
     const firebaseConfig = {
         apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
         authDomain: "utom-c4003.firebaseapp.com",
+        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
         projectId: "utom-c4003",
         storageBucket: "utom-c4003.firebasestorage.app",
         messagingSenderId: "878225874050",
         appId: "1:878225874050:web:643626906bfd233eeae89b",
-        measurementId: "G-STHFWDKVZN",
-        // Add Realtime Database URL (default for your project)
-        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com/"
+        measurementId: "G-STHFWDKVZN"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -544,7 +543,7 @@
         }
     });
 
-    // ========== LOGIN with database read ==========
+    // ========== LOGIN (with read from database) ==========
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = loginEmail.value.trim();
@@ -570,7 +569,6 @@
             if (snapshot.exists()) {
                 const userData = snapshot.val();
                 console.log('User data retrieved:', userData);
-                // Store extra info in sessionStorage for next page
                 sessionStorage.setItem('utom_user_email', user.email);
                 sessionStorage.setItem('utom_user_uid', user.uid);
                 sessionStorage.setItem('utom_user_name', `${userData.firstName} ${userData.lastName}`);
@@ -582,7 +580,7 @@
                 sessionStorage.setItem('utom_user_uid', user.uid);
             }
             
-            // Redirect based on email (admin or user)
+            // Redirect based on email
             if (email === 'admin@utom.com') {
                 window.location.href = 'admin.html';
             } else {
