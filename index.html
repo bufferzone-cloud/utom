@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM | Secure Access — Firebase</title>
+    <title>UTOM | Secure Access — Install App</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/utom/manifest.json">
+    <!-- Theme color for browser -->
+    <meta name="theme-color" content="#F5B042">
+    <!-- Apple touch icon (optional) -->
+    <link rel="apple-touch-icon" href="/utom/icons/icon-192.png">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="manifest" href="/utom/manifest.json">
     <!-- Firebase SDKs -->
     <script type="importmap">
         {
@@ -275,6 +280,7 @@
             box-shadow: 0 30px 45px rgba(0, 0, 0, 0.2);
             transform: scale(0.96);
             transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            text-align: center;
         }
 
         .modal-overlay.active .modal-container {
@@ -287,6 +293,7 @@
             margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
@@ -337,6 +344,37 @@
             animation: spin 1s linear infinite;
         }
 
+        /* Install button (floating) */
+        .install-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #F5B042;
+            color: black;
+            border-radius: 60px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            animation: slideUp 0.3s ease;
+        }
+        .install-banner button {
+            background: black;
+            color: #F5B042;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         @keyframes fadeSlideDown {
             0% { opacity: 0; transform: translateY(-12px); }
             100% { opacity: 1; transform: translateY(0); }
@@ -355,6 +393,7 @@
             .pill-input { padding: 12px 16px 12px 44px; font-size: 0.95rem; }
             .input-icon-group i { left: 16px; font-size: 1rem; }
             .modal-container { padding: 1.5rem; }
+            .install-banner { flex-direction: column; gap: 10px; text-align: center; }
         }
 
         @media (max-width: 380px) {
@@ -451,6 +490,22 @@
             <button id="sendResetLinkBtn" class="btn-yellow-black"><i class="fas fa-paper-plane"></i> Send reset email</button>
         </div>
     </div>
+</div>
+
+<!-- Install App Popup (shown if app not installed) -->
+<div id="installPopup" class="modal-overlay">
+    <div class="modal-container">
+        <h3><i class="fas fa-download" style="color:#F5B042;"></i> Install UTOM App</h3>
+        <p>Get a faster, offline‑ready experience with our app. Install it on your device for easy access.</p>
+        <button id="installAppBtn" class="btn-yellow-black" style="margin-bottom: 10px;"><i class="fas fa-download"></i> Install Now</button>
+        <button id="dismissInstallBtn" class="btn-outline-dark btn-yellow-black" style="background: transparent;">Maybe Later</button>
+    </div>
+</div>
+
+<!-- Floating install banner (alternative) -->
+<div id="installBanner" class="install-banner" style="display: none;">
+    <span><i class="fas fa-mobile-alt"></i> Install UTOM App for offline access</span>
+    <button id="bannerInstallBtn">Install</button>
 </div>
 
 <script type="module">
@@ -578,11 +633,9 @@
         setButtonLoading(registerBtn, true, originalText);
         
         try {
-            // 1. Create user with email/password
             const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
             const user = userCredential.user;
             
-            // 2. Store additional user data in Realtime Database under /users/{uid}
             await set(ref(database, `users/${user.uid}`), {
                 firstName: fName,
                 lastName: lName,
@@ -619,7 +672,7 @@
         }
     });
     
-    // ----- LOGIN with Firebase Auth + REDIRECT based on email prefix -----
+    // ----- LOGIN with Firebase Auth -----
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
@@ -633,23 +686,15 @@
         setButtonLoading(loginBtn, true, originalLoginHtml);
         
         try {
-            // Authenticate user
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            
-            // ---- REDIRECTION LOGIC ----
-            // Check if email starts with "admin@" (case-insensitive)
-            const isAdmin = email.toLowerCase().startsWith('admin@');
-            // Redirect to admin dashboard if admin email, otherwise standard user page
-            if (isAdmin) {
+            // Redirect based on email prefix (admin or user)
+            if (email.toLowerCase().startsWith('admin@')) {
                 window.location.href = 'admin.html';
             } else {
                 window.location.href = 'user.html';
             }
-            // IMPORTANT: Because redirect unloads the page, no further code runs here.
-            // The finally block will still execute but the page navigation takes precedence.
-            return; // prevent any accidental extra operations
-            
+            return;
         } catch (error) {
             let errorMsg = 'Invalid email or password. Please try again or create an account.';
             if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
@@ -657,8 +702,6 @@
             if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             loginErrorSpan.innerText = errorMsg;
         } finally {
-            // Restore button state (only if redirect didn't occur, but safe to call)
-            // If page redirects, this might not be noticeable.
             setButtonLoading(loginBtn, false, originalLoginHtml);
         }
     });
@@ -686,7 +729,6 @@
         
         try {
             await sendPasswordResetEmail(auth, email);
-            // Show success inside modal
             resetErrorSpan.style.color = '#2b7e3a';
             resetErrorSpan.innerText = '✅ Password reset email sent! Check your inbox.';
             setTimeout(() => {
@@ -707,13 +749,68 @@
     
     showSignupBtn.addEventListener('click', showSignupPanel);
     backToLoginBtn.addEventListener('click', showLoginPanel);
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/utom/sw.js')
-      .then(reg => console.log('SW registered:', reg))
-      .catch(err => console.error('SW failed:', err));
-  }
+
+    // ========== PWA INSTALL PROMPT LOGIC ==========
+    let deferredPrompt = null;
+    const installPopup = document.getElementById('installPopup');
+    const installBanner = document.getElementById('installBanner');
+    const installAppBtn = document.getElementById('installAppBtn');
+    const dismissInstallBtn = document.getElementById('dismissInstallBtn');
+    const bannerInstallBtn = document.getElementById('bannerInstallBtn');
+
+    // Listen for beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show the install popup (or banner) – only if not already installed
+        // We'll show the modal popup (more prominent)
+        installPopup.classList.add('active');
+        // Also optionally show the banner as fallback
+        installBanner.style.display = 'flex';
+    });
+
+    // Install button in modal
+    installAppBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to install: ${outcome}`);
+        deferredPrompt = null;
+        installPopup.classList.remove('active');
+        installBanner.style.display = 'none';
+    });
+
+    // Dismiss install popup
+    dismissInstallBtn.addEventListener('click', () => {
+        installPopup.classList.remove('active');
+        // Keep banner maybe? but we'll hide it as well
+        installBanner.style.display = 'none';
+    });
+
+    // Banner install button
+    bannerInstallBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.style.display = 'none';
+        installPopup.classList.remove('active');
+    });
+
+    // Also hide banner if user clicks anywhere else? We'll let it stay but can be dismissed
+    // Optional: check if app is already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        // Already installed, hide install prompts
+        installPopup.classList.remove('active');
+        installBanner.style.display = 'none';
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/utom/sw.js')
+            .then(reg => console.log('Service Worker registered:', reg))
+            .catch(err => console.error('SW registration failed:', err));
+    }
 </script>
 </body>
 </html>
