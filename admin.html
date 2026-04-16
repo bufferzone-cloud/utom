@@ -363,7 +363,7 @@
             cursor: pointer;
             color: #888;
         }
-        /* Video Player Modal (like user app) */
+        /* Video Player Modal (inline) */
         .video-player-container {
             background: black;
             border-radius: 24px;
@@ -378,7 +378,7 @@
         .video-info {
             padding: 1rem 0;
         }
-        /* Certificate Paper (same as user view) */
+        /* Certificate Paper (same as user) */
         .certificate-paper {
             border: 2px solid #F5B042;
             border-radius: 24px;
@@ -459,7 +459,7 @@
     <button class="nav-five-btn" data-section="settings"><i class="fas fa-cog"></i> SETTINGS</button>
 </div>
 
-<!-- Video Player Modal (like user app) -->
+<!-- Video Player Modal (inline) -->
 <div id="videoPlayerModal" class="modal">
     <div class="modal-content">
         <span class="close-modal" id="closeVideoModal">&times;</span>
@@ -472,7 +472,7 @@
     </div>
 </div>
 
-<!-- Certificate View Modal (same as user) -->
+<!-- Certificate View Modal -->
 <div id="certViewModal" class="modal">
     <div class="modal-content">
         <span class="close-modal" id="closeCertModal">&times;</span>
@@ -912,28 +912,133 @@
     }
 
     function setupUI() {
-        document.querySelectorAll('.nav-five-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=btn.dataset.section; document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section')); document.getElementById(id+'Section').classList.add('active-section'); document.querySelectorAll('.nav-five-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(id==='posted') renderPostedGrid(); if(id==='users') renderUsers(); if(id==='payments') renderPendingPayments(); if(id==='certificates'){ renderCertificatesList(); updateUserSelect(); } if(id==='account') renderAccount(); }));
-        document.getElementById('bigPostBtn').onclick = ()=>{ document.getElementById('dynamicPostForm').classList.add('show'); document.getElementById('bigPostBtn').style.display='none'; };
-        document.getElementById('cancelPostBtn').onclick = ()=>{ document.getElementById('dynamicPostForm').classList.remove('show'); document.getElementById('bigPostBtn').style.display='block'; };
-        document.getElementById('priceType').addEventListener('change',function(){ document.getElementById('paidAmount').style.display=this.value==='paid'?'block':'none'; });
-        document.querySelectorAll('input[name="videoSource"]').forEach(r=>r.addEventListener('change',function(){ document.getElementById('linkGroup').style.display=this.value==='link'?'block':'none'; document.getElementById('uploadGroup').style.display=this.value==='upload'?'block':'none'; }));
-        document.getElementById('quickAddModuleBtn').addEventListener('click',()=>{ const nm=document.getElementById('newModuleNameHome').value.trim(); if(nm && !modules.includes(nm)) set(ref(db,'modules'),[...modules,nm]); document.getElementById('newModuleNameHome').value=''; });
-        document.getElementById('homePostForm').addEventListener('submit',e=>{ e.preventDefault(); publishVideo(); });
-        document.getElementById('cloudinaryUploadBtn').addEventListener('click',()=>{ cloudinary.openUploadWidget({ cloudName:CLOUD_NAME, uploadPreset:UPLOAD_PRESET, sources:['local','url'], resourceType:'video', maxFileSize:50000000 }, (err,res)=>{ if(!err && res?.event==='success'){ document.getElementById('cloudinaryVideoUrl').value=res.info.secure_url; document.getElementById('uploadStatus').innerHTML='<span style="color:green;">Uploaded</span>'; const offset=parseFloat(document.getElementById('thumbnailOffset').value)||3; const thumbUrl=res.info.secure_url.replace('/upload/','/upload/so_'+offset+'/').replace(/\.[^/.]+$/,'.jpg'); document.getElementById('generatedThumbnailUrl').value=thumbUrl; document.getElementById('thumbnailPreviewImg').src=thumbUrl; document.getElementById('thumbnailPreviewContainer').style.display='flex'; } else if(err) document.getElementById('uploadStatus').innerHTML='<span style="color:red;">Upload failed</span>'; }); });
-        document.getElementById('generateThumbnailBtn').addEventListener('click',()=>{ const url=document.getElementById('cloudinaryVideoUrl').value; if(!url){ alert('Upload video first'); return; } const offset=parseFloat(document.getElementById('thumbnailOffset').value)||3; const thumbUrl=url.replace('/upload/','/upload/so_'+offset+'/').replace(/\.[^/.]+$/,'.jpg'); document.getElementById('generatedThumbnailUrl').value=thumbUrl; document.getElementById('thumbnailPreviewImg').src=thumbUrl; document.getElementById('thumbnailPreviewContainer').style.display='flex'; });
-        document.getElementById('appToggle').addEventListener('click',async()=>{ const cur=document.getElementById('appToggle').classList.contains('active'); await set(ref(db,'system/maintenance'),!cur); document.getElementById('appToggle').classList.toggle('active'); addNotification(`Maintenance mode ${!cur ? 'ON' : 'OFF'}`); });
-        document.getElementById('paymentMethodSelect').addEventListener('change',async(e)=>await set(ref(db,'settings/paymentMethod'),e.target.value));
-        document.getElementById('logoutBtn').addEventListener('click',async()=>{ await signOut(auth); window.location.href='index.html'; });
-        document.getElementById('searchVideoInput')?.addEventListener('input',renderPostedGrid);
-        document.getElementById('filterModuleSelect')?.addEventListener('change',renderPostedGrid);
-        document.getElementById('filterPriceSelect')?.addEventListener('change',renderPostedGrid);
-        document.getElementById('userSearch')?.addEventListener('input',()=>renderUsers());
-        document.getElementById('notifBell').addEventListener('click',()=>{ const dd=document.getElementById('notifDropdown'); dd.classList.toggle('show'); setTimeout(()=>dd.classList.remove('show'),5000); });
-        document.querySelectorAll('.close-modal').forEach(el=>el.onclick=()=>document.querySelectorAll('.modal').forEach(m=>m.style.display='none'));
-        window.addEventListener('click',e=>{ if(e.target.classList.contains('modal')) e.target.style.display='none'; });
+        // Navigation
+        const navBtns = document.querySelectorAll('.nav-five-btn');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sectionId = btn.dataset.section;
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+                document.getElementById(sectionId + 'Section').classList.add('active-section');
+                navBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (sectionId === 'posted') renderPostedGrid();
+                if (sectionId === 'users') renderUsers();
+                if (sectionId === 'payments') renderPendingPayments();
+                if (sectionId === 'certificates') { renderCertificatesList(); updateUserSelect(); }
+                if (sectionId === 'account') renderAccount();
+            });
+        });
+        // Post form toggle
+        const bigPostBtn = document.getElementById('bigPostBtn');
+        const cancelPostBtn = document.getElementById('cancelPostBtn');
+        const dynamicForm = document.getElementById('dynamicPostForm');
+        bigPostBtn.onclick = () => { dynamicForm.classList.add('show'); bigPostBtn.style.display = 'none'; };
+        cancelPostBtn.onclick = () => { dynamicForm.classList.remove('show'); bigPostBtn.style.display = 'block'; };
+        // Price type
+        document.getElementById('priceType').addEventListener('change', function() {
+            document.getElementById('paidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
+        });
+        // Video source toggle
+        const linkRadio = document.querySelector('input[name="videoSource"][value="link"]');
+        const uploadRadio = document.querySelector('input[name="videoSource"][value="upload"]');
+        const linkGroup = document.getElementById('linkGroup');
+        const uploadGroup = document.getElementById('uploadGroup');
+        linkRadio.addEventListener('change', () => { linkGroup.style.display = 'block'; uploadGroup.style.display = 'none'; });
+        uploadRadio.addEventListener('change', () => { linkGroup.style.display = 'none'; uploadGroup.style.display = 'block'; });
+        // Quick add module
+        document.getElementById('quickAddModuleBtn').addEventListener('click', () => {
+            const newMod = document.getElementById('newModuleNameHome').value.trim();
+            if (newMod && !modules.includes(newMod)) {
+                set(modulesRef, [...modules, newMod]);
+                document.getElementById('newModuleNameHome').value = '';
+            }
+        });
+        // Submit form
+        document.getElementById('homePostForm').addEventListener('submit', e => { e.preventDefault(); publishVideo(); });
+        // Cloudinary upload
+        document.getElementById('cloudinaryUploadBtn').addEventListener('click', () => {
+            cloudinary.openUploadWidget({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url'],
+                resourceType: 'video',
+                maxFileSize: 50000000
+            }, (error, result) => {
+                if (!error && result?.event === 'success') {
+                    document.getElementById('cloudinaryVideoUrl').value = result.info.secure_url;
+                    document.getElementById('uploadStatus').innerHTML = '<span style="color:green;">Uploaded!</span>';
+                    const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                    const thumbUrl = result.info.secure_url.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+                    document.getElementById('generatedThumbnailUrl').value = thumbUrl;
+                    document.getElementById('thumbnailPreviewImg').src = thumbUrl;
+                    document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+                } else if (error) {
+                    document.getElementById('uploadStatus').innerHTML = '<span style="color:red;">Upload failed</span>';
+                }
+            });
+        });
+        // Generate thumbnail
+        document.getElementById('generateThumbnailBtn').addEventListener('click', () => {
+            const url = document.getElementById('cloudinaryVideoUrl').value;
+            if (!url) { alert('Upload video first'); return; }
+            const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+            const thumbUrl = url.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
+            document.getElementById('generatedThumbnailUrl').value = thumbUrl;
+            document.getElementById('thumbnailPreviewImg').src = thumbUrl;
+            document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+        });
+        // Settings
+        document.getElementById('appToggle').addEventListener('click', async () => {
+            const cur = document.getElementById('appToggle').classList.contains('active');
+            await set(ref(db, 'system/maintenance'), !cur);
+            document.getElementById('appToggle').classList.toggle('active');
+            addNotification(`Maintenance mode ${!cur ? 'ON' : 'OFF'}`);
+        });
+        document.getElementById('paymentMethodSelect').addEventListener('change', async (e) => {
+            await set(ref(db, 'settings/paymentMethod'), e.target.value);
+        });
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        });
+        // Search and filters
+        document.getElementById('searchVideoInput')?.addEventListener('input', () => renderPostedGrid());
+        document.getElementById('filterModuleSelect')?.addEventListener('change', () => renderPostedGrid());
+        document.getElementById('filterPriceSelect')?.addEventListener('change', () => renderPostedGrid());
+        document.getElementById('userSearch')?.addEventListener('input', () => renderUsers());
+        // Notifications bell
+        const notifBell = document.getElementById('notifBell');
+        const notifDropdown = document.getElementById('notifDropdown');
+        notifBell.addEventListener('click', () => {
+            notifDropdown.classList.toggle('show');
+            setTimeout(() => notifDropdown.classList.remove('show'), 5000);
+        });
+        // Close modals
+        document.querySelectorAll('.close-modal').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            });
+        });
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+        });
     }
-    function refreshAll() { renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderAccount(); renderPendingPayments(); renderCertificatesList(); }
-    function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+    function refreshAll() {
+        renderHomeScrolls();
+        renderPostedGrid();
+        renderUsers();
+        renderAccount();
+        renderPendingPayments();
+        renderCertificatesList();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 </script>
 </body>
 </html>
