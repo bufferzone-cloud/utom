@@ -364,10 +364,18 @@
         .upload-box {
             border: 2px dashed #F5B042;
             border-radius: 20px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             cursor: pointer;
             margin: 1rem 0;
+            position: relative;
+            min-height: 120px;
+        }
+        .upload-box img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 16px;
+            margin-top: 0.5rem;
         }
         /* ----- PAGE CONTAINERS ----- */
         .page-container {
@@ -425,6 +433,13 @@
             background: transparent;
             border: 1.5px solid #F5B042;
             color: #000;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         /* Bottom Navigation */
         .bottom-nav {
@@ -488,19 +503,29 @@
             border-bottom: 1px solid #eee;
             font-size: 0.8rem;
         }
-        /* Progress Bar */
-        .progress-container {
+        /* Modal (only for funds, but removed) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            background: #e0e0e0;
-            border-radius: 10px;
-            margin-top: 8px;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
         }
-        .progress-bar {
-            width: 0%;
-            height: 6px;
-            background: #F5B042;
-            border-radius: 10px;
-            transition: width 0.2s;
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 48px;
+            padding: 1.5rem;
+            text-align: center;
         }
         @media (max-width: 480px) {
             .videos-grid-2x2 {
@@ -620,7 +645,6 @@
             <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
             <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
             <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
-            <button class="btn-profile" id="addFundsBtn"><i class="fas fa-wallet"></i> Add Funds (Demo +100)</button>
             <button class="btn-profile btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
@@ -631,7 +655,7 @@
         <div id="docFullContent" class="full-page-content"></div>
     </div>
 
-    <!-- Payment Page (Full Page, YouTube style) -->
+    <!-- Payment Page (Full Page) -->
     <div id="paymentPage" class="page-container full-page-container">
         <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back</button>
         <div class="payment-page-preview" id="paymentPreviewContainer"></div>
@@ -649,18 +673,9 @@
         <div id="paymentUploadBox" class="upload-box">
             <i class="fas fa-cloud-upload-alt fa-2x"></i>
             <p>Tap to upload payment screenshot</p>
+            <div id="paymentScreenshotPreview"></div>
         </div>
-        <div id="paymentScreenshotPreview" style="margin: 1rem 0;"></div>
         <button id="submitPaymentPageBtn" class="btn-profile">Submit for Approval</button>
-    </div>
-
-    <!-- Add Funds Modal -->
-    <div id="fundsModal" class="modal">
-        <div class="modal-content">
-            <h3>Add Funds</h3>
-            <button id="funds100Btn" class="btn-profile">+ ZMW 100</button>
-            <button id="closeFundsBtn" class="btn-outline" style="margin-top:8px;">Cancel</button>
-        </div>
     </div>
 
     <!-- Side Notification Bar -->
@@ -703,7 +718,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Global state
     let currentUser = null;
     let userData = { firstName: '', lastName: '', email: '', phone: '', wallet: 0, enrolled: [], likedVideos: [], likedDocs: [] };
     let allVideos = [];
@@ -718,7 +732,6 @@
     let currentFilter = 'all';
     let currentSearch = '';
 
-    // IndexedDB
     let offlineDB;
     const dbRequest = indexedDB.open('UTOMOfflineDB', 1);
     dbRequest.onupgradeneeded = (e) => {
@@ -728,7 +741,6 @@
         }
     };
     dbRequest.onsuccess = (e) => { offlineDB = e.target.result; loadOfflineVideoList(); };
-    dbRequest.onerror = (e) => console.error("IndexedDB error", e);
 
     async function loadOfflineVideoList() {
         if (!offlineDB) return;
@@ -739,7 +751,6 @@
         renderOfflinePage();
     }
 
-    // Auth
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'index.html'; return; }
         if (user.email && user.email.startsWith('admin@')) { window.location.href = 'admin.html'; return; }
@@ -1087,7 +1098,6 @@
         document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
     }
 
-    // Payment Page (Full Page)
     function openPaymentPage(item, type) {
         selectedItem = item;
         selectedItemType = type;
@@ -1138,7 +1148,6 @@
             renderHomeVideos();
         });
 
-        // Payment page upload using Cloudinary Widget (exactly like admin)
         const uploadBox = document.getElementById('paymentUploadBox');
         uploadBox.addEventListener('click', () => {
             cloudinary.openUploadWidget({
@@ -1152,7 +1161,7 @@
                 if (error) return;
                 if (result.event === 'success') {
                     paymentScreenshotUrl = result.info.secure_url;
-                    document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${paymentScreenshotUrl}" style="max-width:100%; border-radius:20px;">`;
+                    document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${paymentScreenshotUrl}" style="max-width:100%; border-radius:16px; margin-top:10px;">`;
                     addNotification('Screenshot uploaded successfully');
                 }
             });
@@ -1184,15 +1193,6 @@
             paymentScreenshotUrl = null;
         });
 
-        document.getElementById('addFundsBtn').addEventListener('click', () => document.getElementById('fundsModal').classList.add('active'));
-        document.getElementById('closeFundsBtn').addEventListener('click', () => document.getElementById('fundsModal').classList.remove('active'));
-        document.getElementById('funds100Btn').addEventListener('click', async () => {
-            userData.wallet += 100;
-            await saveUserData();
-            addNotification(`💰 Wallet funded with ZMW 100`);
-            document.getElementById('fundsModal').classList.remove('active');
-        });
-
         document.getElementById('changePasswordBtn').addEventListener('click', async () => {
             if (currentUser) await sendPasswordResetEmail(auth, currentUser.email);
             alert('Password reset email sent.');
@@ -1214,14 +1214,7 @@
             document.getElementById('searchInput').focus();
         });
 
-        document.querySelectorAll('.close-modal').forEach(el => {
-            el.addEventListener('click', () => {
-                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-            });
-        });
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) e.target.classList.remove('active');
-        });
+        // Wallet deduction on admin approval (listener already active)
     }
 
     function showPage(pageId) {
