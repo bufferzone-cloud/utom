@@ -264,6 +264,17 @@
             font-size: 0.9rem;
             padding: 4px;
         }
+        .like-video-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px;
+        }
+        .like-video-btn.liked {
+            color: #e74c3c;
+        }
         /* ----- DOC CARDS (ADMIN STYLE) ----- */
         .docs-list {
             display: flex;
@@ -591,7 +602,7 @@
         <div id="docsListContainer" class="docs-list"></div>
     </div>
 
-    <!-- Offline Videos Page (replaces Wishlist) -->
+    <!-- Offline Videos Page -->
     <div id="offlinePage" class="page-container">
         <div class="grid-title">
             <h3><i class="fas fa-download"></i> Offline Videos</h3>
@@ -625,7 +636,7 @@
         </div>
     </div>
 
-    <!-- Full Page Document Viewer (hidden page) -->
+    <!-- Full Page Document Viewer -->
     <div id="docFullPage" class="page-container full-page-container">
         <button id="backFromDocBtn" class="btn-outline" style="margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back</button>
         <div id="docFullContent" class="full-page-content"></div>
@@ -701,13 +712,13 @@
 
     // Global state
     let currentUser = null;
-    let userData = { firstName: '', lastName: '', email: '', phone: '', wallet: 0, enrolled: [], likedDocs: [] };
+    let userData = { firstName: '', lastName: '', email: '', phone: '', wallet: 0, enrolled: [], likedVideos: [], likedDocs: [] };
     let allVideos = [];
     let allDocs = [];
     let approvedPurchases = new Set();
     let notifications = [];
     let watchedVideos = new Set();
-    let offlineVideos = new Set(); // video IDs saved offline
+    let offlineVideos = new Set();
     let selectedItem = null;
     let selectedItemType = 'video';
     let screenshotFile = null;
@@ -783,10 +794,11 @@
         if (snap.exists()) {
             userData = { ...userData, ...snap.val() };
             userData.enrolled = userData.enrolled || [];
+            userData.likedVideos = userData.likedVideos || [];
             userData.likedDocs = userData.likedDocs || [];
             userData.wallet = userData.wallet || 0;
         } else {
-            userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', wallet: 0, enrolled: [], likedDocs: [] };
+            userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', wallet: 0, enrolled: [], likedVideos: [], likedDocs: [] };
             await set(userRef, userData);
         }
         updateUserInterface();
@@ -797,6 +809,7 @@
         await update(ref(db, `users/${currentUser.uid}`), {
             wallet: userData.wallet,
             enrolled: userData.enrolled,
+            likedVideos: userData.likedVideos,
             likedDocs: userData.likedDocs,
             phone: userData.phone
         });
@@ -859,6 +872,7 @@
     function buildVideoCard(video) {
         const hasAccess = canAccessVideo(video);
         const priceDisplay = video.price === 0 ? 'FREE' : `ZMW ${video.price}`;
+        const isLiked = userData.likedVideos.includes(video.id);
         const canDownload = hasAccess;
         return `
             <div class="video-card" data-id="${video.id}" data-price="${video.price}" data-access="${hasAccess}">
@@ -870,7 +884,8 @@
                         <span class="price-tag">${priceDisplay}</span>
                     </div>
                     <div class="card-actions">
-                        ${!hasAccess && video.price > 0 ? '<span class="status-badge badge-pending"><i class="fas fa-lock"></i> Pay</span>' : '<span></span>'}
+                        <button class="like-video-btn ${isLiked ? 'liked' : ''}" data-id="${video.id}"><i class="far fa-heart"></i></button>
+                        ${!hasAccess && video.price > 0 ? '<span class="status-badge badge-pending"><i class="fas fa-lock"></i> Pay</span>' : ''}
                         ${canDownload ? `<button class="download-video-btn" data-id="${video.id}" title="Download for offline"><i class="fas fa-download"></i></button>` : ''}
                     </div>
                 </div>
@@ -881,7 +896,7 @@
     function attachVideoEvents() {
         document.querySelectorAll('.video-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('.download-video-btn')) return;
+                if (e.target.closest('.download-video-btn') || e.target.closest('.like-video-btn')) return;
                 const videoId = card.dataset.id;
                 const video = allVideos.find(v => v.id === videoId);
                 if (!video) return;
@@ -906,6 +921,20 @@
                     return;
                 }
                 await downloadVideoForOffline(video);
+            });
+        });
+        document.querySelectorAll('.like-video-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const videoId = btn.dataset.id;
+                const idx = userData.likedVideos.indexOf(videoId);
+                if (idx === -1) {
+                    userData.likedVideos.push(videoId);
+                } else {
+                    userData.likedVideos.splice(idx, 1);
+                }
+                await saveUserData();
+                renderAllContent();
             });
         });
     }
