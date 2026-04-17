@@ -200,7 +200,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
 
-        /* Video Cards & Inline Player */
+        /* Video Cards (enlarged by 20%) */
         .horizontal-scroll {
             display: flex;
             overflow-x: auto;
@@ -209,7 +209,7 @@
             scrollbar-width: thin;
         }
         .video-card-grid {
-            min-width: 150px;
+            min-width: 180px;  /* increased from 150px */
             background: white;
             border-radius: 20px;
             box-shadow: 0 6px 12px rgba(0,0,0,0.08);
@@ -222,19 +222,19 @@
         }
         .video-card-grid img {
             width: 100%;
-            height: 100px;
+            height: 120px;  /* increased from 100px */
             object-fit: cover;
         }
         .card-info {
-            padding: 8px;
+            padding: 10px;  /* increased */
         }
         .stats-row {
             display: flex;
             gap: 0.5rem;
             margin: 5px 0;
-            font-size: 0.6rem;
+            font-size: 0.7rem;  /* slightly larger */
             background: #fef5e8;
-            padding: 3px 6px;
+            padding: 4px 8px;
             border-radius: 30px;
             justify-content: space-between;
             flex-wrap: wrap;
@@ -242,9 +242,9 @@
         .play-video-btn {
             background: #F5B042;
             border: none;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 30px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -598,9 +598,10 @@
 </head>
 <body>
 
-<!-- Toast container for slide notifications -->
+<!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Top Bar -->
 <div class="top-brand">
     <div class="logo-area">
         <div class="logo-img">
@@ -620,6 +621,7 @@
     </div>
 </div>
 
+<!-- Bottom Navigation -->
 <div class="nav-five">
     <button class="nav-five-btn active" data-section="home"><i class="fas fa-home"></i> HOME</button>
     <button class="nav-five-btn" data-section="posted"><i class="fas fa-video"></i> POSTED</button>
@@ -652,7 +654,7 @@
     </div>
 </div>
 
-<!-- Full Page Text Editor for Doc Writing -->
+<!-- Full Page Text Editor -->
 <div id="docEditorPage" class="section" style="padding: 1rem;">
     <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
         <button id="cancelDocEditorBtn" class="btn-outline"><i class="fas fa-times"></i> Cancel</button>
@@ -712,9 +714,7 @@
                 <div class="video-source-group" id="uploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
                     <div id="uploadProgressArea" style="margin-top:10px;">
-                        <div class="progress-container">
-                            <div class="progress-fill" id="uploadProgressFill" style="width:0%"></div>
-                        </div>
+                        <div class="progress-container"><div class="progress-fill" id="uploadProgressFill" style="width:0%"></div></div>
                         <span id="uploadPercentText">0%</span>
                     </div>
                     <input type="hidden" id="cloudinaryVideoUrl">
@@ -824,9 +824,7 @@
                 <div id="docUploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryDocUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
                     <div id="docUploadProgress">
-                        <div class="progress-container">
-                            <div class="progress-fill" id="docProgressFill" style="width:0%"></div>
-                        </div>
+                        <div class="progress-container"><div class="progress-fill" id="docProgressFill" style="width:0%"></div></div>
                         <span id="docPercentText">0%</span>
                     </div>
                     <input type="hidden" id="cloudinaryDocUrl">
@@ -841,7 +839,7 @@
     </div>
 </div>
 
-<!-- ACCOUNT SECTION (Full Page) -->
+<!-- ACCOUNT SECTION -->
 <div id="accountSection" class="section">
     <div class="card-glass" style="background: linear-gradient(145deg, #fff8ed, #ffe8d4);">
         <h2 style="color:#b45f06;">💰 Earnings & Transactions</h2>
@@ -910,7 +908,6 @@
     let videos = [], users = [], modules = [], transactions = [], docs = [];
     let notifications = [];
     let currentModuleType = 'video';
-    let pendingDocContent = '';
 
     const videosRef = ref(db, 'videos');
     const usersRef = ref(db, 'users');
@@ -935,27 +932,20 @@
     function setupRealtime() {
         onValue(videosRef, snap => {
             videos = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
-            renderHomeScrolls();
-            renderPostedGrid();
-            renderModulesAccordion();
-            updateStats();
+            renderHomeScrolls(); renderPostedGrid(); renderModulesAccordion(); updateStats();
         });
         onValue(usersRef, snap => {
             users = snap.val() ? Object.entries(snap.val()).map(([uid,d])=>({uid,...d})) : [];
-            renderUsers();
-            updateBannedList();
-            updateStats();
+            renderUsers(); updateBannedList(); updateStats();
         });
         onValue(modulesRef, snap => {
             modules = snap.val() || ['Web Dev','Data Science'];
             if(!Array.isArray(modules)) modules = Object.values(modules);
-            updateModuleSelects();
-            renderModulesAccordion();
+            updateModuleSelects(); renderModulesAccordion();
         });
         onValue(transactionsRef, snap => {
             transactions = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
-            renderAccount();
-            updateStats();
+            renderAccount(); updateStats();
         });
         onValue(docsRef, snap => {
             docs = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
@@ -963,8 +953,7 @@
         });
         onValue(notificationsRef, snap => {
             notifications = snap.val() ? Object.values(snap.val()) : [];
-            updateNotifBadge();
-            renderNotificationsPage();
+            updateNotifBadge(); renderNotificationsPage();
         });
         onValue(maintenanceRef, snap => {
             document.getElementById('appToggle')?.classList.toggle('active', snap.val() === true);
@@ -983,45 +972,36 @@
         document.getElementById('homeFreeScroll').innerHTML = free.map(v => buildVideoCard(v)).join('');
     }
 
-    function buildVideoCard(v, withActions = false) {
+    function buildVideoCard(v) {
         const uniqueViews = v.uniqueViewers ? Object.keys(v.uniqueViewers).length : (v.views||0);
         const likes = v.likes || 0;
         const enrolled = transactions.filter(t => t.videoId === v.id).length;
         const paidCount = transactions.filter(t => t.videoId === v.id && t.amount > 0).length;
-        return `
-            <div class="video-card-grid" data-id="${v.id}">
-                <img src="${v.thumbnail || 'https://picsum.photos/300/180'}" onerror="this.src='https://picsum.photos/300/180'">
-                <div class="card-info">
-                    <h4>${escapeHtml(v.title)}</h4>
-                    <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
-                    <div class="stats-row">
-                        <span><i class="fas fa-eye"></i> ${uniqueViews}</span>
-                        <span><i class="fas fa-heart"></i> ${likes}</span>
-                        <span><i class="fas fa-user-graduate"></i> ${enrolled}</span>
-                    </div>
-                    <div class="stats-row">
-                        <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
-                        <span><i class="fas fa-dollar-sign"></i> ${paidCount} paid</span>
-                    </div>
-                    <button class="play-video-btn" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-id="${v.id}">
-                        <i class="fas fa-play"></i> Watch
-                    </button>
+        return `<div class="video-card-grid" data-id="${v.id}">
+            <img src="${v.thumbnail || 'https://picsum.photos/300/180'}">
+            <div class="card-info">
+                <h4>${escapeHtml(v.title)}</h4>
+                <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
+                <div class="stats-row">
+                    <span><i class="fas fa-eye"></i> ${uniqueViews}</span>
+                    <span><i class="fas fa-heart"></i> ${likes}</span>
+                    <span><i class="fas fa-user-graduate"></i> ${enrolled}</span>
                 </div>
+                <div class="stats-row">
+                    <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
+                    <span><i class="fas fa-dollar-sign"></i> ${paidCount} paid</span>
+                </div>
+                <button class="play-video-btn" data-id="${v.id}"><i class="fas fa-play"></i> Watch</button>
             </div>
-        `;
+        </div>`;
     }
 
     function renderPostedGrid() {
         const search = document.getElementById('searchVideoInput')?.value.toLowerCase() || '';
         const modFilter = document.getElementById('filterModuleSelect')?.value || 'all';
         const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
-        let filtered = videos.filter(v =>
-            (v.title.toLowerCase().includes(search) || v.instructor.toLowerCase().includes(search)) &&
-            (modFilter === 'all' || v.module === modFilter) &&
-            (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
-        );
-        const grid = document.getElementById('postedVideosGrid');
-        grid.innerHTML = filtered.map(v => buildVideoCard(v, true)).join('') || '<div>No videos</div>';
+        let filtered = videos.filter(v => (v.title.toLowerCase().includes(search)||v.instructor.toLowerCase().includes(search)) && (modFilter==='all'||v.module===modFilter) && (priceFilter==='all'||(priceFilter==='free'?v.price===0:v.price>0)));
+        document.getElementById('postedVideosGrid').innerHTML = filtered.map(v=>buildVideoCard(v)).join('')||'<div>No videos</div>';
         attachVideoActions();
     }
 
@@ -1029,8 +1009,7 @@
         document.querySelectorAll('.play-video-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const id = btn.dataset.id;
-                const video = videos.find(v => v.id === id);
+                const video = videos.find(v=>v.id===btn.dataset.id);
                 if(video) playVideoInline(video);
             });
         });
@@ -1041,49 +1020,44 @@
         const playerDiv = document.getElementById('globalInlinePlayer');
         let embed = '';
         const url = video.videoUrl;
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        if(url.includes('youtube.com')||url.includes('youtu.be')){
             let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
             embed = `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
-        } else if (url.includes('vimeo.com')) {
-            let id = url.split('/').pop();
-            embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+        } else if(url.includes('vimeo.com')){
+            embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
         } else {
             embed = `<video controls autoplay style="width:100%; max-height:250px;"><source src="${url}" type="video/mp4"></video>`;
         }
         container.innerHTML = embed;
         playerDiv.style.display = 'block';
         const viewers = video.uniqueViewers || {};
-        if (!viewers[currentAdmin?.uid]) {
+        if(!viewers[currentAdmin?.uid]) {
             viewers[currentAdmin?.uid] = true;
             update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views||0)+1 });
         }
     }
 
-    document.getElementById('closeInlinePlayer').addEventListener('click', () => {
+    document.getElementById('closeInlinePlayer').addEventListener('click', ()=>{
         document.getElementById('globalInlinePlayer').style.display = 'none';
         document.getElementById('inlinePlayerEmbed').innerHTML = '';
     });
 
     function renderUsers() {
         const container = document.getElementById('usersListContainer');
-        Promise.all(users.map(async u => {
-            const bannedSnap = await get(ref(db, `bannedUsers/${u.uid}`));
-            return { ...u, banned: bannedSnap.val() === true };
-        })).then(usersWithBan => {
-            container.innerHTML = usersWithBan.map(u => `
-                <div class="user-row" data-uid="${u.uid}">
-                    <div style="flex:1;">${escapeHtml(u.email)}</div>
-                    <div style="flex:1; text-align:center;"><strong>${escapeHtml(u.firstName||'')} ${escapeHtml(u.lastName||'')}</strong></div>
-                    <div style="flex:1; text-align:right;">${escapeHtml(u.phone||'N/A')} ${u.banned?'<span class="badge-banned">Banned</span>':''}</div>
-                </div>
-            `).join('');
-            document.querySelectorAll('.user-row').forEach(row => {
-                row.addEventListener('click', () => {
-                    const user = users.find(u => u.uid === row.dataset.uid);
+        Promise.all(users.map(async u => ({...u, banned: (await get(ref(db,`bannedUsers/${u.uid}`))).val()===true})))
+            .then(usersWithBan => {
+                container.innerHTML = usersWithBan.map(u => `
+                    <div class="user-row" data-uid="${u.uid}">
+                        <div style="flex:1;">${escapeHtml(u.email)}</div>
+                        <div style="flex:1; text-align:center;"><strong>${escapeHtml(u.firstName||'')} ${escapeHtml(u.lastName||'')}</strong></div>
+                        <div style="flex:1; text-align:right;">${escapeHtml(u.phone||'N/A')} ${u.banned?'<span class="badge-banned">Banned</span>':''}</div>
+                    </div>
+                `).join('');
+                document.querySelectorAll('.user-row').forEach(row => row.addEventListener('click', ()=>{
+                    const user = users.find(u=>u.uid===row.dataset.uid);
                     if(user) showUserDetailsModal(user);
-                });
+                }));
             });
-        });
     }
 
     async function showUserDetailsModal(user) {
@@ -1107,7 +1081,7 @@
         toggle.classList.toggle('active', isBanned);
         toggle.onclick = () => {
             const newState = !toggle.classList.contains('active');
-            if (newState) set(ref(db, `bannedUsers/${user.uid}`), true);
+            if(newState) set(ref(db, `bannedUsers/${user.uid}`), true);
             else remove(ref(db, `bannedUsers/${user.uid}`));
             toggle.classList.toggle('active', newState);
             renderUsers(); updateBannedList();
@@ -1117,43 +1091,22 @@
 
     function renderModulesAccordion() {
         const container = document.getElementById('modulesAccordionContainer');
-        if (currentModuleType === 'video') {
+        if(currentModuleType === 'video') {
             container.innerHTML = modules.map(mod => {
-                const modVideos = videos.filter(v => v.module === mod);
-                return `
-                    <div class="module-folder">
-                        <div class="module-header">
-                            <span><i class="fas fa-folder"></i> ${escapeHtml(mod)} (${modVideos.length})</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="module-videos" style="display:grid; grid-template-columns:repeat(2,1fr); gap:0.5rem;">
-                            ${modVideos.map(v => buildVideoCard(v)).join('') || '<div style="padding:10px;">No videos</div>'}
-                        </div>
-                    </div>
-                `;
+                const modVideos = videos.filter(v=>v.module===mod);
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> ${mod} (${modVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${modVideos.map(v=>buildVideoCard(v)).join('')||'<div>No videos</div>'}</div></div>`;
             }).join('');
         } else {
             container.innerHTML = modules.map(mod => {
-                const modDocs = docs.filter(d => d.module === mod);
-                return `
-                    <div class="module-folder">
-                        <div class="module-header">
-                            <span><i class="fas fa-folder-open"></i> ${escapeHtml(mod)} (${modDocs.length})</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="module-videos" style="display:flex; flex-direction:column; gap:0.5rem;">
-                            ${modDocs.map(d => buildDocCard(d)).join('') || '<div style="padding:10px;">No documents</div>'}
-                        </div>
-                    </div>
-                `;
+                const modDocs = docs.filter(d=>d.module===mod);
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder-open"></i> ${mod} (${modDocs.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos" style="flex-direction:column;">${modDocs.map(d=>buildDocCard(d)).join('')||'<div>No documents</div>'}</div></div>`;
             }).join('');
         }
         document.querySelectorAll('.module-header').forEach(header => {
             header.addEventListener('click', () => {
                 const videosDiv = header.nextElementSibling;
                 videosDiv.classList.toggle('show');
-                const icon = header.querySelector('.fa-chevron-down');
-                icon.style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+                header.querySelector('.fa-chevron-down').style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : '';
             });
         });
         attachVideoActions();
@@ -1161,335 +1114,198 @@
     }
 
     function buildDocCard(doc) {
-        const reads = doc.reads || 0;
-        const likes = doc.likes || 0;
-        return `
-            <div class="doc-card">
-                <h3>${escapeHtml(doc.title)}</h3>
-                <div class="doc-instructor">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.module)}</div>
-                <div class="doc-preview">${escapeHtml(doc.description||'')}</div>
-                <div class="stats-row">
-                    <span><i class="fas fa-eye"></i> ${reads}</span>
-                    <span><i class="fas fa-heart"></i> ${likes}</span>
-                </div>
-                <div class="doc-footer">
-                    <span>${doc.price === 0 ? 'FREE' : `ZMW ${doc.price}`}</span>
-                    <button class="read-btn" data-docid="${doc.id}"><i class="fas fa-book-open"></i> Read</button>
-                </div>
-            </div>
-        `;
+        return `<div class="doc-card">
+            <h3>${escapeHtml(doc.title)}</h3>
+            <div class="doc-instructor">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.module)}</div>
+            <div class="doc-preview">${escapeHtml(doc.description||'')}</div>
+            <div class="stats-row"><span><i class="fas fa-eye"></i> ${doc.reads||0}</span><span><i class="fas fa-heart"></i> ${doc.likes||0}</span></div>
+            <div class="doc-footer"><span>${doc.price===0?'FREE':`ZMW ${doc.price}`}</span><button class="read-btn" data-docid="${doc.id}"><i class="fas fa-book-open"></i> Read</button></div>
+        </div>`;
     }
 
     function renderDocsList() {
-        document.getElementById('docsListContainer').innerHTML = docs.map(d => buildDocCard(d)).join('');
+        document.getElementById('docsListContainer').innerHTML = docs.map(d=>buildDocCard(d)).join('');
         attachDocActions();
     }
 
     function attachDocActions() {
-        document.querySelectorAll('.read-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const doc = docs.find(d => d.id === btn.dataset.docid);
-                if(doc) openDocFullPage(doc);
-            });
-        });
+        document.querySelectorAll('.read-btn').forEach(btn => btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            const doc = docs.find(d=>d.id===btn.dataset.docid);
+            if(doc) openDocFullPage(doc);
+        }));
     }
 
     function openDocFullPage(doc) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
         document.getElementById('docFullPage').classList.add('active-section');
-        const content = document.getElementById('docFullContent');
-        let html = `<h2>${escapeHtml(doc.title)}</h2><p style="color:#666;">${escapeHtml(doc.instructor)}</p><hr>`;
-        if (doc.docUrl) {
-            html += `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;"></iframe>`;
-        } else {
-            html += `<div style="white-space: pre-wrap;">${escapeHtml(doc.content||'')}</div>`;
-        }
-        content.innerHTML = html;
-        update(ref(db, `docs/${doc.id}`), { reads: (doc.reads||0)+1 });
+        let html = `<h2>${escapeHtml(doc.title)}</h2><p>${escapeHtml(doc.instructor)}</p><hr>`;
+        html += doc.docUrl ? `<iframe src="${doc.docUrl}" width="100%" height="600px"></iframe>` : `<div style="white-space:pre-wrap;">${escapeHtml(doc.content)}</div>`;
+        document.getElementById('docFullContent').innerHTML = html;
+        update(ref(db,`docs/${doc.id}`), { reads: (doc.reads||0)+1 });
     }
 
     function renderAccount() {
-        const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const total = transactions.reduce((s,t)=>s+(t.amount||0),0);
         document.getElementById('totalEarningsDisplay').innerText = `ZMW ${total}`;
-        document.getElementById('totalPaidPurchases').innerText = transactions.filter(t => t.amount > 0).length;
-        const list = document.getElementById('transactionHistoryList');
-        list.innerHTML = transactions.slice(0, 30).map(t => `
-            <div style="padding:10px; background:#fff; border-radius:16px; margin-bottom:8px;">
-                <b>${escapeHtml(t.userName || 'User')}</b> - ${escapeHtml(t.videoTitle || 'Item')}<br>
-                ZMW ${t.amount} · ${t.date || ''}
-            </div>
-        `).join('') || 'No transactions';
+        document.getElementById('totalPaidPurchases').innerText = transactions.filter(t=>t.amount>0).length;
+        document.getElementById('transactionHistoryList').innerHTML = transactions.slice(0,30).map(t=>`<div style="padding:10px; background:#fff; border-radius:16px; margin-bottom:8px;"><b>${escapeHtml(t.userName)}</b> - ${escapeHtml(t.videoTitle)}<br>ZMW ${t.amount} · ${t.date}</div>`).join('');
     }
 
     function renderNotificationsPage() {
         const container = document.getElementById('notificationsList');
-        container.innerHTML = notifications.map(n => `
-            <div class="notif-item" data-type="${n.type}" data-target="${n.targetId}">
-                <i class="fas fa-${n.type==='payment'?'money-bill':n.type==='like'?'heart':'bell'}"></i> ${n.message}
-                <small style="float:right;">${new Date(n.timestamp).toLocaleTimeString()}</small>
-            </div>
-        `).join('');
-        document.querySelectorAll('#notificationsList .notif-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const type = item.dataset.type;
-                const target = item.dataset.target;
-                if (type.includes('video')) {
-                    document.querySelector('[data-section="home"]').click();
-                    const vid = videos.find(v => v.id === target);
-                    if (vid) playVideoInline(vid);
-                } else if (type.includes('user')) {
-                    document.querySelector('[data-section="users"]').click();
-                } else if (type.includes('payment')) {
-                    document.querySelector('[data-section="account"]').click();
-                }
-            });
-        });
+        container.innerHTML = notifications.map(n=>`<div class="notif-item" data-type="${n.type}" data-target="${n.targetId}"><i class="fas fa-${n.type==='payment'?'money-bill':'bell'}"></i> ${n.message}</div>`).join('');
     }
 
     function updateNotifBadge() {
-        const unread = notifications.length;
-        document.getElementById('notifCount').style.display = unread ? 'inline-block' : 'none';
-        document.getElementById('notifCount').innerText = unread > 9 ? '9+' : unread;
-        const dropdown = document.getElementById('notifDropdown');
-        dropdown.innerHTML = notifications.map(n => `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n.message)}</div>`).join('');
+        const count = notifications.length;
+        document.getElementById('notifCount').style.display = count?'inline-block':'none';
+        document.getElementById('notifCount').innerText = count>9?'9+':count;
     }
 
-    // Cloudinary Upload with Progress
-    function setupCloudinaryUpload(btnId, urlFieldId, progressFillId, percentTextId, isVideo = true) {
-        document.getElementById(btnId).addEventListener('click', () => {
-            cloudinary.openUploadWidget({
-                cloudName: CLOUD_NAME,
-                uploadPreset: UPLOAD_PRESET,
-                sources: ['local', 'url'],
-                maxFileSize: 50000000,
-                resourceType: isVideo ? 'video' : 'auto',
-                styles: { palette: { windowBorder: "#F5B042" } }
-            }, (error, result) => {
-                if (error) return;
-                if (result.event === 'progress') {
-                    const percent = Math.round(result.info.progress);
-                    document.getElementById(progressFillId).style.width = percent + '%';
-                    document.getElementById(percentTextId).innerText = percent + '%';
+    // Cloudinary setup (unchanged)
+    function setupCloudinary(btnId, urlId, progId, percId, isVideo=true) {
+        document.getElementById(btnId).addEventListener('click', ()=>{
+            cloudinary.openUploadWidget({ cloudName:CLOUD_NAME, uploadPreset:UPLOAD_PRESET, sources:['local','url'], maxFileSize:50000000, resourceType:isVideo?'video':'auto' },
+            (error, result) => {
+                if(error) return;
+                if(result.event==='progress'){
+                    const p = Math.round(result.info.progress);
+                    document.getElementById(progId).style.width = p+'%';
+                    document.getElementById(percId).innerText = p+'%';
                 }
-                if (result.event === 'success') {
-                    document.getElementById(urlFieldId).value = result.info.secure_url;
-                    showToast('Upload complete!');
-                    if (isVideo) {
-                        const thumb = result.info.secure_url.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
+                if(result.event==='success'){
+                    document.getElementById(urlId).value = result.info.secure_url;
+                    if(isVideo){
+                        const thumb = result.info.secure_url.replace('/upload/','/upload/so_3/').replace(/\.[^/.]+$/,'.jpg');
                         document.getElementById('generatedThumbnailUrl').value = thumb;
                         document.getElementById('thumbnailPreviewImg').src = thumb;
-                        document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+                        document.getElementById('thumbnailPreviewContainer').style.display='flex';
                     }
-                    document.getElementById(progressFillId).style.width = '0%';
-                    document.getElementById(percentTextId).innerText = '0%';
+                    document.getElementById(progId).style.width='0%';
                 }
             });
         });
     }
+    setupCloudinary('cloudinaryUploadBtn','cloudinaryVideoUrl','uploadProgressFill','uploadPercentText',true);
+    setupCloudinary('cloudinaryDocUploadBtn','cloudinaryDocUrl','docProgressFill','docPercentText',false);
 
-    setupCloudinaryUpload('cloudinaryUploadBtn', 'cloudinaryVideoUrl', 'uploadProgressFill', 'uploadPercentText', true);
-    setupCloudinaryUpload('cloudinaryDocUploadBtn', 'cloudinaryDocUrl', 'docProgressFill', 'docPercentText', false);
-
-    // Post Video Form
-    document.getElementById('homePostForm').addEventListener('submit', async (e) => {
+    // Form submissions
+    document.getElementById('homePostForm').addEventListener('submit', async (e)=>{
         e.preventDefault();
         const title = document.getElementById('videoTitle').value.trim();
         const instructor = document.getElementById('instructorName').value.trim();
-        if (!title || !instructor) return alert('Title and instructor required');
-        const priceType = document.getElementById('priceType').value;
-        const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0;
+        if(!title||!instructor) return alert('Required');
+        const price = document.getElementById('priceType').value==='free'?0:parseFloat(document.getElementById('paidAmount').value)||0;
         const module = document.getElementById('moduleSelectHome').value;
         let videoUrl, thumbnail;
-        const sourceType = document.querySelector('input[name="videoSource"]:checked').value;
-        if (sourceType === 'link') {
-            videoUrl = document.getElementById('videoUrlInput').value.trim();
-            thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || 'https://picsum.photos/300/180';
-            if (!videoUrl) return alert('Enter video URL');
+        if(document.querySelector('input[name="videoSource"]:checked').value==='link'){
+            videoUrl = document.getElementById('videoUrlInput').value;
+            thumbnail = document.getElementById('linkThumbnailUrl').value||'https://picsum.photos/300/180';
         } else {
             videoUrl = document.getElementById('cloudinaryVideoUrl').value;
             thumbnail = document.getElementById('generatedThumbnailUrl').value;
-            if (!videoUrl) return alert('Upload video first');
         }
+        if(!videoUrl) return alert('Video URL required');
         const newRef = push(videosRef);
-        await set(newRef, {
-            title, instructor, price, thumbnail, module,
-            description: document.getElementById('videoDesc').value.trim(),
-            videoUrl,
-            createdAt: serverTimestamp(),
-            views: 0,
-            likes: 0,
-            uniqueViewers: {}
-        });
-        showToast('Video published!');
+        await set(newRef, { title, instructor, price, thumbnail, module, description: document.getElementById('videoDesc').value, videoUrl, createdAt: serverTimestamp(), views:0, likes:0, uniqueViewers:{} });
         document.getElementById('dynamicPostForm').classList.remove('show');
-        document.getElementById('bigPostBtn').style.display = 'block';
+        document.getElementById('bigPostBtn').style.display='block';
+        showToast('Video published!');
     });
 
-    // Post Doc Form
-    document.getElementById('docPostForm').addEventListener('submit', async (e) => {
+    document.getElementById('docPostForm').addEventListener('submit', async (e)=>{
         e.preventDefault();
         const title = document.getElementById('docTitle').value.trim();
         const instructor = document.getElementById('docInstructor').value.trim();
-        if (!title || !instructor) return alert('Required fields');
-        const priceType = document.getElementById('docPriceType').value;
-        const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('docPaidAmount').value) || 0;
+        if(!title||!instructor) return alert('Required');
+        const price = document.getElementById('docPriceType').value==='free'?0:parseFloat(document.getElementById('docPaidAmount').value)||0;
         const module = document.getElementById('docModuleSelect').value;
-        const description = document.getElementById('docDescription').value.trim();
-        const sourceType = document.querySelector('input[name="docSource"]:checked').value;
-        let content = '', docUrl = '';
-        if (sourceType === 'text') {
+        const description = document.getElementById('docDescription').value;
+        let content='', docUrl='';
+        if(document.querySelector('input[name="docSource"]:checked').value==='text'){
             content = document.getElementById('docContentHidden').value;
-            if (!content) return alert('Please write content in the editor');
+            if(!content) return alert('Write content in editor');
         } else {
             docUrl = document.getElementById('cloudinaryDocUrl').value;
-            if (!docUrl) return alert('Upload a document first');
+            if(!docUrl) return alert('Upload document');
         }
         const newRef = push(docsRef);
-        await set(newRef, {
-            title, instructor, price, module, description, content, docUrl,
-            createdAt: serverTimestamp(),
-            reads: 0,
-            likes: 0
-        });
-        showToast('Document published!');
+        await set(newRef, { title, instructor, price, module, description, content, docUrl, createdAt: serverTimestamp(), reads:0, likes:0 });
         document.getElementById('docPostFormContainer').classList.remove('show');
-        document.getElementById('bigPostDocBtn').style.display = 'block';
-        document.getElementById('docContentHidden').value = '';
-        document.getElementById('fullPageEditor').innerHTML = '';
+        document.getElementById('bigPostDocBtn').style.display='block';
+        showToast('Document published!');
     });
 
-    // Full Page Editor
-    document.getElementById('openFullEditorBtn').addEventListener('click', () => {
-        pendingDocContent = document.getElementById('docContentHidden').value;
-        document.getElementById('fullPageEditor').innerHTML = pendingDocContent;
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+    // Editor
+    document.getElementById('openFullEditorBtn').addEventListener('click', ()=>{
+        document.getElementById('fullPageEditor').innerHTML = document.getElementById('docContentHidden').value;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
         document.getElementById('docEditorPage').classList.add('active-section');
     });
-    document.getElementById('cancelDocEditorBtn').addEventListener('click', () => {
-        document.querySelector('[data-section="docs"]').click();
-    });
-    document.getElementById('doneDocEditorBtn').addEventListener('click', () => {
-        const content = document.getElementById('fullPageEditor').innerHTML;
-        document.getElementById('docContentHidden').value = content;
+    document.getElementById('cancelDocEditorBtn').addEventListener('click', ()=> document.querySelector('[data-section="docs"]').click());
+    document.getElementById('doneDocEditorBtn').addEventListener('click', ()=>{
+        document.getElementById('docContentHidden').value = document.getElementById('fullPageEditor').innerHTML;
         document.querySelector('[data-section="docs"]').click();
     });
 
     function setupUI() {
         // Navigation
-        document.querySelectorAll('.nav-five-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sec = btn.dataset.section;
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
-                document.getElementById(sec + 'Section').classList.add('active-section');
-                document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                if (sec === 'posted') renderPostedGrid();
-                if (sec === 'users') renderUsers();
-                if (sec === 'modules') renderModulesAccordion();
-                if (sec === 'docs') renderDocsList();
-                if (sec === 'account') renderAccount();
-            });
-        });
-
-        // Account button (top bar)
-        document.getElementById('accountQuickBtn').addEventListener('click', () => {
-            document.querySelector('[data-section="account"]').click();
-        });
-
-        // Notifications page via bell
-        document.getElementById('notifBell').addEventListener('click', () => {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+        document.querySelectorAll('.nav-five-btn').forEach(btn => btn.addEventListener('click', ()=>{
+            const sec = btn.dataset.section;
+            document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
+            document.getElementById(sec+'Section').classList.add('active-section');
+            document.querySelectorAll('.nav-five-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            if(sec==='posted') renderPostedGrid();
+            if(sec==='users') renderUsers();
+            if(sec==='account') renderAccount();
+        }));
+        document.getElementById('accountQuickBtn').addEventListener('click', ()=> document.querySelector('[data-section="account"]').click());
+        document.getElementById('notifBell').addEventListener('click', ()=>{
+            document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
             document.getElementById('notificationsSection').classList.add('active-section');
-            document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav-five-btn').forEach(b=>b.classList.remove('active'));
         });
-
-        // Back from doc viewer
-        document.getElementById('backFromDocBtn').addEventListener('click', () => {
-            document.querySelector('[data-section="docs"]').click();
+        document.getElementById('backFromDocBtn').addEventListener('click', ()=> document.querySelector('[data-section="docs"]').click());
+        document.querySelectorAll('.toggle-option').forEach(opt => opt.addEventListener('click', function(){
+            document.querySelectorAll('.toggle-option').forEach(o=>o.classList.remove('active'));
+            this.classList.add('active');
+            currentModuleType = this.dataset.moduleType;
+            renderModulesAccordion();
+        }));
+        document.querySelectorAll('.close-modal').forEach(el=>el.addEventListener('click', ()=>el.closest('.modal').style.display='none'));
+        document.getElementById('bigPostBtn').onclick = ()=> { document.getElementById('dynamicPostForm').classList.add('show'); document.getElementById('bigPostBtn').style.display='none'; };
+        document.getElementById('cancelPostBtn').onclick = ()=> { document.getElementById('dynamicPostForm').classList.remove('show'); document.getElementById('bigPostBtn').style.display='block'; };
+        document.getElementById('bigPostDocBtn').onclick = ()=> { document.getElementById('docPostFormContainer').classList.add('show'); document.getElementById('bigPostDocBtn').style.display='none'; };
+        document.getElementById('priceType').addEventListener('change', e=> document.getElementById('paidAmount').style.display = e.target.value==='paid'?'block':'none');
+        document.getElementById('docPriceType').addEventListener('change', e=> document.getElementById('docPaidAmount').style.display = e.target.value==='paid'?'block':'none');
+        document.querySelectorAll('input[name="videoSource"]').forEach(r=> r.addEventListener('change', e=>{
+            document.getElementById('linkGroup').style.display = e.target.value==='link'?'block':'none';
+            document.getElementById('uploadGroup').style.display = e.target.value==='upload'?'block':'none';
+        }));
+        document.querySelectorAll('input[name="docSource"]').forEach(r=> r.addEventListener('change', e=>{
+            document.getElementById('docTextGroup').style.display = e.target.value==='text'?'block':'none';
+            document.getElementById('docUploadGroup').style.display = e.target.value==='upload'?'block':'none';
+        }));
+        // Quick module adds
+        document.getElementById('quickAddModuleBtn').addEventListener('click', ()=>{
+            const m = document.getElementById('newModuleNameHome').value.trim();
+            if(m && !modules.includes(m)) set(modulesRef, [...modules, m]);
         });
-
-        // Module type toggle
-        document.querySelectorAll('.toggle-option').forEach(opt => {
-            opt.addEventListener('click', function() {
-                document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
-                this.classList.add('active');
-                currentModuleType = this.dataset.moduleType;
-                renderModulesAccordion();
-            });
+        document.getElementById('quickAddDocModuleBtn').addEventListener('click', ()=>{
+            const m = document.getElementById('newDocModule').value.trim();
+            if(m && !modules.includes(m)) set(modulesRef, [...modules, m]);
         });
-
-        // Close modals
-        document.querySelectorAll('.close-modal').forEach(el => {
-            el.addEventListener('click', () => {
-                el.closest('.modal').style.display = 'none';
-            });
+        document.getElementById('globalAddModuleBtn').addEventListener('click', ()=>{
+            const m = document.getElementById('newGlobalModule').value.trim();
+            if(m && !modules.includes(m)) set(modulesRef, [...modules, m]);
         });
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
-        });
-
-        // Post form toggles
-        document.getElementById('bigPostBtn').onclick = () => {
-            document.getElementById('dynamicPostForm').classList.add('show');
-            document.getElementById('bigPostBtn').style.display = 'none';
-        };
-        document.getElementById('cancelPostBtn').onclick = () => {
-            document.getElementById('dynamicPostForm').classList.remove('show');
-            document.getElementById('bigPostBtn').style.display = 'block';
-        };
-        document.getElementById('bigPostDocBtn').onclick = () => {
-            document.getElementById('docPostFormContainer').classList.add('show');
-            document.getElementById('bigPostDocBtn').style.display = 'none';
-        };
-
-        // Price toggles
-        document.getElementById('priceType').addEventListener('change', function() {
-            document.getElementById('paidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
-        });
-        document.getElementById('docPriceType').addEventListener('change', function() {
-            document.getElementById('docPaidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
-        });
-        document.querySelectorAll('input[name="videoSource"]').forEach(r => {
-            r.addEventListener('change', function() {
-                document.getElementById('linkGroup').style.display = this.value === 'link' ? 'block' : 'none';
-                document.getElementById('uploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
-            });
-        });
-        document.querySelectorAll('input[name="docSource"]').forEach(r => {
-            r.addEventListener('change', function() {
-                document.getElementById('docTextGroup').style.display = this.value === 'text' ? 'block' : 'none';
-                document.getElementById('docUploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
-            });
-        });
-
-        // Quick add module
-        document.getElementById('quickAddModuleBtn').addEventListener('click', () => {
-            const newMod = document.getElementById('newModuleNameHome').value.trim();
-            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
-        });
-        document.getElementById('quickAddDocModuleBtn').addEventListener('click', () => {
-            const newMod = document.getElementById('newDocModule').value.trim();
-            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
-        });
-        document.getElementById('globalAddModuleBtn').addEventListener('click', () => {
-            const newMod = document.getElementById('newGlobalModule').value.trim();
-            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
-        });
-
-        // Settings
-        document.getElementById('appToggle').addEventListener('click', async () => {
+        document.getElementById('appToggle').addEventListener('click', async ()=>{
             const snap = await get(maintenanceRef);
-            const newState = !(snap.val() === true);
-            await set(maintenanceRef, newState);
-            document.getElementById('appToggle').classList.toggle('active', newState);
+            await set(maintenanceRef, !(snap.val()===true));
         });
-        document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
-            update(settingsRef, { paymentMethod: e.target.value });
-        });
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
-
-        // Search/filter
+        document.getElementById('logoutBtn').addEventListener('click', ()=> signOut(auth));
         document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
         document.getElementById('filterModuleSelect')?.addEventListener('change', renderPostedGrid);
         document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
@@ -1498,68 +1314,31 @@
     function updateStats() {
         document.getElementById('statVideos').innerText = videos.length;
         document.getElementById('statUsers').innerText = users.length;
-        const totalEarn = transactions.reduce((s, t) => s + (t.amount || 0), 0);
-        document.getElementById('statEarnings').innerText = `ZMW ${totalEarn}`;
+        document.getElementById('statEarnings').innerText = `ZMW ${transactions.reduce((s,t)=>s+(t.amount||0),0)}`;
     }
-
     function updateModuleSelects() {
-        const select = document.getElementById('moduleSelectHome');
-        if (select) select.innerHTML = modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-        const docSelect = document.getElementById('docModuleSelect');
-        if (docSelect) docSelect.innerHTML = modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-        const filter = document.getElementById('filterModuleSelect');
-        if (filter) filter.innerHTML = '<option value="all">All modules</option>' + modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        const sel = (id)=>document.getElementById(id);
+        if(sel('moduleSelectHome')) sel('moduleSelectHome').innerHTML = modules.map(m=>`<option>${m}</option>`).join('');
+        if(sel('docModuleSelect')) sel('docModuleSelect').innerHTML = modules.map(m=>`<option>${m}</option>`).join('');
+        if(sel('filterModuleSelect')) sel('filterModuleSelect').innerHTML = '<option value="all">All</option>'+modules.map(m=>`<option>${m}</option>`).join('');
     }
-
     async function updateBannedList() {
-        const bannedSnap = await get(bannedUsersRef);
-        const bannedUids = bannedSnap.val() ? Object.keys(bannedSnap.val()) : [];
-        const bannedUsersList = users.filter(u => bannedUids.includes(u.uid));
-        const container = document.getElementById('bannedUsersList');
-        container.innerHTML = bannedUsersList.map(u => `
-            <div>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email})
-                <button class="unban-btn" data-uid="${u.uid}" style="background:none; border:none; color:#F5B042;">Unban</button>
-            </div>
-        `).join('') || 'No banned users';
-        document.querySelectorAll('.unban-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                remove(ref(db, `bannedUsers/${btn.dataset.uid}`)).then(() => {
-                    renderUsers();
-                    updateBannedList();
-                });
-            });
-        });
+        const snap = await get(bannedUsersRef);
+        const banned = snap.val()||{};
+        document.getElementById('bannedUsersList').innerHTML = users.filter(u=>banned[u.uid]).map(u=>`<div>${u.email} <button data-uid="${u.uid}" class="unban-btn">Unban</button></div>`).join('');
+        document.querySelectorAll('.unban-btn').forEach(b=>b.addEventListener('click', ()=> remove(ref(db,`bannedUsers/${b.dataset.uid}`))));
     }
-
-    function showToast(message, type = 'info') {
+    function showToast(msg, type='info') {
         const toast = document.createElement('div');
         toast.className = 'toast';
-        let icon = 'bell';
-        if (type === 'payment') icon = 'money-bill';
-        if (type === 'like') icon = 'heart';
-        if (type === 'enroll') icon = 'user-plus';
-        toast.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+        toast.innerHTML = `<i class="fas fa-${type==='payment'?'money-bill':'bell'}"></i> ${msg}`;
         document.getElementById('toastContainer').appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
+        setTimeout(()=>toast.remove(), 4000);
     }
-
     function refreshAll() {
-        renderHomeScrolls();
-        renderPostedGrid();
-        renderUsers();
-        renderModulesAccordion();
-        renderDocsList();
-        renderAccount();
-        updateBannedList();
-        updateStats();
+        renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderModulesAccordion(); renderDocsList(); renderAccount(); updateBannedList(); updateStats();
     }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    function escapeHtml(t){ if(!t)return''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 </script>
 </body>
 </html>
