@@ -385,6 +385,35 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* ----- NEW: Floating Install Button (added) ----- */
+        .floating-install-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: #F5B042;
+            color: black;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            z-index: 999;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid white;
+        }
+        .floating-install-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+        }
+        .floating-install-btn.hidden {
+            display: none;
+        }
+
         @media (max-width: 500px) {
             body { padding: 0.8rem; align-items: flex-start; padding-top: 1.8rem; }
             .form-card { padding: 1.4rem 1.2rem 1.6rem; border-radius: 32px; }
@@ -394,6 +423,13 @@
             .input-icon-group i { left: 16px; font-size: 1rem; }
             .modal-container { padding: 1.5rem; }
             .install-banner { flex-direction: column; gap: 10px; text-align: center; }
+            .floating-install-btn {
+                bottom: 16px;
+                right: 16px;
+                width: 48px;
+                height: 48px;
+                font-size: 1.4rem;
+            }
         }
 
         @media (max-width: 380px) {
@@ -507,6 +543,11 @@
     <span><i class="fas fa-mobile-alt"></i> Install UTOM App for offline access</span>
     <button id="bannerInstallBtn">Install</button>
 </div>
+
+<!-- NEW: Manual floating install button (added) -->
+<button id="manualInstallBtn" class="floating-install-btn" title="Install UTOM App">
+    <i class="fas fa-download"></i>
+</button>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
@@ -757,16 +798,30 @@
     const installAppBtn = document.getElementById('installAppBtn');
     const dismissInstallBtn = document.getElementById('dismissInstallBtn');
     const bannerInstallBtn = document.getElementById('bannerInstallBtn');
+    // NEW: Manual install button
+    const manualInstallBtn = document.getElementById('manualInstallBtn');
+
+    // Helper to hide all install UI when app is installed
+    function hideInstallPrompts() {
+        installPopup.classList.remove('active');
+        installBanner.style.display = 'none';
+        manualInstallBtn.classList.add('hidden');
+    }
+
+    // Check if already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        hideInstallPrompts();
+    }
 
     // Listen for beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show the install popup (or banner) – only if not already installed
-        // We'll show the modal popup (more prominent)
+        // Show the install popup and banner
         installPopup.classList.add('active');
-        // Also optionally show the banner as fallback
         installBanner.style.display = 'flex';
+        // Also show the manual floating button
+        manualInstallBtn.classList.remove('hidden');
     });
 
     // Install button in modal
@@ -776,15 +831,14 @@
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`User response to install: ${outcome}`);
         deferredPrompt = null;
-        installPopup.classList.remove('active');
-        installBanner.style.display = 'none';
+        hideInstallPrompts();
     });
 
     // Dismiss install popup
     dismissInstallBtn.addEventListener('click', () => {
         installPopup.classList.remove('active');
-        // Keep banner maybe? but we'll hide it as well
         installBanner.style.display = 'none';
+        // Keep manual button visible in case they change mind later
     });
 
     // Banner install button
@@ -793,17 +847,29 @@
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         deferredPrompt = null;
-        installBanner.style.display = 'none';
-        installPopup.classList.remove('active');
+        hideInstallPrompts();
     });
 
-    // Also hide banner if user clicks anywhere else? We'll let it stay but can be dismissed
-    // Optional: check if app is already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        // Already installed, hide install prompts
-        installPopup.classList.remove('active');
-        installBanner.style.display = 'none';
-    }
+    // ---- NEW: Manual floating install button logic ----
+    manualInstallBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Show the native install prompt
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Manual install outcome: ${outcome}`);
+            deferredPrompt = null;
+            hideInstallPrompts();
+        } else {
+            // If no prompt available, maybe the app is already installed or not supported
+            alert('The app may already be installed, or your browser does not support installation. If you are on a supported device, try using the browser menu to "Add to Home Screen".');
+        }
+    });
+
+    // Listen for successful installation
+    window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
+        hideInstallPrompts();
+    });
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
