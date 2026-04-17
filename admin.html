@@ -200,7 +200,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
 
-        /* Video Cards (enlarged by 20%) */
+        /* Video Cards & Inline Player (enlarged 20%) */
         .horizontal-scroll {
             display: flex;
             overflow-x: auto;
@@ -209,7 +209,7 @@
             scrollbar-width: thin;
         }
         .video-card-grid {
-            min-width: 180px;  /* increased from 150px */
+            min-width: 180px;      /* 150px * 1.2 */
             background: white;
             border-radius: 20px;
             box-shadow: 0 6px 12px rgba(0,0,0,0.08);
@@ -222,17 +222,17 @@
         }
         .video-card-grid img {
             width: 100%;
-            height: 120px;  /* increased from 100px */
+            height: 120px;          /* 100px * 1.2 */
             object-fit: cover;
         }
         .card-info {
-            padding: 10px;  /* increased */
+            padding: 10px;           /* increased */
         }
         .stats-row {
             display: flex;
             gap: 0.5rem;
             margin: 5px 0;
-            font-size: 0.7rem;  /* slightly larger */
+            font-size: 0.7rem;      /* slightly larger */
             background: #fef5e8;
             padding: 4px 8px;
             border-radius: 30px;
@@ -598,10 +598,9 @@
 </head>
 <body>
 
-<!-- Toast container -->
+<!-- Toast container for slide notifications -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Top Bar -->
 <div class="top-brand">
     <div class="logo-area">
         <div class="logo-img">
@@ -621,7 +620,6 @@
     </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="nav-five">
     <button class="nav-five-btn active" data-section="home"><i class="fas fa-home"></i> HOME</button>
     <button class="nav-five-btn" data-section="posted"><i class="fas fa-video"></i> POSTED</button>
@@ -641,16 +639,44 @@
     </div>
 </div>
 
+<!-- Video Player Modal -->
+<div id="videoPlayerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="modalPlayerContainer"></div>
+        <div>
+            <h3 id="modalVideoTitle"></h3>
+            <p id="modalVideoInstructor"></p>
+        </div>
+    </div>
+</div>
+
 <!-- User Details Modal -->
 <div id="userDetailsModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
         <h3><i class="fas fa-user-circle"></i> User Profile</h3>
-        <div id="userProfileContent"></div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-            <span>Ban User</span>
-            <div id="userBanToggle" class="toggle-switch"></div>
+        <table id="userModalTable" style="width:100%; border-collapse: collapse;"></table>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+            <button id="userModalBanBtn" class="btn-outline"><i class="fas fa-ban"></i> Toggle Ban</button>
         </div>
+    </div>
+</div>
+
+<!-- Document Viewer Modal -->
+<div id="docViewerModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+        <span class="close-modal">&times;</span>
+        <div id="docViewerContent" style="padding: 20px; background: #fafafa; border-radius: 20px;"></div>
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div id="txModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Transaction Details</h3>
+        <table id="txModalTable" style="width:100%;"></table>
     </div>
 </div>
 
@@ -714,7 +740,9 @@
                 <div class="video-source-group" id="uploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
                     <div id="uploadProgressArea" style="margin-top:10px;">
-                        <div class="progress-container"><div class="progress-fill" id="uploadProgressFill" style="width:0%"></div></div>
+                        <div class="progress-container">
+                            <div class="progress-fill" id="uploadProgressFill" style="width:0%"></div>
+                        </div>
                         <span id="uploadPercentText">0%</span>
                     </div>
                     <input type="hidden" id="cloudinaryVideoUrl">
@@ -824,7 +852,9 @@
                 <div id="docUploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryDocUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
                     <div id="docUploadProgress">
-                        <div class="progress-container"><div class="progress-fill" id="docProgressFill" style="width:0%"></div></div>
+                        <div class="progress-container">
+                            <div class="progress-fill" id="docProgressFill" style="width:0%"></div>
+                        </div>
                         <span id="docPercentText">0%</span>
                     </div>
                     <input type="hidden" id="cloudinaryDocUrl">
@@ -839,7 +869,7 @@
     </div>
 </div>
 
-<!-- ACCOUNT SECTION -->
+<!-- ACCOUNT SECTION (Full Page) -->
 <div id="accountSection" class="section">
     <div class="card-glass" style="background: linear-gradient(145deg, #fff8ed, #ffe8d4);">
         <h2 style="color:#b45f06;">💰 Earnings & Transactions</h2>
@@ -972,36 +1002,45 @@
         document.getElementById('homeFreeScroll').innerHTML = free.map(v => buildVideoCard(v)).join('');
     }
 
-    function buildVideoCard(v) {
+    function buildVideoCard(v, withActions = false) {
         const uniqueViews = v.uniqueViewers ? Object.keys(v.uniqueViewers).length : (v.views||0);
         const likes = v.likes || 0;
         const enrolled = transactions.filter(t => t.videoId === v.id).length;
         const paidCount = transactions.filter(t => t.videoId === v.id && t.amount > 0).length;
-        return `<div class="video-card-grid" data-id="${v.id}">
-            <img src="${v.thumbnail || 'https://picsum.photos/300/180'}">
-            <div class="card-info">
-                <h4>${escapeHtml(v.title)}</h4>
-                <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
-                <div class="stats-row">
-                    <span><i class="fas fa-eye"></i> ${uniqueViews}</span>
-                    <span><i class="fas fa-heart"></i> ${likes}</span>
-                    <span><i class="fas fa-user-graduate"></i> ${enrolled}</span>
+        return `
+            <div class="video-card-grid" data-id="${v.id}">
+                <img src="${v.thumbnail || 'https://picsum.photos/300/180'}" onerror="this.src='https://picsum.photos/300/180'">
+                <div class="card-info">
+                    <h4>${escapeHtml(v.title)}</h4>
+                    <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
+                    <div class="stats-row">
+                        <span><i class="fas fa-eye"></i> ${uniqueViews}</span>
+                        <span><i class="fas fa-heart"></i> ${likes}</span>
+                        <span><i class="fas fa-user-graduate"></i> ${enrolled}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
+                        <span><i class="fas fa-dollar-sign"></i> ${paidCount} paid</span>
+                    </div>
+                    <button class="play-video-btn" data-id="${v.id}">
+                        <i class="fas fa-play"></i> Watch
+                    </button>
                 </div>
-                <div class="stats-row">
-                    <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
-                    <span><i class="fas fa-dollar-sign"></i> ${paidCount} paid</span>
-                </div>
-                <button class="play-video-btn" data-id="${v.id}"><i class="fas fa-play"></i> Watch</button>
             </div>
-        </div>`;
+        `;
     }
 
     function renderPostedGrid() {
         const search = document.getElementById('searchVideoInput')?.value.toLowerCase() || '';
         const modFilter = document.getElementById('filterModuleSelect')?.value || 'all';
         const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
-        let filtered = videos.filter(v => (v.title.toLowerCase().includes(search)||v.instructor.toLowerCase().includes(search)) && (modFilter==='all'||v.module===modFilter) && (priceFilter==='all'||(priceFilter==='free'?v.price===0:v.price>0)));
-        document.getElementById('postedVideosGrid').innerHTML = filtered.map(v=>buildVideoCard(v)).join('')||'<div>No videos</div>';
+        let filtered = videos.filter(v =>
+            (v.title.toLowerCase().includes(search) || v.instructor.toLowerCase().includes(search)) &&
+            (modFilter === 'all' || v.module === modFilter) &&
+            (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
+        );
+        const grid = document.getElementById('postedVideosGrid');
+        grid.innerHTML = filtered.map(v => buildVideoCard(v, true)).join('') || '<div>No videos</div>';
         attachVideoActions();
     }
 
@@ -1009,7 +1048,7 @@
         document.querySelectorAll('.play-video-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const video = videos.find(v=>v.id===btn.dataset.id);
+                const video = videos.find(v => v.id === btn.dataset.id);
                 if(video) playVideoInline(video);
             });
         });
@@ -1020,93 +1059,89 @@
         const playerDiv = document.getElementById('globalInlinePlayer');
         let embed = '';
         const url = video.videoUrl;
-        if(url.includes('youtube.com')||url.includes('youtu.be')){
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
             let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
             embed = `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
-        } else if(url.includes('vimeo.com')){
-            embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+        } else if (url.includes('vimeo.com')) {
+            let id = url.split('/').pop();
+            embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
         } else {
             embed = `<video controls autoplay style="width:100%; max-height:250px;"><source src="${url}" type="video/mp4"></video>`;
         }
         container.innerHTML = embed;
         playerDiv.style.display = 'block';
         const viewers = video.uniqueViewers || {};
-        if(!viewers[currentAdmin?.uid]) {
+        if (!viewers[currentAdmin?.uid]) {
             viewers[currentAdmin?.uid] = true;
             update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views||0)+1 });
         }
     }
 
-    document.getElementById('closeInlinePlayer').addEventListener('click', ()=>{
+    document.getElementById('closeInlinePlayer').addEventListener('click', () => {
         document.getElementById('globalInlinePlayer').style.display = 'none';
         document.getElementById('inlinePlayerEmbed').innerHTML = '';
     });
 
     function renderUsers() {
         const container = document.getElementById('usersListContainer');
-        Promise.all(users.map(async u => ({...u, banned: (await get(ref(db,`bannedUsers/${u.uid}`))).val()===true})))
-            .then(usersWithBan => {
-                container.innerHTML = usersWithBan.map(u => `
-                    <div class="user-row" data-uid="${u.uid}">
-                        <div style="flex:1;">${escapeHtml(u.email)}</div>
-                        <div style="flex:1; text-align:center;"><strong>${escapeHtml(u.firstName||'')} ${escapeHtml(u.lastName||'')}</strong></div>
-                        <div style="flex:1; text-align:right;">${escapeHtml(u.phone||'N/A')} ${u.banned?'<span class="badge-banned">Banned</span>':''}</div>
-                    </div>
-                `).join('');
-                document.querySelectorAll('.user-row').forEach(row => row.addEventListener('click', ()=>{
-                    const user = users.find(u=>u.uid===row.dataset.uid);
-                    if(user) showUserDetailsModal(user);
-                }));
-            });
+        Promise.all(users.map(async u => {
+            const bannedSnap = await get(ref(db, `bannedUsers/${u.uid}`));
+            return { ...u, banned: bannedSnap.val() === true };
+        })).then(usersWithBan => {
+            container.innerHTML = usersWithBan.map(u => `
+                <div class="user-row" data-uid="${u.uid}">
+                    <div><strong>${escapeHtml(u.firstName||'')} ${escapeHtml(u.lastName||'')}</strong><br><span style="font-size:0.7rem;">${escapeHtml(u.email)}</span></div>
+                    <div>${u.banned ? '<span class="badge-banned">Banned</span>' : ''}</div>
+                </div>
+            `).join('');
+            document.querySelectorAll('.user-row').forEach(row => row.addEventListener('click', () => {
+                const user = users.find(u => u.uid === row.dataset.uid);
+                if(user) showUserDetailsModal(user);
+            }));
+        });
     }
 
-    async function showUserDetailsModal(user) {
-        const modal = document.getElementById('userDetailsModal');
-        const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-        const isBanned = bannedSnap.val() === true;
-        const userVideosWatched = videos.filter(v => v.uniqueViewers && v.uniqueViewers[user.uid]).length;
-        const userLikes = videos.filter(v => v.likedBy && v.likedBy[user.uid]).length;
-        const enrolled = transactions.filter(t => t.userId === user.uid).length;
-        const joinDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown';
-        document.getElementById('userProfileContent').innerHTML = `
-            <p><strong>Name:</strong> ${escapeHtml(user.firstName||'')} ${escapeHtml(user.lastName||'')}</p>
-            <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(user.phone||'N/A')}</p>
-            <p><strong>Joined:</strong> ${joinDate}</p>
-            <p><strong>Videos Watched:</strong> ${userVideosWatched}</p>
-            <p><strong>Liked Videos:</strong> ${userLikes}</p>
-            <p><strong>Courses Enrolled:</strong> ${enrolled}</p>
-        `;
-        const toggle = document.getElementById('userBanToggle');
-        toggle.classList.toggle('active', isBanned);
-        toggle.onclick = () => {
-            const newState = !toggle.classList.contains('active');
-            if(newState) set(ref(db, `bannedUsers/${user.uid}`), true);
-            else remove(ref(db, `bannedUsers/${user.uid}`));
-            toggle.classList.toggle('active', newState);
-            renderUsers(); updateBannedList();
-        };
-        modal.style.display = 'flex';
+    function showUserDetailsModal(user) {
+        get(ref(db, `bannedUsers/${user.uid}`)).then(snap => {
+            const isBanned = snap.val() === true;
+            const table = document.getElementById('userModalTable');
+            table.innerHTML = `
+                <tr><td>Name</td><td>${escapeHtml(user.firstName||'')} ${escapeHtml(user.lastName||'')}</td></tr>
+                <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
+                <tr><td>Phone</td><td>${escapeHtml(user.phone||'N/A')}</td></tr>
+                <tr><td>Status</td><td>${isBanned ? '<span style="color:red;">Banned</span>' : 'Active'}</td></tr>
+            `;
+            const modal = document.getElementById('userDetailsModal');
+            modal.style.display = 'flex';
+            modal.dataset.uid = user.uid;
+            document.getElementById('userModalBanBtn').onclick = () => {
+                if (isBanned) remove(ref(db, `bannedUsers/${user.uid}`));
+                else set(ref(db, `bannedUsers/${user.uid}`), true);
+                modal.style.display = 'none';
+                renderUsers(); updateBannedList();
+            };
+        });
     }
 
     function renderModulesAccordion() {
         const container = document.getElementById('modulesAccordionContainer');
-        if(currentModuleType === 'video') {
+        if (currentModuleType === 'video') {
             container.innerHTML = modules.map(mod => {
-                const modVideos = videos.filter(v=>v.module===mod);
-                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> ${mod} (${modVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${modVideos.map(v=>buildVideoCard(v)).join('')||'<div>No videos</div>'}</div></div>`;
+                const modVideos = videos.filter(v => v.module === mod);
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> ${escapeHtml(mod)} (${modVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${modVideos.map(v=>buildVideoCard(v)).join('')||'<div>No videos</div>'}</div></div>`;
             }).join('');
         } else {
             container.innerHTML = modules.map(mod => {
-                const modDocs = docs.filter(d=>d.module===mod);
-                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder-open"></i> ${mod} (${modDocs.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos" style="flex-direction:column;">${modDocs.map(d=>buildDocCard(d)).join('')||'<div>No documents</div>'}</div></div>`;
+                const modDocs = docs.filter(d => d.module === mod);
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder-open"></i> ${escapeHtml(mod)} (${modDocs.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos" style="flex-direction:column;">${modDocs.map(d=>buildDocCard(d)).join('')||'<div>No documents</div>'}</div></div>`;
             }).join('');
         }
         document.querySelectorAll('.module-header').forEach(header => {
             header.addEventListener('click', () => {
                 const videosDiv = header.nextElementSibling;
                 videosDiv.classList.toggle('show');
-                header.querySelector('.fa-chevron-down').style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : '';
+                const icon = header.querySelector('.fa-chevron-down');
+                icon.style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : '';
             });
         });
         attachVideoActions();
@@ -1114,13 +1149,8 @@
     }
 
     function buildDocCard(doc) {
-        return `<div class="doc-card">
-            <h3>${escapeHtml(doc.title)}</h3>
-            <div class="doc-instructor">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.module)}</div>
-            <div class="doc-preview">${escapeHtml(doc.description||'')}</div>
-            <div class="stats-row"><span><i class="fas fa-eye"></i> ${doc.reads||0}</span><span><i class="fas fa-heart"></i> ${doc.likes||0}</span></div>
-            <div class="doc-footer"><span>${doc.price===0?'FREE':`ZMW ${doc.price}`}</span><button class="read-btn" data-docid="${doc.id}"><i class="fas fa-book-open"></i> Read</button></div>
-        </div>`;
+        const reads = doc.reads || 0, likes = doc.likes || 0;
+        return `<div class="doc-card"><h3>${escapeHtml(doc.title)}</h3><div class="doc-instructor">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.module)}</div><div class="doc-preview">${escapeHtml(doc.description||'')}</div><div class="stats-row"><span><i class="fas fa-eye"></i> ${reads}</span><span><i class="fas fa-heart"></i> ${likes}</span></div><div class="doc-footer"><span>${doc.price===0?'FREE':`ZMW ${doc.price}`}</span><button class="read-btn" data-docid="${doc.id}"><i class="fas fa-book-open"></i> Read</button></div></div>`;
     }
 
     function renderDocsList() {
@@ -1153,17 +1183,17 @@
     }
 
     function renderNotificationsPage() {
-        const container = document.getElementById('notificationsList');
-        container.innerHTML = notifications.map(n=>`<div class="notif-item" data-type="${n.type}" data-target="${n.targetId}"><i class="fas fa-${n.type==='payment'?'money-bill':'bell'}"></i> ${n.message}</div>`).join('');
+        document.getElementById('notificationsList').innerHTML = notifications.map(n=>`<div class="notif-item"><i class="fas fa-bell"></i> ${n.message}</div>`).join('');
     }
 
     function updateNotifBadge() {
         const count = notifications.length;
         document.getElementById('notifCount').style.display = count?'inline-block':'none';
         document.getElementById('notifCount').innerText = count>9?'9+':count;
+        document.getElementById('notifDropdown').innerHTML = notifications.map(n=>`<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n.message)}</div>`).join('');
     }
 
-    // Cloudinary setup (unchanged)
+    // Cloudinary Upload
     function setupCloudinary(btnId, urlId, progId, percId, isVideo=true) {
         document.getElementById(btnId).addEventListener('click', ()=>{
             cloudinary.openUploadWidget({ cloudName:CLOUD_NAME, uploadPreset:UPLOAD_PRESET, sources:['local','url'], maxFileSize:50000000, resourceType:isVideo?'video':'auto' },
@@ -1193,35 +1223,29 @@
     // Form submissions
     document.getElementById('homePostForm').addEventListener('submit', async (e)=>{
         e.preventDefault();
-        const title = document.getElementById('videoTitle').value.trim();
-        const instructor = document.getElementById('instructorName').value.trim();
+        const title = document.getElementById('videoTitle').value.trim(), instructor = document.getElementById('instructorName').value.trim();
         if(!title||!instructor) return alert('Required');
         const price = document.getElementById('priceType').value==='free'?0:parseFloat(document.getElementById('paidAmount').value)||0;
         const module = document.getElementById('moduleSelectHome').value;
         let videoUrl, thumbnail;
         if(document.querySelector('input[name="videoSource"]:checked').value==='link'){
-            videoUrl = document.getElementById('videoUrlInput').value;
-            thumbnail = document.getElementById('linkThumbnailUrl').value||'https://picsum.photos/300/180';
+            videoUrl = document.getElementById('videoUrlInput').value; thumbnail = document.getElementById('linkThumbnailUrl').value||'https://picsum.photos/300/180';
         } else {
-            videoUrl = document.getElementById('cloudinaryVideoUrl').value;
-            thumbnail = document.getElementById('generatedThumbnailUrl').value;
+            videoUrl = document.getElementById('cloudinaryVideoUrl').value; thumbnail = document.getElementById('generatedThumbnailUrl').value;
         }
         if(!videoUrl) return alert('Video URL required');
         const newRef = push(videosRef);
         await set(newRef, { title, instructor, price, thumbnail, module, description: document.getElementById('videoDesc').value, videoUrl, createdAt: serverTimestamp(), views:0, likes:0, uniqueViewers:{} });
-        document.getElementById('dynamicPostForm').classList.remove('show');
-        document.getElementById('bigPostBtn').style.display='block';
+        document.getElementById('dynamicPostForm').classList.remove('show'); document.getElementById('bigPostBtn').style.display='block';
         showToast('Video published!');
     });
 
     document.getElementById('docPostForm').addEventListener('submit', async (e)=>{
         e.preventDefault();
-        const title = document.getElementById('docTitle').value.trim();
-        const instructor = document.getElementById('docInstructor').value.trim();
+        const title = document.getElementById('docTitle').value.trim(), instructor = document.getElementById('docInstructor').value.trim();
         if(!title||!instructor) return alert('Required');
         const price = document.getElementById('docPriceType').value==='free'?0:parseFloat(document.getElementById('docPaidAmount').value)||0;
-        const module = document.getElementById('docModuleSelect').value;
-        const description = document.getElementById('docDescription').value;
+        const module = document.getElementById('docModuleSelect').value, description = document.getElementById('docDescription').value;
         let content='', docUrl='';
         if(document.querySelector('input[name="docSource"]:checked').value==='text'){
             content = document.getElementById('docContentHidden').value;
@@ -1232,12 +1256,11 @@
         }
         const newRef = push(docsRef);
         await set(newRef, { title, instructor, price, module, description, content, docUrl, createdAt: serverTimestamp(), reads:0, likes:0 });
-        document.getElementById('docPostFormContainer').classList.remove('show');
-        document.getElementById('bigPostDocBtn').style.display='block';
+        document.getElementById('docPostFormContainer').classList.remove('show'); document.getElementById('bigPostDocBtn').style.display='block';
         showToast('Document published!');
     });
 
-    // Editor
+    // Full Page Editor
     document.getElementById('openFullEditorBtn').addEventListener('click', ()=>{
         document.getElementById('fullPageEditor').innerHTML = document.getElementById('docContentHidden').value;
         document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
@@ -1288,7 +1311,6 @@
             document.getElementById('docTextGroup').style.display = e.target.value==='text'?'block':'none';
             document.getElementById('docUploadGroup').style.display = e.target.value==='upload'?'block':'none';
         }));
-        // Quick module adds
         document.getElementById('quickAddModuleBtn').addEventListener('click', ()=>{
             const m = document.getElementById('newModuleNameHome').value.trim();
             if(m && !modules.includes(m)) set(modulesRef, [...modules, m]);
@@ -1339,6 +1361,11 @@
         renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderModulesAccordion(); renderDocsList(); renderAccount(); updateBannedList(); updateStats();
     }
     function escapeHtml(t){ if(!t)return''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+    // Simulate events for toast demo (original)
+    setTimeout(() => showToast('New learner registered!', 'enroll'), 5000);
+    setTimeout(() => showToast('Video received a like!', 'like'), 8000);
+    setTimeout(() => showToast('New payment of ZMW 50', 'payment'), 12000);
 </script>
 </body>
 </html>
