@@ -399,9 +399,15 @@
             border-radius: 50%;
             display: inline-block;
         }
-        .status-dot.pending { background: #F5B042; }
-        .status-dot.approved { background: #2ecc71; }
-        .status-dot.rejected { background: #e74c3c; }
+        .status-dot.pending {
+            background: #F5B042;
+        }
+        .status-dot.approved {
+            background: #2ecc71;
+        }
+        .status-dot.rejected {
+            background: #e74c3c;
+        }
         /* ----- MODULES TOGGLE ----- */
         .module-type-toggle {
             display: flex;
@@ -726,7 +732,10 @@
     <div class="modal-content">
         <span class="close-modal">&times;</span>
         <div id="modalPlayerContainer"></div>
-        <div><h3 id="modalVideoTitle"></h3><p id="modalVideoInstructor"></p></div>
+        <div>
+            <h3 id="modalVideoTitle"></h3>
+            <p id="modalVideoInstructor"></p>
+        </div>
     </div>
 </div>
 <div id="userDetailsModal" class="modal">
@@ -1286,7 +1295,6 @@
         if (doc.docUrl) {
             html += `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;"></iframe>`;
         } else {
-            // Render content as HTML to preserve formatting (bold, line breaks, etc.)
             html += `<div class="doc-full-content">${doc.content || ''}</div>`;
         }
         document.getElementById('docFullContent').innerHTML = html;
@@ -1344,10 +1352,19 @@
         }
         content.innerHTML = html;
         if (tx.status === 'pending') {
-            document.getElementById('modalApproveBtn').addEventListener('click', () => {
-                update(ref(db, `transactions/${tx.id}`), { status: 'approved' });
+            document.getElementById('modalApproveBtn').addEventListener('click', async () => {
+                await update(ref(db, `transactions/${tx.id}`), { status: 'approved' });
+                // Deduct from user wallet
+                const userSnap = await get(ref(db, `users/${tx.userId}`));
+                if (userSnap.exists()) {
+                    const userData = userSnap.val();
+                    const newWallet = (userData.wallet || 0) - tx.amount;
+                    await update(ref(db, `users/${tx.userId}`), { wallet: newWallet });
+                }
+                // Mark purchase as approved for user
+                await set(ref(db, `approvedPurchases/${tx.userId}/${tx.itemId || tx.videoId || tx.docId}`), true);
                 document.getElementById('txDetailModal').style.display = 'none';
-                showToast('Transaction approved', 'payment');
+                showToast('Transaction approved and wallet deducted', 'payment');
             });
             document.getElementById('modalRejectBtn').addEventListener('click', () => {
                 update(ref(db, `transactions/${tx.id}`), { status: 'rejected' });
