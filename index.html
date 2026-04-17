@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM | Secure Access</title>
-    <!-- NEW PWA Manifest (replaces old) -->
+    <title>UTOM | Secure Access — Install App</title>
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/utom/manifest.json">
+    <!-- Theme color for browser -->
+    <meta name="theme-color" content="#F5B042">
+    <!-- Apple touch icon (optional) -->
+    <link rel="apple-touch-icon" href="/utom/icons/icon-192.png">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase SDKs -->
@@ -340,38 +344,35 @@
             animation: spin 1s linear infinite;
         }
 
-        /* NEW Install button (simple, clean) */
-        .install-app-btn-container {
-            width: 100%;
-            margin-top: 0.5rem;
+        /* Install button (floating) */
+        .install-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #F5B042;
+            color: black;
+            border-radius: 60px;
+            padding: 12px 20px;
             display: flex;
-            justify-content: center;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            animation: slideUp 0.3s ease;
         }
-        #installBtn {
-            background: #000000;
+        .install-banner button {
+            background: black;
             color: #F5B042;
             border: none;
-            padding: 12px 28px;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 0.95rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            width: auto;
-            min-width: 200px;
         }
-        #installBtn i {
-            margin-right: 8px;
-            color: #F5B042;
-        }
-        #installBtn:hover {
-            transform: translateY(-2px);
-            background: #1a1a1a;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-        #installBtn.hidden-install {
-            display: none;
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         @keyframes fadeSlideDown {
@@ -392,7 +393,7 @@
             .pill-input { padding: 12px 16px 12px 44px; font-size: 0.95rem; }
             .input-icon-group i { left: 16px; font-size: 1rem; }
             .modal-container { padding: 1.5rem; }
-            #installBtn { padding: 10px 20px; font-size: 0.85rem; min-width: 160px; }
+            .install-banner { flex-direction: column; gap: 10px; text-align: center; }
         }
 
         @media (max-width: 380px) {
@@ -471,13 +472,7 @@
             </form>
         </div>
     </div>
-    
     <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support</div>
-    
-    <!-- NEW INSTALL BUTTON (simple popup trigger for PWA) -->
-    <div class="install-app-btn-container">
-        <button id="installBtn" class="hidden-install"><i class="fas fa-download"></i> Install UTOM App</button>
-    </div>
 </div>
 
 <!-- FORGOT PASSWORD MODAL (Firebase reset email) -->
@@ -495,6 +490,22 @@
             <button id="sendResetLinkBtn" class="btn-yellow-black"><i class="fas fa-paper-plane"></i> Send reset email</button>
         </div>
     </div>
+</div>
+
+<!-- Install App Popup (shown if app not installed) -->
+<div id="installPopup" class="modal-overlay">
+    <div class="modal-container">
+        <h3><i class="fas fa-download" style="color:#F5B042;"></i> Install UTOM App</h3>
+        <p>Get a faster, offline‑ready experience with our app. Install it on your device for easy access.</p>
+        <button id="installAppBtn" class="btn-yellow-black" style="margin-bottom: 10px;"><i class="fas fa-download"></i> Install Now</button>
+        <button id="dismissInstallBtn" class="btn-outline-dark btn-yellow-black" style="background: transparent;">Maybe Later</button>
+    </div>
+</div>
+
+<!-- Floating install banner (alternative) -->
+<div id="installBanner" class="install-banner" style="display: none;">
+    <span><i class="fas fa-mobile-alt"></i> Install UTOM App for offline access</span>
+    <button id="bannerInstallBtn">Install</button>
 </div>
 
 <script type="module">
@@ -739,59 +750,66 @@
     showSignupBtn.addEventListener('click', showSignupPanel);
     backToLoginBtn.addEventListener('click', showLoginPanel);
 
-    // ==================== NEW PWA INSTALL LOGIC ====================
-    // Remove all old PWA cruft and provide clean install button
-    let installPromptEvent = null;
-    const installButton = document.getElementById('installBtn');
-    
-    // Listen for the beforeinstallprompt event (browser triggers when PWA installable)
+    // ========== PWA INSTALL PROMPT LOGIC ==========
+    let deferredPrompt = null;
+    const installPopup = document.getElementById('installPopup');
+    const installBanner = document.getElementById('installBanner');
+    const installAppBtn = document.getElementById('installAppBtn');
+    const dismissInstallBtn = document.getElementById('dismissInstallBtn');
+    const bannerInstallBtn = document.getElementById('bannerInstallBtn');
+
+    // Listen for beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        installPromptEvent = e;
-        // Show the install button
-        installButton.classList.remove('hidden-install');
+        deferredPrompt = e;
+        // Show the install popup (or banner) – only if not already installed
+        // We'll show the modal popup (more prominent)
+        installPopup.classList.add('active');
+        // Also optionally show the banner as fallback
+        installBanner.style.display = 'flex';
     });
-    
-    // Handle install button click
-    installButton.addEventListener('click', async () => {
-        if (!installPromptEvent) {
-            // Fallback: maybe already installed or not available
-            alert('App installation is not available right now. Make sure you are using a supported browser (Chrome, Edge, Samsung Internet).');
-            return;
-        }
-        // Show the native install prompt
-        installPromptEvent.prompt();
-        const { outcome } = await installPromptEvent.userChoice;
-        console.log(`Install prompt outcome: ${outcome}`);
-        // Reset the deferred prompt variable; can't be used again
-        installPromptEvent = null;
-        // Hide the button after user responds (optional)
-        if (outcome === 'accepted') {
-            installButton.classList.add('hidden-install');
-        }
+
+    // Install button in modal
+    installAppBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to install: ${outcome}`);
+        deferredPrompt = null;
+        installPopup.classList.remove('active');
+        installBanner.style.display = 'none';
     });
-    
-    // Hide install button if app is already installed (standalone mode)
-    const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if (isAppInstalled) {
-        installButton.classList.add('hidden-install');
+
+    // Dismiss install popup
+    dismissInstallBtn.addEventListener('click', () => {
+        installPopup.classList.remove('active');
+        // Keep banner maybe? but we'll hide it as well
+        installBanner.style.display = 'none';
+    });
+
+    // Banner install button
+    bannerInstallBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.style.display = 'none';
+        installPopup.classList.remove('active');
+    });
+
+    // Also hide banner if user clicks anywhere else? We'll let it stay but can be dismissed
+    // Optional: check if app is already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        // Already installed, hide install prompts
+        installPopup.classList.remove('active');
+        installBanner.style.display = 'none';
     }
-    
-    // Also listen for appinstalled event to hide button after installation
-    window.addEventListener('appinstalled', () => {
-        installButton.classList.add('hidden-install');
-        installPromptEvent = null;
-    });
-    
-    // Register the NEW Service Worker for offline capabilities & PWA requirements
+
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/utom/sw.js')
-            .then(reg => {
-                console.log('✅ New Service Worker registered successfully:', reg);
-            })
-            .catch(err => {
-                console.error('❌ Service Worker registration failed:', err);
-            });
+            .then(reg => console.log('Service Worker registered:', reg))
+            .catch(err => console.error('SW registration failed:', err));
     }
 </script>
 </body>
