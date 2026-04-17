@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM · Admin Studio</title>
+    <title>UTOM · Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
@@ -35,42 +35,49 @@
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .logo-img {
-            width: 32px;
-            height: 32px;
-            background: #F5B042;
+            width: 38px;
+            height: 38px;
             border-radius: 12px;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
+            background: #F5B042;
+        }
+        .logo-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .logo-text {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 800;
             background: linear-gradient(135deg, #E89E2A, #F5B042);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
-        .badge-tutor {
+        .account-badge {
             background: #F5B04220;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 30px;
             color: #F5B042;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
 
         /* Notifications */
         .notif-bell {
             position: relative;
             cursor: pointer;
-            font-size: 1.2rem;
-            color: #6c6f78;
+            font-size: 1.3rem;
+            color: #4a4e5c;
         }
         .notif-badge {
             position: absolute;
@@ -88,18 +95,51 @@
             right: 0;
             background: white;
             border-radius: 20px;
-            width: 260px;
+            width: 280px;
             max-height: 350px;
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             display: none;
             z-index: 100;
         }
-        .notif-dropdown.show { display: block; }
+        .notif-dropdown.show {
+            display: block;
+        }
         .notif-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        /* Toast notifications (slide) */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: #1e1e2f;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+        }
+        .toast i {
+            color: #F5B042;
+            font-size: 1.2rem;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         /* Bottom Navigation */
@@ -130,7 +170,9 @@
             color: #6c6f78;
             min-width: 48px;
         }
-        .nav-five-btn i { font-size: 1.1rem; }
+        .nav-five-btn i {
+            font-size: 1.2rem;
+        }
         .nav-five-btn.active i {
             color: #F5B042;
             text-shadow: 0 0 6px rgba(245,176,66,0.8);
@@ -142,20 +184,23 @@
             display: none;
             animation: fade 0.2s;
         }
-        .section.active-section { display: block; }
+        .section.active-section {
+            display: block;
+        }
         @keyframes fade {
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
         .card-glass {
             background: white;
             border-radius: 24px;
-            padding: 0.9rem;
+            padding: 1rem;
             margin: 0.7rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
 
-        /* Video Cards */
+        /* Video Cards & Inline Player */
         .horizontal-scroll {
             display: flex;
             overflow-x: auto;
@@ -172,13 +217,17 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .video-card-grid:hover { transform: translateY(-2px); }
+        .video-card-grid:hover {
+            transform: translateY(-2px);
+        }
         .video-card-grid img {
             width: 100%;
             height: 100px;
             object-fit: cover;
         }
-        .card-info { padding: 8px; }
+        .card-info {
+            padding: 8px;
+        }
         .stats-row {
             display: flex;
             gap: 0.5rem;
@@ -188,9 +237,8 @@
             padding: 3px 6px;
             border-radius: 30px;
             justify-content: space-between;
+            flex-wrap: wrap;
         }
-
-        /* Play Button Style (consistent across app) */
         .play-video-btn {
             background: #F5B042;
             border: none;
@@ -206,10 +254,127 @@
         }
         .play-video-btn:hover {
             background: #e6a030;
-            transform: scale(1.02);
         }
-        .play-video-btn i {
-            font-size: 0.7rem;
+
+        /* Inline Player */
+        .inline-player-container {
+            background: #000;
+            border-radius: 20px;
+            margin: 0.7rem 0.7rem 0;
+            overflow: hidden;
+        }
+        .inline-player-container video,
+        .inline-player-container iframe {
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+            background: black;
+        }
+        .player-close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* DOC Cards (1x1 grid) */
+        .docs-grid-1col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .doc-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+            transition: 0.15s;
+            border: 1px solid #fff3e0;
+        }
+        .doc-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        .doc-instructor {
+            color: #a0a5b0;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+        }
+        .doc-preview {
+            color: #3a3e4a;
+            margin: 12px 0;
+            line-height: 1.4;
+            font-size: 0.85rem;
+        }
+        .doc-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+        }
+        .read-btn {
+            background: #F5B042;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+        }
+
+        /* Modules toggle */
+        .module-type-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .toggle-option {
+            padding: 6px 18px;
+            border-radius: 40px;
+            background: #eee;
+            cursor: pointer;
+        }
+        .toggle-option.active {
+            background: #F5B042;
+            color: white;
+        }
+
+        /* Account page colorful */
+        .stat-cards {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .stat-card {
+            background: linear-gradient(145deg, #fff5e6, #ffe6c7);
+            flex: 1;
+            padding: 16px;
+            border-radius: 24px;
+            text-align: center;
+        }
+        .transactions-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Progress bar for upload */
+        .progress-container {
+            width: 100%;
+            background: #ddd;
+            border-radius: 20px;
+            margin-top: 8px;
+            height: 8px;
+        }
+        .progress-fill {
+            height: 8px;
+            border-radius: 20px;
+            background: #F5B042;
+            width: 0%;
         }
 
         /* Post Video Form */
@@ -230,7 +395,9 @@
             display: none;
             border: 1px solid #ffe1b3;
         }
-        .toggle-form.show { display: block; }
+        .toggle-form.show {
+            display: block;
+        }
         .form-row {
             display: flex;
             flex-wrap: wrap;
@@ -294,28 +461,8 @@
             gap: 10px;
             flex-wrap: wrap;
         }
-        .module-videos.show { display: flex; }
-        .module-video-card {
-            width: calc(50% - 5px);
-            background: white;
-            border-radius: 16px;
-            padding: 8px;
-            cursor: pointer;
+        .module-videos.show {
             display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .module-video-card img {
-            width: 55px;
-            height: 55px;
-            object-fit: cover;
-            border-radius: 14px;
-        }
-        .delete-mini {
-            background: none;
-            border: none;
-            color: #d9534f;
-            cursor: pointer;
         }
 
         /* Users List */
@@ -327,10 +474,7 @@
             padding: 10px 0;
             border-bottom: 1px solid #eee;
             gap: 8px;
-        }
-        .user-actions {
-            display: flex;
-            gap: 8px;
+            cursor: pointer;
         }
         .badge-banned {
             background: #e6394620;
@@ -375,36 +519,6 @@
             color: #888;
         }
 
-        /* Video Player Modal (matches user experience) */
-        .video-player-container {
-            background: black;
-            border-radius: 24px;
-            overflow: hidden;
-        }
-        .video-player-container video,
-        .video-player-container iframe {
-            width: 100%;
-            max-height: 60vh;
-            background: black;
-        }
-        .video-info {
-            padding: 1rem 0;
-        }
-
-        /* Certificate Paper (user view) */
-        .certificate-paper {
-            border: 2px solid #F5B042;
-            border-radius: 24px;
-            padding: 2rem;
-            margin: 1rem 0;
-            text-align: center;
-            background: white;
-        }
-        .cert-logo { font-size: 3rem; color: #F5B042; margin-bottom: 1rem; }
-        .cert-title { font-size: 2rem; font-weight: 300; letter-spacing: 2px; }
-        .cert-name { font-size: 2rem; font-weight: 800; font-family: 'Georgia', serif; margin: 1rem 0; }
-        .cert-details { margin: 1rem 0; font-size: 1rem; color: #555; }
-
         /* Toggle Switch */
         .toggle-switch {
             width: 44px;
@@ -415,7 +529,9 @@
             position: relative;
             cursor: pointer;
         }
-        .toggle-switch.active { background: #F5B042; }
+        .toggle-switch.active {
+            background: #F5B042;
+        }
         .toggle-switch:after {
             content: "";
             width: 18px;
@@ -427,7 +543,9 @@
             left: 3px;
             transition: 0.2s;
         }
-        .toggle-switch.active:after { left: 23px; }
+        .toggle-switch.active:after {
+            left: 23px;
+        }
 
         /* Utilities */
         .videos-grid {
@@ -449,54 +567,35 @@
             padding: 0.4rem 0.8rem;
             margin-bottom: 0.8rem;
         }
-        .earnings-big {
-            font-size: 1.8rem;
-        }
-        .transaction-row-click {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .thumbnail-preview {
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .thumbnail-preview img {
-            width: 80px;
-            height: 45px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
 
         @media (max-width: 550px) {
-            .modules-grid-2x2 { grid-template-columns: 1fr; }
-            .module-video-card { width: 100%; }
-            .modal-content { width: 95%; padding: 1rem; }
+            .modules-grid-2x2 {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
+<!-- Toast container for slide notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
 <div class="top-brand">
     <div class="logo-area">
-        <div class="logo-img"><i class="fas fa-chalkboard-user"></i></div>
-        <div class="logo-text">UTOM Studio</div>
+        <div class="logo-img">
+            <img src="logo.png" alt="logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'18\' fill=\'%23F5B042\'/%3E%3Ctext x=\'20\' y=\'27\' font-size=\'20\' text-anchor=\'middle\' fill=\'white\' font-weight=\'bold\'%3EU%3C/text%3E%3C/svg%3E'">
+        </div>
+        <div class="logo-text">UTOM Admin</div>
     </div>
-    <div style="display: flex; gap: 0.8rem; align-items: center;">
+    <div style="display: flex; gap: 1rem; align-items: center;">
         <div class="notif-bell" id="notifBell">
             <i class="fas fa-bell"></i>
             <span id="notifCount" class="notif-badge" style="display: none;">0</span>
             <div id="notifDropdown" class="notif-dropdown"></div>
         </div>
-        <div class="badge-tutor"><i class="fas fa-crown"></i> Admin</div>
+        <div class="account-badge" id="accountQuickBtn">
+            <i class="fas fa-user-circle"></i> Account
+        </div>
     </div>
 </div>
 
@@ -505,37 +604,29 @@
     <button class="nav-five-btn" data-section="posted"><i class="fas fa-video"></i> POSTED</button>
     <button class="nav-five-btn" data-section="users"><i class="fas fa-users"></i> USERS</button>
     <button class="nav-five-btn" data-section="modules"><i class="fas fa-folder-tree"></i> MODULES</button>
-    <button class="nav-five-btn" data-section="account"><i class="fas fa-coins"></i> ACCOUNT</button>
+    <button class="nav-five-btn" data-section="docs"><i class="fas fa-file-alt"></i> DOC</button>
     <button class="nav-five-btn" data-section="settings"><i class="fas fa-cog"></i> SETTINGS</button>
 </div>
 
-<!-- Video Player Modal (matches user experience) -->
-<div id="videoPlayerModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" id="closeVideoModal">&times;</span>
-        <div class="video-player-container" id="videoPlayerContainer"></div>
-        <div class="video-info">
-            <h3 id="modalVideoTitle"></h3>
-            <p id="modalVideoInstructor"></p>
-            <p id="modalVideoDesc"></p>
+<!-- Inline video player -->
+<div id="globalInlinePlayer" style="display: none; margin: 0 0.7rem 0.7rem;">
+    <div class="inline-player-container">
+        <div style="position: relative;">
+            <span id="closeInlinePlayer" class="player-close"><i class="fas fa-times"></i> Close</span>
+            <div id="inlinePlayerEmbed"></div>
         </div>
     </div>
 </div>
 
-<!-- Certificate View Modal -->
-<div id="certViewModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" id="closeCertModal">&times;</span>
-        <div id="certificateViewContent"></div>
-    </div>
-</div>
-
-<!-- Transaction Detail Modal -->
-<div id="txModal" class="modal">
+<!-- Video Player Modal -->
+<div id="videoPlayerModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
-        <h3>Transaction Details</h3>
-        <table class="modal-table" id="txModalTable"></table>
+        <div id="modalPlayerContainer"></div>
+        <div>
+            <h3 id="modalVideoTitle"></h3>
+            <p id="modalVideoInstructor"></p>
+        </div>
     </div>
 </div>
 
@@ -544,16 +635,55 @@
     <div class="modal-content">
         <span class="close-modal">&times;</span>
         <h3><i class="fas fa-user-circle"></i> User Profile</h3>
-        <table class="modal-table" id="userModalTable"></table>
-        <div class="modal-buttons" style="display: flex; gap: 12px; justify-content: flex-end;">
+        <table id="userModalTable" style="width:100%; border-collapse: collapse;"></table>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
             <button id="userModalBanBtn" class="btn-outline"><i class="fas fa-ban"></i> Toggle Ban</button>
         </div>
     </div>
 </div>
 
+<!-- Document Viewer Modal -->
+<div id="docViewerModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+        <span class="close-modal">&times;</span>
+        <div id="docViewerContent" style="padding: 20px; background: #fafafa; border-radius: 20px;"></div>
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div id="txModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Transaction Details</h3>
+        <table id="txModalTable" style="width:100%;"></table>
+    </div>
+</div>
+
+<!-- Account Page Modal -->
+<div id="accountPageModal" class="modal">
+    <div class="modal-content" style="background: linear-gradient(145deg, #fff8ed, #ffe8d4);">
+        <span class="close-modal">&times;</span>
+        <h2 style="color:#b45f06;">💰 Earnings & Transactions</h2>
+        <div class="stat-cards">
+            <div class="stat-card">
+                <i class="fas fa-wallet fa-2x" style="color:#F5B042;"></i>
+                <h3 id="totalEarningsDisplay">ZMW 0</h3>
+                <span>Total Revenue</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-video fa-2x"></i>
+                <h3 id="totalPaidPurchases">0</h3>
+                <span>Paid Enrollments</span>
+            </div>
+        </div>
+        <h4>📋 Recent Transactions</h4>
+        <div class="transactions-list" id="transactionHistoryList"></div>
+    </div>
+</div>
+
 <!-- HOME SECTION -->
 <div id="homeSection" class="section active-section">
-    <div class="post-video-top" style="margin:0.7rem 0.7rem 0.2rem;">
+    <div style="margin:0.7rem 0.7rem 0.2rem;">
         <button id="bigPostBtn" class="btn-big-post"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
         <div id="dynamicPostForm" class="toggle-form">
             <h4>Upload new video</h4>
@@ -577,31 +707,34 @@
                 <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
                 <div class="form-row">
                     <div class="radio-group">
-                        <label><input type="radio" name="videoSource" value="link" checked> <i class="fas fa-link"></i> Video Link</label>
-                        <label><input type="radio" name="videoSource" value="upload"> <i class="fas fa-cloud-upload-alt"></i> Cloudinary Upload</label>
+                        <label><input type="radio" name="videoSource" value="link" checked> Link</label>
+                        <label><input type="radio" name="videoSource" value="upload"> Upload</label>
                     </div>
                 </div>
-                <div class="form-row video-source-group" id="linkGroup">
-                    <input type="url" id="videoUrlInput" placeholder="https://... (YouTube/Vimeo embed or direct MP4)">
-                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL (optional)" style="margin-top:8px;">
+                <div class="video-source-group" id="linkGroup">
+                    <input type="url" id="videoUrlInput" placeholder="Video URL">
+                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:8px;">
                 </div>
-                <div class="form-row video-source-group" id="uploadGroup" style="display:none;">
-                    <button type="button" id="cloudinaryUploadBtn" class="btn-yellow" style="width:100%;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
+                <div class="video-source-group" id="uploadGroup" style="display:none;">
+                    <button type="button" id="cloudinaryUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
+                    <div id="uploadProgressArea" style="margin-top:10px;">
+                        <div class="progress-container">
+                            <div class="progress-fill" id="uploadProgressFill" style="width:0%"></div>
+                        </div>
+                        <span id="uploadPercentText">0%</span>
+                    </div>
                     <input type="hidden" id="cloudinaryVideoUrl">
-                    <div id="uploadStatus"></div>
                     <div style="margin-top:12px;">
-                        <label>Thumbnail frame (seconds):</label>
-                        <div style="display:flex; gap:8px;">
-                            <input type="number" id="thumbnailOffset" value="3" min="0" step="0.5" style="width:100px;">
-                            <button type="button" id="generateThumbnailBtn" class="btn-outline">Generate Preview</button>
-                        </div>
-                        <input type="hidden" id="generatedThumbnailUrl">
-                        <div id="thumbnailPreviewContainer" class="thumbnail-preview" style="display:none;">
-                            <img id="thumbnailPreviewImg"><span>Thumbnail ready</span>
-                        </div>
+                        <label>Thumbnail frame (sec):</label>
+                        <input type="number" id="thumbnailOffset" value="3" step="0.5">
+                        <button type="button" id="generateThumbnailBtn" class="btn-outline">Generate</button>
+                    </div>
+                    <input type="hidden" id="generatedThumbnailUrl">
+                    <div id="thumbnailPreviewContainer" class="thumbnail-preview" style="display:none;">
+                        <img id="thumbnailPreviewImg" width="80">
                     </div>
                 </div>
-                <div class="form-actions" style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
                     <button type="button" id="cancelPostBtn" class="btn-outline">Cancel</button>
                     <button type="submit" class="btn-yellow">PUBLISH</button>
                 </div>
@@ -614,9 +747,9 @@
             <span><i class="fas fa-users"></i> <span id="statUsers">0</span></span>
             <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
         </div>
-        <h3>🔥 Trending Paid</h3>
+        <h3>💰 Paid Videos</h3>
         <div class="horizontal-scroll" id="homePaidScroll"></div>
-        <h3>🎁 Free picks</h3>
+        <h3>🆓 Free Videos</h3>
         <div class="horizontal-scroll" id="homeFreeScroll"></div>
     </div>
 </div>
@@ -628,7 +761,7 @@
         <div class="search-filter">
             <input type="text" id="searchVideoInput" placeholder="Search...">
             <select id="filterModuleSelect"><option value="all">All modules</option></select>
-            <select id="filterPriceSelect"><option value="all">All prices</option><option value="free">Free</option><option value="paid">Paid</option></select>
+            <select id="filterPriceSelect"><option value="all">All</option><option value="free">Free</option><option value="paid">Paid</option></select>
         </div>
         <div id="postedVideosGrid" class="videos-grid"></div>
     </div>
@@ -646,7 +779,11 @@
 <div id="modulesSection" class="section">
     <div class="card-glass">
         <h3>📁 Course Modules</h3>
-        <div style="display: flex; gap: 0.5rem; margin: 0.6rem 0; flex-wrap: wrap;">
+        <div class="module-type-toggle">
+            <span class="toggle-option active" data-module-type="video">Video Modules</span>
+            <span class="toggle-option" data-module-type="doc">Doc Modules</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin: 0.6rem 0;">
             <input type="text" id="newGlobalModule" placeholder="Module name">
             <button id="globalAddModuleBtn" class="btn-yellow">+ Add</button>
         </div>
@@ -654,44 +791,77 @@
     </div>
 </div>
 
-<!-- ACCOUNT SECTION -->
-<div id="accountSection" class="section">
-    <div class="card-glass" style="text-align: center;">
-        <div class="earnings-big" id="totalEarningsSpan">ZMW 0</div>
-        <div>Total revenue</div>
-        <hr>
-        <h4>📜 Transaction history</h4>
-        <div id="transactionHistoryList"></div>
+<!-- DOC SECTION -->
+<div id="docsSection" class="section">
+    <div class="card-glass">
+        <button id="bigPostDocBtn" class="btn-big-post"><i class="fas fa-plus-circle"></i> POST DOCUMENT</button>
+        <div id="docPostFormContainer" class="toggle-form">
+            <h4>Add Document / Notes</h4>
+            <form id="docPostForm">
+                <div class="form-row">
+                    <input type="text" id="docTitle" placeholder="Title *" required>
+                    <input type="text" id="docInstructor" placeholder="Instructor *" required>
+                </div>
+                <div class="form-row">
+                    <select id="docPriceType">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid (ZMW)</option>
+                    </select>
+                    <input type="number" id="docPaidAmount" placeholder="Amount ZMW" style="display:none;">
+                </div>
+                <div class="form-row">
+                    <select id="docModuleSelect"></select>
+                    <input type="text" id="newDocModule" placeholder="+ New module">
+                    <button type="button" id="quickAddDocModuleBtn" class="btn-yellow">Create</button>
+                </div>
+                <textarea id="docContentText" rows="6" placeholder="Paste your notes / text (max 5000 chars)" maxlength="5000"></textarea>
+                <div class="form-row">
+                    <div class="radio-group">
+                        <label><input type="radio" name="docSource" value="text" checked> Text</label>
+                        <label><input type="radio" name="docSource" value="upload"> Upload Doc</label>
+                    </div>
+                </div>
+                <div id="docUploadGroup" style="display:none;">
+                    <button type="button" id="cloudinaryDocUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
+                    <div id="docUploadProgress">
+                        <div class="progress-container">
+                            <div class="progress-fill" id="docProgressFill" style="width:0%"></div>
+                        </div>
+                        <span id="docPercentText">0%</span>
+                    </div>
+                    <input type="hidden" id="cloudinaryDocUrl">
+                </div>
+                <div style="margin-top:12px;">
+                    <button type="submit" class="btn-yellow">PUBLISH DOC</button>
+                </div>
+            </form>
+        </div>
+        <h3 style="margin: 1rem 0 0.5rem;">📄 Document Library</h3>
+        <div id="docsListContainer" class="docs-grid-1col"></div>
     </div>
 </div>
 
 <!-- SETTINGS SECTION -->
 <div id="settingsSection" class="section">
     <div class="card-glass">
-        <h3>⚙️ App Settings</h3>
-        <div style="margin: 0.8rem 0; padding: 0.5rem; background: #fef5e8; border-radius: 20px;">
-            <div style="display: flex; justify-content: space-between;">
-                <span><strong>🌍 App Active Mode</strong><br><small>If OFF, users cannot interact</small></span>
-                <div id="appToggle" class="toggle-switch active"></div>
-            </div>
+        <h3>⚙️ Settings</h3>
+        <div style="display: flex; justify-content: space-between; margin: 12px 0;">
+            <span>App Active Mode</span>
+            <div id="appToggle" class="toggle-switch active"></div>
         </div>
-        <div style="margin: 0.8rem 0;">
-            <strong><i class="fas fa-credit-card"></i> Default Payment Method</strong>
-            <select id="paymentMethodSelect" class="btn-outline" style="width: 100%; margin-top: 6px;">
-                <option value="MTN Mobile Money">MTN Mobile Money</option>
-                <option value="Airtel Money">Airtel Money</option>
-                <option value="Visa Card">Visa Card</option>
-                <option value="Mastercard">Mastercard</option>
-                <option value="Bank Transfer">Bank Transfer</option>
+        <div style="margin: 12px 0;">
+            <strong>Payment Method</strong>
+            <select id="paymentMethodSelect" style="width:100%; margin-top:6px;">
+                <option>MTN Mobile Money</option>
+                <option>Airtel Money</option>
+                <option>Visa Card</option>
             </select>
         </div>
-        <div style="margin: 0.8rem 0;">
-            <strong><i class="fas fa-user-slash"></i> Banned Users</strong>
-            <div id="bannedUsersList" style="margin-top: 6px; font-size: 0.75rem;"></div>
+        <div style="margin: 12px 0;">
+            <strong>Banned Users</strong>
+            <div id="bannedUsersList" style="margin-top:6px;"></div>
         </div>
-        <button id="logoutBtn" class="btn-yellow" style="width: 100%; margin-top: 8px;">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
+        <button id="logoutBtn" class="btn-yellow" style="width:100%;">Logout</button>
     </div>
 </div>
 
@@ -716,104 +886,194 @@
     const db = getDatabase(app);
 
     let currentAdmin = null;
-    let videos = [], users = [], modules = [], transactions = [], settings = { appActive: true, paymentMethod: 'MTN Mobile Money' };
-    let videosRef, usersRef, modulesRef, transactionsRef, settingsRef, bannedUsersRef, maintenanceRef;
+    let videos = [], users = [], modules = [], transactions = [], docs = [];
     let notifications = [];
+    let currentModuleType = 'video';
+
+    const videosRef = ref(db, 'videos');
+    const usersRef = ref(db, 'users');
+    const modulesRef = ref(db, 'modules');
+    const transactionsRef = ref(db, 'transactions');
+    const docsRef = ref(db, 'docs');
+    const settingsRef = ref(db, 'settings');
+    const bannedUsersRef = ref(db, 'bannedUsers');
+    const maintenanceRef = ref(db, 'system/maintenance');
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) { window.location.href = 'index.html'; return; }
-        if (!user.email?.startsWith('admin@')) { alert('Access denied. Admin only.'); await signOut(auth); window.location.href = 'index.html'; return; }
+        if (!user.email?.startsWith('admin@')) { alert('Admin only.'); signOut(auth); return; }
         currentAdmin = user;
-        await loadModules(); await loadSettings();
+        await loadModules();
         setupRealtime();
         setupUI();
         refreshAll();
     });
 
     function setupRealtime() {
-        onValue(ref(db, 'videos'), snap => { videos = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : []; renderHomeScrolls(); renderPostedGrid(); renderModulesAccordion(); updateStats(); });
-        onValue(ref(db, 'users'), snap => { users = snap.val() ? Object.entries(snap.val()).map(([uid,d])=>({uid,...d})) : []; renderUsers(); updateBannedList(); updateStats(); });
-        onValue(ref(db, 'modules'), snap => { modules = snap.val() || ['Web Dev','Data Science','Design','Marketing']; if(!Array.isArray(modules)) modules = Object.values(modules); updateModuleSelects(); updateFilterModules(); renderModulesAccordion(); });
-        onValue(ref(db, 'transactions'), snap => { transactions = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : []; renderAccount(); updateStats(); });
-        onValue(ref(db, 'system/maintenance'), snap => { const isOn = snap.val() === true; document.getElementById('appToggle').classList.toggle('active', isOn); });
+        onValue(videosRef, snap => {
+            videos = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
+            renderHomeScrolls();
+            renderPostedGrid();
+            renderModulesAccordion();
+            updateStats();
+        });
+        onValue(usersRef, snap => {
+            users = snap.val() ? Object.entries(snap.val()).map(([uid,d])=>({uid,...d})) : [];
+            renderUsers();
+            updateBannedList();
+            updateStats();
+        });
+        onValue(modulesRef, snap => {
+            modules = snap.val() || ['Web Dev','Data Science'];
+            if(!Array.isArray(modules)) modules = Object.values(modules);
+            updateModuleSelects();
+            renderModulesAccordion();
+        });
+        onValue(transactionsRef, snap => {
+            transactions = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
+            renderAccountModal();
+            updateStats();
+        });
+        onValue(docsRef, snap => {
+            docs = snap.val() ? Object.entries(snap.val()).map(([id,d])=>({id,...d})) : [];
+            renderDocsList();
+        });
+        onValue(maintenanceRef, snap => {
+            document.getElementById('appToggle')?.classList.toggle('active', snap.val() === true);
+        });
     }
 
-    async function loadModules() { const snap = await get(ref(db,'modules')); if(!snap.exists()) set(ref(db,'modules'),['Web Dev','Data Science','Design','Marketing']); }
-    async function loadSettings() { const snap = await get(ref(db,'settings')); if(!snap.exists()) set(ref(db,'settings'),{appActive:true,paymentMethod:'MTN Mobile Money'}); }
+    async function loadModules() {
+        const snap = await get(modulesRef);
+        if(!snap.exists()) set(modulesRef, ['Web Dev','Data Science','Design']);
+    }
 
     function renderHomeScrolls() {
-        document.getElementById('homePaidScroll').innerHTML = videos.filter(v=>v.price>0).map(v=>buildVideoCard(v)).join('');
-        document.getElementById('homeFreeScroll').innerHTML = videos.filter(v=>v.price===0).map(v=>buildVideoCard(v)).join('');
+        const paid = videos.filter(v => v.price > 0).sort((a,b) => (b.views||0) - (a.views||0));
+        const free = videos.filter(v => v.price === 0);
+        document.getElementById('homePaidScroll').innerHTML = paid.map(v => buildVideoCard(v)).join('');
+        document.getElementById('homeFreeScroll').innerHTML = free.map(v => buildVideoCard(v)).join('');
     }
+
+    function buildVideoCard(v, withActions = false) {
+        const likes = v.likes || 0;
+        const enrolled = transactions.filter(t => t.videoId === v.id).length;
+        const paidCount = transactions.filter(t => t.videoId === v.id && t.amount > 0).length;
+        return `
+            <div class="video-card-grid" data-id="${v.id}">
+                <img src="${v.thumbnail || 'https://picsum.photos/300/180'}" onerror="this.src='https://picsum.photos/300/180'">
+                <div class="card-info">
+                    <h4>${escapeHtml(v.title)}</h4>
+                    <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
+                    <div class="stats-row">
+                        <span><i class="fas fa-eye"></i> ${v.views || 0}</span>
+                        <span><i class="fas fa-heart"></i> ${likes}</span>
+                        <span><i class="fas fa-user-graduate"></i> ${enrolled}</span>
+                    </div>
+                    <div class="stats-row">
+                        <span>${v.price === 0 ? 'FREE' : `ZMW ${v.price}`}</span>
+                        <span><i class="fas fa-dollar-sign"></i> ${paidCount} paid</span>
+                    </div>
+                    <button class="play-video-btn" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-id="${v.id}">
+                        <i class="fas fa-play"></i> Watch
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     function renderPostedGrid() {
         const search = document.getElementById('searchVideoInput')?.value.toLowerCase() || '';
         const modFilter = document.getElementById('filterModuleSelect')?.value || 'all';
         const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
-        let filtered = videos.filter(v => (v.title.toLowerCase().includes(search) || v.instructor.toLowerCase().includes(search)) && (modFilter==='all'||v.module===modFilter) && (priceFilter==='all'||(priceFilter==='free'?v.price===0:v.price>0)));
-        document.getElementById('postedVideosGrid').innerHTML = filtered.map(v=>buildVideoCard(v,true)).join('') || '<div>No videos</div>';
+        let filtered = videos.filter(v =>
+            (v.title.toLowerCase().includes(search) || v.instructor.toLowerCase().includes(search)) &&
+            (modFilter === 'all' || v.module === modFilter) &&
+            (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
+        );
+        const grid = document.getElementById('postedVideosGrid');
+        grid.innerHTML = filtered.map(v => buildVideoCard(v, true)).join('') || '<div>No videos</div>';
         attachVideoActions();
     }
-    function buildVideoCard(v, withActions=false) {
-        return `<div class="video-card-grid" data-id="${v.id}">
-            <img src="${v.thumbnail||'https://picsum.photos/300/180'}" onerror="this.src='https://picsum.photos/300/180'">
-            <div class="card-info">
-                <h4>${escapeHtml(v.title)}</h4>
-                <div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div>
-                <div class="stats-row"><span><i class="fas fa-eye"></i> ${v.views||0}</span><span>${v.price===0?'FREE':`ZMW ${v.price}`}</span></div>
-                ${withActions?`<div style="display:flex; gap:8px; justify-content:flex-end;"><button class="play-video-btn" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-desc="${escapeHtml(v.description||'')}"><i class="fas fa-play"></i> Play</button><button class="edit-video-btn" data-id="${v.id}" style="background:none; border:none;"><i class="fas fa-edit"></i></button><button class="delete-video-btn" data-id="${v.id}" style="background:none; border:none; color:#d9534f;"><i class="fas fa-trash-alt"></i></button></div>`:`<button class="play-video-btn" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-desc="${escapeHtml(v.description||'')}"><i class="fas fa-play"></i> Watch</button>`}
-            </div>
-        </div>`;
-    }
+
     function attachVideoActions() {
-        document.querySelectorAll('.play-video-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openVideoPlayer(btn.dataset.url, btn.dataset.title, btn.dataset.instructor, btn.dataset.desc); }));
-        document.querySelectorAll('.edit-video-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); const vid = videos.find(v=>v.id===btn.dataset.id); if(vid) populateEditForm(vid); }));
-        document.querySelectorAll('.delete-video-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); if(confirm('Delete this video?')) remove(ref(db,`videos/${btn.dataset.id}`)); }));
+        document.querySelectorAll('.play-video-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const video = videos.find(v => v.id === id);
+                if(video) playVideoInline(video);
+            });
+        });
+        document.querySelectorAll('.edit-video-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const vid = videos.find(v => v.id === btn.dataset.id);
+                if(vid) populateEditForm(vid);
+            });
+        });
+        document.querySelectorAll('.delete-video-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(confirm('Delete this video?')) remove(ref(db, `videos/${btn.dataset.id}`));
+            });
+        });
     }
-    function openVideoPlayer(url, title, instructor, desc) {
-        const container = document.getElementById('videoPlayerContainer');
-        let embedHtml = '';
-        if(url.includes('youtube.com') || url.includes('youtu.be')) {
-            let videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            embedHtml = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(url.includes('vimeo.com')) {
-            let videoId = url.split('/').pop();
-            embedHtml = `<iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+
+    function playVideoInline(video) {
+        const container = document.getElementById('inlinePlayerEmbed');
+        const playerDiv = document.getElementById('globalInlinePlayer');
+        let embed = '';
+        const url = video.videoUrl;
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+            embed = `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+        } else if (url.includes('vimeo.com')) {
+            let id = url.split('/').pop();
+            embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
         } else {
-            embedHtml = `<video controls autoplay style="width:100%; max-height:60vh;"><source src="${url}" type="video/mp4"></video>`;
+            embed = `<video controls autoplay style="width:100%; max-height:250px;"><source src="${url}" type="video/mp4"></video>`;
         }
-        container.innerHTML = embedHtml;
-        document.getElementById('modalVideoTitle').innerText = title;
-        document.getElementById('modalVideoInstructor').innerText = instructor;
-        document.getElementById('modalVideoDesc').innerText = desc || '';
-        document.getElementById('videoPlayerModal').style.display = 'flex';
+        container.innerHTML = embed;
+        playerDiv.style.display = 'block';
+        update(ref(db, `videos/${video.id}`), { views: (video.views || 0) + 1 });
+        showToast(`Now playing: ${video.title}`, 'play');
     }
+
+    document.getElementById('closeInlinePlayer').addEventListener('click', () => {
+        document.getElementById('globalInlinePlayer').style.display = 'none';
+        document.getElementById('inlinePlayerEmbed').innerHTML = '';
+    });
 
     function renderUsers() {
         const container = document.getElementById('usersListContainer');
-        Promise.all(users.map(async (u) => {
+        Promise.all(users.map(async u => {
             const bannedSnap = await get(ref(db, `bannedUsers/${u.uid}`));
             return { ...u, banned: bannedSnap.val() === true };
         })).then(usersWithBan => {
             container.innerHTML = usersWithBan.map(u => `
-                <div class="user-row">
-                    <div><strong>${escapeHtml(u.firstName||'')} ${escapeHtml(u.lastName||'')}</strong><br><span style="font-size:0.7rem;">${escapeHtml(u.email)}</span></div>
-                    <div>📞 ${escapeHtml(u.phone||'N/A')}</div>
-                    <div class="user-actions">
-                        ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
-                        <button class="view-user" data-uid="${u.uid}" style="background:none; border:none;"><i class="fas fa-info-circle"></i></button>
+                <div class="user-row" data-uid="${u.uid}">
+                    <div>
+                        <strong>${escapeHtml(u.firstName || '')} ${escapeHtml(u.lastName || '')}</strong><br>
+                        <span style="font-size:0.7rem;">${escapeHtml(u.email)}</span>
                     </div>
+                    <div>${u.banned ? '<span class="badge-banned">Banned</span>' : ''}</div>
                 </div>
             `).join('');
-            document.querySelectorAll('.view-user').forEach(btn => btn.addEventListener('click', () => {
-                const user = users.find(u => u.uid === btn.dataset.uid);
-                if(user) showUserDetailsModal(user);
-            }));
+            document.querySelectorAll('.user-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const user = users.find(u => u.uid === row.dataset.uid);
+                    if(user) showUserDetailsModal(user);
+                });
+            });
         });
     }
+
     function showUserDetailsModal(user) {
         get(ref(db, `bannedUsers/${user.uid}`)).then(snap => {
             const isBanned = snap.val() === true;
-            document.getElementById('userModalTable').innerHTML = `
+            const table = document.getElementById('userModalTable');
+            table.innerHTML = `
                 <tr><td>Name</td><td>${escapeHtml(user.firstName||'')} ${escapeHtml(user.lastName||'')}</td></tr>
                 <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
                 <tr><td>Phone</td><td>${escapeHtml(user.phone||'N/A')}</td></tr>
@@ -822,10 +1082,12 @@
             const modal = document.getElementById('userDetailsModal');
             modal.style.display = 'flex';
             modal.dataset.uid = user.uid;
-            const banBtn = document.getElementById('userModalBanBtn');
-            banBtn.onclick = () => {
-                if(isBanned) remove(ref(db, `bannedUsers/${user.uid}`));
-                else set(ref(db, `bannedUsers/${user.uid}`), true);
+            document.getElementById('userModalBanBtn').onclick = () => {
+                if (isBanned) {
+                    remove(ref(db, `bannedUsers/${user.uid}`));
+                } else {
+                    set(ref(db, `bannedUsers/${user.uid}`), true);
+                }
                 modal.style.display = 'none';
                 renderUsers();
                 updateBannedList();
@@ -835,10 +1097,42 @@
 
     function renderModulesAccordion() {
         const container = document.getElementById('modulesAccordionContainer');
-        container.innerHTML = modules.map(mod => {
-            const moduleVideos = videos.filter(v => v.module === mod);
-            return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> <strong>${escapeHtml(mod)}</strong> (${moduleVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${moduleVideos.map(v => `<div class="module-video-card" data-id="${v.id}"><img src="${v.thumbnail||'https://picsum.photos/100/100'}"><div style="flex:1;"><strong>${escapeHtml(v.title)}</strong><div style="font-size:0.7rem;">${escapeHtml(v.instructor)}</div></div><button class="play-video-btn" data-url="${v.videoUrl}" data-title="${escapeHtml(v.title)}" data-instructor="${escapeHtml(v.instructor)}" data-desc="${escapeHtml(v.description||'')}"><i class="fas fa-play"></i> Play</button><button class="delete-mini" onclick="event.stopPropagation(); window.deleteVideoById('${v.id}')"><i class="fas fa-trash-alt"></i></button></div>`).join('')||'No videos'}</div></div>`;
-        }).join('');
+        if (currentModuleType === 'video') {
+            container.innerHTML = modules.map(mod => {
+                const modVideos = videos.filter(v => v.module === mod);
+                return `
+                    <div class="module-folder">
+                        <div class="module-header">
+                            <span><i class="fas fa-folder"></i> ${escapeHtml(mod)} (${modVideos.length})</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="module-videos">
+                            ${modVideos.map(v => buildVideoCard(v, true)).join('') || '<div style="padding:10px;">No videos</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = modules.map(mod => {
+                const modDocs = docs.filter(d => d.module === mod);
+                return `
+                    <div class="module-folder">
+                        <div class="module-header">
+                            <span><i class="fas fa-folder-open"></i> ${escapeHtml(mod)} (${modDocs.length})</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="module-videos">
+                            ${modDocs.map(d => `
+                                <div class="doc-card" style="padding:0.8rem;">
+                                    <strong>${escapeHtml(d.title)}</strong>
+                                    <button class="read-btn" data-docid="${d.id}" style="margin-top:8px;">Read</button>
+                                </div>
+                            `).join('') || '<div style="padding:10px;">No documents</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
         document.querySelectorAll('.module-header').forEach(header => {
             header.addEventListener('click', () => {
                 const videosDiv = header.nextElementSibling;
@@ -847,213 +1141,360 @@
                 icon.style.transform = videosDiv.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
             });
         });
-        document.querySelectorAll('.play-video-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openVideoPlayer(btn.dataset.url, btn.dataset.title, btn.dataset.instructor, btn.dataset.desc); }));
+        attachVideoActions();
+        document.querySelectorAll('.read-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const doc = docs.find(d => d.id === btn.dataset.docid);
+                if(doc) openDocViewer(doc);
+            });
+        });
     }
-    window.deleteVideoById = (id) => { if(confirm('Delete?')) remove(ref(db, `videos/${id}`)); };
 
-    function renderAccount() {
-        const total = transactions.reduce((sum,t)=>sum+(t.amount||0),0);
-        document.getElementById('totalEarningsSpan').innerHTML = `ZMW ${total}`;
-        const container = document.getElementById('transactionHistoryList');
-        container.innerHTML = transactions.map(t => `<div class="transaction-row-click" data-txid="${t.id}"><span><strong>${escapeHtml(t.userName||'User')}</strong></span><span>${escapeHtml(t.videoTitle)}</span><span class="highlight-amount">ZMW ${t.amount}</span><span>${t.date}</span><i class="fas fa-info-circle"></i></div>`).join('') || 'No transactions';
-        document.querySelectorAll('.transaction-row-click').forEach(row => row.addEventListener('click', () => {
-            const tx = transactions.find(t => t.id === row.dataset.txid);
-            if(tx) showTxModal(tx);
-        }));
+    function renderDocsList() {
+        const container = document.getElementById('docsListContainer');
+        container.innerHTML = docs.map(doc => {
+            const preview = (doc.content || '').substring(0, 150) + (doc.content?.length > 150 ? '...' : '');
+            return `
+                <div class="doc-card">
+                    <h3>${escapeHtml(doc.title)}</h3>
+                    <div class="doc-instructor">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.module)}</div>
+                    <div class="doc-preview">${escapeHtml(preview) || '📎 Document attached'}</div>
+                    <div class="doc-footer">
+                        <span>${doc.price === 0 ? 'FREE' : `ZMW ${doc.price}`}</span>
+                        <button class="read-btn" data-docid="${doc.id}">📖 Read</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.querySelectorAll('.read-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const doc = docs.find(d => d.id === btn.dataset.docid);
+                if(doc) openDocViewer(doc);
+            });
+        });
     }
-    function showTxModal(tx) {
-        document.getElementById('txModalTable').innerHTML = `<tr><td>ID</td><td>${tx.id}</td></tr><tr><td>User</td><td>${escapeHtml(tx.userName)} (${tx.userEmail})</td></tr><tr><td>Video</td><td>${escapeHtml(tx.videoTitle)}</td></tr><tr><td>Amount</td><td class="highlight-amount">ZMW ${tx.amount}</td></tr><tr><td>Method</td><td>${tx.paymentMethod||'Mobile Money'}</td></tr><tr><td>Date</td><td>${tx.date}</td></tr>`;
-        document.getElementById('txModal').style.display = 'flex';
+
+    function openDocViewer(doc) {
+        const contentDiv = document.getElementById('docViewerContent');
+        let html = `<h2>${escapeHtml(doc.title)}</h2><p style="color:#666;">${escapeHtml(doc.instructor)}</p><hr>`;
+        if (doc.docUrl) {
+            html += `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;"></iframe>`;
+        } else {
+            html += `<div style="white-space: pre-wrap; font-size:1rem;">${escapeHtml(doc.content)}</div>`;
+        }
+        contentDiv.innerHTML = html;
+        document.getElementById('docViewerModal').style.display = 'flex';
     }
+
+    function renderAccountModal() {
+        const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        document.getElementById('totalEarningsDisplay').innerText = `ZMW ${total}`;
+        document.getElementById('totalPaidPurchases').innerText = transactions.filter(t => t.amount > 0).length;
+        const list = document.getElementById('transactionHistoryList');
+        list.innerHTML = transactions.slice(0, 20).map(t => `
+            <div style="padding:10px; background:#fff; border-radius:16px; margin-bottom:8px;">
+                <b>${escapeHtml(t.userName || 'User')}</b> - ${escapeHtml(t.videoTitle || 'Item')}<br>
+                ZMW ${t.amount} · ${t.date || ''}
+            </div>
+        `).join('') || 'No transactions';
+    }
+
     async function updateBannedList() {
-        const bannedSnap = await get(ref(db,'bannedUsers'));
+        const bannedSnap = await get(bannedUsersRef);
         const bannedUids = bannedSnap.val() ? Object.keys(bannedSnap.val()) : [];
         const bannedUsersList = users.filter(u => bannedUids.includes(u.uid));
         const container = document.getElementById('bannedUsersList');
-        container.innerHTML = bannedUsersList.map(u => `<div>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email}) <button class="unban-btn" data-uid="${u.uid}" style="background:none; border:none; color:#F5B042;">Unban</button></div>`).join('') || 'No banned users';
-        document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => remove(ref(db,`bannedUsers/${btn.dataset.uid}`)).then(() => { renderUsers(); updateBannedList(); })));
+        container.innerHTML = bannedUsersList.map(u => `
+            <div>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)} (${u.email})
+                <button class="unban-btn" data-uid="${u.uid}" style="background:none; border:none; color:#F5B042;">Unban</button>
+            </div>
+        `).join('') || 'No banned users';
+        document.querySelectorAll('.unban-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                remove(ref(db, `bannedUsers/${btn.dataset.uid}`)).then(() => {
+                    renderUsers();
+                    updateBannedList();
+                });
+            });
+        });
     }
 
     function updateStats() {
         document.getElementById('statVideos').innerText = videos.length;
         document.getElementById('statUsers').innerText = users.length;
-        document.getElementById('statEarnings').innerText = `ZMW ${transactions.reduce((s,t)=>s+(t.amount||0),0)}`;
+        const totalEarn = transactions.reduce((s, t) => s + (t.amount || 0), 0);
+        document.getElementById('statEarnings').innerText = `ZMW ${totalEarn}`;
     }
+
     function updateModuleSelects() {
         const select = document.getElementById('moduleSelectHome');
-        if(select) select.innerHTML = modules.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        if(select) select.innerHTML = modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        const docSelect = document.getElementById('docModuleSelect');
+        if(docSelect) docSelect.innerHTML = modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
         const filter = document.getElementById('filterModuleSelect');
-        if(filter) filter.innerHTML = '<option value="all">All modules</option>' + modules.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        if(filter) filter.innerHTML = '<option value="all">All modules</option>' + modules.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     }
-    function updateFilterModules() { updateModuleSelects(); }
 
-    // Video posting (unchanged from original)
-    function setupPostForm() {
-        document.getElementById('bigPostBtn').onclick = () => {
-            document.getElementById('dynamicPostForm').classList.add('show');
-            document.getElementById('bigPostBtn').style.display = 'none';
-            document.getElementById('homePostForm').reset();
-            document.getElementById('paidAmount').style.display = 'none';
-            document.getElementById('cloudinaryVideoUrl').value = '';
-            document.getElementById('generatedThumbnailUrl').value = '';
-            document.getElementById('thumbnailPreviewContainer').style.display = 'none';
-            document.getElementById('uploadStatus').innerText = '';
-        };
-        document.getElementById('cancelPostBtn').onclick = () => {
-            document.getElementById('dynamicPostForm').classList.remove('show');
-            document.getElementById('bigPostBtn').style.display = 'block';
-        };
-        document.getElementById('priceType').addEventListener('change', function() {
-            document.getElementById('paidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
-        });
-        document.querySelectorAll('input[name="videoSource"]').forEach(radio => radio.addEventListener('change', function() {
-            document.getElementById('linkGroup').style.display = this.value === 'link' ? 'block' : 'none';
-            document.getElementById('uploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
-        }));
-        document.getElementById('quickAddModuleBtn').addEventListener('click', () => {
-            const newModule = document.getElementById('newModuleNameHome').value.trim();
-            if (newModule && !modules.includes(newModule)) {
-                set(modulesRef, [...modules, newModule]);
-                document.getElementById('newModuleNameHome').value = '';
-            }
-        });
-        document.getElementById('homePostForm').addEventListener('submit', (e) => { e.preventDefault(); publishVideo(); });
-        document.getElementById('generateThumbnailBtn').addEventListener('click', generateThumbnail);
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        let icon = 'bell';
+        if (type === 'payment') icon = 'money-bill';
+        if (type === 'like') icon = 'heart';
+        if (type === 'enroll') icon = 'user-plus';
+        toast.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+        notifications.unshift(message);
+        if (notifications.length > 20) notifications.pop();
+        updateNotifBadge();
     }
-    function generateThumbnail() {
-        const videoUrl = document.getElementById('cloudinaryVideoUrl').value;
-        if (!videoUrl) { alert('Please upload a video first.'); return; }
-        const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
-        const thumbUrl = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
-        document.getElementById('generatedThumbnailUrl').value = thumbUrl;
-        document.getElementById('thumbnailPreviewImg').src = thumbUrl;
-        document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+
+    function updateNotifBadge() {
+        const badge = document.getElementById('notifCount');
+        badge.style.display = notifications.length ? 'inline-block' : 'none';
+        badge.innerText = notifications.length > 9 ? '9+' : notifications.length;
+        const dropdown = document.getElementById('notifDropdown');
+        dropdown.innerHTML = notifications.map(n => `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n)}</div>`).join('');
     }
-    async function publishVideo() {
+
+    // Cloudinary Upload with Progress
+    function setupCloudinaryUpload(btnId, urlFieldId, progressFillId, percentTextId, isVideo = true) {
+        document.getElementById(btnId).addEventListener('click', () => {
+            cloudinary.openUploadWidget({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url'],
+                maxFileSize: 50000000,
+                resourceType: isVideo ? 'video' : 'auto',
+                styles: { palette: { windowBorder: "#F5B042" } }
+            }, (error, result) => {
+                if (error) return;
+                if (result.event === 'progress') {
+                    const percent = Math.round(result.info.progress);
+                    document.getElementById(progressFillId).style.width = percent + '%';
+                    document.getElementById(percentTextId).innerText = percent + '%';
+                }
+                if (result.event === 'success') {
+                    document.getElementById(urlFieldId).value = result.info.secure_url;
+                    showToast('Upload complete!');
+                    if (isVideo) {
+                        const thumb = result.info.secure_url.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
+                        document.getElementById('generatedThumbnailUrl').value = thumb;
+                        document.getElementById('thumbnailPreviewImg').src = thumb;
+                        document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
+                    }
+                    document.getElementById(progressFillId).style.width = '0%';
+                    document.getElementById(percentTextId).innerText = '0%';
+                }
+            });
+        });
+    }
+
+    setupCloudinaryUpload('cloudinaryUploadBtn', 'cloudinaryVideoUrl', 'uploadProgressFill', 'uploadPercentText', true);
+    setupCloudinaryUpload('cloudinaryDocUploadBtn', 'cloudinaryDocUrl', 'docProgressFill', 'docPercentText', false);
+
+    // Post Video Form
+    document.getElementById('homePostForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
         const title = document.getElementById('videoTitle').value.trim();
         const instructor = document.getElementById('instructorName').value.trim();
         if (!title || !instructor) return alert('Title and instructor required');
         const priceType = document.getElementById('priceType').value;
         const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0;
         const module = document.getElementById('moduleSelectHome').value;
-        const description = document.getElementById('videoDesc').value.trim();
         let videoUrl, thumbnail;
         const sourceType = document.querySelector('input[name="videoSource"]:checked').value;
         if (sourceType === 'link') {
             videoUrl = document.getElementById('videoUrlInput').value.trim();
             thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || 'https://picsum.photos/300/180';
-            if (!videoUrl) return alert('Please enter a video URL');
+            if (!videoUrl) return alert('Enter video URL');
         } else {
             videoUrl = document.getElementById('cloudinaryVideoUrl').value;
             thumbnail = document.getElementById('generatedThumbnailUrl').value;
-            if (!videoUrl) return alert('Please upload a video first');
-            if (!thumbnail) {
-                const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
-                thumbnail = videoUrl.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
-            }
+            if (!videoUrl) return alert('Upload video first');
         }
-        const newVideoRef = push(videosRef);
-        await set(newVideoRef, { title, instructor, price, thumbnail, module, description, videoUrl, createdAt: new Date().toISOString(), views: 0 });
-        alert('Video published!');
+        const newRef = push(videosRef);
+        await set(newRef, {
+            title, instructor, price, thumbnail, module,
+            description: document.getElementById('videoDesc').value.trim(),
+            videoUrl,
+            createdAt: new Date().toISOString(),
+            views: 0,
+            likes: 0
+        });
+        showToast('Video published!');
         document.getElementById('dynamicPostForm').classList.remove('show');
         document.getElementById('bigPostBtn').style.display = 'block';
-    }
-    function populateEditForm(video) {
-        // Same as original, kept for brevity
-    }
-    function setupCloudinaryUpload() {
-        document.getElementById('cloudinaryUploadBtn').addEventListener('click', () => {
-            cloudinary.openUploadWidget({
-                cloudName: CLOUD_NAME,
-                uploadPreset: UPLOAD_PRESET,
-                sources: ['local', 'url', 'camera'],
-                maxFileSize: 50000000,
-                resourceType: 'video',
-                styles: { palette: { window: "#FFFFFF", windowBorder: "#F5B042", tabIcon: "#F5B042", link: "#F5B042", action: "#F5B042" } }
-            }, (error, result) => {
-                if (!error && result?.event === 'success') {
-                    document.getElementById('cloudinaryVideoUrl').value = result.info.secure_url;
-                    document.getElementById('uploadStatus').innerHTML = `<span style="color:green;"><i class="fas fa-check-circle"></i> Uploaded: ${result.info.original_filename}</span>`;
-                    const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
-                    const thumbUrl = result.info.secure_url.replace('/upload/', '/upload/so_' + offset + '/').replace(/\.[^/.]+$/, '.jpg');
-                    document.getElementById('generatedThumbnailUrl').value = thumbUrl;
-                    document.getElementById('thumbnailPreviewImg').src = thumbUrl;
-                    document.getElementById('thumbnailPreviewContainer').style.display = 'flex';
-                } else if (error) {
-                    document.getElementById('uploadStatus').innerHTML = `<span style="color:red;">Upload failed: ${error.message}</span>`;
-                }
-            });
-        });
-    }
-    function setupSettingsHandlers() {
-        document.getElementById('appToggle').addEventListener('click', async () => {
-            const newState = !settings.appActive;
-            await set(maintenanceRef, !newState);
-            await set(settingsRef, { ...settings, appActive: newState });
-            addNotification(`Maintenance mode ${!newState ? 'ON' : 'OFF'}`);
-        });
-        document.getElementById('paymentMethodSelect').addEventListener('change', (e) => update(settingsRef, { paymentMethod: e.target.value }));
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
-    }
-    function addNotification(msg) {
-        notifications.unshift(msg);
-        if(notifications.length > 10) notifications.pop();
-        const badge = document.getElementById('notifCount');
-        badge.style.display = notifications.length ? 'inline-block' : 'none';
-        badge.innerText = notifications.length > 9 ? '9+' : notifications.length;
-        const dropdown = document.getElementById('notifDropdown');
-        dropdown.innerHTML = notifications.map(n => `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n)}</div>`).join('');
-        dropdown.classList.add('show');
-        setTimeout(() => dropdown.classList.remove('show'), 3000);
-    }
-    function setupNavigation() {
-        const sections = ['home','posted','users','modules','account','settings'];
-        document.querySelectorAll('.nav-five-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.section;
-                sections.forEach(s => document.getElementById(s+'Section').classList.remove('active-section'));
-                document.getElementById(id+'Section').classList.add('active-section');
-                document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                if(id === 'posted') renderPostedGrid();
-                if(id === 'users') renderUsers();
-                if(id === 'modules') renderModulesAccordion();
-                if(id === 'account') renderAccount();
-            });
-        });
-    }
-    function setupModals() {
-        document.querySelectorAll('.close-modal, #closeVideoModal, #closeCertModal').forEach(el => el.addEventListener('click', () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none')));
-        window.addEventListener('click', (e) => { if(e.target.classList.contains('modal')) e.target.style.display = 'none'; });
-    }
-    function refreshAll() {
-        renderHomeScrolls(); renderPostedGrid(); renderUsers(); renderModulesAccordion(); renderAccount(); updateBannedList();
-    }
-    function escapeHtml(text) { if(!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    });
 
-    // Global event listeners
-    document.getElementById('globalAddModuleBtn')?.addEventListener('click', () => {
-        const newMod = document.getElementById('newGlobalModule').value.trim();
-        if(newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
-        document.getElementById('newGlobalModule').value = '';
+    // Post Doc Form
+    document.getElementById('docPostForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('docTitle').value.trim();
+        const instructor = document.getElementById('docInstructor').value.trim();
+        if (!title || !instructor) return alert('Required fields');
+        const priceType = document.getElementById('docPriceType').value;
+        const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('docPaidAmount').value) || 0;
+        const module = document.getElementById('docModuleSelect').value;
+        const sourceType = document.querySelector('input[name="docSource"]:checked').value;
+        let content = '', docUrl = '';
+        if (sourceType === 'text') {
+            content = document.getElementById('docContentText').value.trim();
+            if (!content) return alert('Paste some text');
+        } else {
+            docUrl = document.getElementById('cloudinaryDocUrl').value;
+            if (!docUrl) return alert('Upload a document first');
+        }
+        const newRef = push(docsRef);
+        await set(newRef, {
+            title, instructor, price, module, content, docUrl,
+            createdAt: new Date().toISOString()
+        });
+        showToast('Document published!');
+        document.getElementById('docPostFormContainer').classList.remove('show');
+        document.getElementById('bigPostDocBtn').style.display = 'block';
+        document.getElementById('docPostForm').reset();
     });
-    document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
-    document.getElementById('filterModuleSelect')?.addEventListener('change', renderPostedGrid);
-    document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
-    document.getElementById('notifBell').addEventListener('click', () => {
-        const dd = document.getElementById('notifDropdown');
-        dd.classList.toggle('show');
-        setTimeout(() => dd.classList.remove('show'), 5000);
-    });
+
+    function populateEditForm(video) {
+        // Implementation as needed
+    }
 
     function setupUI() {
-        setupNavigation();
-        setupPostForm();
-        setupCloudinaryUpload();
-        setupSettingsHandlers();
-        setupModals();
-        updateModuleSelects();
+        // Navigation
+        document.querySelectorAll('.nav-five-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sec = btn.dataset.section;
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+                document.getElementById(sec + 'Section').classList.add('active-section');
+                document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (sec === 'posted') renderPostedGrid();
+                if (sec === 'users') renderUsers();
+                if (sec === 'modules') renderModulesAccordion();
+                if (sec === 'docs') renderDocsList();
+            });
+        });
+
+        // Module type toggle
+        document.querySelectorAll('.toggle-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                currentModuleType = this.dataset.moduleType;
+                renderModulesAccordion();
+            });
+        });
+
+        // Account modal
+        document.getElementById('accountQuickBtn').addEventListener('click', () => {
+            document.getElementById('accountPageModal').style.display = 'flex';
+            renderAccountModal();
+        });
+
+        // Close modals
+        document.querySelectorAll('.close-modal').forEach(el => {
+            el.addEventListener('click', () => {
+                el.closest('.modal').style.display = 'none';
+            });
+        });
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+        });
+
+        // Post form toggles
+        document.getElementById('bigPostBtn').onclick = () => {
+            document.getElementById('dynamicPostForm').classList.add('show');
+            document.getElementById('bigPostBtn').style.display = 'none';
+        };
+        document.getElementById('cancelPostBtn').onclick = () => {
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
+        };
+        document.getElementById('bigPostDocBtn').onclick = () => {
+            document.getElementById('docPostFormContainer').classList.add('show');
+            document.getElementById('bigPostDocBtn').style.display = 'none';
+        };
+
+        // Price toggles
+        document.getElementById('priceType').addEventListener('change', function() {
+            document.getElementById('paidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
+        });
+        document.getElementById('docPriceType').addEventListener('change', function() {
+            document.getElementById('docPaidAmount').style.display = this.value === 'paid' ? 'block' : 'none';
+        });
+        document.querySelectorAll('input[name="videoSource"]').forEach(r => {
+            r.addEventListener('change', function() {
+                document.getElementById('linkGroup').style.display = this.value === 'link' ? 'block' : 'none';
+                document.getElementById('uploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
+            });
+        });
+        document.querySelectorAll('input[name="docSource"]').forEach(r => {
+            r.addEventListener('change', function() {
+                document.getElementById('docUploadGroup').style.display = this.value === 'upload' ? 'block' : 'none';
+            });
+        });
+
+        // Quick add module
+        document.getElementById('quickAddModuleBtn').addEventListener('click', () => {
+            const newMod = document.getElementById('newModuleNameHome').value.trim();
+            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
+        });
+        document.getElementById('quickAddDocModuleBtn').addEventListener('click', () => {
+            const newMod = document.getElementById('newDocModule').value.trim();
+            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
+        });
+        document.getElementById('globalAddModuleBtn').addEventListener('click', () => {
+            const newMod = document.getElementById('newGlobalModule').value.trim();
+            if (newMod && !modules.includes(newMod)) set(modulesRef, [...modules, newMod]);
+        });
+
+        // Settings
+        document.getElementById('appToggle').addEventListener('click', async () => {
+            const snap = await get(maintenanceRef);
+            const newState = !(snap.val() === true);
+            await set(maintenanceRef, newState);
+            document.getElementById('appToggle').classList.toggle('active', newState);
+        });
+        document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
+            update(settingsRef, { paymentMethod: e.target.value });
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'index.html'));
+
+        // Notif bell
+        document.getElementById('notifBell').addEventListener('click', () => {
+            document.getElementById('notifDropdown').classList.toggle('show');
+        });
+
+        // Search/filter
+        document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
+        document.getElementById('filterModuleSelect')?.addEventListener('change', renderPostedGrid);
+        document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
     }
+
+    function refreshAll() {
+        renderHomeScrolls();
+        renderPostedGrid();
+        renderUsers();
+        renderModulesAccordion();
+        renderDocsList();
+        updateBannedList();
+        updateStats();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Simulate new events for toast demo (optional)
+    setTimeout(() => showToast('New learner registered!', 'enroll'), 5000);
+    setTimeout(() => showToast('Video received a like!', 'like'), 8000);
+    setTimeout(() => showToast('New payment of ZMW 50', 'payment'), 12000);
 </script>
 </body>
 </html>
