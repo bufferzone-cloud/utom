@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Cloudinary Upload Widget -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         /* ----- RESET & GLOBAL ----- */
@@ -648,7 +649,6 @@
         <div id="paymentUploadBox" class="upload-box">
             <i class="fas fa-cloud-upload-alt fa-2x"></i>
             <p>Tap to upload payment screenshot</p>
-            <input type="file" id="paymentScreenshotInput" accept="image/*" style="display:none;">
         </div>
         <div id="paymentScreenshotPreview" style="margin: 1rem 0;"></div>
         <button id="submitPaymentPageBtn" class="btn-profile">Submit for Approval</button>
@@ -714,7 +714,7 @@
     let offlineVideos = new Set();
     let selectedItem = null;
     let selectedItemType = 'video';
-    let paymentScreenshotFile = null;
+    let paymentScreenshotUrl = null;
     let currentFilter = 'all';
     let currentSearch = '';
 
@@ -1114,7 +1114,7 @@
         }
         
         document.getElementById('paymentScreenshotPreview').innerHTML = '';
-        paymentScreenshotFile = null;
+        paymentScreenshotUrl = null;
         document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
         document.getElementById('paymentPage').classList.add('active-page');
     }
@@ -1138,31 +1138,31 @@
             renderHomeVideos();
         });
 
-        // Payment page upload
+        // Payment page upload using Cloudinary Widget (exactly like admin)
         const uploadBox = document.getElementById('paymentUploadBox');
-        const fileInput = document.getElementById('paymentScreenshotInput');
-        uploadBox.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                paymentScreenshotFile = file;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%; border-radius:20px;">`;
-                };
-                reader.readAsDataURL(file);
-            }
+        uploadBox.addEventListener('click', () => {
+            cloudinary.openUploadWidget({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url', 'camera'],
+                maxFileSize: 5000000,
+                clientAllowedFormats: ['png', 'jpg', 'jpeg', 'heic'],
+                maxFiles: 1
+            }, (error, result) => {
+                if (error) return;
+                if (result.event === 'success') {
+                    paymentScreenshotUrl = result.info.secure_url;
+                    document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${paymentScreenshotUrl}" style="max-width:100%; border-radius:20px;">`;
+                    addNotification('Screenshot uploaded successfully');
+                }
+            });
         });
+
         document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
-            if (!selectedItem || !paymentScreenshotFile) {
+            if (!selectedItem || !paymentScreenshotUrl) {
                 alert("Please upload a payment screenshot.");
                 return;
             }
-            const formData = new FormData();
-            formData.append('file', paymentScreenshotFile);
-            formData.append('upload_preset', UPLOAD_PRESET);
-            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:'POST', body:formData });
-            const uploadJson = await uploadRes.json();
             const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
             await set(pendingRef, {
                 itemId: selectedItem.id,
@@ -1170,7 +1170,7 @@
                 itemType: selectedItemType,
                 amount: selectedItem.price,
                 provider: 'MTN/Airtel',
-                screenshot: uploadJson.secure_url,
+                screenshot: paymentScreenshotUrl,
                 status: 'pending',
                 timestamp: Date.now(),
                 userId: currentUser.uid,
@@ -1181,7 +1181,7 @@
             addNotification(`✅ Purchase request sent for "${selectedItem.title}". Awaiting admin approval.`);
             showPage('home');
             selectedItem = null;
-            paymentScreenshotFile = null;
+            paymentScreenshotUrl = null;
         });
 
         document.getElementById('addFundsBtn').addEventListener('click', () => document.getElementById('fundsModal').classList.add('active'));
