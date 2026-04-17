@@ -329,7 +329,7 @@
         .like-doc-btn.liked {
             color: #e74c3c;
         }
-        /* ----- FULL PAGE DOC VIEWER ----- */
+        /* ----- FULL PAGE DOC VIEWER & PAYMENT PAGE ----- */
         .full-page-container {
             padding: 1rem;
         }
@@ -340,6 +340,33 @@
             white-space: pre-wrap;
             font-size: 1rem;
             line-height: 1.6;
+        }
+        .payment-page-preview {
+            background: black;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .payment-page-preview video,
+        .payment-page-preview iframe {
+            width: 100%;
+            max-height: 220px;
+        }
+        .wallet-info-row {
+            display: flex;
+            justify-content: space-between;
+            background: #fef5e8;
+            padding: 1rem;
+            border-radius: 20px;
+            margin: 1rem 0;
+        }
+        .upload-box {
+            border: 2px dashed #F5B042;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            margin: 1rem 0;
         }
         /* ----- PAGE CONTAINERS ----- */
         .page-container {
@@ -397,45 +424,6 @@
             background: transparent;
             border: 1.5px solid #F5B042;
             color: #000;
-        }
-        /* Modals */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 300;
-            visibility: hidden;
-            opacity: 0;
-            transition: 0.2s;
-        }
-        .modal.active {
-            visibility: visible;
-            opacity: 1;
-        }
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 48px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-        .screenshot-preview {
-            max-width: 100%;
-            margin: 10px 0;
-            border-radius: 20px;
-        }
-        .close-modal {
-            float: right;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #888;
         }
         /* Bottom Navigation */
         .bottom-nav {
@@ -642,23 +630,28 @@
         <div id="docFullContent" class="full-page-content"></div>
     </div>
 
-    <!-- Payment Modal -->
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closePaymentModal">&times;</span>
-            <h3><i class="fas fa-credit-card"></i> Purchase Content</h3>
-            <div id="paymentCourseInfo" style="background:#fef5e8; border-radius:24px; padding:0.8rem; margin:1rem 0; text-align:left;"></div>
-            <div id="paymentAmountDisplay" style="font-size:1.8rem; font-weight:800; color:#F5B042;"></div>
-            <select id="providerSelect" style="width:100%; padding:10px; border-radius:40px; margin:10px 0; border:1px solid #ddd;">
-                <option value="MTN Mobile Money">MTN Mobile Money</option>
-                <option value="Airtel Money">Airtel Money</option>
-                <option value="Zamtel Kwacha">Zamtel Kwacha</option>
-            </select>
-            <button id="uploadScreenshotBtn" class="btn-profile" style="background:#4f46e5;"><i class="fas fa-cloud-upload-alt"></i> Upload Screenshot</button>
-            <input type="file" id="screenshotFileInput" accept="image/*" style="display:none;">
-            <div id="screenshotPreview"></div>
-            <button id="submitPaymentBtn" class="btn-profile">Submit for Approval</button>
+    <!-- Payment Page (Full Page, YouTube style) -->
+    <div id="paymentPage" class="page-container full-page-container">
+        <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back</button>
+        <div class="payment-page-preview" id="paymentPreviewContainer"></div>
+        <h2 id="paymentItemTitle"></h2>
+        <p id="paymentItemInstructor"></p>
+        <div class="wallet-info-row">
+            <span>Your balance:</span>
+            <strong id="paymentWalletBalance">ZMW 0</strong>
         </div>
+        <div class="wallet-info-row">
+            <span>Price:</span>
+            <strong id="paymentItemPrice">ZMW 0</strong>
+        </div>
+        <p style="margin: 0.5rem 0;">After admin approval, the amount will be deducted.</p>
+        <div id="paymentUploadBox" class="upload-box">
+            <i class="fas fa-cloud-upload-alt fa-2x"></i>
+            <p>Tap to upload payment screenshot</p>
+            <input type="file" id="paymentScreenshotInput" accept="image/*" style="display:none;">
+        </div>
+        <div id="paymentScreenshotPreview" style="margin: 1rem 0;"></div>
+        <button id="submitPaymentPageBtn" class="btn-profile">Submit for Approval</button>
     </div>
 
     <!-- Add Funds Modal -->
@@ -721,7 +714,7 @@
     let offlineVideos = new Set();
     let selectedItem = null;
     let selectedItemType = 'video';
-    let screenshotFile = null;
+    let paymentScreenshotFile = null;
     let currentFilter = 'all';
     let currentSearch = '';
 
@@ -902,7 +895,7 @@
                 if (!video) return;
                 const hasAccess = card.dataset.access === 'true';
                 if (video.price > 0 && !hasAccess) {
-                    openPaymentModal(video, 'video');
+                    openPaymentPage(video, 'video');
                 } else {
                     playVideoInPlayer(video);
                     watchedVideos.add(videoId);
@@ -943,20 +936,12 @@
         try {
             addNotification(`⬇️ Downloading "${video.title}"...`);
             const response = await fetch(video.videoUrl);
-            const reader = response.body.getReader();
-            const contentLength = +response.headers.get('Content-Length');
-            let receivedLength = 0;
-            const chunks = [];
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                receivedLength += value.length;
-            }
-            const blob = new Blob(chunks);
+            if (!response.ok) throw new Error('Network error');
+            const blob = await response.blob();
             const tx = offlineDB.transaction('videos', 'readwrite');
             const store = tx.objectStore('videos');
             store.put({ id: video.id, blob: blob, title: video.title, thumbnail: video.thumbnail });
+            await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
             offlineVideos.add(video.id);
             addNotification(`✅ "${video.title}" saved offline!`);
             renderOfflinePage();
@@ -1029,7 +1014,7 @@
                 const doc = allDocs.find(d => d.id === docId);
                 if (!doc) return;
                 if (!canAccessDoc(doc)) {
-                    openPaymentModal(doc, 'doc');
+                    openPaymentPage(doc, 'doc');
                     return;
                 }
                 openDocFullPage(doc);
@@ -1102,18 +1087,36 @@
         document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
     }
 
-    function openPaymentModal(item, type) {
+    // Payment Page (Full Page)
+    function openPaymentPage(item, type) {
         selectedItem = item;
         selectedItemType = type;
-        document.getElementById('paymentCourseInfo').innerHTML = `
-            <strong>${escapeHtml(item.title)}</strong><br>
-            by ${escapeHtml(item.instructor)}<br>
-            Price: ZMW ${item.price}
-        `;
-        document.getElementById('paymentAmountDisplay').innerText = `ZMW ${item.price}`;
-        document.getElementById('screenshotPreview').innerHTML = '';
-        screenshotFile = null;
-        document.getElementById('paymentModal').classList.add('active');
+        document.getElementById('paymentItemTitle').innerText = item.title;
+        document.getElementById('paymentItemInstructor').innerText = `by ${item.instructor}`;
+        document.getElementById('paymentItemPrice').innerText = `ZMW ${item.price}`;
+        document.getElementById('paymentWalletBalance').innerText = `ZMW ${userData.wallet}`;
+        
+        const previewContainer = document.getElementById('paymentPreviewContainer');
+        if (type === 'video') {
+            let embed = '';
+            const url = item.videoUrl;
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+                embed = `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`;
+            } else if (url.includes('vimeo.com')) {
+                embed = `<iframe width="100%" height="220" src="https://player.vimeo.com/video/${url.split('/').pop()}" frameborder="0" allowfullscreen></iframe>`;
+            } else {
+                embed = `<video controls style="width:100%; max-height:220px;"><source src="${url}" type="video/mp4"></video>`;
+            }
+            previewContainer.innerHTML = embed;
+        } else {
+            previewContainer.innerHTML = `<div style="background:#f5f5f5; padding:2rem; text-align:center;"><i class="fas fa-file-alt fa-3x"></i><p>${escapeHtml(item.title)}</p></div>`;
+        }
+        
+        document.getElementById('paymentScreenshotPreview').innerHTML = '';
+        paymentScreenshotFile = null;
+        document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
+        document.getElementById('paymentPage').classList.add('active-page');
     }
 
     function setupUI() {
@@ -1124,6 +1127,7 @@
         document.getElementById('logoutBtnSmall').addEventListener('click', () => signOut(auth));
         document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
         document.getElementById('backFromDocBtn').addEventListener('click', () => showPage('docs'));
+        document.getElementById('backFromPaymentBtn').addEventListener('click', () => showPage('home'));
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
             currentSearch = e.target.value.toLowerCase();
@@ -1134,36 +1138,38 @@
             renderHomeVideos();
         });
 
-        // Payment modal
-        document.getElementById('uploadScreenshotBtn').addEventListener('click', () => {
-            document.getElementById('screenshotFileInput').click();
-        });
-        document.getElementById('screenshotFileInput').addEventListener('change', (e) => {
+        // Payment page upload
+        const uploadBox = document.getElementById('paymentUploadBox');
+        const fileInput = document.getElementById('paymentScreenshotInput');
+        uploadBox.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                screenshotFile = file;
+                paymentScreenshotFile = file;
                 const reader = new FileReader();
                 reader.onload = (ev) => {
-                    document.getElementById('screenshotPreview').innerHTML = `<img src="${ev.target.result}" class="screenshot-preview">`;
+                    document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%; border-radius:20px;">`;
                 };
                 reader.readAsDataURL(file);
             }
         });
-        document.getElementById('submitPaymentBtn').addEventListener('click', async () => {
-            if (!selectedItem || !screenshotFile) { alert("Please upload a screenshot."); return; }
+        document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
+            if (!selectedItem || !paymentScreenshotFile) {
+                alert("Please upload a payment screenshot.");
+                return;
+            }
             const formData = new FormData();
-            formData.append('file', screenshotFile);
+            formData.append('file', paymentScreenshotFile);
             formData.append('upload_preset', UPLOAD_PRESET);
             const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:'POST', body:formData });
             const uploadJson = await uploadRes.json();
-            const provider = document.getElementById('providerSelect').value;
             const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
             await set(pendingRef, {
                 itemId: selectedItem.id,
                 itemTitle: selectedItem.title,
                 itemType: selectedItemType,
                 amount: selectedItem.price,
-                provider: provider,
+                provider: 'MTN/Airtel',
                 screenshot: uploadJson.secure_url,
                 status: 'pending',
                 timestamp: Date.now(),
@@ -1173,11 +1179,9 @@
                 userPhone: userData.phone || ''
             });
             addNotification(`✅ Purchase request sent for "${selectedItem.title}". Awaiting admin approval.`);
-            document.getElementById('paymentModal').classList.remove('active');
+            showPage('home');
             selectedItem = null;
-        });
-        document.getElementById('closePaymentModal').addEventListener('click', () => {
-            document.getElementById('paymentModal').classList.remove('active');
+            paymentScreenshotFile = null;
         });
 
         document.getElementById('addFundsBtn').addEventListener('click', () => document.getElementById('fundsModal').classList.add('active'));
