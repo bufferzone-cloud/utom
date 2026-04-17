@@ -1,11 +1,17 @@
-// UTOM PWA Service Worker
-const CACHE_NAME = 'utom-v1';
-const urlsToCache = [
-  'https://bufferzone-cloud.github.io/utom/index.html',
-  'https://bufferzone-cloud.github.io/utom/user.html',
-  'https://bufferzone-cloud.github.io/utom/admin.html',
-  'https://bufferzone-cloud.github.io/utom/logo.png',
-  'https://bufferzone-cloud.github.io/utom//offline.html',               // optional offline fallback
+// UTOM PWA Service Worker – Enhanced for reliable installation & offline access
+const CACHE_VERSION = 'utom-v2';
+const CACHE_NAME = `utom-cache-${CACHE_VERSION}`;
+const RUNTIME_CACHE = 'utom-runtime';
+
+// Core assets to cache on install (critical for offline startup)
+const PRECACHE_URLS = [
+  '/utom/index.html',
+  '/utom/user.html',
+  '/utom/admin.html',
+  '/utom/offline.html',
+  '/utom/logo.png',
+  '/utom/manifest.json',
+  // External CDN resources (essential for UI)
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
   'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js',
@@ -14,52 +20,102 @@ const urlsToCache = [
   'https://upload-widget.cloudinary.com/global/all.js'
 ];
 
+// Install event – precache core assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .catch(err => console.error('Cache install failed', err))
+      .then(cache => {
+        console.log('Precaching app shell');
+        return cache.addAll(PRECACHE_URLS);
+      })
+      .catch(err => console.error('Precache failed:', err))
   );
-  self.skipWaiting();
+  self.skipWaiting(); // Activate immediately
 });
 
+// Activate event – clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(key => key !== CACHE_NAME && caches.delete(key))
-    ))
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME && cache !== RUNTIME_CACHE) {
+            console.log('Deleting old cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    })
   );
-  self.clients.claim();
+  self.clients.claim(); // Take control of all clients
 });
 
+// Fetch event – network-first for HTML, cache-first for assets
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  // Skip non-GET, external analytics, etc.
-  if (event.request.method !== 'GET') return;
-  
-  // For same-origin or allowed CDNs, try cache then network
-  if (url.origin === location.origin ||
-      url.href.includes('cdnjs.cloudflare.com') ||
-      url.href.includes('gstatic.com') ||
-      url.href.includes('upload-widget.cloudinary.com')) {
-    
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Only handle GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip cross-origin requests that aren't in our CDN allowlist
+  const allowedCDNs = [
+    'cdnjs.cloudflare.com',
+    'gstatic.com',
+    'upload-widget.cloudinary.com'
+  ];
+  const isSameOrigin = url.origin === self.location.origin;
+  const isAllowedCDN = allowedCDNs.some(cdn => url.hostname.includes(cdn));
+
+  if (!isSameOrigin && !isAllowedCDN) return;
+
+  // For HTML navigation requests: network-first, fallback to offline page
+  if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(networkResponse => {
-          if (networkResponse.ok) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        }).catch(() => {
-          // Offline fallback for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/utom/offline.html');
-          }
-          return new Response('Offline – content not available', { status: 503 });
-        });
-      })
+      fetch(request)
+        .then(response => {
+          // Cache the latest version
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+          return response;
+        })
+        .catch(() => {
+          return caches.match(request)
+            .then(cachedResponse => cachedResponse || caches.match('/utom/offline.html'));
+        })
     );
+    return;
   }
+
+  // For other assets (JS, CSS, images, fonts): cache-first, then network fallback
+  event.respondWith(
+    caches.match(request).then(cachedResponse => {
+      if (cachedResponse) {
+        // Return cached version and update cache in background
+        fetch(request).then(networkResponse => {
+          if (networkResponse.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put(request, networkResponse));
+          }
+        }).catch(() => {}); // ignore network errors during background update
+        return cachedResponse;
+      }
+
+      // Not in cache – go to network
+      return fetch(request).then(networkResponse => {
+        // Cache valid responses
+        if (networkResponse.ok) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+        }
+        return networkResponse;
+      }).catch(error => {
+        // If it's an image or font, maybe return a fallback
+        if (request.destination === 'image') {
+          return new Response('', { status: 408, statusText: 'Offline image' });
+        }
+        // Otherwise just fail
+        throw error;
+      });
+    })
+  );
 });
