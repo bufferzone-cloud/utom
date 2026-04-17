@@ -12,15 +12,12 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             background: #f4f7fc;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             font-size: 0.85rem;
             padding-bottom: 80px;
         }
-
-        /* Top Bar */
         .top-brand {
             background: white;
             padding: 0.6rem 1rem;
@@ -71,8 +68,6 @@
             gap: 8px;
             cursor: pointer;
         }
-
-        /* Notifications */
         .notif-bell {
             position: relative;
             cursor: pointer;
@@ -89,8 +84,6 @@
             padding: 2px 6px;
             font-size: 0.6rem;
         }
-
-        /* Bottom Navigation */
         .nav-five {
             position: fixed;
             bottom: 0;
@@ -125,8 +118,6 @@
             color: #F5B042;
             text-shadow: 0 0 6px rgba(245,176,66,0.8);
         }
-
-        /* Sections */
         .section {
             display: none;
             animation: fade 0.2s;
@@ -134,8 +125,10 @@
         .section.active-section {
             display: block;
         }
-        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         .card-glass {
             background: white;
             border-radius: 24px;
@@ -143,8 +136,6 @@
             margin: 0.7rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
-
-        /* Video Cards */
         .horizontal-scroll {
             display: flex;
             overflow-x: auto;
@@ -177,6 +168,7 @@
             padding: 3px 6px;
             border-radius: 30px;
             justify-content: space-between;
+            flex-wrap: wrap;
         }
         .play-video-btn {
             background: #F5B042;
@@ -187,8 +179,6 @@
             font-weight: 600;
             cursor: pointer;
         }
-
-        /* Inline Player */
         .inline-player-container {
             background: #000;
             border-radius: 20px;
@@ -206,8 +196,6 @@
             cursor: pointer;
             z-index: 10;
         }
-
-        /* DOC Cards */
         .docs-grid-1col {
             display: flex;
             flex-direction: column;
@@ -235,8 +223,6 @@
             cursor: pointer;
             color: white;
         }
-
-        /* Modules toggle */
         .module-type-toggle {
             display: flex;
             gap: 10px;
@@ -252,8 +238,6 @@
             background: #F5B042;
             color: white;
         }
-
-        /* Account page */
         .stat-cards {
             display: flex;
             gap: 12px;
@@ -266,8 +250,6 @@
             border-radius: 24px;
             text-align: center;
         }
-
-        /* Progress bar */
         .progress-container {
             width: 100%;
             background: #ddd;
@@ -281,8 +263,6 @@
             background: #F5B042;
             width: 0%;
         }
-
-        /* Toggle Switch (iPhone style) */
         .toggle-switch {
             width: 44px;
             height: 22px;
@@ -309,8 +289,6 @@
         .toggle-switch.active:after {
             left: 23px;
         }
-
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -341,8 +319,6 @@
             font-size: 1.5rem;
             cursor: pointer;
         }
-
-        /* Form styles */
         .btn-big-post {
             background: #F5B042;
             border: none;
@@ -391,11 +367,58 @@
             border-radius: 40px;
             cursor: pointer;
         }
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+        .modules-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+        .user-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .badge-banned {
+            background: #e6394620;
+            color: #e63946;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+        }
+        .full-page-editor {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            min-height: 70vh;
+            font-size: 1rem;
+            line-height: 1.6;
+            border: 1px solid #eee;
+            outline: none;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+        .full-page-editor:empty:before {
+            content: "Start typing your document...";
+            color: #aaa;
+        }
+        @media (max-width: 550px) {
+            .videos-grid { grid-template-columns: 1fr; }
+            .modules-grid-2x2 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-<!-- Inline video player (global) -->
+<!-- Inline video player -->
 <div id="globalInlinePlayer" style="display: none; margin: 0 0.7rem 0.7rem;">
     <div class="inline-player-container">
         <div style="position: relative;">
@@ -416,6 +439,15 @@
             <div id="userBanToggle" class="toggle-switch"></div>
         </div>
     </div>
+</div>
+
+<!-- Full Page Text Editor for Doc Writing -->
+<div id="docEditorPage" class="section" style="padding: 1rem;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+        <button id="cancelDocEditorBtn" class="btn-outline"><i class="fas fa-times"></i> Cancel</button>
+        <button id="doneDocEditorBtn" class="btn-yellow"><i class="fas fa-check"></i> Done</button>
+    </div>
+    <div id="fullPageEditor" class="full-page-editor" contenteditable="true"></div>
 </div>
 
 <!-- Document Full Page Viewer -->
@@ -453,7 +485,7 @@
     <button class="nav-five-btn" data-section="settings"><i class="fas fa-cog"></i> SETTINGS</button>
 </div>
 
-<!-- NOTIFICATIONS PAGE (hidden section) -->
+<!-- NOTIFICATIONS PAGE -->
 <div id="notificationsSection" class="section">
     <div class="card-glass">
         <h3><i class="fas fa-bell"></i> Notifications</h3>
@@ -468,26 +500,63 @@
         <div id="dynamicPostForm" class="toggle-form">
             <h4>Upload new video</h4>
             <form id="homePostForm">
-                <div class="form-row"><input type="text" id="videoTitle" placeholder="Title *" required><input type="text" id="instructorName" placeholder="Instructor *" required></div>
-                <div class="form-row"><select id="priceType"><option value="free">Free</option><option value="paid">Paid (ZMW)</option></select><input type="number" id="paidAmount" placeholder="Amount ZMW" style="display:none;"></div>
-                <div class="form-row"><select id="moduleSelectHome"></select><input type="text" id="newModuleNameHome" placeholder="+ New module"><button type="button" id="quickAddModuleBtn" class="btn-yellow">Create</button></div>
+                <div class="form-row">
+                    <input type="text" id="videoTitle" placeholder="Title *" required>
+                    <input type="text" id="instructorName" placeholder="Instructor *" required>
+                </div>
+                <div class="form-row">
+                    <select id="priceType">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid (ZMW)</option>
+                    </select>
+                    <input type="number" id="paidAmount" placeholder="Amount ZMW" style="display:none;">
+                </div>
+                <div class="form-row">
+                    <select id="moduleSelectHome"></select>
+                    <input type="text" id="newModuleNameHome" placeholder="+ New module">
+                    <button type="button" id="quickAddModuleBtn" class="btn-yellow">Create</button>
+                </div>
                 <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
-                <div class="form-row"><div class="radio-group"><label><input type="radio" name="videoSource" value="link" checked> Link</label><label><input type="radio" name="videoSource" value="upload"> Upload</label></div></div>
-                <div class="video-source-group" id="linkGroup"><input type="url" id="videoUrlInput" placeholder="Video URL"><input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL"></div>
+                <div class="form-row">
+                    <div class="radio-group">
+                        <label><input type="radio" name="videoSource" value="link" checked> Link</label>
+                        <label><input type="radio" name="videoSource" value="upload"> Upload</label>
+                    </div>
+                </div>
+                <div class="video-source-group" id="linkGroup">
+                    <input type="url" id="videoUrlInput" placeholder="Video URL">
+                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL">
+                </div>
                 <div class="video-source-group" id="uploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
-                    <div id="uploadProgressArea"><div class="progress-container"><div class="progress-fill" id="uploadProgressFill"></div></div><span id="uploadPercentText">0%</span></div>
+                    <div id="uploadProgressArea">
+                        <div class="progress-container"><div class="progress-fill" id="uploadProgressFill"></div></div>
+                        <span id="uploadPercentText">0%</span>
+                    </div>
                     <input type="hidden" id="cloudinaryVideoUrl">
-                    <div><label>Thumb frame (sec):</label><input type="number" id="thumbnailOffset" value="3" step="0.5"><button type="button" id="generateThumbnailBtn" class="btn-outline">Generate</button></div>
+                    <div>
+                        <label>Thumb frame (sec):</label>
+                        <input type="number" id="thumbnailOffset" value="3" step="0.5">
+                        <button type="button" id="generateThumbnailBtn" class="btn-outline">Generate</button>
+                    </div>
                     <input type="hidden" id="generatedThumbnailUrl">
-                    <div id="thumbnailPreviewContainer" style="display:none;"><img id="thumbnailPreviewImg" width="80"></div>
+                    <div id="thumbnailPreviewContainer" style="display:none;">
+                        <img id="thumbnailPreviewImg" width="80">
+                    </div>
                 </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;"><button type="button" id="cancelPostBtn" class="btn-outline">Cancel</button><button type="submit" class="btn-yellow">PUBLISH</button></div>
+                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                    <button type="button" id="cancelPostBtn" class="btn-outline">Cancel</button>
+                    <button type="submit" class="btn-yellow">PUBLISH</button>
+                </div>
             </form>
         </div>
     </div>
     <div class="card-glass">
-        <div class="stats-mini"><span><i class="fas fa-video"></i> <span id="statVideos">0</span></span><span><i class="fas fa-users"></i> <span id="statUsers">0</span></span><span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span></div>
+        <div class="stats-mini">
+            <span><i class="fas fa-video"></i> <span id="statVideos">0</span></span>
+            <span><i class="fas fa-users"></i> <span id="statUsers">0</span></span>
+            <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
+        </div>
         <h3>💰 Paid Videos</h3>
         <div class="horizontal-scroll" id="homePaidScroll"></div>
         <h3>🆓 Free Videos</h3>
@@ -499,7 +568,11 @@
 <div id="postedSection" class="section">
     <div class="card-glass">
         <h2>My Content Library</h2>
-        <div class="search-filter"><input type="text" id="searchVideoInput" placeholder="Search..."><select id="filterModuleSelect"><option value="all">All modules</option></select><select id="filterPriceSelect"><option value="all">All</option><option value="free">Free</option><option value="paid">Paid</option></select></div>
+        <div class="search-filter">
+            <input type="text" id="searchVideoInput" placeholder="Search...">
+            <select id="filterModuleSelect"><option value="all">All modules</option></select>
+            <select id="filterPriceSelect"><option value="all">All</option><option value="free">Free</option><option value="paid">Paid</option></select>
+        </div>
         <div id="postedVideosGrid" class="videos-grid"></div>
     </div>
 </div>
@@ -520,7 +593,10 @@
             <span class="toggle-option active" data-module-type="video">Video Modules</span>
             <span class="toggle-option" data-module-type="doc">Doc Modules</span>
         </div>
-        <div style="display: flex; gap: 0.5rem;"><input type="text" id="newGlobalModule" placeholder="Module name"><button id="globalAddModuleBtn" class="btn-yellow">+ Add</button></div>
+        <div style="display: flex; gap: 0.5rem; margin: 0.6rem 0;">
+            <input type="text" id="newGlobalModule" placeholder="Module name">
+            <button id="globalAddModuleBtn" class="btn-yellow">+ Add</button>
+        </div>
         <div id="modulesAccordionContainer" class="modules-grid-2x2"></div>
     </div>
 </div>
@@ -532,20 +608,46 @@
         <div id="docPostFormContainer" class="toggle-form">
             <h4>Add Document / Notes</h4>
             <form id="docPostForm">
-                <div class="form-row"><input type="text" id="docTitle" placeholder="Title *" required><input type="text" id="docInstructor" placeholder="Instructor *" required></div>
-                <div class="form-row"><select id="docPriceType"><option value="free">Free</option><option value="paid">Paid (ZMW)</option></select><input type="number" id="docPaidAmount" placeholder="Amount ZMW" style="display:none;"></div>
-                <div class="form-row"><select id="docModuleSelect"></select><input type="text" id="newDocModule" placeholder="+ New module"><button type="button" id="quickAddDocModuleBtn" class="btn-yellow">Create</button></div>
+                <div class="form-row">
+                    <input type="text" id="docTitle" placeholder="Title *" required>
+                    <input type="text" id="docInstructor" placeholder="Instructor *" required>
+                </div>
+                <div class="form-row">
+                    <select id="docPriceType">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid (ZMW)</option>
+                    </select>
+                    <input type="number" id="docPaidAmount" placeholder="Amount ZMW" style="display:none;">
+                </div>
+                <div class="form-row">
+                    <select id="docModuleSelect"></select>
+                    <input type="text" id="newDocModule" placeholder="+ New module">
+                    <button type="button" id="quickAddDocModuleBtn" class="btn-yellow">Create</button>
+                </div>
                 <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
-                <div class="form-row"><div class="radio-group"><label><input type="radio" name="docSource" value="text" checked> Write Text</label><label><input type="radio" name="docSource" value="upload"> Upload Doc</label></div></div>
+                <div class="form-row">
+                    <div class="radio-group">
+                        <label><input type="radio" name="docSource" value="text" checked> Write Text</label>
+                        <label><input type="radio" name="docSource" value="upload"> Upload Doc</label>
+                    </div>
+                </div>
                 <div id="docTextGroup">
-                    <textarea id="docContentText" rows="8" placeholder="Write your document here... (supports paragraphs)" style="white-space: pre-wrap;"></textarea>
+                    <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;">
+                        <i class="fas fa-pen"></i> Open Full Editor
+                    </button>
+                    <input type="hidden" id="docContentHidden">
                 </div>
                 <div id="docUploadGroup" style="display:none;">
                     <button type="button" id="cloudinaryDocUploadBtn" class="btn-yellow"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
-                    <div id="docUploadProgress"><div class="progress-container"><div class="progress-fill" id="docProgressFill"></div></div><span id="docPercentText">0%</span></div>
+                    <div id="docUploadProgress">
+                        <div class="progress-container"><div class="progress-fill" id="docProgressFill"></div></div>
+                        <span id="docPercentText">0%</span>
+                    </div>
                     <input type="hidden" id="cloudinaryDocUrl">
                 </div>
-                <div style="margin-top:12px;"><button type="submit" class="btn-yellow">PUBLISH DOC</button></div>
+                <div style="margin-top:12px;">
+                    <button type="submit" class="btn-yellow">PUBLISH DOC</button>
+                </div>
             </form>
         </div>
         <h3 style="margin: 1rem 0 0.5rem;">📄 Document Library</h3>
@@ -553,13 +655,21 @@
     </div>
 </div>
 
-<!-- ACCOUNT SECTION (Full Page) -->
+<!-- ACCOUNT SECTION -->
 <div id="accountSection" class="section">
     <div class="card-glass" style="background: linear-gradient(145deg, #fff8ed, #ffe8d4);">
         <h2 style="color:#b45f06;">💰 Earnings & Transactions</h2>
         <div class="stat-cards">
-            <div class="stat-card"><i class="fas fa-wallet fa-2x" style="color:#F5B042;"></i><h3 id="totalEarningsDisplay">ZMW 0</h3><span>Total Revenue</span></div>
-            <div class="stat-card"><i class="fas fa-video fa-2x"></i><h3 id="totalPaidPurchases">0</h3><span>Paid Enrollments</span></div>
+            <div class="stat-card">
+                <i class="fas fa-wallet fa-2x" style="color:#F5B042;"></i>
+                <h3 id="totalEarningsDisplay">ZMW 0</h3>
+                <span>Total Revenue</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-video fa-2x"></i>
+                <h3 id="totalPaidPurchases">0</h3>
+                <span>Paid Enrollments</span>
+            </div>
         </div>
         <h4>📋 Recent Transactions</h4>
         <div id="transactionHistoryList" class="transactions-list" style="max-height:400px; overflow-y:auto;"></div>
@@ -570,10 +680,23 @@
 <div id="settingsSection" class="section">
     <div class="card-glass">
         <h3>⚙️ Settings</h3>
-        <div style="display: flex; justify-content: space-between;"><span>App Active</span><div id="appToggle" class="toggle-switch active"></div></div>
-        <div><strong>Payment Method</strong><select id="paymentMethodSelect"><option>MTN Mobile Money</option><option>Airtel Money</option></select></div>
-        <div><strong>Banned Users</strong><div id="bannedUsersList"></div></div>
-        <button id="logoutBtn" class="btn-yellow">Logout</button>
+        <div style="display: flex; justify-content: space-between; margin: 12px 0;">
+            <span>App Active Mode</span>
+            <div id="appToggle" class="toggle-switch active"></div>
+        </div>
+        <div style="margin: 12px 0;">
+            <strong>Payment Method</strong>
+            <select id="paymentMethodSelect" style="width:100%; margin-top:6px;">
+                <option>MTN Mobile Money</option>
+                <option>Airtel Money</option>
+                <option>Visa Card</option>
+            </select>
+        </div>
+        <div style="margin: 12px 0;">
+            <strong>Banned Users</strong>
+            <div id="bannedUsersList" style="margin-top:6px;"></div>
+        </div>
+        <button id="logoutBtn" class="btn-yellow" style="width:100%;">Logout</button>
     </div>
 </div>
 
@@ -600,7 +723,7 @@
     let currentAdmin = null;
     let videos = [], users = [], modules = [], transactions = [], docs = [], notifications = [];
     let currentModuleType = 'video';
-    let viewedVideos = {}; // track unique views per user
+    let pendingDocContent = '';
 
     const videosRef = ref(db, 'videos');
     const usersRef = ref(db, 'users');
@@ -659,16 +782,6 @@
         if(!snap.exists()) set(modulesRef, ['Web Dev','Data Science','Design']);
     }
 
-    // ---------- UNIQUE VIEW TRACKING ----------
-    function hasUserViewed(userId, videoId) {
-        const key = `${userId}_${videoId}`;
-        return viewedVideos[key] || false;
-    }
-    function markViewed(userId, videoId) {
-        viewedVideos[`${userId}_${videoId}`] = true;
-    }
-
-    // ---------- RENDER FUNCTIONS ----------
     function renderHomeScrolls() {
         const paid = videos.filter(v=>v.price>0).sort((a,b)=>(b.views||0)-(a.views||0));
         const free = videos.filter(v=>v.price===0);
@@ -727,7 +840,6 @@
         }
         container.innerHTML = embed;
         playerDiv.style.display = 'block';
-        // Unique view increment
         const viewers = video.uniqueViewers || {};
         if (!viewers[currentAdmin?.uid]) {
             viewers[currentAdmin?.uid] = true;
@@ -796,12 +908,12 @@
         if(currentModuleType==='video'){
             container.innerHTML = modules.map(mod => {
                 const modVideos = videos.filter(v=>v.module===mod);
-                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> ${mod} (${modVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${modVideos.map(v=>buildVideoCard(v)).join('')}</div></div>`;
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder"></i> ${mod} (${modVideos.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos" style="display:grid; grid-template-columns:repeat(2,1fr); gap:0.5rem;">${modVideos.map(v=>buildVideoCard(v)).join('')}</div></div>`;
             }).join('');
         } else {
             container.innerHTML = modules.map(mod => {
                 const modDocs = docs.filter(d=>d.module===mod);
-                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder-open"></i> ${mod} (${modDocs.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos">${modDocs.map(d=>buildDocCard(d)).join('')}</div></div>`;
+                return `<div class="module-folder"><div class="module-header"><span><i class="fas fa-folder-open"></i> ${mod} (${modDocs.length})</span><i class="fas fa-chevron-down"></i></div><div class="module-videos" style="display:flex; flex-direction:column; gap:0.5rem;">${modDocs.map(d=>buildDocCard(d)).join('')}</div></div>`;
             }).join('');
         }
         document.querySelectorAll('.module-header').forEach(h => h.addEventListener('click', ()=>{
@@ -851,7 +963,6 @@
             html += `<div style="white-space: pre-wrap;">${escapeHtml(doc.content||'')}</div>`;
         }
         content.innerHTML = html;
-        // Increment read count
         update(ref(db, `docs/${doc.id}`), { reads: (doc.reads||0)+1 });
     }
 
@@ -875,7 +986,6 @@
             item.addEventListener('click', () => {
                 const type = item.dataset.type;
                 const target = item.dataset.target;
-                // Navigate to relevant section
                 if(type.includes('video')) {
                     document.querySelector('[data-section="home"]').click();
                     const vid = videos.find(v=>v.id===target);
@@ -885,7 +995,6 @@
                 } else if(type.includes('payment')) {
                     document.querySelector('[data-section="account"]').click();
                 }
-                document.querySelector('[data-section="home"]').click(); // fallback
             });
         });
     }
@@ -896,7 +1005,7 @@
         document.getElementById('notifCount').innerText = unread>9?'9+':unread;
     }
 
-    // ---------- CLOUDINARY UPLOAD ----------
+    // Cloudinary
     function setupCloudinary(btnId, urlFieldId, progressFillId, percentId, isVideo=true) {
         document.getElementById(btnId).addEventListener('click', ()=>{
             cloudinary.openUploadWidget({
@@ -926,7 +1035,7 @@
     setupCloudinary('cloudinaryUploadBtn','cloudinaryVideoUrl','uploadProgressFill','uploadPercentText',true);
     setupCloudinary('cloudinaryDocUploadBtn','cloudinaryDocUrl','docProgressFill','docPercentText',false);
 
-    // ---------- FORM SUBMISSIONS ----------
+    // Form Submissions
     document.getElementById('homePostForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('videoTitle').value.trim();
@@ -946,6 +1055,7 @@
         const newRef = push(videosRef);
         await set(newRef, { title, instructor, price, thumbnail, module, description: document.getElementById('videoDesc').value, videoUrl, createdAt: serverTimestamp(), views:0, likes:0, uniqueViewers:{} });
         document.getElementById('dynamicPostForm').classList.remove('show');
+        document.getElementById('bigPostBtn').style.display = 'block';
     });
 
     document.getElementById('docPostForm').addEventListener('submit', async (e) => {
@@ -959,7 +1069,8 @@
         const sourceType = document.querySelector('input[name="docSource"]:checked').value;
         let content='', docUrl='';
         if(sourceType==='text'){
-            content = document.getElementById('docContentText').value.trim();
+            content = document.getElementById('docContentHidden').value;
+            if(!content) return alert('Please write content in the editor');
         } else {
             docUrl = document.getElementById('cloudinaryDocUrl').value;
             if(!docUrl) return alert('Upload document');
@@ -967,9 +1078,27 @@
         const newRef = push(docsRef);
         await set(newRef, { title, instructor, price, module, description, content, docUrl, createdAt: serverTimestamp(), reads:0, likes:0 });
         document.getElementById('docPostFormContainer').classList.remove('show');
+        document.getElementById('bigPostDocBtn').style.display = 'block';
+        document.getElementById('docContentHidden').value = '';
+        document.getElementById('fullPageEditor').innerHTML = '';
     });
 
-    // ---------- UI SETUP ----------
+    // Full Page Editor
+    document.getElementById('openFullEditorBtn').addEventListener('click', ()=>{
+        pendingDocContent = document.getElementById('docContentHidden').value;
+        document.getElementById('fullPageEditor').innerHTML = pendingDocContent;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active-section'));
+        document.getElementById('docEditorPage').classList.add('active-section');
+    });
+    document.getElementById('cancelDocEditorBtn').addEventListener('click', ()=>{
+        document.querySelector('[data-section="docs"]').click();
+    });
+    document.getElementById('doneDocEditorBtn').addEventListener('click', ()=>{
+        const content = document.getElementById('fullPageEditor').innerHTML;
+        document.getElementById('docContentHidden').value = content;
+        document.querySelector('[data-section="docs"]').click();
+    });
+
     function setupUI() {
         document.querySelectorAll('.nav-five-btn').forEach(btn => btn.addEventListener('click', ()=>{
             const sec = btn.dataset.section;
@@ -980,6 +1109,7 @@
             if(sec==='posted') renderPostedGrid();
             if(sec==='users') renderUsers();
             if(sec==='account') renderAccount();
+            if(sec==='docs') renderDocsList();
         }));
         document.getElementById('accountBtn').addEventListener('click', ()=>{
             document.querySelector('[data-section="account"]').click();
