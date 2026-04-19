@@ -144,7 +144,7 @@
             from { opacity: 0; transform: translateX(30px); }
             to { opacity: 1; transform: translateX(0); }
         }
-        /* ----- BOTTOM NAVIGATION (NO ACCOUNT TAB) ----- */
+        /* ----- BOTTOM NAVIGATION ----- */
         .nav-five {
             position: fixed;
             bottom: 0;
@@ -683,7 +683,6 @@
             background: #F5B042;
             width: 0%;
         }
-        /* Document content rendering */
         .doc-full-content {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -702,6 +701,15 @@
         }
         @media (max-width: 550px) {
             .videos-grid { grid-template-columns: 1fr; }
+        }
+        /* Auto price display */
+        .auto-price-badge {
+            background: #F5B04220;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -730,7 +738,7 @@
     </div>
 </div>
 
-<!-- BOTTOM NAVIGATION (ACCOUNT REMOVED, COURSES REPLACES MODULES) -->
+<!-- BOTTOM NAVIGATION -->
 <div class="nav-five">
     <button class="nav-five-btn active" data-section="home"><i class="fas fa-home"></i> HOME</button>
     <button class="nav-five-btn" data-section="posted"><i class="fas fa-video"></i> POSTED</button>
@@ -800,7 +808,7 @@
     <div id="docFullContent" class="doc-full-content" style="background: white; padding: 2rem; border-radius: 24px; font-size: 1rem; line-height: 1.6;"></div>
 </div>
 
-<!-- SUBFOLDER VIEW SECTION (NEW) -->
+<!-- SUBFOLDER VIEW SECTION -->
 <div id="subfolderViewSection" class="section">
     <div style="padding:0.7rem;">
         <button id="backFromSubfolderBtn" class="btn-outline"><i class="fas fa-arrow-left"></i> Back to Courses</button>
@@ -831,14 +839,10 @@
                     <input type="text" id="instructorName" placeholder="Instructor *" required>
                 </div>
                 <div class="form-row">
-                    <select id="priceType">
-                        <option value="free">Free</option>
-                        <option value="paid">Paid (ZMW)</option>
-                    </select>
-                    <input type="number" id="paidAmount" placeholder="Amount ZMW" step="1" style="display:none;">
+                    <select id="courseSelectHome"></select>
+                    <span class="auto-price-badge" id="videoPriceDisplay">Price: FREE</span>
                 </div>
                 <div class="form-row">
-                    <select id="courseSelectHome"></select>
                     <select id="subfolderSelectHome"></select>
                     <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
                     <button type="button" id="quickAddSubfolderBtn" class="btn-yellow">Add</button>
@@ -871,6 +875,7 @@
                         <img id="thumbnailPreviewImg" width="80">
                     </div>
                 </div>
+                <input type="hidden" id="videoPriceHidden" value="0">
                 <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
                     <button type="button" id="cancelPostBtn" class="btn-outline">Cancel</button>
                     <button type="submit" class="btn-yellow">PUBLISH</button>
@@ -916,7 +921,7 @@
     </div>
 </div>
 
-<!-- COURSES SECTION (formerly MODULES) -->
+<!-- COURSES SECTION -->
 <div id="coursesSection" class="section">
     <div class="card-glass">
         <h3>📚 Courses</h3>
@@ -945,14 +950,10 @@
                     <input type="text" id="docInstructor" placeholder="Instructor *" required>
                 </div>
                 <div class="form-row">
-                    <select id="docPriceType">
-                        <option value="free">Free</option>
-                        <option value="paid">Paid (ZMW)</option>
-                    </select>
-                    <input type="number" id="docPaidAmount" placeholder="Amount ZMW" style="display:none;">
+                    <select id="docCourseSelect"></select>
+                    <span class="auto-price-badge" id="docPriceDisplay">Price: FREE</span>
                 </div>
                 <div class="form-row">
-                    <select id="docCourseSelect"></select>
                     <select id="docSubfolderSelect"></select>
                     <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
                     <button type="button" id="quickAddDocSubfolderBtn" class="btn-yellow">Add</button>
@@ -980,6 +981,7 @@
                 <div id="docLinkGroup" style="display:none;">
                     <input type="url" id="docLinkInput" placeholder="https://... (Document URL)">
                 </div>
+                <input type="hidden" id="docPriceHidden" value="0">
                 <div style="margin-top:12px; display: flex; gap: 10px;">
                     <button type="button" id="cancelDocPostBtn" class="btn-outline">Cancel</button>
                     <button type="submit" class="btn-yellow">PUBLISH DOC</button>
@@ -991,7 +993,7 @@
     </div>
 </div>
 
-<!-- ACCOUNT SECTION (REDESIGNED) -->
+<!-- ACCOUNT SECTION -->
 <div id="accountSection" class="section">
     <div class="card-glass" style="background: linear-gradient(145deg, #fff8ed, #ffe8d4);">
         <div class="big-earnings" id="bigEarningsDisplay">ZMW 0</div>
@@ -1102,7 +1104,6 @@
         onValue(coursesRef, snap => {
             courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
             if (courses.length === 0) {
-                // Initialize default courses
                 set(coursesRef, { 'course1': { name: 'Web Development', price: 0 }, 'course2': { name: 'Data Science', price: 50 } });
             }
             updateCourseSelects();
@@ -1121,7 +1122,7 @@
         onValue(docsRef, snap => {
             docs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
             renderDocsList();
-            renderCoursesAccordion(); // may show docs in subfolders
+            renderCoursesAccordion();
         });
         onValue(notificationsRef, snap => {
             notifications = snap.val() ? Object.values(snap.val()) : [];
@@ -1138,7 +1139,7 @@
         });
     }
 
-    // ----- RENDER FUNCTIONS (SORTED RECENT FIRST) -----
+    // ----- RENDER FUNCTIONS -----
     function renderHomeScrolls() {
         const paid = videos.filter(v => v.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         const free = videos.filter(v => v.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -1241,7 +1242,6 @@
                 </div>
             `;
         }).join('');
-        // Toggle course accordion
         document.querySelectorAll('.course-header').forEach(header => {
             header.addEventListener('click', () => {
                 const list = header.nextElementSibling;
@@ -1249,7 +1249,6 @@
                 header.querySelector('.fa-chevron-down').style.transform = list.classList.contains('show') ? 'rotate(180deg)' : '';
             });
         });
-        // Subfolder click: open subfolder view
         document.querySelectorAll('.subfolder-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1258,7 +1257,6 @@
                 if (subfolder) openSubfolderView(subfolder);
             });
         });
-        // Add subfolder
         document.querySelectorAll('.add-subfolder-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1278,8 +1276,8 @@
         document.getElementById('subfolderViewSection').classList.add('active-section');
         document.getElementById('subfolderViewTitle').innerText = `${course?.name || ''} / ${subfolder.name}`;
         
-        const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
-        const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+        const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+        const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
         
         document.getElementById('subfolderVideosContainer').innerHTML = subVideos.map(v => buildVideoCard(v, true)).join('') || '<div>No videos</div>';
         document.getElementById('subfolderDocsContainer').innerHTML = subDocs.map(d => buildDocCard(d)).join('') || '<div>No documents</div>';
@@ -1331,7 +1329,6 @@
         const url = video.videoUrl;
         if (url.includes('youtube.com') || url.includes('youtu.be')) {
             let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            // Use nocookie, modestbranding to reduce YouTube branding
             embed = `<iframe width="100%" height="250" src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&modestbranding=1&rel=0&showinfo=0&controls=1" frameborder="0" allowfullscreen></iframe>`;
         } else if (url.includes('vimeo.com')) {
             embed = `<iframe width="100%" height="250" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
@@ -1375,7 +1372,7 @@
             <div class="transaction-row" data-txid="${tx.id}">
                 <div class="tx-user-info">
                     <strong>${escapeHtml(tx.userName)}</strong>
-                    <small>${escapeHtml(tx.userEmail)} · ${escapeHtml(tx.userPhone || 'No phone')}</small>
+                    <small>${escapeHtml(tx.userEmail)} · ${escapeHtml(tx.userPhone || 'No phone')} · ${tx.itemType || 'video'}</small>
                 </div>
                 <div class="tx-amount">ZMW ${tx.amount}</div>
                 <span class="status-dot ${tx.status}"></span>
@@ -1394,7 +1391,7 @@
         let html = `
             <p><strong>User:</strong> ${escapeHtml(tx.userName)} (${escapeHtml(tx.userEmail)})</p>
             <p><strong>Phone:</strong> ${escapeHtml(tx.userPhone || 'N/A')}</p>
-            <p><strong>Content:</strong> ${escapeHtml(tx.videoTitle || tx.docTitle || 'N/A')}</p>
+            <p><strong>Item:</strong> ${escapeHtml(tx.itemTitle)} (${tx.itemType})</p>
             <p><strong>Amount:</strong> ZMW ${tx.amount}</p>
             <p><strong>Status:</strong> <span style="color:${tx.status==='approved'?'green':(tx.status==='pending'?'orange':'red')}">${tx.status}</span></p>
             <p><strong>Date:</strong> ${tx.date}</p>
@@ -1413,15 +1410,20 @@
         if (tx.status === 'pending') {
             document.getElementById('modalApproveBtn').addEventListener('click', async () => {
                 await update(ref(db, `transactions/${tx.id}`), { status: 'approved' });
-                const userSnap = await get(ref(db, `users/${tx.userId}`));
-                if (userSnap.exists()) {
-                    const userData = userSnap.val();
-                    const newWallet = (userData.wallet || 0) - tx.amount;
-                    await update(ref(db, `users/${tx.userId}`), { wallet: newWallet });
+                // If it's a course purchase, mark as approved for user
+                if (tx.itemType === 'course') {
+                    await set(ref(db, `approvedPurchases/${tx.userId}/${tx.itemId}`), true);
+                } else {
+                    const userSnap = await get(ref(db, `users/${tx.userId}`));
+                    if (userSnap.exists()) {
+                        const userData = userSnap.val();
+                        const newWallet = (userData.wallet || 0) - tx.amount;
+                        await update(ref(db, `users/${tx.userId}`), { wallet: newWallet });
+                    }
+                    await set(ref(db, `approvedPurchases/${tx.userId}/${tx.itemId}`), true);
                 }
-                await set(ref(db, `approvedPurchases/${tx.userId}/${tx.itemId || tx.videoId || tx.docId}`), true);
                 document.getElementById('txDetailModal').style.display = 'none';
-                showToast('Transaction approved and wallet deducted', 'payment');
+                showToast('Transaction approved');
             });
             document.getElementById('modalRejectBtn').addEventListener('click', () => {
                 update(ref(db, `transactions/${tx.id}`), { status: 'rejected' });
@@ -1492,7 +1494,7 @@
     function renderNotificationsPage() {
         const container = document.getElementById('notificationsList');
         container.innerHTML = notifications.map(n => `
-            <div class="notif-item" data-link="${n.link || ''}">
+            <div class="notif-item">
                 ${escapeHtml(n.message)}
             </div>
         `).join('');
@@ -1505,7 +1507,7 @@
         badge.innerText = count > 9 ? '9+' : count;
         const dropdown = document.getElementById('notifDropdown');
         dropdown.innerHTML = notifications.slice(0, 5).map(n => `
-            <div class="notif-item" data-link="${n.link || ''}">
+            <div class="notif-item">
                 ${escapeHtml(n.message)}
             </div>
         `).join('');
@@ -1553,9 +1555,9 @@
         const title = document.getElementById('videoTitle').value.trim();
         const instructor = document.getElementById('instructorName').value.trim();
         if (!title || !instructor) return alert('Required fields missing');
-        const price = document.getElementById('priceType').value === 'free' ? 0 : parseFloat(document.getElementById('paidAmount').value) || 0;
         const courseId = document.getElementById('courseSelectHome').value;
         const subfolderId = document.getElementById('subfolderSelectHome').value;
+        const price = parseFloat(document.getElementById('videoPriceHidden').value) || 0;
         let videoUrl, thumbnail;
         if (document.querySelector('input[name="videoSource"]:checked').value === 'link') {
             videoUrl = document.getElementById('videoUrlInput').value;
@@ -1584,9 +1586,9 @@
         const title = document.getElementById('docTitle').value.trim();
         const instructor = document.getElementById('docInstructor').value.trim();
         if (!title || !instructor) return alert('Required fields missing');
-        const price = document.getElementById('docPriceType').value === 'free' ? 0 : parseFloat(document.getElementById('docPaidAmount').value) || 0;
         const courseId = document.getElementById('docCourseSelect').value;
         const subfolderId = document.getElementById('docSubfolderSelect').value;
+        const price = parseFloat(document.getElementById('docPriceHidden').value) || 0;
         const desc = document.getElementById('docDescription').value;
         let content = '', docUrl = '';
         const source = document.querySelector('input[name="docSource"]:checked').value;
@@ -1663,8 +1665,6 @@
             document.getElementById('docPostFormContainer').classList.remove('show');
             document.getElementById('bigPostDocBtn').style.display = 'block';
         };
-        document.getElementById('priceType').addEventListener('change', e => document.getElementById('paidAmount').style.display = e.target.value === 'paid' ? 'block' : 'none');
-        document.getElementById('docPriceType').addEventListener('change', e => document.getElementById('docPaidAmount').style.display = e.target.value === 'paid' ? 'block' : 'none');
         document.querySelectorAll('input[name="videoSource"]').forEach(r => r.addEventListener('change', e => {
             document.getElementById('linkGroup').style.display = e.target.value === 'link' ? 'block' : 'none';
             document.getElementById('uploadGroup').style.display = e.target.value === 'upload' ? 'block' : 'none';
@@ -1731,6 +1731,28 @@
                 applyTransactionFilter();
             });
         });
+
+        // Course price auto-fill for video
+        document.getElementById('courseSelectHome').addEventListener('change', updateVideoPriceDisplay);
+        document.getElementById('docCourseSelect').addEventListener('change', updateDocPriceDisplay);
+    }
+
+    function updateVideoPriceDisplay() {
+        const courseId = document.getElementById('courseSelectHome').value;
+        const course = courses.find(c => c.id === courseId);
+        const price = course ? course.price : 0;
+        document.getElementById('videoPriceHidden').value = price;
+        document.getElementById('videoPriceDisplay').innerText = price === 0 ? 'Price: FREE' : `Price: ZMW ${price}`;
+        updateSubfolderSelects();
+    }
+
+    function updateDocPriceDisplay() {
+        const courseId = document.getElementById('docCourseSelect').value;
+        const course = courses.find(c => c.id === courseId);
+        const price = course ? course.price : 0;
+        document.getElementById('docPriceHidden').value = price;
+        document.getElementById('docPriceDisplay').innerText = price === 0 ? 'Price: FREE' : `Price: ZMW ${price}`;
+        updateSubfolderSelects();
     }
 
     function updateStats() {
@@ -1742,9 +1764,17 @@
 
     function updateCourseSelects() {
         const courseSelect = (id) => document.getElementById(id);
-        if (courseSelect('courseSelectHome')) courseSelect('courseSelectHome').innerHTML = courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)} ${c.price>0?`(ZMW ${c.price})`:''}</option>`).join('');
-        if (courseSelect('docCourseSelect')) courseSelect('docCourseSelect').innerHTML = courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-        if (courseSelect('filterCourseSelect')) courseSelect('filterCourseSelect').innerHTML = '<option value="all">All courses</option>' + courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        if (courseSelect('courseSelectHome')) {
+            courseSelect('courseSelectHome').innerHTML = courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)} ${c.price>0?`(ZMW ${c.price})`:''}</option>`).join('');
+            updateVideoPriceDisplay();
+        }
+        if (courseSelect('docCourseSelect')) {
+            courseSelect('docCourseSelect').innerHTML = courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            updateDocPriceDisplay();
+        }
+        if (courseSelect('filterCourseSelect')) {
+            courseSelect('filterCourseSelect').innerHTML = '<option value="all">All courses</option>' + courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
         updateSubfolderSelects();
     }
 
@@ -1762,9 +1792,6 @@
             subDoc.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
         }
     }
-
-    document.getElementById('courseSelectHome')?.addEventListener('change', updateSubfolderSelects);
-    document.getElementById('docCourseSelect')?.addEventListener('change', updateSubfolderSelects);
 
     async function updateBannedList() {
         const container = document.getElementById('bannedUsersList');
