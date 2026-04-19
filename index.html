@@ -8,8 +8,8 @@
     <link rel="manifest" href="/utom/manifest.json">
     <!-- Theme color for browser -->
     <meta name="theme-color" content="#F5B042">
-    <!-- Apple touch icon (optional) -->
-    <link rel="apple-touch-icon" href="/utom/icons/icon-192.png">
+    <!-- Apple touch icon -->
+    <link rel="apple-touch-icon" href="/utom/logo.png">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Firebase SDKs -->
@@ -47,7 +47,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.8rem;
         }
 
         .logo-area {
@@ -57,13 +57,11 @@
         }
 
         .logo-img {
-            max-width: 200px;
+            max-width: 300px;  /* 50% larger than original 200px */
             width: 100%;
             height: auto;
             display: block;
             margin: 0 auto;
-            filter: none;
-            transition: none;
             pointer-events: none;
         }
 
@@ -83,8 +81,13 @@
             box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.02);
             width: 100%;
             padding: 1.8rem 1.5rem 2rem;
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
             animation: fadeSlideDown 0.4s ease-out;
+        }
+
+        .form-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.12);
         }
 
         .form-panel {
@@ -165,8 +168,8 @@
         }
 
         .btn-yellow-black:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(245, 176, 66, 0.25);
             background: #ffb84d;
         }
 
@@ -190,7 +193,8 @@
 
         .btn-outline-dark:hover {
             background: #00000008;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
         }
 
         .text-link {
@@ -344,7 +348,7 @@
             animation: spin 1s linear infinite;
         }
 
-        /* Install button (floating) */
+        /* Install banner */
         .install-banner {
             position: fixed;
             bottom: 20px;
@@ -389,7 +393,7 @@
             body { padding: 0.8rem; align-items: flex-start; padding-top: 1.8rem; }
             .form-card { padding: 1.4rem 1.2rem 1.6rem; border-radius: 32px; }
             .btn-yellow-black { padding: 12px 16px; font-size: 0.95rem; }
-            .logo-img { max-width: 150px; }
+            .logo-img { max-width: 220px; }
             .pill-input { padding: 12px 16px 12px 44px; font-size: 0.95rem; }
             .input-icon-group i { left: 16px; font-size: 1rem; }
             .modal-container { padding: 1.5rem; }
@@ -430,7 +434,7 @@
             </form>
         </div>
 
-        <!-- SIGNUP FORM (Registration) -->
+        <!-- SIGNUP FORM -->
         <div id="signupPanel" class="form-panel hidden-panel">
             <form id="signupForm">
                 <div class="double-row">
@@ -475,7 +479,7 @@
     <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support</div>
 </div>
 
-<!-- FORGOT PASSWORD MODAL (Firebase reset email) -->
+<!-- FORGOT PASSWORD MODAL -->
 <div id="forgotModal" class="modal-overlay">
     <div class="modal-container">
         <h3><i class="fas fa-paper-plane" style="color:#F5B042;"></i> Reset password</h3>
@@ -492,7 +496,7 @@
     </div>
 </div>
 
-<!-- Install App Popup (shown if app not installed) -->
+<!-- Install App Popup -->
 <div id="installPopup" class="modal-overlay">
     <div class="modal-container">
         <h3><i class="fas fa-download" style="color:#F5B042;"></i> Install UTOM App</h3>
@@ -502,7 +506,7 @@
     </div>
 </div>
 
-<!-- Floating install banner (alternative) -->
+<!-- Floating install banner -->
 <div id="installBanner" class="install-banner" style="display: none;">
     <span><i class="fas fa-mobile-alt"></i> Install UTOM App for offline access</span>
     <button id="bannerInstallBtn">Install</button>
@@ -524,7 +528,6 @@
         measurementId: "G-STHFWDKVZN"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
@@ -560,7 +563,6 @@
     const resetEmailInput = document.getElementById('resetEmailInput');
     const resetErrorSpan = document.getElementById('resetError');
     
-    // Helper: set button loading state
     function setButtonLoading(button, isLoading, originalHtml) {
         if(isLoading) {
             button.disabled = true;
@@ -571,7 +573,6 @@
         }
     }
     
-    // UI panel toggles
     function showLoginPanel() {
         loginPanel.classList.remove('hidden-panel');
         signupPanel.classList.add('hidden-panel');
@@ -598,12 +599,11 @@
         forgotModal.classList.remove('active');
     }
     
-    // ----- SIGNUP with Firebase Auth + Realtime Database -----
+    // SIGNUP
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
         signupSuccessSpan.style.display = 'none';
-        signupSuccessSpan.innerText = '';
         
         const fName = firstName.value.trim();
         const lName = lastName.value.trim();
@@ -613,7 +613,6 @@
         const confirmPwd = confirmPassword.value;
         const termsOk = termsCheckbox.checked;
         
-        // Validations
         if(!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
             signupErrorSpan.innerText = 'All fields are required.';
             return;
@@ -653,26 +652,20 @@
                 showLoginPanel();
                 loginEmail.value = email;
                 loginPassword.value = '';
-                loginErrorSpan.innerText = '';
                 signupSuccessSpan.style.display = 'none';
             }, 1500);
         } catch (error) {
-            console.error(error);
             let errorMsg = error.message;
-            if (error.code === 'auth/email-already-in-use') {
-                errorMsg = 'Email already registered. Please login or use another email.';
-            } else if (error.code === 'auth/weak-password') {
-                errorMsg = 'Password should be at least 6 characters.';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMsg = 'Invalid email format.';
-            }
+            if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered.';
+            else if (error.code === 'auth/weak-password') errorMsg = 'Password too weak.';
+            else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             signupErrorSpan.innerText = errorMsg;
         } finally {
             setButtonLoading(registerBtn, false, originalText);
         }
     });
     
-    // ----- LOGIN with Firebase Auth -----
+    // LOGIN
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
@@ -688,25 +681,22 @@
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            // Redirect based on email prefix (admin or user)
             if (email.toLowerCase().startsWith('admin@')) {
                 window.location.href = 'admin.html';
             } else {
                 window.location.href = 'user.html';
             }
-            return;
         } catch (error) {
-            let errorMsg = 'Invalid email or password. Please try again or create an account.';
-            if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+            let errorMsg = 'Invalid email or password.';
+            if (error.code === 'auth/user-not-found') errorMsg = 'No account found.';
             if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
-            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
             loginErrorSpan.innerText = errorMsg;
         } finally {
             setButtonLoading(loginBtn, false, originalLoginHtml);
         }
     });
     
-    // ----- FORGOT PASSWORD: Firebase sendPasswordResetEmail -----
+    // FORGOT PASSWORD
     forgotPwdBtn.addEventListener('click', openForgotModal);
     closeModalBtn.addEventListener('click', closeForgotModal);
     forgotModal.addEventListener('click', (e) => { if(e.target === forgotModal) closeForgotModal(); });
@@ -714,15 +704,9 @@
     sendResetLinkBtn.addEventListener('click', async () => {
         const email = resetEmailInput.value.trim();
         resetErrorSpan.innerText = '';
-        if(!email) {
-            resetErrorSpan.innerText = 'Please enter your email address.';
-            return;
-        }
+        if(!email) { resetErrorSpan.innerText = 'Please enter your email address.'; return; }
         const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if(!emailRegex.test(email)) {
-            resetErrorSpan.innerText = 'Enter a valid email address.';
-            return;
-        }
+        if(!emailRegex.test(email)) { resetErrorSpan.innerText = 'Enter a valid email address.'; return; }
         
         const originalBtnText = sendResetLinkBtn.innerHTML;
         setButtonLoading(sendResetLinkBtn, true, originalBtnText);
@@ -730,7 +714,7 @@
         try {
             await sendPasswordResetEmail(auth, email);
             resetErrorSpan.style.color = '#2b7e3a';
-            resetErrorSpan.innerText = '✅ Password reset email sent! Check your inbox.';
+            resetErrorSpan.innerText = '✅ Password reset email sent!';
             setTimeout(() => {
                 closeForgotModal();
                 resetErrorSpan.style.color = '#d9534f';
@@ -738,8 +722,7 @@
             }, 2500);
         } catch (error) {
             let errorMsg = 'Failed to send reset email.';
-            if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
-            if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email address.';
+            if (error.code === 'auth/user-not-found') errorMsg = 'No account found.';
             resetErrorSpan.style.color = '#d9534f';
             resetErrorSpan.innerText = errorMsg;
         } finally {
@@ -750,7 +733,7 @@
     showSignupBtn.addEventListener('click', showSignupPanel);
     backToLoginBtn.addEventListener('click', showLoginPanel);
 
-    // ========== PWA INSTALL PROMPT LOGIC ==========
+    // ========== PWA INSTALL ==========
     let deferredPrompt = null;
     const installPopup = document.getElementById('installPopup');
     const installBanner = document.getElementById('installBanner');
@@ -758,36 +741,27 @@
     const dismissInstallBtn = document.getElementById('dismissInstallBtn');
     const bannerInstallBtn = document.getElementById('bannerInstallBtn');
 
-    // Listen for beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show the install popup (or banner) – only if not already installed
-        // We'll show the modal popup (more prominent)
         installPopup.classList.add('active');
-        // Also optionally show the banner as fallback
         installBanner.style.display = 'flex';
     });
 
-    // Install button in modal
     installAppBtn.addEventListener('click', async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to install: ${outcome}`);
         deferredPrompt = null;
         installPopup.classList.remove('active');
         installBanner.style.display = 'none';
     });
 
-    // Dismiss install popup
     dismissInstallBtn.addEventListener('click', () => {
         installPopup.classList.remove('active');
-        // Keep banner maybe? but we'll hide it as well
         installBanner.style.display = 'none';
     });
 
-    // Banner install button
     bannerInstallBtn.addEventListener('click', async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
@@ -797,19 +771,15 @@
         installPopup.classList.remove('active');
     });
 
-    // Also hide banner if user clicks anywhere else? We'll let it stay but can be dismissed
-    // Optional: check if app is already installed (standalone mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        // Already installed, hide install prompts
         installPopup.classList.remove('active');
         installBanner.style.display = 'none';
     }
 
-    // Register Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/utom/sw.js')
-            .then(reg => console.log('Service Worker registered:', reg))
-            .catch(err => console.error('SW registration failed:', err));
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.error('SW failed', err));
     }
 </script>
 </body>
