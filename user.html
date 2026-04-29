@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript">
+    <script src="https://upload-widget.cloudinary.com/global/all.js">
     </script>
     <style>
         :root {
@@ -23,7 +23,11 @@
             --radius-md: 20px;
             --radius-lg: 28px;
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --green: #2ecc71;
+            --red: #e63946;
+            --yellow: #f39c12;
         }
+
         * {
             margin: 0;
             padding: 0;
@@ -90,23 +94,28 @@
             gap: 16px;
             align-items: center;
         }
-        .icon-button {
-            position: relative;
-            cursor: pointer;
+        .header-icons i {
             font-size: 1.25rem;
             color: #2c2c2c;
+            cursor: pointer;
             padding: 7px;
             border-radius: 50%;
             transition: var(--transition);
         }
-        .icon-button:hover {
+        .header-icons i:hover {
             color: var(--gold);
             background: #F5B04212;
         }
+        .notif-icon-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .notification-badge {
             position: absolute;
-            top: 0px;
-            right: -2px;
+            top: -3px;
+            right: -6px;
             background: #e63946;
             color: #fff;
             font-size: 0.55rem;
@@ -115,6 +124,9 @@
             padding: 2px 7px;
             min-width: 18px;
             text-align: center;
+            pointer-events: none;
+            line-height: 1.4;
+            box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
         .compact-user-card {
             background: white;
@@ -487,6 +499,17 @@
             line-height: 1.7;
             box-shadow: var(--shadow-sm);
         }
+        .payment-page-preview {
+            background: #000;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .payment-page-preview video,
+        .payment-page-preview iframe {
+            width: 100%;
+            max-height: 220px;
+        }
         .wallet-info-row {
             display: flex;
             justify-content: space-between;
@@ -669,6 +692,10 @@
             font-size: 0.9rem;
             transition: var(--transition);
             box-shadow: 0 4px 14px rgba(245, 176, 66, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .btn-profile:hover {
             background: #e8a830;
@@ -693,6 +720,29 @@
             border-color: var(--gold);
             color: #c47f1a;
             background: #fffdf7;
+        }
+        .btn-transaction {
+            background: #fff;
+            width: 100%;
+            padding: 13px;
+            border-radius: 60px;
+            font-weight: 700;
+            margin-top: 10px;
+            border: 2px solid #f0d8a8;
+            cursor: pointer;
+            color: #c47f1a;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-transaction:hover {
+            background: #fffdf5;
+            border-color: var(--gold);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(245, 176, 66, 0.2);
         }
         .bottom-nav {
             position: fixed;
@@ -792,11 +842,12 @@
             color: #b0b4c0;
             font-size: 0.85rem;
         }
-        /* Transaction History */
+
+        /* Transaction History Styles */
         .transaction-card {
-            background: white;
+            background: #fff;
             border-radius: var(--radius-md);
-            padding: 1rem;
+            padding: 1.1rem;
             margin-bottom: 0.8rem;
             box-shadow: var(--shadow-sm);
             border: 1px solid #f2f2f5;
@@ -804,53 +855,90 @@
         }
         .transaction-card:hover {
             box-shadow: var(--shadow-md);
+            border-color: #f0d8a8;
         }
-        .transaction-card .tx-header {
+        .transaction-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+            gap: 8px;
         }
-        .transaction-card .tx-header h4 {
+        .transaction-course-name {
+            font-weight: 700;
             font-size: 0.9rem;
-            font-weight: 700;
             color: #1a1d28;
+            flex: 1;
         }
-        .transaction-card .tx-detail {
-            font-size: 0.78rem;
-            color: #5f6377;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-        }
-        .transaction-card .tx-status {
-            padding: 4px 12px;
-            border-radius: 30px;
+        .transaction-status-badge {
+            font-size: 0.6rem;
+            padding: 4px 11px;
+            border-radius: 20px;
             font-weight: 700;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        .transaction-status-badge.pending {
+            background: #fef3cd;
+            color: #b45309;
+        }
+        .transaction-status-badge.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .transaction-status-badge.rejected {
+            background: #fde8e8;
+            color: #a71d2a;
+        }
+        .transaction-detail-row {
+            display: flex;
+            justify-content: space-between;
             font-size: 0.7rem;
-            text-transform: uppercase;
+            color: #8b8fa3;
+            padding: 3px 0;
         }
-        .tx-status.pending {
-            background: #F5B042;
-            color: #fff;
+        .transaction-detail-row strong {
+            color: #4a4e5c;
         }
-        .tx-status.approved {
-            background: #2ecc71;
-            color: #fff;
+        .transaction-amount {
+            font-weight: 800;
+            color: #c47f1a;
+            font-size: 0.85rem;
         }
-        .tx-status.rejected {
-            background: #e74c3c;
-            color: #fff;
-        }
-        .screenshot-thumb {
-            max-width: 150px;
-            max-height: 100px;
-            border-radius: 10px;
-            margin-top: 8px;
+        .transaction-screenshot {
+            margin-top: 10px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid #eaeef3;
             cursor: pointer;
-            border: 1px solid #eee;
+            transition: var(--transition);
         }
+        .transaction-screenshot img {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+        .transaction-screenshot:hover {
+            border-color: var(--gold);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        .transaction-screenshot-expanded img {
+            max-height: 500px;
+            object-fit: contain;
+        }
+        .transaction-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            color: #8b8fa3;
+        }
+        .transaction-date i {
+            color: #c0c4d0;
+            font-size: 0.65rem;
+        }
+
         @media (max-width: 400px) {
             .courses-grid,
             .videos-grid-2x2 {
@@ -861,10 +949,18 @@
             .video-card img {
                 height: 80px;
             }
+            .course-info h4,
+            .video-info h4 {
+                font-size: 0.7rem;
+            }
+            .transaction-card {
+                padding: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
+
     <!-- Overlays -->
     <div id="bannedOverlay" class="overlay" style="display:none;">
         <i class="fas fa-ban" style="color:#d9534f;"></i>
@@ -884,12 +980,12 @@
                 <img src="logo.png" alt="UTOM" class="logo-img" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'logo-fallback\'><i class=\'fas fa-chalkboard-user\'></i> UTOM</div>';">
             </div>
             <div class="header-icons">
-                <div class="icon-button" id="searchIcon"><i class="fas fa-search"></i></div>
-                <div class="icon-button" id="notifIcon" style="position:relative;">
-                    <i class="fas fa-bell"></i>
+                <i class="fas fa-search" id="searchIcon"></i>
+                <span class="notif-icon-wrapper">
+                    <i class="fas fa-bell" id="notifIcon"></i>
                     <span id="notifBadge" class="notification-badge" style="display:none;">0</span>
-                </div>
-                <div class="icon-button" id="profileIcon"><i class="fas fa-user-circle"></i></div>
+                </span>
+                <i class="fas fa-user-circle" id="profileIcon"></i>
             </div>
         </div>
 
@@ -955,17 +1051,18 @@
                 <div class="info-row"><span>Full name</span><span id="profileName"></span></div>
                 <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
                 <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
-                <button class="btn-profile" id="transactionHistoryBtn"><i class="fas fa-history"></i> Transaction History</button>
+                <button class="btn-transaction" id="transactionHistoryBtn"><i class="fas fa-receipt"></i> Transaction History</button>
                 <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
-                <button class="btn-profile btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button class="btn-profile btn-outline" id="logoutBtn" style="margin-top:6px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </div>
 
         <!-- TRANSACTION HISTORY PAGE -->
         <div id="transactionHistoryPage" class="page-container full-page-container">
-            <button id="backFromHistoryBtn" class="btn-outline" style="margin-bottom:0.8rem;"><i class="fas fa-arrow-left"></i> Back</button>
-            <h2 style="margin-bottom:1rem;"><i class="fas fa-receipt" style="color:var(--gold);"></i> Transaction History</h2>
+            <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.8rem;"><i class="fas fa-arrow-left"></i> Back to Profile</button>
+            <h2 style="margin-bottom:1rem;"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
             <div id="transactionHistoryList"></div>
+            <div id="emptyTransactionMsg" class="empty-state" style="display:none;">📭 No transactions yet. Purchase a course to see your history here.</div>
         </div>
 
         <!-- DOC FULL PAGE -->
@@ -979,27 +1076,32 @@
             <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.8rem;"><i class="fas fa-arrow-left"></i> Back</button>
             <h2 id="paymentCourseTitle"></h2>
             <div class="wallet-info-row">
-                <span>Your balance:</span><strong id="paymentWalletBalance">ZMW 0</strong>
+                <span>Your balance:</span>
+                <strong id="paymentWalletBalance">ZMW 0</strong>
             </div>
             <div class="wallet-info-row">
-                <span>Course Price:</span><strong id="paymentCoursePrice">ZMW 0</strong>
+                <span>Course Price:</span>
+                <strong id="paymentCoursePrice">ZMW 0</strong>
             </div>
+
+            <!-- Admin Payment Numbers -->
             <div class="payment-numbers-box" id="paymentNumbersBox">
                 <h4><i class="fas fa-money-bill-wave"></i> Deposit Payment To</h4>
                 <div class="deposit-instruction">
                     <i class="fas fa-info-circle"></i> Please deposit exactly <strong id="depositAmountDisplay">ZMW 0</strong> into one of the numbers below, then upload your payment screenshot.
                 </div>
-                <div class="payment-number-row">
+                <div class="payment-number-row" id="mtnNumberRow">
                     <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
                     <span class="number-value" id="mtnNumberDisplay">Not set</span>
                     <button class="copy-num-btn" id="copyMtnBtn"><i class="fas fa-copy"></i> Copy</button>
                 </div>
-                <div class="payment-number-row">
+                <div class="payment-number-row" id="airtelNumberRow">
                     <span class="number-label"><i class="fas fa-mobile-alt" style="color:#e74c3c;"></i> Airtel:</span>
                     <span class="number-value" id="airtelNumberDisplay">Not set</span>
                     <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
                 </div>
             </div>
+
             <p style="margin:0.5rem 0;font-size:0.78rem;color:#8b8fa3;">After admin approval, the amount will be deducted from your wallet.</p>
             <div id="paymentUploadBox" class="upload-box">
                 <i class="fas fa-cloud-upload-alt fa-2x"></i>
@@ -1029,8 +1131,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-        import { getDatabase, ref, get, set, update, onValue, push } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from
+        "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, update, onValue, push } from
+        "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
@@ -1056,6 +1160,7 @@
         let allDocs = [];
         let approvedCourses = new Set();
         let pendingPurchases = {};
+        let allUserTransactions = [];
         let notifications = [];
         let watchedVideos = new Set();
         let offlineVideos = new Set();
@@ -1063,34 +1168,47 @@
         let paymentScreenshotUrl = null;
         let currentSearch = '';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
-        let userTransactions = [];
 
         let offlineDB;
         const dbRequest = indexedDB.open('UTOMOfflineDB', 1);
         dbRequest.onupgradeneeded = (e) => {
             const dbStore = e.target.result;
-            if (!dbStore.objectStoreNames.contains('videos')) dbStore.createObjectStore('videos', { keyPath: 'id' });
+            if (!dbStore.objectStoreNames.contains('videos')) {
+                dbStore.createObjectStore('videos', { keyPath: 'id' });
+            }
         };
-        dbRequest.onsuccess = (e) => { offlineDB = e.target.result; loadOfflineVideoList(); };
+        dbRequest.onsuccess = (e) => {
+            offlineDB = e.target.result;
+            loadOfflineVideoList();
+        };
 
         async function loadOfflineVideoList() {
             if (!offlineDB) return;
             const tx = offlineDB.transaction('videos', 'readonly');
             const store = tx.objectStore('videos');
-            const keys = await new Promise(res => { const r = store.getAllKeys(); r.onsuccess = () => res(r.result); });
+            const keys = await new Promise((res) => {
+                const req = store.getAllKeys();
+                req.onsuccess = () => res(req.result);
+            });
             offlineVideos = new Set(keys);
             renderOfflinePage();
         }
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'index.html'; return; }
-            if (user.email?.startsWith('admin@')) { window.location.href = 'admin.html'; return; }
+            if (user.email && user.email.startsWith('admin@')) { window.location.href = 'admin.html'; return; }
             currentUser = user;
 
             const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-            if (bannedSnap.val() === true) { document.getElementById('bannedOverlay').style.display = 'flex'; return; }
+            if (bannedSnap.val() === true) {
+                document.getElementById('bannedOverlay').style.display = 'flex';
+                return;
+            }
             const maintSnap = await get(ref(db, 'system/maintenance'));
-            if (maintSnap.val() === true) { document.getElementById('maintenanceOverlay').style.display = 'flex'; return; }
+            if (maintSnap.val() === true) {
+                document.getElementById('maintenanceOverlay').style.display = 'flex';
+                return;
+            }
 
             document.getElementById('appContent').style.display = 'block';
             await loadUserData(user.uid);
@@ -1100,38 +1218,58 @@
                 if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
                 renderAllCourses();
                 renderMyLearn();
+                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                    renderTransactionHistory();
+                }
             });
+
             onValue(ref(db, `pendingPurchases/${user.uid}`), (snap) => {
                 pendingPurchases = {};
-                if (snap.val()) Object.entries(snap.val()).forEach(([txId, tx]) => {
-                    if (tx.itemType === 'course') pendingPurchases[tx.itemId] = { amount: tx.amount, txId, status: tx.status };
-                });
-                fetchUserTransactions();
+                allUserTransactions = [];
+                if (snap.val()) {
+                    Object.entries(snap.val()).forEach(([txId, tx]) => {
+                        allUserTransactions.push({ id: txId, ...tx });
+                        if (tx.status === 'pending' && tx.itemType === 'course') {
+                            pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
+                        }
+                    });
+                }
+                allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 renderAllCourses();
+                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                    renderTransactionHistory();
+                }
             });
-            onValue(ref(db, 'courses'), snap => {
-                allCourses = snap.val() ? Object.entries(snap.val()).map(([id,c]) => ({id,...c})) : [];
+
+            onValue(ref(db, 'courses'), (snap) => {
+                allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
                 renderAllCourses();
+                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                    renderTransactionHistory();
+                }
             });
-            onValue(ref(db, 'subfolders'), snap => {
-                allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id,s]) => ({id,...s})) : [];
+
+            onValue(ref(db, 'subfolders'), (snap) => {
+                allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
                 if (selectedCourse) renderCourseDetail(selectedCourse);
             });
-            onValue(ref(db, 'videos'), snap => {
-                allVideos = snap.val() ? Object.entries(snap.val()).map(([id,v]) => ({id,...v})) : [];
+
+            onValue(ref(db, 'videos'), (snap) => {
+                allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
                 if (selectedCourse) renderCourseDetail(selectedCourse);
                 renderWatchedVideos();
             });
-            onValue(ref(db, 'docs'), snap => {
-                allDocs = snap.val() ? Object.entries(snap.val()).map(([id,d]) => ({id,...d})) : [];
+
+            onValue(ref(db, 'docs'), (snap) => {
+                allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 if (selectedCourse) renderCourseDetail(selectedCourse);
             });
-            onValue(ref(db, 'system/paymentSettings'), snap => {
-                if (snap.val()) paymentSettings = snap.val();
+
+            onValue(ref(db, 'system/paymentSettings'), (snap) => {
+                if (snap.val()) {
+                    paymentSettings = snap.val();
+                }
                 updatePaymentNumbersDisplay();
-            });
-            onValue(ref(db, 'transactions'), snap => {
-                fetchUserTransactions();
             });
 
             setupUI();
@@ -1139,15 +1277,17 @@
         });
 
         async function loadUserData(uid) {
-            const snap = await get(ref(db, `users/${uid}`));
+            const userRef = ref(db, `users/${uid}`);
+            const snap = await get(userRef);
             if (snap.exists()) {
                 userData = { ...userData, ...snap.val() };
                 userData.likedVideos = userData.likedVideos || [];
                 userData.likedDocs = userData.likedDocs || [];
                 userData.wallet = userData.wallet || 0;
             } else {
-                userData = { firstName:'', lastName:'', email:currentUser.email, phone:'', wallet:0, likedVideos:[], likedDocs:[] };
-                await set(ref(db, `users/${uid}`), userData);
+                userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', wallet: 0,
+                    likedVideos: [], likedDocs: [] };
+                await set(userRef, userData);
             }
             updateUserInterface();
         }
@@ -1164,7 +1304,8 @@
         }
 
         function updateUserInterface() {
-            const name = `${userData.firstName} ${userData.lastName}`.trim() || currentUser?.email?.split('@')[0] || 'User';
+            const name = `${userData.firstName} ${userData.lastName}`.trim() || (currentUser?.email?.split('@')[0] ||
+                'User');
             document.getElementById('compactUserName').innerText = name;
             document.getElementById('compactUserEmail').innerText = currentUser?.email || '';
             document.getElementById('walletAmount').innerText = `ZMW ${userData.wallet}`;
@@ -1174,8 +1315,10 @@
         }
 
         function updatePaymentNumbersDisplay() {
-            document.getElementById('mtnNumberDisplay').innerText = paymentSettings.mtnNumber || 'Not set';
-            document.getElementById('airtelNumberDisplay').innerText = paymentSettings.airtelNumber || 'Not set';
+            const mtnDisplay = document.getElementById('mtnNumberDisplay');
+            const airtelDisplay = document.getElementById('airtelNumberDisplay');
+            if (mtnDisplay) mtnDisplay.innerText = paymentSettings.mtnNumber || 'Not set';
+            if (airtelDisplay) airtelDisplay.innerText = paymentSettings.airtelNumber || 'Not set';
         }
 
         function addNotification(msg) {
@@ -1184,23 +1327,120 @@
             const badge = document.getElementById('notifBadge');
             badge.style.display = notifications.length ? 'inline-block' : 'none';
             badge.innerText = notifications.length > 9 ? '9+' : notifications.length;
-            document.getElementById('notifList').innerHTML = notifications.map(n => `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n)}</div>`).join('');
+            const notifList = document.getElementById('notifList');
+            notifList.innerHTML = notifications.map(n =>
+                `<div class="notif-item"><i class="fas fa-bell"></i> ${escapeHtml(n)}</div>`).join('');
         }
 
-        function getCourseThumbnail(courseId) {
-            const video = allVideos.find(v => v.courseId === courseId);
-            if (video) return getVideoThumbnail(video);
-            return 'https://picsum.photos/300/180';
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown date';
+            const date = new Date(timestamp);
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function renderTransactionHistory() {
+            const container = document.getElementById('transactionHistoryList');
+            const emptyMsg = document.getElementById('emptyTransactionMsg');
+
+            const transactions = [...allUserTransactions];
+
+            // Also check approvedCourses for any that aren't in transactions
+            const txCourseIds = new Set(transactions.map(t => t.itemId));
+            for (const courseId of approvedCourses) {
+                if (!txCourseIds.has(courseId)) {
+                    const course = allCourses.find(c => c.id === courseId);
+                    if (course) {
+                        transactions.push({
+                            id: 'legacy-' + courseId,
+                            itemId: courseId,
+                            itemTitle: course.name,
+                            itemType: 'course',
+                            amount: course.price || 0,
+                            status: 'approved',
+                            timestamp: null,
+                            screenshot: null,
+                            provider: 'Unknown',
+                            isLegacy: true
+                        });
+                    }
+                }
+            }
+
+            transactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            if (transactions.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.style.display = 'block';
+                return;
+            }
+
+            emptyMsg.style.display = 'none';
+            container.innerHTML = transactions.map(tx => {
+                const statusClass = (tx.status || 'pending').toLowerCase();
+                const statusLabel = (tx.status || 'Pending').charAt(0).toUpperCase() + (tx.status ||
+                    'pending').slice(1);
+                const dateStr = formatDate(tx.timestamp);
+                const hasScreenshot = tx.screenshot && tx.screenshot.trim() !== '';
+
+                return `
+                <div class="transaction-card" data-tx-id="${tx.id}">
+                    <div class="transaction-header">
+                        <span class="transaction-course-name">${escapeHtml(tx.itemTitle || 'Unknown Course')}</span>
+                        <span class="transaction-status-badge ${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="transaction-detail-row">
+                        <span>Amount:</span>
+                        <span class="transaction-amount">ZMW ${tx.amount || 0}</span>
+                    </div>
+                    <div class="transaction-detail-row">
+                        <span>Provider:</span>
+                        <strong>${escapeHtml(tx.provider || 'N/A')}</strong>
+                    </div>
+                    <div class="transaction-detail-row">
+                        <span>Reference:</span>
+                        <strong style="font-family:monospace;font-size:0.65rem;">${escapeHtml(tx.id)}</strong>
+                    </div>
+                    <div class="transaction-date">
+                        <i class="far fa-clock"></i> ${dateStr}
+                        ${tx.isLegacy ? ' <span style="color:#f39c12;">(Legacy record)</span>' : ''}
+                    </div>
+                    ${hasScreenshot ? `
+                    <div class="transaction-screenshot" data-screenshot-url="${escapeHtml(tx.screenshot)}" title="Tap to expand/collapse screenshot">
+                        <img src="${escapeHtml(tx.screenshot)}" alt="Payment screenshot" loading="lazy" style="max-height:160px;object-fit:cover;">
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+
+            // Attach screenshot expand/collapse
+            container.querySelectorAll('.transaction-screenshot').forEach(screenshotDiv => {
+                screenshotDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    screenshotDiv.classList.toggle('transaction-screenshot-expanded');
+                });
+            });
+        }
+
+        function renderAllCourses() {
+            const searchTerm = currentSearch.toLowerCase();
+            let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
+            const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const free = filtered.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            document.getElementById('paidCoursesGrid').innerHTML = paid.map(c => buildCourseCard(c)).join('') ||
+                '<div class="empty-state">No paid courses found</div>';
+            document.getElementById('freeCoursesGrid').innerHTML = free.map(c => buildCourseCard(c)).join('') ||
+                '<div class="empty-state">No free courses found</div>';
+            attachCourseEvents();
         }
 
         function buildCourseCard(course) {
             const isApproved = approvedCourses.has(course.id);
-            const isPending = pendingPurchases[course.id]?.status === 'pending';
+            const isPending = pendingPurchases[course.id] !== undefined;
             const statusText = isApproved ? 'Enrolled' : (isPending ? 'Pending' : '');
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
             return `
             <div class="course-card" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}">
-                <img src="${getCourseThumbnail(course.id)}" alt="${escapeHtml(course.name)}" loading="lazy">
+                <img src="${course.thumbnail || 'https://picsum.photos/300/180'}" alt="${escapeHtml(course.name)}" loading="lazy">
                 <div class="course-info">
                     <h4>${escapeHtml(course.name)}</h4>
                     <div class="course-meta">
@@ -1217,12 +1457,19 @@
                     const courseId = card.dataset.id;
                     const course = allCourses.find(c => c.id === courseId);
                     if (!course) return;
+                    const isApproved = card.dataset.approved === 'true';
+                    const isPending = card.dataset.pending === 'true';
                     if (course.price === 0) {
                         openCourseDetail(course);
                     } else {
-                        if (card.dataset.approved === 'true') openCourseDetail(course);
-                        else if (card.dataset.pending === 'true') addNotification(`Payment for "${course.name}" is pending.`);
-                        else openPaymentPage(course);
+                        if (isApproved) {
+                            openCourseDetail(course);
+                        } else if (isPending) {
+                            addNotification(
+                                `Payment for "${course.name}" is pending admin approval.`);
+                        } else {
+                            openPaymentPage(course);
+                        }
                     }
                 });
             });
@@ -1244,23 +1491,25 @@
                 return `
                 <div class="subfolder-item">
                     <div class="subfolder-header">
-                        <span><i class="fas fa-folder"></i> ${escapeHtml(sf.name)} (${videos.length}v, ${docs.length}d)</span>
+                        <span><i class="fas fa-folder"></i> ${escapeHtml(sf.name)} (${videos.length} videos, ${docs.length} docs)</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="subfolder-content">
-                        ${videos.length ? '<h4 style="margin:0.5rem 0;">Videos</h4>':''}
-                        <div class="videos-grid-2x2">${videos.map(v=>buildVideoCard(v)).join('')}</div>
-                        ${docs.length ? '<h4 style="margin:1rem 0 0.5rem;">Documents</h4>':''}
-                        <div class="docs-list">${docs.map(d=>buildDocCard(d)).join('')}</div>
+                        ${videos.length ? '<h4 style="margin:0.5rem 0;font-size:0.8rem;">Videos</h4>' : ''}
+                        <div class="videos-grid-2x2">${videos.map(v => buildVideoCard(v)).join('')}</div>
+                        ${docs.length ? '<h4 style="margin:1rem 0 0.5rem;font-size:0.8rem;">Documents</h4>' : ''}
+                        <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
+                        ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
                     </div>
                 </div>`;
-            }).join('') || '<p class="empty-state">No subfolders yet.</p>';
+            }).join('') || '<p class="empty-state">No subfolders in this course yet.</p>';
 
-            document.querySelectorAll('.subfolder-header').forEach(h => {
-                h.addEventListener('click', () => {
-                    const c = h.nextElementSibling;
-                    c.classList.toggle('show');
-                    h.querySelector('.fa-chevron-down').style.transform = c.classList.contains('show') ? 'rotate(180deg)' : '';
+            document.querySelectorAll('.subfolder-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    content.classList.toggle('show');
+                    header.querySelector('.fa-chevron-down').style.transform = content.classList
+                        .contains('show') ? 'rotate(180deg)' : '';
                 });
             });
             attachVideoEvents();
@@ -1268,43 +1517,49 @@
         }
 
         function getVideoThumbnail(video) {
-            if (video.thumbnail?.trim()) return video.thumbnail;
-            if (video.videoUrl?.includes('cloudinary.com')) return video.videoUrl.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
+            if (video.thumbnail && video.thumbnail.trim() !== '') return video.thumbnail;
+            if (video.videoUrl && video.videoUrl.includes('cloudinary.com')) {
+                return video.videoUrl.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
+            }
             return 'https://picsum.photos/300/180';
         }
 
         function isDownloadableVideo(video) {
             if (!video.videoUrl) return false;
             const url = video.videoUrl.toLowerCase();
-            return !url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('vimeo.com');
+            if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
+            if (url.includes('vimeo.com')) return false;
+            return true;
         }
 
         function buildVideoCard(video) {
-            const liked = userData.likedVideos.includes(video.id);
+            const isLiked = userData.likedVideos.includes(video.id);
+            const canDownload = isDownloadableVideo(video);
+            const thumbnail = getVideoThumbnail(video);
             return `
             <div class="video-card" data-id="${video.id}">
-                <img src="${getVideoThumbnail(video)}" alt="${escapeHtml(video.title)}" loading="lazy">
+                <img src="${thumbnail}" alt="${escapeHtml(video.title)}" loading="lazy">
                 <div class="video-info">
                     <h4>${escapeHtml(video.title)}</h4>
                     <div class="video-meta"><span>${escapeHtml(video.instructor)}</span></div>
                     <div class="card-actions">
-                        <button class="like-video-btn ${liked?'liked':''}" data-id="${video.id}"><i class="far fa-heart"></i></button>
-                        <button class="download-video-btn ${isDownloadableVideo(video)?'':'hidden-dl'}" data-id="${video.id}"><i class="fas fa-download"></i></button>
+                        <button class="like-video-btn ${isLiked?'liked':''}" data-id="${video.id}" title="Like"><i class="far fa-heart"></i></button>
+                        <button class="download-video-btn ${canDownload?'':'hidden-dl'}" data-id="${video.id}" title="Download for offline"><i class="fas fa-download"></i></button>
                     </div>
                 </div>
             </div>`;
         }
 
         function buildDocCard(doc) {
-            const liked = userData.likedDocs.includes(doc.id);
+            const isLiked = userData.likedDocs.includes(doc.id);
             return `
             <div class="doc-card">
                 <h3>${escapeHtml(doc.title)}</h3>
                 <div class="doc-instructor">by ${escapeHtml(doc.instructor)}</div>
-                <div class="doc-preview">${escapeHtml(doc.description || '')}</div>
+                <div class="doc-preview">${escapeHtml(doc.description || 'No description')}</div>
                 <div class="doc-footer">
-                    <div style="display:flex;gap:10px;">
-                        <button class="like-doc-btn ${liked?'liked':''}" data-id="${doc.id}"><i class="far fa-heart"></i></button>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <button class="like-doc-btn ${isLiked?'liked':''}" data-id="${doc.id}" title="Like"><i class="far fa-heart"></i></button>
                         <button class="read-btn" data-id="${doc.id}">Read</button>
                     </div>
                 </div>
@@ -1313,147 +1568,205 @@
 
         function attachVideoEvents() {
             document.querySelectorAll('.video-card').forEach(card => {
-                card.addEventListener('click', e => {
-                    if (e.target.closest('button')) return;
-                    const v = allVideos.find(v=>v.id===card.dataset.id);
-                    if (v) { playVideoInPlayer(v); watchedVideos.add(v.id); }
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.download-video-btn') || e.target.closest(
+                            '.like-video-btn')) return;
+                    const videoId = card.dataset.id;
+                    const video = allVideos.find(v => v.id === videoId);
+                    if (video) {
+                        playVideoInPlayer(video);
+                        watchedVideos.add(videoId);
+                    }
                 });
             });
-            document.querySelectorAll('.download-video-btn:not(.hidden-dl)').forEach(b => b.addEventListener('click', async e => {
-                e.stopPropagation();
-                const v = allVideos.find(v=>v.id===b.dataset.id);
-                if (v) await downloadVideoForOffline(v);
-            }));
-            document.querySelectorAll('.like-video-btn').forEach(b => b.addEventListener('click', async e => {
-                e.stopPropagation();
-                const id = b.dataset.id;
-                const idx = userData.likedVideos.indexOf(id);
-                if (idx===-1) userData.likedVideos.push(id); else userData.likedVideos.splice(idx,1);
-                await saveUserData();
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-                renderWatchedVideos();
-            }));
+            document.querySelectorAll('.download-video-btn:not(.hidden-dl)').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const videoId = btn.dataset.id;
+                    const video = allVideos.find(v => v.id === videoId);
+                    if (video && isDownloadableVideo(video)) await downloadVideoForOffline(video);
+                });
+            });
+            document.querySelectorAll('.like-video-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const videoId = btn.dataset.id;
+                    const idx = userData.likedVideos.indexOf(videoId);
+                    if (idx === -1) userData.likedVideos.push(videoId);
+                    else userData.likedVideos.splice(idx, 1);
+                    await saveUserData();
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    renderWatchedVideos();
+                });
+            });
         }
 
         function attachDocEvents() {
-            document.querySelectorAll('.read-btn').forEach(b => b.addEventListener('click', e => {
-                e.stopPropagation();
-                const doc = allDocs.find(d=>d.id===b.dataset.id);
-                if (doc) openDocFullPage(doc);
-            }));
-            document.querySelectorAll('.like-doc-btn').forEach(b => b.addEventListener('click', async e => {
-                e.stopPropagation();
-                const id = b.dataset.id;
-                const idx = userData.likedDocs.indexOf(id);
-                if (idx===-1) userData.likedDocs.push(id); else userData.likedDocs.splice(idx,1);
-                await saveUserData();
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-            }));
+            document.querySelectorAll('.read-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const docId = btn.dataset.id;
+                    const doc = allDocs.find(d => d.id === docId);
+                    if (doc) openDocFullPage(doc);
+                });
+            });
+            document.querySelectorAll('.like-doc-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const docId = btn.dataset.id;
+                    const idx = userData.likedDocs.indexOf(docId);
+                    if (idx === -1) userData.likedDocs.push(docId);
+                    else userData.likedDocs.splice(idx, 1);
+                    await saveUserData();
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                });
+            });
         }
 
         async function downloadVideoForOffline(video) {
-            if (!isDownloadableVideo(video)) { addNotification("⚠️ YouTube/Vimeo cannot be downloaded."); return; }
+            if (!isDownloadableVideo(video)) {
+                addNotification("⚠️ YouTube/Vimeo videos cannot be downloaded offline.");
+                return;
+            }
             try {
                 addNotification(`⬇️ Downloading "${video.title}"...`);
-                const r = await fetch(video.videoUrl);
-                if (!r.ok) throw new Error('Network error');
-                const blob = await r.blob();
-                const tx = offlineDB.transaction('videos','readwrite');
+                const response = await fetch(video.videoUrl);
+                if (!response.ok) throw new Error('Network error');
+                const blob = await response.blob();
+                const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
-                store.put({ id: video.id, blob, title: video.title, thumbnail: getVideoThumbnail(video) });
-                await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+                store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
+                await new Promise((res, rej) => { tx.oncomplete = res;
+                    tx.onerror = rej; });
                 offlineVideos.add(video.id);
                 addNotification(`✅ "${video.title}" saved offline!`);
                 renderOfflinePage();
-            } catch(e) { addNotification("Download failed: "+e.message); }
+            } catch (e) {
+                addNotification("Download failed: " + e.message);
+            }
         }
 
         function playVideoInPlayer(video) {
             const container = document.getElementById('playerEmbedContainer');
+            const playerDiv = document.getElementById('persistentPlayer');
             let embed = '';
             const url = video.videoUrl;
-            if (url.includes('youtube.com')||url.includes('youtu.be')) {
-                let id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                embed = `<iframe width="100%" height="230" src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&modestbranding=1&rel=0" frameborder="0" allowfullscreen></iframe>`;
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+                embed =
+                    `<iframe width="100%" height="230" src="https://www.youtube-nocookie.com/embed/${vidId}?autoplay=1&modestbranding=1&rel=0" frameborder="0" allowfullscreen></iframe>`;
             } else if (url.includes('vimeo.com')) {
-                embed = `<iframe width="100%" height="230" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+                embed =
+                    `<iframe width="100%" height="230" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
             } else {
-                embed = `<video controls autoplay style="width:100%;max-height:230px;"><source src="${url}" type="video/mp4"></video>`;
+                embed =
+                    `<video controls autoplay style="width:100%;max-height:230px;"><source src="${url}" type="video/mp4"></video>`;
             }
             container.innerHTML = embed;
-            document.getElementById('persistentPlayer').style.display = 'block';
+            playerDiv.style.display = 'block';
             const viewers = video.uniqueViewers || {};
             if (!viewers[currentUser.uid]) {
                 viewers[currentUser.uid] = true;
-                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views||0)+1 });
+                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
             }
         }
 
         function openDocFullPage(doc) {
-            document.querySelectorAll('.page-container').forEach(p=>p.classList.remove('active-page'));
+            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             document.getElementById('docFullPage').classList.add('active-page');
-            let html = `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr>`;
-            if (doc.docUrl) html += `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;border-radius:14px;"></iframe>`;
-            else html += `<div style="white-space:pre-wrap;">${doc.content || ''}</div>`;
+            let html =
+                `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr style="margin:1rem 0;">`;
+            if (doc.docUrl) {
+                html +=
+                    `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;border-radius:14px;"></iframe>`;
+            } else {
+                html +=
+                    `<div style="white-space:pre-wrap;line-height:1.7;">${doc.content || 'No content available.'}</div>`;
+            }
             document.getElementById('docFullContent').innerHTML = html;
-            update(ref(db, `docs/${doc.id}`), { reads: (doc.reads||0)+1 });
+            update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
         function renderMyLearn() {
-            const watched = allVideos.filter(v=>watchedVideos.has(v.id));
-            document.getElementById('watchedVideosGrid').innerHTML = watched.map(v=>buildVideoCard(v)).join('') || '<p class="empty-state">No watched videos</p>';
-            const myPaid = allCourses.filter(c=>approvedCourses.has(c.id));
-            document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c=>`
+            const watched = allVideos.filter(v => watchedVideos.has(v.id));
+            document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v)).join('') ||
+                '<p class="empty-state">No watched videos yet</p>';
+            const myPaid = allCourses.filter(c => approvedCourses.has(c.id));
+            document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c => {
+                return `
                 <div class="course-card" data-id="${c.id}">
-                    <img src="${getCourseThumbnail(c.id)}" alt="${escapeHtml(c.name)}">
-                    <div class="course-info"><h4>${escapeHtml(c.name)}</h4><div class="course-meta"><span class="course-price">ZMW ${c.price}</span><span class="course-status approved">Enrolled</span></div></div>
-                </div>`).join('') || '<p class="empty-state">No paid courses</p>';
-            document.querySelectorAll('#myPaidCoursesGrid .course-card').forEach(card => card.addEventListener('click', ()=>{
-                const c = allCourses.find(c=>c.id===card.dataset.id);
-                if (c) openCourseDetail(c);
-            }));
+                    <img src="${c.thumbnail || 'https://picsum.photos/300/180'}" alt="${escapeHtml(c.name)}" loading="lazy">
+                    <div class="course-info">
+                        <h4>${escapeHtml(c.name)}</h4>
+                        <div class="course-meta">
+                            <span class="course-price">ZMW ${c.price}</span>
+                            <span class="course-status approved">Enrolled</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="empty-state">No paid courses yet</p>';
+            document.querySelectorAll('#myPaidCoursesGrid .course-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const course = allCourses.find(c => c.id === card.dataset.id);
+                    if (course) openCourseDetail(course);
+                });
+            });
             attachVideoEvents();
         }
 
         function renderWatchedVideos() {
-            if (document.getElementById('mylearningPage').classList.contains('active-page')) renderMyLearn();
+            if (document.getElementById('mylearningPage').classList.contains('active-page')) {
+                renderMyLearn();
+            }
         }
 
         async function renderOfflinePage() {
             const container = document.getElementById('offlineVideosGrid');
-            const arr = [];
+            const offlineArray = [];
             if (offlineDB) {
-                const tx = offlineDB.transaction('videos','readonly');
+                const tx = offlineDB.transaction('videos', 'readonly');
                 const store = tx.objectStore('videos');
-                const keys = await new Promise(res=>{ const r=store.getAllKeys(); r.onsuccess=()=>res(r.result); });
+                const keys = await new Promise((res) => {
+                    const req = store.getAllKeys();
+                    req.onsuccess = () => res(req.result);
+                });
                 for (let id of keys) {
                     const req = store.get(id);
-                    await new Promise(res=>{ req.onsuccess=()=>res(); });
-                    const rec = req.result;
-                    const meta = allVideos.find(v=>v.id===id) || { title: rec.title, instructor:'Offline' };
-                    arr.push({ ...meta, id, thumbnail: rec.thumbnail || getVideoThumbnail(meta) });
+                    await new Promise(res => { req.onsuccess = () => res(); });
+                    const record = req.result;
+                    const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
+                        instructor: 'Offline', price: 0 };
+                    offlineArray.push({ ...videoMeta, id, offline: true, thumbnail: record.thumbnail ||
+                            getVideoThumbnail(videoMeta) });
                 }
             }
-            container.innerHTML = arr.map(v=>`
-                <div class="video-card" data-id="${v.id}" data-offline="true">
-                    <img src="${v.thumbnail}" alt="${escapeHtml(v.title)}">
-                    <div class="video-info"><h4>${escapeHtml(v.title)}</h4><div class="video-meta"><span>📱 Offline</span></div></div>
-                </div>`).join('');
-            document.getElementById('emptyOfflineMsg').style.display = arr.length ? 'none' : 'block';
-            document.querySelectorAll('#offlineVideosGrid .video-card').forEach(card => card.addEventListener('click', async ()=>{
-                const videoId = card.dataset.id;
-                const tx = offlineDB.transaction('videos','readonly');
-                const store = tx.objectStore('videos');
-                const req = store.get(videoId);
-                req.onsuccess = ()=>{
-                    const rec = req.result;
-                    if (rec?.blob) {
-                        const url = URL.createObjectURL(rec.blob);
-                        document.getElementById('playerEmbedContainer').innerHTML = `<video controls autoplay style="width:100%"><source src="${url}" type="video/mp4"></video>`;
-                        document.getElementById('persistentPlayer').style.display = 'block';
-                    }
-                };
-            }));
+            container.innerHTML = offlineArray.map(v => `
+            <div class="video-card" data-id="${v.id}" data-offline="true">
+                <img src="${v.thumbnail || 'https://picsum.photos/300/180'}" alt="${escapeHtml(v.title)}" loading="lazy">
+                <div class="video-info">
+                    <h4>${escapeHtml(v.title)}</h4>
+                    <div class="video-meta"><span>📱 Offline</span></div>
+                </div>
+            </div>`).join('');
+            document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
+            document.querySelectorAll('#offlineVideosGrid .video-card').forEach(card => {
+                card.addEventListener('click', async () => {
+                    const videoId = card.dataset.id;
+                    const tx = offlineDB.transaction('videos', 'readonly');
+                    const store = tx.objectStore('videos');
+                    const req = store.get(videoId);
+                    req.onsuccess = () => {
+                        const record = req.result;
+                        if (record && record.blob) {
+                            const blobUrl = URL.createObjectURL(record.blob);
+                            const container = document.getElementById('playerEmbedContainer');
+                            container.innerHTML =
+                                `<video controls autoplay style="width:100%;max-height:230px;"><source src="${blobUrl}" type="video/mp4"></video>`;
+                            document.getElementById('persistentPlayer').style.display = 'block';
+                        }
+                    };
+                });
+            });
         }
 
         function openPaymentPage(course) {
@@ -1468,146 +1781,152 @@
             showPage('payment');
         }
 
-        async function fetchUserTransactions() {
-            if (!currentUser) return;
-            const uid = currentUser.uid;
-            const map = new Map();
-            const pendingSnap = await get(ref(db, `pendingPurchases/${uid}`));
-            if (pendingSnap.val()) {
-                Object.entries(pendingSnap.val()).forEach(([txId, tx]) => {
-                    if (tx.itemType === 'course') map.set(txId, { id: txId, ...tx, source: 'pending' });
-                });
-            }
-            const txSnap = await get(ref(db, 'transactions'));
-            if (txSnap.val()) {
-                Object.entries(txSnap.val()).forEach(([txId, tx]) => {
-                    if (tx.userId === uid && tx.itemType === 'course') {
-                        if (!map.has(txId)) map.set(txId, { id: txId, ...tx, source: 'transactions' });
-                        else {
-                            const existing = map.get(txId);
-                            if (existing.status !== 'approved' && tx.status === 'approved') map.set(txId, { id: txId, ...tx, source: 'transactions' });
-                        }
-                    }
-                });
-            }
-            userTransactions = Array.from(map.values()).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-            if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) renderTransactionHistory();
-        }
-
-        function renderTransactionHistory() {
-            const container = document.getElementById('transactionHistoryList');
-            container.innerHTML = userTransactions.map(tx => {
-                const date = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : (tx.date || 'N/A');
-                return `
-                <div class="transaction-card">
-                    <div class="tx-header">
-                        <h4>${escapeHtml(tx.itemTitle)}</h4>
-                        <span class="tx-status ${tx.status}">${tx.status}</span>
-                    </div>
-                    <div class="tx-detail">
-                        <span><i class="fas fa-money-bill-wave"></i> ZMW ${tx.amount}</span>
-                        <span>· ${date}</span>
-                    </div>
-                    ${tx.screenshot ? `<img src="${tx.screenshot}" class="screenshot-thumb" onclick="window.open('${tx.screenshot}')" alt="screenshot">` : ''}
-                </div>`;
-            }).join('') || '<p class="empty-state">No transactions yet.</p>';
-        }
-
         function setupUI() {
-            document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', ()=> showPage(btn.dataset.page)));
-            document.getElementById('profileIcon').addEventListener('click', ()=> showPage('profile'));
-            document.getElementById('logoutBtnSmall').addEventListener('click', ()=> signOut(auth));
-            document.getElementById('logoutBtn').addEventListener('click', ()=> signOut(auth));
-            document.getElementById('backFromCourseBtn').addEventListener('click', ()=> showPage('home'));
-            document.getElementById('backFromDocBtn').addEventListener('click', ()=> showPage(selectedCourse ? 'courseDetail' : 'home'));
-            document.getElementById('backFromPaymentBtn').addEventListener('click', ()=> showPage('home'));
-            document.getElementById('backFromHistoryBtn').addEventListener('click', ()=> showPage('profile'));
-
-            document.getElementById('searchInput').addEventListener('input', e => { currentSearch = e.target.value.toLowerCase(); renderAllCourses(); });
-            document.getElementById('searchIcon').addEventListener('click', ()=> document.getElementById('searchInput').focus());
-
-            document.getElementById('copyMtnBtn').addEventListener('click', e => {
-                e.stopPropagation();
-                const num = paymentSettings.mtnNumber;
-                if (num && num!=='Not set') navigator.clipboard.writeText(num).then(()=>addNotification('📋 MTN number copied!')).catch(()=>addNotification('Copy failed'));
-                else addNotification('No MTN number set.');
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', () => showPage(btn.dataset.page));
             });
-            document.getElementById('copyAirtelBtn').addEventListener('click', e => {
-                e.stopPropagation();
-                const num = paymentSettings.airtelNumber;
-                if (num && num!=='Not set') navigator.clipboard.writeText(num).then(()=>addNotification('📋 Airtel number copied!')); else addNotification('No Airtel number set.');
+            document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
+            document.getElementById('logoutBtnSmall').addEventListener('click', () => signOut(auth));
+            document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+            document.getElementById('backFromCourseBtn').addEventListener('click', () => showPage('home'));
+            document.getElementById('backFromDocBtn').addEventListener('click', () => {
+                if (selectedCourse) showPage('courseDetail');
+                else showPage('home');
+            });
+            document.getElementById('backFromPaymentBtn').addEventListener('click', () => showPage('home'));
+            document.getElementById('backFromTransactionBtn').addEventListener('click', () => showPage('profile'));
+            document.getElementById('transactionHistoryBtn').addEventListener('click', () => {
+                renderTransactionHistory();
+                showPage('transactionHistory');
+            });
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase();
+                renderAllCourses();
+            });
+            document.getElementById('searchIcon').addEventListener('click', () => {
+                document.getElementById('searchInput').focus();
             });
 
-            document.getElementById('paymentUploadBox').addEventListener('click', ()=>{
+            // Copy buttons for payment numbers
+            document.getElementById('copyMtnBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const num = paymentSettings.mtnNumber || '';
+                if (num && num !== 'Not set') {
+                    navigator.clipboard.writeText(num).then(() => {
+                        addNotification('📋 MTN number copied!');
+                    }).catch(() => {
+                        addNotification('Failed to copy number');
+                    });
+                } else {
+                    addNotification('No MTN number set by admin yet.');
+                }
+            });
+            document.getElementById('copyAirtelBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const num = paymentSettings.airtelNumber || '';
+                if (num && num !== 'Not set') {
+                    navigator.clipboard.writeText(num).then(() => {
+                        addNotification('📋 Airtel number copied!');
+                    }).catch(() => {
+                        addNotification('Failed to copy number');
+                    });
+                } else {
+                    addNotification('No Airtel number set by admin yet.');
+                }
+            });
+
+            const uploadBox = document.getElementById('paymentUploadBox');
+            uploadBox.addEventListener('click', () => {
                 cloudinary.openUploadWidget({
-                    cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources:['local','url','camera'],
-                    maxFileSize:5000000, clientAllowedFormats:['png','jpg','jpeg'], maxFiles:1
-                }, (err, res)=>{
-                    if (err) return;
-                    if (res.event==='success') {
-                        paymentScreenshotUrl = res.info.secure_url;
-                        document.getElementById('paymentScreenshotPreview').innerHTML = `<img src="${paymentScreenshotUrl}" style="max-width:100%;border-radius:14px;margin-top:10px;">`;
-                        addNotification('📸 Screenshot uploaded');
+                    cloudName: CLOUD_NAME,
+                    uploadPreset: UPLOAD_PRESET,
+                    sources: ['local', 'url', 'camera'],
+                    maxFileSize: 5000000,
+                    clientAllowedFormats: ['png', 'jpg', 'jpeg', 'heic'],
+                    maxFiles: 1
+                }, (error, result) => {
+                    if (error) return;
+                    if (result.event === 'success') {
+                        paymentScreenshotUrl = result.info.secure_url;
+                        document.getElementById('paymentScreenshotPreview').innerHTML =
+                            `<img src="${paymentScreenshotUrl}" style="max-width:100%;border-radius:14px;margin-top:10px;" alt="Screenshot">`;
+                        addNotification('📸 Screenshot uploaded successfully');
                     }
                 });
             });
 
-            document.getElementById('submitPaymentPageBtn').addEventListener('click', async ()=>{
-                if (!selectedCourse || !paymentScreenshotUrl) return alert('Upload a screenshot first.');
-                const ref = push(ref(db, `pendingPurchases/${currentUser.uid}`));
-                await set(ref, {
-                    itemId:selectedCourse.id, itemTitle:selectedCourse.name, itemType:'course', amount:selectedCourse.price,
-                    provider:'MTN/Airtel', screenshot:paymentScreenshotUrl, status:'pending', timestamp:Date.now(),
-                    userId:currentUser.uid, userEmail:currentUser.email, userName:`${userData.firstName} ${userData.lastName}`,
-                    userPhone:userData.phone||''
+            document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
+                if (!selectedCourse || !paymentScreenshotUrl) {
+                    alert("Please upload a payment screenshot before submitting.");
+                    return;
+                }
+                const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
+                await set(pendingRef, {
+                    itemId: selectedCourse.id,
+                    itemTitle: selectedCourse.name,
+                    itemType: 'course',
+                    amount: selectedCourse.price,
+                    provider: 'MTN/Airtel',
+                    screenshot: paymentScreenshotUrl,
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    userName: `${userData.firstName} ${userData.lastName}`,
+                    userPhone: userData.phone || ''
                 });
-                addNotification(`✅ Purchase request sent for "${selectedCourse.name}".`);
+                addNotification(
+                    `✅ Purchase request sent for "${selectedCourse.name}". Awaiting admin approval.`);
                 showPage('home');
                 selectedCourse = null;
                 paymentScreenshotUrl = null;
             });
 
-            document.getElementById('changePasswordBtn').addEventListener('click', async ()=>{
+            document.getElementById('changePasswordBtn').addEventListener('click', async () => {
                 if (currentUser) await sendPasswordResetEmail(auth, currentUser.email);
-                alert('Password reset email sent.');
+                alert('Password reset email sent. Check your inbox.');
             });
-            document.getElementById('transactionHistoryBtn').addEventListener('click', ()=>{
-                fetchUserTransactions();
-                showPage('transactionHistory');
+            document.getElementById('notifIcon').addEventListener('click', () => {
+                document.getElementById('sideNotif').classList.add('open');
             });
-
-            document.getElementById('notifIcon').addEventListener('click', ()=> document.getElementById('sideNotif').classList.add('open'));
-            document.getElementById('closeNotif').addEventListener('click', ()=> document.getElementById('sideNotif').classList.remove('open'));
-            document.getElementById('closePlayerBtn').addEventListener('click', ()=>{
+            document.getElementById('closeNotif').addEventListener('click', () => {
+                document.getElementById('sideNotif').classList.remove('open');
+            });
+            document.getElementById('closePlayerBtn').addEventListener('click', () => {
                 document.getElementById('persistentPlayer').style.display = 'none';
                 document.getElementById('playerEmbedContainer').innerHTML = '';
             });
         }
 
         function showPage(pageId) {
-            document.querySelectorAll('.page-container').forEach(p=>p.classList.remove('active-page'));
-            document.getElementById(pageId+'Page').classList.add('active-page');
-            document.querySelectorAll('.nav-item').forEach(b=>{
-                b.classList.remove('active');
-                if (b.dataset.page === pageId) b.classList.add('active');
+            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
+            const targetPage = document.getElementById(pageId + 'Page');
+            if (targetPage) {
+                targetPage.classList.add('active-page');
+            }
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.page === pageId) btn.classList.add('active');
             });
-            if (pageId==='home') renderAllCourses();
-            if (pageId==='mylearning') renderMyLearn();
-            if (pageId==='offline') renderOfflinePage();
-            if (pageId==='profile') updateUserInterface();
-            if (pageId==='transactionHistory') renderTransactionHistory();
-            if (pageId==='courseDetail' && selectedCourse) renderCourseDetail(selectedCourse);
-            if (pageId==='payment' && selectedCourse) {
+            if (pageId === 'home') renderAllCourses();
+            if (pageId === 'mylearning') renderMyLearn();
+            if (pageId === 'offline') renderOfflinePage();
+            if (pageId === 'profile') updateUserInterface();
+            if (pageId === 'courseDetail' && selectedCourse) renderCourseDetail(selectedCourse);
+            if (pageId === 'payment' && selectedCourse) {
                 updatePaymentNumbersDisplay();
                 document.getElementById('depositAmountDisplay').innerText = `ZMW ${selectedCourse.price}`;
+            }
+            if (pageId === 'transactionHistory') {
+                renderTransactionHistory();
             }
         }
 
         function escapeHtml(text) {
             if (!text) return '';
-            const d = document.createElement('div');
-            d.textContent = text;
-            return d.innerHTML;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 </body>
