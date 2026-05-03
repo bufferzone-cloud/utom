@@ -495,6 +495,7 @@
             align-items: center;
             margin-top: 14px;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .read-btn {
             background: var(--gold);
@@ -512,6 +513,27 @@
             background: #e8a830;
             transform: translateY(-1px);
             box-shadow: 0 5px 16px rgba(245, 176, 66, 0.4);
+        }
+        .download-doc-btn {
+            background: transparent;
+            border: 1.5px solid var(--gold);
+            padding: 9px 20px;
+            border-radius: 60px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--gold);
+            font-size: 0.78rem;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        .download-doc-btn:hover {
+            background: #F5B04218;
+            border-color: #c47f1a;
+            color: #c47f1a;
+            transform: translateY(-1px);
         }
         .like-doc-btn {
             background: none;
@@ -1699,15 +1721,18 @@
 
         function buildDocCard(doc) {
             const isLiked = userData.likedDocs.includes(doc.id);
+            // Add download button only if docUrl exists
+            const hasUrl = doc.docUrl && doc.docUrl.trim() !== '';
             return `
             <div class="doc-card">
                 <h3>${escapeHtml(doc.title)}</h3>
                 <div class="doc-instructor">by ${escapeHtml(doc.instructor)}</div>
                 <div class="doc-preview">${escapeHtml(doc.description || 'No description')}</div>
                 <div class="doc-footer">
-                    <div style="display:flex;gap:10px;align-items:center;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                         <button class="like-doc-btn ${isLiked?'liked':''}" data-id="${doc.id}" title="Like"><i class="far fa-heart"></i></button>
                         <button class="read-btn" data-id="${doc.id}">Read</button>
+                        ${hasUrl ? `<button class="download-doc-btn" data-id="${doc.id}" data-url="${escapeHtml(doc.docUrl)}" title="Download document"><i class="fas fa-download"></i> Download</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -1768,6 +1793,32 @@
                     if (selectedCourse) renderCourseDetail(selectedCourse);
                 });
             });
+            // Attach download handler for documents
+            document.querySelectorAll('.download-doc-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const url = btn.dataset.url;
+                    if (!url) return;
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error('Network error');
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = url.split('/').pop() || 'document';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                        addNotification('download', 'Document download started.');
+                    } catch (err) {
+                        // Fallback: open in new tab
+                        window.open(url, '_blank');
+                        addNotification('warning', 'Direct download failed. Opening in new tab.');
+                    }
+                });
+            });
         }
 
         async function downloadVideoForOffline(video) {
@@ -1802,8 +1853,9 @@
             const url = video.videoUrl;
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+                // Reduced YouTube branding: no controls, no related, modest branding, autoplay muted
                 embed =
-                    `<iframe width="100%" height="230" src="https://www.youtube-nocookie.com/embed/${vidId}?autoplay=1&modestbranding=1&rel=0" frameborder="0" allowfullscreen></iframe>`;
+                    `<iframe width="100%" height="230" src="https://www.youtube-nocookie.com/embed/${vidId}?controls=0&rel=0&modestbranding=1&autoplay=1&mute=1" frameborder="0" allowfullscreen></iframe>`;
             } else if (url.includes('vimeo.com')) {
                 embed =
                     `<iframe width="100%" height="230" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
@@ -1825,9 +1877,25 @@
             document.getElementById('docFullPage').classList.add('active-page');
             let html =
                 `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr style="margin:1rem 0;">`;
+
             if (doc.docUrl) {
-                html +=
-                    `<iframe src="${doc.docUrl}" width="100%" height="600px" style="border:none;border-radius:14px;"></iframe>`;
+                const lowerUrl = doc.docUrl.toLowerCase();
+                const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
+                // Use viewer for Office documents and PDFs
+                if (['pdf'].includes(fileExtension)) {
+                    // Display PDF directly in iframe (browser native viewer)
+                    html +=
+                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
+                } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
+                    // Use Google Docs Viewer for Office documents
+                    const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
+                    html +=
+                        `<iframe src="${viewerUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
+                } else {
+                    // Fallback: try iframe
+                    html +=
+                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
+                }
             } else {
                 html +=
                     `<div style="white-space:pre-wrap;line-height:1.7;">${doc.content || 'No content available.'}</div>`;
