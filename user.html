@@ -1721,7 +1721,6 @@
 
         function buildDocCard(doc) {
             const isLiked = userData.likedDocs.includes(doc.id);
-            // Add download button only if docUrl exists
             const hasUrl = doc.docUrl && doc.docUrl.trim() !== '';
             return `
             <div class="doc-card">
@@ -1793,7 +1792,6 @@
                     if (selectedCourse) renderCourseDetail(selectedCourse);
                 });
             });
-            // Attach download handler for documents
             document.querySelectorAll('.download-doc-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -1813,7 +1811,6 @@
                         URL.revokeObjectURL(blobUrl);
                         addNotification('download', 'Document download started.');
                     } catch (err) {
-                        // Fallback: open in new tab
                         window.open(url, '_blank');
                         addNotification('warning', 'Direct download failed. Opening in new tab.');
                     }
@@ -1853,9 +1850,10 @@
             const url = video.videoUrl;
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                // Reduced YouTube branding: no controls, no related, modest branding, autoplay muted
-                embed =
-                    `<iframe width="100%" height="230" src="https://www.youtube-nocookie.com/embed/${vidId}?controls=0&rel=0&modestbranding=1&autoplay=1&mute=1" frameborder="0" allowfullscreen></iframe>`;
+                // Minimized YouTube branding + controls visible, no mute
+                embed = `<iframe width="100%" height="230" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&autoplay=1" 
+                                frameborder="0" allowfullscreen allow="autoplay"></iframe>`;
             } else if (url.includes('vimeo.com')) {
                 embed =
                     `<iframe width="100%" height="230" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
@@ -1879,20 +1877,15 @@
                 `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr style="margin:1rem 0;">`;
 
             if (doc.docUrl) {
-                const lowerUrl = doc.docUrl.toLowerCase();
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                // Use viewer for Office documents and PDFs
                 if (['pdf'].includes(fileExtension)) {
-                    // Display PDF directly in iframe (browser native viewer)
                     html +=
                         `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
                 } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
-                    // Use Google Docs Viewer for Office documents
                     const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
                     html +=
                         `<iframe src="${viewerUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
                 } else {
-                    // Fallback: try iframe
                     html +=
                         `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
                 }
