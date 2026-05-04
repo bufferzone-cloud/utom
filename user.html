@@ -234,6 +234,20 @@
         .player-close-btn:hover {
             background: rgba(231, 76, 60, 0.8);
         }
+
+        /* Hide YouTube watermark/branding */
+        .yt-logo-cover {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 60px;
+            height: 20px;
+            background: rgba(0,0,0,0.85);
+            z-index: 19;
+            border-radius: 3px;
+            pointer-events: none;  /* allow clicks to pass through */
+        }
+
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -1039,32 +1053,9 @@
             font-size: 0.65rem;
         }
 
+        /* Source badge hidden entirely */
         .video-source-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.55rem;
-            padding: 2px 7px;
-            border-radius: 12px;
-            background: #f0f0f5;
-            color: #6b6f7c;
-            font-weight: 600;
-            margin-top: 3px;
-        }
-        .video-source-badge i {
-            font-size: 0.5rem;
-        }
-        .video-source-badge.youtube {
-            background: #ffe8e8;
-            color: #cc0000;
-        }
-        .video-source-badge.vimeo {
-            background: #e8f0fe;
-            color: #1ab7ea;
-        }
-        .video-source-badge.direct {
-            background: #e8f8e8;
-            color: #2e7d32;
+            display: none !important;
         }
 
         @media (max-width: 400px) {
@@ -1118,7 +1109,10 @@
         <div id="persistentPlayer" class="persistent-player">
             <div class="player-container">
                 <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
-                <div id="playerEmbedContainer"></div>
+                <div id="playerEmbedContainer" style="position:relative;">
+                    <!-- YouTube branding cover -->
+                    <div class="yt-logo-cover"></div>
+                </div>
             </div>
         </div>
 
@@ -1184,7 +1178,7 @@
 
         <div id="docFullPage" class="page-container full-page-container">
             <button id="backFromDocBtn" class="btn-outline" style="margin-bottom:0.8rem;"><i class="fas fa-arrow-left"></i> Back</button>
-            <div id="docFullContent" class="full-page-content"></div>
+            <div id="docFullContent" class="full-page-content" style="overflow:auto;"></div>
         </div>
 
         <div id="paymentPage" class="page-container full-page-container">
@@ -1648,12 +1642,9 @@
             attachDocEvents();
         }
 
-        function getVideoSourceType(video) {
-            if (!video.videoUrl) return 'unknown';
-            const url = video.videoUrl.toLowerCase();
-            if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-            if (url.includes('vimeo.com')) return 'vimeo';
-            return 'direct';
+        // Source badge hidden entirely via CSS, but we still need the function (returns empty)
+        function getVideoSourceBadge(video) {
+            return '';
         }
 
         function getVideoThumbnail(video) {
@@ -1672,20 +1663,6 @@
             return 'https://picsum.photos/300/180';
         }
 
-        function getVideoSourceBadge(video) {
-            const sourceType = getVideoSourceType(video);
-            if (sourceType === 'youtube') {
-                return '<span class="video-source-badge youtube"><i class="fab fa-youtube"></i> YouTube</span>';
-            }
-            if (sourceType === 'vimeo') {
-                return '<span class="video-source-badge vimeo"><i class="fab fa-vimeo-v"></i> Vimeo</span>';
-            }
-            if (sourceType === 'direct') {
-                return '<span class="video-source-badge direct"><i class="fas fa-play-circle"></i> Direct</span>';
-            }
-            return '';
-        }
-
         function isDownloadableVideo(video) {
             if (!video.videoUrl) return false;
             const url = video.videoUrl.toLowerCase();
@@ -1698,7 +1675,6 @@
             const isLiked = userData.likedVideos.includes(video.id);
             const canDownload = isDownloadableVideo(video);
             const thumbnail = getVideoThumbnail(video);
-            const sourceBadge = getVideoSourceBadge(video);
             return `
             <div class="video-card" data-id="${video.id}">
                 <div class="video-thumb-wrapper">
@@ -1709,7 +1685,6 @@
                     <h4>${escapeHtml(video.title)}</h4>
                     <div class="video-meta">
                         <span>${escapeHtml(video.instructor)}</span>
-                        ${sourceBadge}
                     </div>
                     <div class="card-actions">
                         <button class="like-video-btn ${isLiked?'liked':''}" data-id="${video.id}" title="Like"><i class="far fa-heart"></i></button>
@@ -1846,14 +1821,22 @@
         function playVideoInPlayer(video) {
             const container = document.getElementById('playerEmbedContainer');
             const playerDiv = document.getElementById('persistentPlayer');
+            // Remove any existing cover before adding new content
+            const existingCover = container.querySelector('.yt-logo-cover');
+            if (existingCover) existingCover.remove();
+            
             let embed = '';
             const url = video.videoUrl;
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                // Minimized YouTube branding + controls visible, no mute
+                // Use nocookie domain, modestbranding, hide info, disable keyboard shortcuts
                 embed = `<iframe width="100%" height="230" 
-                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&autoplay=1" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&autoplay=1" 
                                 frameborder="0" allowfullscreen allow="autoplay"></iframe>`;
+                // Re-add the cover to hide the tiny YouTube text logo that remains
+                const cover = document.createElement('div');
+                cover.className = 'yt-logo-cover';
+                container.appendChild(cover);
             } else if (url.includes('vimeo.com')) {
                 embed =
                     `<iframe width="100%" height="230" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
@@ -1861,7 +1844,7 @@
                 embed =
                     `<video controls autoplay style="width:100%;max-height:230px;"><source src="${url}" type="video/mp4"></video>`;
             }
-            container.innerHTML = embed;
+            container.innerHTML = embed + (container.querySelector('.yt-logo-cover')?.outerHTML || '');
             playerDiv.style.display = 'block';
             const viewers = video.uniqueViewers || {};
             if (!viewers[currentUser.uid]) {
@@ -1877,18 +1860,23 @@
                 `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr style="margin:1rem 0;">`;
 
             if (doc.docUrl) {
+                // Try to detect Cloudinary PDF or other viewable content
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 if (['pdf'].includes(fileExtension)) {
+                    // Use iframe for PDF (Cloudinary allows embedding)
                     html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
+                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;" allow="fullscreen"></iframe>`;
                 } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
                     const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
                     html +=
                         `<iframe src="${viewerUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
                 } else {
+                    // For other types (images, etc.) or unknown, try iframe and fallback
                     html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
+                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;" allow="fullscreen"></iframe>`;
                 }
+                // Fallback link in case iframe is blocked
+                html += `<p style="margin-top:12px;font-size:0.8rem;color:#8b8fa3;">If the document does not load, <a href="${escapeHtml(doc.docUrl)}" target="_blank" style="color:var(--gold);">open in new tab</a>.</p>`;
             } else {
                 html +=
                     `<div style="white-space:pre-wrap;line-height:1.7;">${doc.content || 'No content available.'}</div>`;
