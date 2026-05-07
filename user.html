@@ -204,7 +204,7 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.1);
         }
 
-        /* ----- PERSISTENT PLAYER (borderless, full width) ----- */
+        /* ----- PERSISTENT PLAYER (borderless, full width, youtube-style) ----- */
         .persistent-player {
             position: sticky;
             top: 56px;
@@ -229,9 +229,45 @@
             border: 0;
             background: black;
         }
+        .player-container video {
+            object-fit: contain;
+        }
+
+        /* Custom player controls overlay (borderless, youtube-like) */
+        .player-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 22;
+            transition: opacity 0.3s ease;
+        }
+        .player-overlay .play-pause-big {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 3.2rem;
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+        }
+        .player-overlay .play-pause-big.show {
+            opacity: 0.9;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .player-container:hover .player-overlay .play-pause-big {
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
         .player-close-btn {
             position: absolute;
-            top: 10px;
+            top: 12px;
             right: 14px;
             background: rgba(0, 0, 0, 0.7);
             color: #fff;
@@ -240,12 +276,39 @@
             padding: 5px 14px;
             font-size: 0.7rem;
             cursor: pointer;
-            z-index: 20;
+            z-index: 25;
             font-weight: 600;
             transition: var(--transition);
+            pointer-events: auto;
         }
         .player-close-btn:hover {
             background: rgba(231, 76, 60, 0.85);
+        }
+
+        .player-fullscreen-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 25;
+            font-size: 1rem;
+            transition: var(--transition);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
+        }
+        .player-fullscreen-btn:hover {
+            background: rgba(245, 176, 66, 0.7);
+            transform: scale(1.08);
+            border-color: var(--gold);
         }
 
         /* ----- YOUTUBE BRANDING COVER (hide tiny logo) ----- */
@@ -259,32 +322,6 @@
             z-index: 19;
             border-radius: 3px;
             pointer-events: none;
-        }
-
-        /* ----- FULLSCREEN BUTTON (overlay) ----- */
-        .player-fullscreen-btn {
-            position: absolute;
-            bottom: 14px;
-            right: 14px;
-            background: rgba(0, 0, 0, 0.65);
-            color: #fff;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 21;
-            font-size: 1rem;
-            transition: var(--transition);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        .player-fullscreen-btn:hover {
-            background: rgba(245, 176, 66, 0.7);
-            transform: scale(1.08);
-            border-color: var(--gold);
         }
 
         /* ----- COURSES GRID ----- */
@@ -1161,12 +1198,16 @@
             </div>
         </div>
 
-        <!-- PERSISTENT PLAYER (borderless, full width) -->
+        <!-- PERSISTENT PLAYER (borderless, youtube-style) -->
         <div id="persistentPlayer" class="persistent-player">
-            <div class="player-container">
+            <div class="player-container" id="playerContainer">
                 <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
                 <button id="fullscreenPlayerBtn" class="player-fullscreen-btn"><i class="fas fa-expand"></i></button>
                 <div id="playerEmbedContainer" style="position: relative; width: 100%; height: 100%;">
+                    <!-- Player overlay for play/pause visual cue -->
+                    <div class="player-overlay" id="playerOverlay">
+                        <div class="play-pause-big" id="playPauseBig"><i class="fas fa-play"></i></div>
+                    </div>
                     <div class="yt-logo-cover"></div>
                 </div>
             </div>
@@ -1335,6 +1376,7 @@
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
 
         let offlineDB;
+        let dbReady = false;
         const dbRequest = indexedDB.open('UTOMOfflineDB', 1);
         dbRequest.onupgradeneeded = (e) => {
             const dbStore = e.target.result;
@@ -1344,23 +1386,33 @@
         };
         dbRequest.onsuccess = (e) => {
             offlineDB = e.target.result;
+            dbReady = true;
             loadOfflineVideoList();
+        };
+        dbRequest.onerror = (e) => {
+            console.error('IndexedDB error:', e);
+            dbReady = false;
         };
 
         async function loadOfflineVideoList() {
-            if (!offlineDB) return;
-            const tx = offlineDB.transaction('videos', 'readonly');
-            const store = tx.objectStore('videos');
-            const keys = await new Promise((res) => {
-                const req = store.getAllKeys();
-                req.onsuccess = () => res(req.result);
-            });
-            offlineVideos = new Set(keys);
-            renderOfflinePage();
+            if (!dbReady || !offlineDB) return;
+            try {
+                const tx = offlineDB.transaction('videos', 'readonly');
+                const store = tx.objectStore('videos');
+                const keys = await new Promise((res) => {
+                    const req = store.getAllKeys();
+                    req.onsuccess = () => res(req.result);
+                    req.onerror = () => res([]);
+                });
+                offlineVideos = new Set(keys);
+                renderOfflinePage();
+            } catch (e) {
+                console.warn('Could not load offline list:', e);
+            }
         }
 
         async function deleteOfflineVideo(videoId) {
-            if (!offlineDB) return;
+            if (!dbReady || !offlineDB) return;
             try {
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
@@ -1371,6 +1423,7 @@
                 const videoMeta = allVideos.find(v => v.id === videoId);
                 addNotification('delete', `Offline video removed: "${videoMeta?.title || videoId}"`);
                 renderOfflinePage();
+                if (selectedCourse) renderCourseDetail(selectedCourse);
             } catch (e) {
                 addNotification('danger', 'Failed to delete offline video: ' + e.message);
             }
@@ -1819,6 +1872,10 @@
                 addNotification('warning', 'This video cannot be downloaded for offline viewing.');
                 return;
             }
+            if (!dbReady || !offlineDB) {
+                addNotification('danger', 'Offline storage is not ready. Please refresh the page and try again.');
+                return;
+            }
             try {
                 addNotification('download', `Downloading "${video.title}"...`);
 
@@ -1914,6 +1971,8 @@
         function playVideoInPlayer(video) {
             const container = document.getElementById('playerEmbedContainer');
             const playerDiv = document.getElementById('persistentPlayer');
+            const overlay = document.getElementById('playerOverlay');
+            const bigIcon = document.getElementById('playPauseBig');
             const existingCover = container.querySelector('.yt-logo-cover');
             if (existingCover) existingCover.remove();
 
@@ -1932,9 +1991,40 @@
                     `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
             } else {
                 embed =
-                    `<video controls autoplay style="width:100%;height:100%;"><source src="${url}" type="video/mp4"></video>`;
+                    `<video controls autoplay style="width:100%;height:100%;" controlsList="nodownload" playsinline></video>`;
+                // Use a custom borderless approach – hide default controls via CSS later
             }
             container.innerHTML = embed + (container.querySelector('.yt-logo-cover')?.outerHTML || '');
+
+            // For HTML5 video, we need to add event listeners to show/hide overlay
+            const videoEl = container.querySelector('video');
+            if (videoEl) {
+                videoEl.addEventListener('play', () => {
+                    bigIcon.className = 'play-pause-big';
+                    bigIcon.innerHTML = '<i class="fas fa-play"></i>';
+                    bigIcon.classList.remove('show');
+                });
+                videoEl.addEventListener('pause', () => {
+                    bigIcon.className = 'play-pause-big show';
+                    bigIcon.innerHTML = '<i class="fas fa-play"></i>';
+                });
+                videoEl.addEventListener('click', () => {
+                    if (videoEl.paused) {
+                        videoEl.play();
+                    } else {
+                        videoEl.pause();
+                    }
+                });
+                // Ensure native controls are hidden
+                videoEl.style.pointerEvents = 'auto';
+                // Overlay clicks should pass through
+                overlay.style.pointerEvents = 'none';
+                // But we want the big icon to be visible on pause
+                if (videoEl.paused) {
+                    bigIcon.className = 'play-pause-big show';
+                }
+            }
+
             playerDiv.style.display = 'block';
 
             const fsBtn = document.getElementById('fullscreenPlayerBtn');
@@ -2017,21 +2107,26 @@
         async function renderOfflinePage() {
             const container = document.getElementById('offlineVideosGrid');
             const offlineArray = [];
-            if (offlineDB) {
-                const tx = offlineDB.transaction('videos', 'readonly');
-                const store = tx.objectStore('videos');
-                const keys = await new Promise((res) => {
-                    const req = store.getAllKeys();
-                    req.onsuccess = () => res(req.result);
-                });
-                for (let id of keys) {
-                    const req = store.get(id);
-                    await new Promise(res => { req.onsuccess = () => res(); });
-                    const record = req.result;
-                    const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
-                        instructor: 'Saved offline', price: 0, videoUrl: '' };
-                    offlineArray.push({ ...videoMeta, id, offline: true, thumbnail: record.thumbnail ||
-                            getVideoThumbnail(videoMeta) });
+            if (dbReady && offlineDB) {
+                try {
+                    const tx = offlineDB.transaction('videos', 'readonly');
+                    const store = tx.objectStore('videos');
+                    const keys = await new Promise((res) => {
+                        const req = store.getAllKeys();
+                        req.onsuccess = () => res(req.result);
+                        req.onerror = () => res([]);
+                    });
+                    for (let id of keys) {
+                        const req = store.get(id);
+                        await new Promise(res => { req.onsuccess = () => res(); });
+                        const record = req.result;
+                        const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
+                            instructor: 'Saved offline', price: 0, videoUrl: '' };
+                        offlineArray.push({ ...videoMeta, id, offline: true, thumbnail: record.thumbnail ||
+                                getVideoThumbnail(videoMeta) });
+                    }
+                } catch (e) {
+                    console.warn('Offline render error:', e);
                 }
             }
             document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
@@ -2055,31 +2150,58 @@
                 card.addEventListener('click', async (e) => {
                     if (e.target.closest('.delete-offline-btn')) return;
                     const videoId = card.dataset.id;
-                    const tx = offlineDB.transaction('videos', 'readonly');
-                    const store = tx.objectStore('videos');
-                    const req = store.get(videoId);
-                    req.onsuccess = () => {
-                        const record = req.result;
-                        if (record && record.blob) {
-                            const blobUrl = URL.createObjectURL(record.blob);
-                            const playerContainer = document.getElementById(
-                                'playerEmbedContainer');
-                            playerContainer.innerHTML =
-                                `<video controls autoplay style="width:100%;height:100%;"><source src="${blobUrl}" type="video/mp4"></video>`;
-                            document.getElementById('persistentPlayer').style.display = 'block';
-                            const fsBtn = document.getElementById('fullscreenPlayerBtn');
-                            fsBtn.onclick = () => {
-                                const pc = document.querySelector('.player-container');
-                                if (pc) {
-                                    if (pc.requestFullscreen) pc.requestFullscreen();
-                                    else if (pc.webkitRequestFullscreen) pc
-                                        .webkitRequestFullscreen();
-                                    else if (pc.msRequestFullscreen) pc
-                                        .msRequestFullscreen();
+                    if (!dbReady || !offlineDB) return;
+                    try {
+                        const tx = offlineDB.transaction('videos', 'readonly');
+                        const store = tx.objectStore('videos');
+                        const req = store.get(videoId);
+                        req.onsuccess = () => {
+                            const record = req.result;
+                            if (record && record.blob) {
+                                const blobUrl = URL.createObjectURL(record.blob);
+                                const playerContainer = document.getElementById(
+                                    'playerEmbedContainer');
+                                playerContainer.innerHTML =
+                                    `<video controls autoplay style="width:100%;height:100%;" controlsList="nodownload" playsinline><source src="${blobUrl}" type="video/mp4"></video>`;
+                                // Add borderless overlay for offline video
+                                const overlay = document.getElementById('playerOverlay');
+                                const bigIcon = document.getElementById('playPauseBig');
+                                const videoEl = playerContainer.querySelector('video');
+                                if (videoEl) {
+                                    videoEl.addEventListener('play', () => {
+                                        bigIcon.className = 'play-pause-big';
+                                        bigIcon.innerHTML = '<i class="fas fa-play"></i>';
+                                        bigIcon.classList.remove('show');
+                                    });
+                                    videoEl.addEventListener('pause', () => {
+                                        bigIcon.className = 'play-pause-big show';
+                                        bigIcon.innerHTML = '<i class="fas fa-play"></i>';
+                                    });
+                                    videoEl.addEventListener('click', () => {
+                                        if (videoEl.paused) videoEl.play();
+                                        else videoEl.pause();
+                                    });
+                                    if (videoEl.paused) {
+                                        bigIcon.className = 'play-pause-big show';
+                                    }
                                 }
-                            };
-                        }
-                    };
+                                document.getElementById('persistentPlayer').style.display = 'block';
+                                const fsBtn = document.getElementById('fullscreenPlayerBtn');
+                                fsBtn.onclick = () => {
+                                    const pc = document.querySelector('.player-container');
+                                    if (pc) {
+                                        if (pc.requestFullscreen) pc.requestFullscreen();
+                                        else if (pc.webkitRequestFullscreen) pc
+                                            .webkitRequestFullscreen();
+                                        else if (pc.msRequestFullscreen) pc
+                                            .msRequestFullscreen();
+                                    }
+                                };
+                            }
+                        };
+                    } catch (e) {
+                        console.warn('Offline play error:', e);
+                    }
                 });
             });
             document.querySelectorAll('.delete-offline-btn').forEach(btn => {
