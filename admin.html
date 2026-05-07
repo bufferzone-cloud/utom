@@ -1112,6 +1112,78 @@
             color: #5f6377;
         }
 
+        .posted-section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            padding: 0.3rem 0.8rem 1rem;
+        }
+        @media (min-width: 700px) {
+            .posted-section-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 400px) {
+            .posted-section-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.7rem;
+            }
+        }
+
+        .doc-full-view {
+            padding: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: transparent;
+        }
+        .doc-full-view .doc-header {
+            margin-bottom: 2rem;
+        }
+        .doc-full-view .doc-header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1a1d28;
+            margin-bottom: 0.3rem;
+        }
+        .doc-full-view .doc-header .doc-meta {
+            color: #8b8fa3;
+            font-size: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .doc-full-view .doc-header .doc-description {
+            margin-top: 1rem;
+            padding: 1rem 1.2rem;
+            background: #fff8ed;
+            border-radius: 16px;
+            border-left: 4px solid var(--gold);
+            color: #4a4e5c;
+            font-size: 0.95rem;
+        }
+        .doc-full-view .doc-body {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+            min-height: 400px;
+        }
+        .doc-full-view .doc-body iframe {
+            width: 100%;
+            min-height: 600px;
+            border: none;
+            border-radius: 12px;
+            background: #f5f6f8;
+        }
+        .doc-full-view .doc-body .doc-text-content {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #1a1d28;
+        }
+        .doc-full-view .doc-body .doc-text-content p {
+            margin-bottom: 1rem;
+        }
+
         @media (max-width: 500px) {
             .video-grid-float {
                 grid-template-columns: repeat(2, 1fr);
@@ -1135,6 +1207,16 @@
             }
             .big-earnings {
                 font-size: 2.2rem;
+            }
+            .doc-full-view .doc-header h1 {
+                font-size: 1.5rem;
+            }
+            .doc-full-view .doc-body {
+                padding: 1rem;
+            }
+            .posted-section-grid {
+                gap: 0.6rem;
+                padding: 0.2rem 0.5rem 0.8rem;
             }
         }
     </style>
@@ -1248,8 +1330,10 @@
     </div>
 
     <div id="docFullPage" class="section" style="padding:1rem;">
-        <button id="backFromDocBtn" class="btn-outline" style="margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back</button>
-        <div id="docFullContent" class="doc-full-content" style="background:#fff;padding:2rem;border-radius:24px;font-size:1rem;line-height:1.7;box-shadow:var(--shadow-sm);"></div>
+        <div id="docFullContent" class="doc-full-view"></div>
+        <div style="margin-top:1rem;text-align:center;">
+            <button id="backFromDocBtn" class="btn-outline"><i class="fas fa-arrow-left"></i> Back to Docs</button>
+        </div>
     </div>
 
     <div id="subfolderViewSection" class="section">
@@ -1344,18 +1428,20 @@
     </div>
 
     <div id="postedSection" class="section">
-        <div class="card-glass">
-            <h2 style="margin-bottom:0.6rem;">My Content Library</h2>
-            <div class="form-row">
-                <input type="text" id="searchVideoInput" placeholder="Search..." style="flex:2;">
-                <select id="filterCourseSelect" style="flex:1;"><option value="all">All courses</option></select>
-                <select id="filterPriceSelect" style="flex:1;">
-                    <option value="all">All</option>
-                    <option value="free">Free</option>
-                    <option value="paid">Paid</option>
-                </select>
+        <div style="padding:0.8rem;">
+            <div class="card-glass" style="margin-bottom:0.8rem;">
+                <h2 style="margin-bottom:0.6rem;">My Content Library</h2>
+                <div class="form-row">
+                    <input type="text" id="searchVideoInput" placeholder="Search..." style="flex:2;">
+                    <select id="filterCourseSelect" style="flex:1;"><option value="all">All courses</option></select>
+                    <select id="filterPriceSelect" style="flex:1;">
+                        <option value="all">All</option>
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
             </div>
-            <div id="postedVideosGrid" class="video-grid-float"></div>
+            <div id="postedVideosGrid" class="posted-section-grid"></div>
         </div>
     </div>
 
@@ -1859,7 +1945,7 @@
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
                 embed = `<iframe width="100%" height="100%" 
-                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&autoplay=1&fs=0" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=0&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=0&playsinline=1&disablekb=1&autoplay=1" 
                                 frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
             } else if (url.includes('vimeo.com')) {
                 embed =
@@ -1880,32 +1966,41 @@
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
             document.getElementById('docFullPage').classList.add('active-section');
+            const content = document.getElementById('docFullContent');
             let html = `
-                <h2>${escapeHtml(doc.title)}</h2>
-                <p style="color:#8b8fa3;">by ${escapeHtml(doc.instructor)}</p>
-                ${doc.description ? `<p style="margin:8px 0 16px;padding:10px 14px;background:#f8f9fb;border-radius:12px;">${escapeHtml(doc.description)}</p>` : ''}
-                <hr>
+                <div class="doc-header">
+                    <h1>${escapeHtml(doc.title)}</h1>
+                    <div class="doc-meta">
+                        <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
+                        <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
+                        <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
+                        <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
+                    </div>
+                    ${doc.description ? `<div class="doc-description">${escapeHtml(doc.description)}</div>` : ''}
+                </div>
+                <div class="doc-body">
             `;
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 if (['pdf'].includes(fileExtension)) {
                     html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:16px;background:#f5f6f8;"></iframe>`;
+                        `<iframe src="${doc.docUrl}" style="width:100%;min-height:600px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
                 } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
                     const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
                     html +=
-                        `<iframe src="${viewerUrl}" width="100%" height="800px" style="border:none;border-radius:16px;background:#f5f6f8;"></iframe>`;
+                        `<iframe src="${viewerUrl}" style="width:100%;min-height:600px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
                 } else {
                     html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:16px;background:#f5f6f8;"></iframe>`;
+                        `<iframe src="${doc.docUrl}" style="width:100%;min-height:600px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
                 }
             } else if (doc.content) {
-                html += `<div style="font-size:1rem;line-height:1.8;padding:1rem 0;">${doc.content}</div>`;
+                html += `<div class="doc-text-content">${doc.content}</div>`;
             } else {
                 html +=
-                    `<div style="text-align:center;padding:3rem;color:#8b8fa3;">No content available for this document.</div>`;
+                    `<div style="text-align:center;padding:3rem;color:#8b8fa3;font-size:1rem;">📄 No content available for this document.</div>`;
             }
-            document.getElementById('docFullContent').innerHTML = html;
+            html += `</div>`;
+            content.innerHTML = html;
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
