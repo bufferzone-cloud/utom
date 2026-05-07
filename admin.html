@@ -935,18 +935,29 @@
             position: absolute;
             top: 12px;
             right: 16px;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 7px 14px;
-            border-radius: 30px;
+            color: var(--gold);
+            background: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             z-index: 10;
-            font-weight: 600;
-            font-size: 0.78rem;
+            font-weight: 700;
+            font-size: 0.85rem;
             transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         .player-close:hover {
-            background: rgba(231, 76, 60, 0.8);
+            background: var(--gold);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .player-close i {
+            color: var(--gold);
+            font-size: 1rem;
         }
 
         .full-page-editor {
@@ -1135,7 +1146,7 @@
             max-width: 1000px;
             margin: 0 auto;
             background: transparent;
-		}
+        }
         .doc-full-view .doc-header {
             margin-bottom: 2rem;
         }
@@ -1169,13 +1180,15 @@
             padding: 0 !important;
             min-height: 400px;
         }
+        .doc-full-view .doc-body embed,
         .doc-full-view .doc-body iframe,
-        .doc-full-view .doc-body embed {
+        .doc-full-view .doc-body object {
             width: 100%;
             min-height: 600px;
             border: none;
             border-radius: 12px;
             background: #f5f6f8;
+            display: block;
         }
         .doc-full-view .doc-body .doc-text-content {
             font-size: 1.05rem;
@@ -1190,7 +1203,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Enhanced document upload form */
         #docPostFormContainer {
             width: 90%;
             max-width: 800px;
@@ -1278,7 +1290,7 @@
     <div id="globalInlinePlayer" style="display:none;">
         <div class="inline-player-container">
             <div style="position:relative;width:100%;height:100%;">
-                <span id="closeInlinePlayer" class="player-close"><i class="fas fa-times"></i> Close</span>
+                <span id="closeInlinePlayer" class="player-close"><i class="fas fa-times"></i></span>
                 <div id="inlinePlayerEmbed" style="width:100%;height:100%;"></div>
             </div>
         </div>
@@ -1966,13 +1978,8 @@
             const url = video.videoUrl;
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                // Minimal controls: hides everything except play/pause and progress bar
-                // 'controls=1&modestbranding=1' makes controls small and hides logo
-                // 'cc_load_policy=0' hides CC button
-                // 'fs=0' hides fullscreen button
-                // 'disablekb=1' disables keyboard shortcuts
                 embed = `<iframe width="100%" height="100%" 
-                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&autoplay=1" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&color=white" 
                                 frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
             } else if (url.includes('vimeo.com')) {
                 embed =
@@ -2009,10 +2016,12 @@
             `;
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                // PDF: use embed for better compatibility
+                // PDF: use embed for best compatibility
                 if (['pdf'].includes(fileExtension)) {
-                    html += `<embed src="${doc.docUrl}" type="application/pdf" width="100%" height="600px" style="border:none;border-radius:12px;" />`;
-                } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
+                    html += `<embed src="${doc.docUrl}" type="application/pdf" width="100%" height="600px" style="border:none;border-radius:12px;background:#f5f6f8;" />`;
+                }
+                // Excel, Word, PowerPoint: use Google Docs viewer
+                else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
                     const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
                     html +=
                         `<iframe src="${viewerUrl}" style="width:100%;min-height:600px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
@@ -2095,6 +2104,7 @@
                             await update(ref(db, `transactions/${txId}`), { status: 'approved' });
                         }
                         await set(ref(db, `approvedPurchases/${userId}/${itemId}`), true);
+                        // Payment notification
                         push(notificationsRef, {
                             message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved`,
                             timestamp: serverTimestamp()
@@ -2117,8 +2127,10 @@
                         } else {
                             await update(ref(db, `transactions/${txId}`), { status: 'rejected' });
                         }
+                        // Payment rejection notification
+                        const tx = allTransactions.find(t => t.id === txId);
                         push(notificationsRef, {
-                            message: `❌ Payment of ZMW ${tx.amount} for "${tx.itemTitle}" rejected`,
+                            message: `❌ Payment of ZMW ${tx?.amount || 0} for "${tx?.itemTitle || 'item'}" rejected`,
                             timestamp: serverTimestamp()
                         });
                         showToast('Transaction rejected', 'info');
@@ -2206,17 +2218,35 @@
         }
 
         function renderNotificationsPage() {
-            document.getElementById('notificationsList').innerHTML = notifications.map(n =>
-                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('');
+            // Only show notifications for new users and payments
+            const filtered = notifications.filter(n => 
+                n.message?.includes('New user') || 
+                n.message?.includes('Payment') || 
+                n.message?.includes('💰') || 
+                n.message?.includes('💵') || 
+                n.message?.includes('❌')
+            );
+            document.getElementById('notificationsList').innerHTML = filtered.map(n =>
+                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('') || 
+                '<div style="color:#8b8fa3;padding:1rem;text-align:center;">No relevant notifications</div>';
         }
 
         function updateNotifBadge() {
-            const count = notifications.length;
+            // Only count new user and payment notifications
+            const filtered = notifications.filter(n => 
+                n.message?.includes('New user') || 
+                n.message?.includes('Payment') || 
+                n.message?.includes('💰') || 
+                n.message?.includes('💵') || 
+                n.message?.includes('❌')
+            );
+            const count = filtered.length;
             const badge = document.getElementById('notifCount');
             badge.style.display = count ? 'inline-block' : 'none';
             badge.innerText = count > 9 ? '9+' : count;
-            document.getElementById('notifDropdown').innerHTML = notifications.slice(0, 5).map(n =>
-                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('');
+            document.getElementById('notifDropdown').innerHTML = filtered.slice(0, 5).map(n =>
+                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('') ||
+                '<div style="padding:1rem;text-align:center;color:#8b8fa3;">No notifications</div>';
         }
 
         function setupCloudinary(btnId, urlId, progId, percId, fileInfoId, isVideo = true) {
@@ -2303,14 +2333,10 @@
                 likes: 0,
                 uniqueViewers: {}
             });
-            push(notificationsRef, {
-                message: `🎬 New video "${title}" by ${instructor} published`,
-                timestamp: serverTimestamp()
-            });
-            document.getElementById('dynamicPostForm').classList.remove('show');
-            document.getElementById('bigPostBtn').style.display = 'block';
             showToast('Video published!', 'success');
             document.getElementById('homePostForm').reset();
+            document.getElementById('dynamicPostForm').classList.remove('show');
+            document.getElementById('bigPostBtn').style.display = 'block';
         });
 
         document.getElementById('docPostForm').addEventListener('submit', async (e) => {
@@ -2349,15 +2375,11 @@
                 reads: 0,
                 likes: 0
             });
-            push(notificationsRef, {
-                message: `📄 New document "${title}" by ${instructor} published`,
-                timestamp: serverTimestamp()
-            });
-            document.getElementById('docPostFormContainer').classList.remove('show');
-            document.getElementById('bigPostDocBtn').style.display = 'block';
             showToast('Document published!', 'success');
             document.getElementById('docPostForm').reset();
             document.getElementById('docUploadFileInfo').style.display = 'none';
+            document.getElementById('docPostFormContainer').classList.remove('show');
+            document.getElementById('bigPostDocBtn').style.display = 'block';
         });
 
         function setupUI() {
