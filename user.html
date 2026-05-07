@@ -1761,7 +1761,9 @@
             if (url.includes('vimeo.com')) {
                 return 'https://picsum.photos/300/180';
             }
+            // For Cloudinary, generate a thumbnail
             if (url.includes('cloudinary.com')) {
+                // Try to get a video thumbnail from Cloudinary
                 return url.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
             }
             return 'https://picsum.photos/300/180';
@@ -1772,6 +1774,7 @@
             const url = video.videoUrl.toLowerCase();
             if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
             if (url.includes('vimeo.com')) return false;
+            // Cloudinary videos are downloadable
             return true;
         }
 
@@ -1978,6 +1981,8 @@
 
             let embed = '';
             const url = video.videoUrl;
+            const isCloudinary = url.includes('cloudinary.com');
+            
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
                 embed = `<iframe width="100%" height="100%" 
@@ -1990,15 +1995,16 @@
                 embed =
                     `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
             } else {
-                embed =
-                    `<video controls autoplay style="width:100%;height:100%;" controlsList="nodownload" playsinline></video>`;
-                // Use a custom borderless approach – hide default controls via CSS later
+                // For Cloudinary and other direct video URLs
+                embed = `<video controls autoplay style="width:100%;height:100%;" playsinline></video>`;
             }
             container.innerHTML = embed + (container.querySelector('.yt-logo-cover')?.outerHTML || '');
 
-            // For HTML5 video, we need to add event listeners to show/hide overlay
+            // For HTML5 video (Cloudinary), set the source and attach events
             const videoEl = container.querySelector('video');
             if (videoEl) {
+                videoEl.src = url;
+                videoEl.load();
                 videoEl.addEventListener('play', () => {
                     bigIcon.className = 'play-pause-big';
                     bigIcon.innerHTML = '<i class="fas fa-play"></i>';
@@ -2015,11 +2021,7 @@
                         videoEl.pause();
                     }
                 });
-                // Ensure native controls are hidden
-                videoEl.style.pointerEvents = 'auto';
-                // Overlay clicks should pass through
                 overlay.style.pointerEvents = 'none';
-                // But we want the big icon to be visible on pause
                 if (videoEl.paused) {
                     bigIcon.className = 'play-pause-big show';
                 }
@@ -2162,7 +2164,7 @@
                                 const playerContainer = document.getElementById(
                                     'playerEmbedContainer');
                                 playerContainer.innerHTML =
-                                    `<video controls autoplay style="width:100%;height:100%;" controlsList="nodownload" playsinline><source src="${blobUrl}" type="video/mp4"></video>`;
+                                    `<video controls autoplay style="width:100%;height:100%;" playsinline><source src="${blobUrl}" type="video/mp4"></video>`;
                                 // Add borderless overlay for offline video
                                 const overlay = document.getElementById('playerOverlay');
                                 const bigIcon = document.getElementById('playPauseBig');
