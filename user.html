@@ -8,6 +8,7 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js">
     </script>
     <style>
+        /* ... (all existing styles unchanged) ... */
         :root {
             --gold: #F5B042;
             --gold-dark: #c47f1a;
@@ -1814,6 +1815,7 @@
             });
         }
 
+        // ======== MODIFIED DOWNLOAD FUNCTION ========
         async function downloadVideoWithProgress(video) {
             if (!isDownloadableVideo(video)) {
                 addNotification('warning', 'This video cannot be downloaded for offline viewing.');
@@ -1849,13 +1851,30 @@
                 }
 
                 const blob = new Blob(chunks);
+                
+                // 1) Save to IndexedDB (for offline playback within the app)
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
                 store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
                 await new Promise((res, rej) => { tx.oncomplete = res;
                     tx.onerror = rej; });
                 offlineVideos.add(video.id);
-                addNotification('success', `"${video.title}" saved for offline viewing.`);
+                
+                // 2) Trigger download to user's device download folder
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                // Extract file extension; fallback to .mp4
+                const ext = video.videoUrl.split('.').pop().split('?')[0] || 'mp4';
+                const filename = `${video.title || 'video'}.${ext}`;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                // Revoke blob URL after a delay to allow download to start
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                
+                addNotification('success', `"${video.title}" saved offline and downloaded to your device.`);
                 renderOfflinePage();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
                 if (progCircle) progCircle.style.strokeDashoffset = 94.24778;
@@ -1864,6 +1883,7 @@
                 addNotification('danger', 'Download failed: ' + e.message);
             }
         }
+        // ============================================
 
         function attachDocEvents() {
             document.querySelectorAll('.read-btn').forEach(btn => {
