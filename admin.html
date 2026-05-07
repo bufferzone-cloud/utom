@@ -133,32 +133,119 @@
             font-weight: 700;
             box-shadow: 0 2px 6px rgba(230, 57, 70, 0.4);
         }
-        .notif-dropdown {
-            position: absolute;
-            top: 48px;
-            right: -10px;
-            background: #fff;
-            border-radius: 20px;
-            width: 290px;
-            max-height: 360px;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
+
+        /* ---- Notification Sidebar ---- */
+        .notif-sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 3000;
             display: none;
-            z-index: 200;
-            border: 1px solid #f0e8d8;
+            backdrop-filter: blur(6px);
         }
-        .notif-dropdown.show {
+        .notif-sidebar-overlay.open {
             display: block;
         }
-        .notif-item {
-            padding: 13px 16px;
+        .notif-sidebar {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            max-width: 92vw;
+            height: 100%;
+            background: #fff;
+            z-index: 3100;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.18);
+            transition: right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            border-radius: 28px 0 0 28px;
+            overflow: hidden;
+        }
+        .notif-sidebar.open {
+            right: 0;
+        }
+        .notif-sidebar-header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1.5px solid #f0e8d8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fffef9;
+            flex-shrink: 0;
+        }
+        .notif-sidebar-header h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .notif-sidebar-header h3 i {
+            color: var(--gold);
+        }
+        .notif-sidebar-header .close-sidebar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            color: #555;
+            border: none;
+        }
+        .notif-sidebar-header .close-sidebar:hover {
+            background: #e74c3c;
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        .notif-sidebar-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.8rem 0.2rem 0.8rem 0.8rem;
+        }
+        .notif-sidebar-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .notif-sidebar-body::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 10px;
+        }
+        .notif-item-sidebar {
+            padding: 14px 16px;
             border-bottom: 1px solid #f3f3f3;
             font-size: 0.8rem;
             cursor: pointer;
             transition: background 0.12s;
+            border-radius: 12px;
+            margin-right: 6px;
         }
-        .notif-item:hover {
+        .notif-item-sidebar:hover {
             background: #fffbf3;
+        }
+        .notif-item-sidebar .notif-time {
+            font-size: 0.65rem;
+            color: #b0b4c0;
+            margin-top: 3px;
+        }
+        .notif-empty {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #b0b4c0;
+            font-size: 0.9rem;
+        }
+        .notif-empty i {
+            font-size: 2.5rem;
+            opacity: 0.4;
+            display: block;
+            margin-bottom: 10px;
         }
 
         .toast-container {
@@ -605,6 +692,12 @@
             transform: scale(1.03);
             box-shadow: 0 5px 14px rgba(46, 204, 113, 0.4);
         }
+        .btn-approve-sm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         .btn-reject-sm {
             background: #e74c3c;
             color: #fff;
@@ -913,6 +1006,7 @@
             transition: width 0.3s;
         }
 
+        /* ---- Inline Player + Fullscreen Button ---- */
         .inline-player-container {
             background: #000;
             border-radius: 20px;
@@ -931,22 +1025,61 @@
             display: block;
             border: 0;
         }
+
+        /* Yellow X in white circle */
         .player-close {
             position: absolute;
             top: 12px;
             right: 16px;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 7px 14px;
-            border-radius: 30px;
+            background: #fff;
+            color: #F5B042;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             z-index: 10;
-            font-weight: 600;
-            font-size: 0.78rem;
+            font-weight: 700;
+            font-size: 1rem;
             transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            border: 1px solid #f0e0c8;
         }
         .player-close:hover {
-            background: rgba(231, 76, 60, 0.8);
+            background: #fff5e0;
+            transform: scale(1.05);
+        }
+        .player-close i {
+            color: #F5B042;
+            font-size: 0.9rem;
+        }
+
+        /* Fullscreen button overlay */
+        .player-fullscreen-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .player-fullscreen-btn:hover {
+            background: rgba(245, 176, 66, 0.7);
+            transform: scale(1.08);
+            border-color: var(--gold);
         }
 
         .full-page-editor {
@@ -1135,7 +1268,7 @@
             max-width: 1000px;
             margin: 0 auto;
             background: transparent;
-		}
+        }
         .doc-full-view .doc-header {
             margin-bottom: 2rem;
         }
@@ -1258,7 +1391,6 @@
             <div class="notif-bell" id="notifBell">
                 <i class="fas fa-bell"></i>
                 <span id="notifCount" class="notif-badge" style="display:none;">0</span>
-                <div id="notifDropdown" class="notif-dropdown"></div>
             </div>
             <div class="account-badge" id="accountQuickBtn">
                 <i class="fas fa-user-circle"></i> Account
@@ -1275,22 +1407,41 @@
         <button class="nav-five-btn" data-section="settings"><i class="fas fa-cog"></i> SETTINGS</button>
     </div>
 
+    <!-- Notification Sidebar -->
+    <div id="notifSidebarOverlay" class="notif-sidebar-overlay"></div>
+    <div id="notifSidebar" class="notif-sidebar">
+        <div class="notif-sidebar-header">
+            <h3><i class="fas fa-bell"></i> Notifications</h3>
+            <button class="close-sidebar" id="closeNotifSidebar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="notif-sidebar-body" id="notifSidebarBody">
+            <div class="notif-empty"><i class="fas fa-bell-slash"></i> No notifications</div>
+        </div>
+    </div>
+
+    <!-- Inline Player -->
     <div id="globalInlinePlayer" style="display:none;">
         <div class="inline-player-container">
             <div style="position:relative;width:100%;height:100%;">
-                <span id="closeInlinePlayer" class="player-close"><i class="fas fa-times"></i> Close</span>
+                <span id="closeInlinePlayer" class="player-close"><i class="fas fa-times"></i></span>
+                <span id="fullscreenInlineBtn" class="player-fullscreen-btn"><i class="fas fa-expand"></i></span>
                 <div id="inlinePlayerEmbed" style="width:100%;height:100%;"></div>
             </div>
         </div>
     </div>
 
+    <!-- Video Player Modal -->
     <div id="videoPlayerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <div id="modalPlayerContainer"></div>
+            <div id="modalPlayerContainer" style="aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;position:relative;">
+                <span id="fullscreenModalBtn" class="player-fullscreen-btn" style="bottom:16px;right:16px;position:absolute;"><i class="fas fa-expand"></i></span>
+            </div>
             <div><h3 id="modalVideoTitle"></h3><p id="modalVideoInstructor"></p></div>
         </div>
     </div>
+
+    <!-- User Details Modal -->
     <div id="userDetailsModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -1301,6 +1452,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Transaction Detail Modal -->
     <div id="txDetailModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -1308,6 +1461,8 @@
             <div id="txDetailContent"></div>
         </div>
     </div>
+
+    <!-- Edit Item Modal -->
     <div id="editItemModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="closeEditModal">&times;</span>
@@ -1343,6 +1498,7 @@
         </div>
     </div>
 
+    <!-- Doc Editor Page -->
     <div id="docEditorPage" class="section" style="padding:1rem;">
         <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
             <button id="cancelDocEditorBtn" class="btn-outline"><i class="fas fa-times"></i> Cancel</button>
@@ -1351,6 +1507,7 @@
         <div id="fullPageEditor" class="full-page-editor" contenteditable="true"></div>
     </div>
 
+    <!-- Doc Full Page -->
     <div id="docFullPage" class="section" style="padding:1rem;">
         <div id="docFullContent" class="doc-full-view"></div>
         <div style="margin-top:1rem;text-align:center;">
@@ -1358,6 +1515,7 @@
         </div>
     </div>
 
+    <!-- Subfolder View -->
     <div id="subfolderViewSection" class="section">
         <div style="padding:0.8rem;">
             <button id="backFromSubfolderBtn" class="btn-outline"><i class="fas fa-arrow-left"></i> Back to Courses</button>
@@ -1368,13 +1526,7 @@
         </div>
     </div>
 
-    <div id="notificationsSection" class="section">
-        <div class="card-glass">
-            <h3><i class="fas fa-bell"></i> All Notifications</h3>
-            <div id="notificationsList"></div>
-        </div>
-    </div>
-
+    <!-- Home Section -->
     <div id="homeSection" class="section active-section">
         <div style="margin:0.8rem;">
             <button id="bigPostBtn" class="btn-big-post"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
@@ -1449,6 +1601,7 @@
         </div>
     </div>
 
+    <!-- Posted Section -->
     <div id="postedSection" class="section">
         <div style="padding:0.8rem;">
             <div class="card-glass" style="margin-bottom:0.8rem;">
@@ -1467,6 +1620,7 @@
         </div>
     </div>
 
+    <!-- Users Section -->
     <div id="usersSection" class="section">
         <div class="card-glass">
             <h3><i class="fas fa-users" style="color:#F5B042;"></i> Registered Learners</h3>
@@ -1474,6 +1628,7 @@
         </div>
     </div>
 
+    <!-- Courses Section -->
     <div id="coursesSection" class="section">
         <div class="card-glass">
             <h3><i class="fas fa-book" style="color:#F5B042;"></i> Courses</h3>
@@ -1490,6 +1645,7 @@
         </div>
     </div>
 
+    <!-- Docs Section -->
     <div id="docsSection" class="section">
         <div class="card-glass">
             <button id="bigPostDocBtn" class="btn-big-post"><i class="fas fa-plus-circle"></i> POST DOCUMENT</button>
@@ -1549,6 +1705,7 @@
         </div>
     </div>
 
+    <!-- Account Section -->
     <div id="accountSection" class="section">
         <div class="card-glass" style="background:linear-gradient(160deg,#fffdf7,#fff8ed);">
             <div class="big-earnings" id="bigEarningsDisplay">ZMW 0</div>
@@ -1561,6 +1718,7 @@
         </div>
     </div>
 
+    <!-- Settings Section -->
     <div id="settingsSection" class="section">
         <div class="card-glass">
             <h3><i class="fas fa-cog" style="color:#F5B042;"></i> Settings</h3>
@@ -1705,7 +1863,7 @@
             onValue(notificationsRef, snap => {
                 notifications = snap.val() ? Object.values(snap.val()) : [];
                 updateNotifBadge();
-                renderNotificationsPage();
+                renderNotificationsSidebar();
             });
             onValue(maintenanceRef, snap => {
                 document.getElementById('appToggle')?.classList.toggle('active', snap.val() === true);
@@ -1750,6 +1908,100 @@
             };
             onValue(transactionsRef, fetchTransactions);
             onValue(pendingPurchasesRef, fetchTransactions);
+        }
+
+        // ----- FULLSCREEN HELPERS -----
+        function requestFullscreen(element) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        }
+
+        function attachFullscreen(containerId, btnId) {
+            const container = document.getElementById(containerId);
+            const btn = document.getElementById(btnId);
+            if (!container || !btn) return;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Find video or iframe inside container
+                const video = container.querySelector('video');
+                const iframe = container.querySelector('iframe');
+                if (video) {
+                    requestFullscreen(video);
+                } else if (iframe) {
+                    // Try iframe itself, or its container
+                    try { requestFullscreen(iframe); } catch (_) { requestFullscreen(container); }
+                } else {
+                    requestFullscreen(container);
+                }
+            });
+        }
+
+        // ----- PLAY VIDEO (inline + modal) -----
+        function playVideoInline(video) {
+            const container = document.getElementById('inlinePlayerEmbed');
+            const playerDiv = document.getElementById('globalInlinePlayer');
+            let embed = '';
+            const url = video.videoUrl;
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+                embed = `<iframe width="100%" height="100%" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&autoplay=1" 
+                                frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
+            } else if (url.includes('vimeo.com')) {
+                embed =
+                    `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
+            } else {
+                embed =
+                    `<video controls autoplay style="width:100%;height:100%;object-fit:cover;display:block;"><source src="${url}" type="video/mp4"></video>`;
+            }
+            container.innerHTML = embed;
+            playerDiv.style.display = 'block';
+            // Attach fullscreen to inline player
+            setTimeout(() => {
+                attachFullscreen('inlinePlayerEmbed', 'fullscreenInlineBtn');
+            }, 100);
+            const viewers = video.uniqueViewers || {};
+            if (!viewers[currentAdmin?.uid]) {
+                viewers[currentAdmin?.uid] = true;
+                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
+            }
+        }
+
+        function playVideoModal(video) {
+            const container = document.getElementById('modalPlayerContainer');
+            const titleEl = document.getElementById('modalVideoTitle');
+            const instrEl = document.getElementById('modalVideoInstructor');
+            titleEl.textContent = video.title || 'Untitled';
+            instrEl.textContent = video.instructor || 'Instructor';
+            let embed = '';
+            const url = video.videoUrl;
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+                embed = `<iframe width="100%" height="100%" 
+                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&autoplay=1" 
+                                frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
+            } else if (url.includes('vimeo.com')) {
+                embed =
+                    `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
+            } else {
+                embed =
+                    `<video controls autoplay style="width:100%;height:100%;object-fit:cover;display:block;"><source src="${url}" type="video/mp4"></video>`;
+            }
+            container.innerHTML = embed;
+            document.getElementById('videoPlayerModal').style.display = 'flex';
+            setTimeout(() => {
+                attachFullscreen('modalPlayerContainer', 'fullscreenModalBtn');
+            }, 100);
+            const viewers = video.uniqueViewers || {};
+            if (!viewers[currentAdmin?.uid]) {
+                viewers[currentAdmin?.uid] = true;
+                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
+            }
         }
 
         function renderHomeGrids() {
@@ -1850,7 +2102,7 @@
                 card.addEventListener('click', (e) => {
                     if (e.target.closest('.play-badge') || e.target.closest('button')) return;
                     const video = videos.find(v => v.id === card.dataset.id);
-                    if (video) playVideoInline(video);
+                    if (video) playVideoModal(video);
                 });
             });
             document.querySelectorAll('.read-btn').forEach(btn => {
@@ -1959,37 +2211,6 @@
             sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
         }
 
-        function playVideoInline(video) {
-            const container = document.getElementById('inlinePlayerEmbed');
-            const playerDiv = document.getElementById('globalInlinePlayer');
-            let embed = '';
-            const url = video.videoUrl;
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                let vidId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                // Minimal controls: hides everything except play/pause and progress bar
-                // 'controls=1&modestbranding=1' makes controls small and hides logo
-                // 'cc_load_policy=0' hides CC button
-                // 'fs=0' hides fullscreen button
-                // 'disablekb=1' disables keyboard shortcuts
-                embed = `<iframe width="100%" height="100%" 
-                                src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&autoplay=1" 
-                                frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
-            } else if (url.includes('vimeo.com')) {
-                embed =
-                    `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
-            } else {
-                embed =
-                    `<video controls autoplay style="width:100%;height:100%;object-fit:cover;display:block;"><source src="${url}" type="video/mp4"></video>`;
-            }
-            container.innerHTML = embed;
-            playerDiv.style.display = 'block';
-            const viewers = video.uniqueViewers || {};
-            if (!viewers[currentAdmin?.uid]) {
-                viewers[currentAdmin?.uid] = true;
-                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
-            }
-        }
-
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
             document.getElementById('docFullPage').classList.add('active-section');
@@ -2009,7 +2230,6 @@
             `;
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                // PDF: use embed for better compatibility
                 if (['pdf'].includes(fileExtension)) {
                     html += `<embed src="${doc.docUrl}" type="application/pdf" width="100%" height="600px" style="border:none;border-radius:12px;" />`;
                 } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
@@ -2046,6 +2266,7 @@
                 const itemType = tx.itemType || 'course';
                 const isPending = tx.status === 'pending';
                 const date = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : (tx.date || 'N/A');
+                const hasScreenshot = tx.screenshot && tx.screenshot.length > 0;
                 return `
                 <div class="transaction-row" data-txid="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}">
                     <div class="tx-user-info">
@@ -2056,8 +2277,12 @@
                     <div class="tx-amount">ZMW ${tx.amount}</div>
                     <span class="status-dot ${tx.status}"></span>
                     ${isPending ? `
-                    <div style="display:flex;gap:5px;margin-left:8px;">
-                        <button class="btn-approve-sm approve-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}"><i class="fas fa-check"></i> Approve</button>
+                    <div style="display:flex;gap:5px;margin-left:8px;flex-wrap:wrap;">
+                        ${hasScreenshot ? `
+                            <button class="btn-approve-sm approve-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}"><i class="fas fa-check"></i> Approve</button>
+                        ` : `
+                            <span style="color:#e74c3c;font-size:0.7rem;font-weight:600;background:#fee;padding:4px 10px;border-radius:30px;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-image"></i> Screenshot required</span>
+                        `}
                         <button class="btn-reject-sm reject-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-source="${tx.source}"><i class="fas fa-times"></i> Reject</button>
                     </div>` : ''}
                 </div>`;
@@ -2078,10 +2303,15 @@
                     const source = btn.dataset.source;
                     if (!confirm(`Approve payment of ZMW ${amount} for "${itemTitle}"?`)) return;
                     try {
+                        // Verify screenshot exists (should be true because button only shows with screenshot)
+                        let txData = null;
                         if (source === 'pendingPurchases') {
                             const txSnap = await get(ref(db, `pendingPurchases/${userId}/${txId}`));
-                            const txData = txSnap.val();
+                            txData = txSnap.val();
                             if (!txData) return showToast('Transaction not found', 'error');
+                            if (!txData.screenshot) {
+                                return showToast('Cannot approve: No screenshot provided', 'error');
+                            }
                             await set(ref(db, `transactions/${txId}`), {
                                 ...txData,
                                 userId,
@@ -2092,6 +2322,12 @@
                             });
                             await remove(ref(db, `pendingPurchases/${userId}/${txId}`));
                         } else {
+                            const txSnap = await get(ref(db, `transactions/${txId}`));
+                            txData = txSnap.val();
+                            if (!txData) return showToast('Transaction not found', 'error');
+                            if (!txData.screenshot) {
+                                return showToast('Cannot approve: No screenshot provided', 'error');
+                            }
                             await update(ref(db, `transactions/${txId}`), { status: 'approved' });
                         }
                         await set(ref(db, `approvedPurchases/${userId}/${itemId}`), true);
@@ -2118,7 +2354,7 @@
                             await update(ref(db, `transactions/${txId}`), { status: 'rejected' });
                         }
                         push(notificationsRef, {
-                            message: `❌ Payment of ZMW ${tx.amount} for "${tx.itemTitle}" rejected`,
+                            message: `❌ Payment rejected`,
                             timestamp: serverTimestamp()
                         });
                         showToast('Transaction rejected', 'info');
@@ -2146,6 +2382,8 @@
             if (tx.screenshot) {
                 html +=
                     `<div><strong>Screenshot:</strong><br><img src="${tx.screenshot}" class="screenshot-preview" onerror="this.style.display='none'"></div>`;
+            } else {
+                html += `<div style="background:#fef0f0;padding:8px 14px;border-radius:30px;color:#c62828;font-weight:600;margin-top:8px;"><i class="fas fa-exclamation-circle"></i> No screenshot uploaded</div>`;
             }
             content.innerHTML = html;
             document.getElementById('txDetailModal').style.display = 'flex';
@@ -2205,9 +2443,15 @@
             };
         }
 
-        function renderNotificationsPage() {
-            document.getElementById('notificationsList').innerHTML = notifications.map(n =>
-                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('');
+        function renderNotificationsSidebar() {
+            const body = document.getElementById('notifSidebarBody');
+            if (notifications.length === 0) {
+                body.innerHTML = `<div class="notif-empty"><i class="fas fa-bell-slash"></i> No notifications</div>`;
+                return;
+            }
+            body.innerHTML = notifications.slice().reverse().map(n =>
+                `<div class="notif-item-sidebar"><i class="fas fa-circle" style="color:var(--gold);font-size:0.4rem;vertical-align:middle;margin-right:8px;"></i> ${escapeHtml(n.message)}</div>`
+            ).join('');
         }
 
         function updateNotifBadge() {
@@ -2215,8 +2459,6 @@
             const badge = document.getElementById('notifCount');
             badge.style.display = count ? 'inline-block' : 'none';
             badge.innerText = count > 9 ? '9+' : count;
-            document.getElementById('notifDropdown').innerHTML = notifications.slice(0, 5).map(n =>
-                `<div class="notif-item">${escapeHtml(n.message)}</div>`).join('');
         }
 
         function setupCloudinary(btnId, urlId, progId, percId, fileInfoId, isVideo = true) {
@@ -2383,14 +2625,23 @@
                 document.querySelectorAll('.nav-five-btn').forEach(b => b.classList.remove('active'));
                 renderAccount();
             });
+
+            // Notification bell → open sidebar
             document.getElementById('notifBell').addEventListener('click', (e) => {
                 e.stopPropagation();
-                document.getElementById('notifDropdown').classList.toggle('show');
+                document.getElementById('notifSidebarOverlay').classList.add('open');
+                document.getElementById('notifSidebar').classList.add('open');
+                renderNotificationsSidebar();
             });
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.notif-bell')) document.getElementById('notifDropdown').classList.remove(
-                    'show');
+            document.getElementById('closeNotifSidebar').addEventListener('click', () => {
+                document.getElementById('notifSidebarOverlay').classList.remove('open');
+                document.getElementById('notifSidebar').classList.remove('open');
             });
+            document.getElementById('notifSidebarOverlay').addEventListener('click', () => {
+                document.getElementById('notifSidebarOverlay').classList.remove('open');
+                document.getElementById('notifSidebar').classList.remove('open');
+            });
+
             document.getElementById('backFromDocBtn').addEventListener('click', () => document.querySelector(
                 '[data-section="docs"]').click());
             document.querySelectorAll('.close-modal').forEach(el => el.addEventListener('click', () => el.closest(
