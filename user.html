@@ -42,7 +42,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* ----- BANNED / MAINTENANCE OVERLAYS ----- */
+        /* ----- OVERLAYS ----- */
         .overlay {
             position: fixed;
             top: 0;
@@ -287,7 +287,7 @@
             border-color: var(--gold);
         }
 
-        /* ----- COURSES GRID (matching admin card sizing) ----- */
+        /* ----- COURSES GRID ----- */
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -362,7 +362,7 @@
             background: #2ecc71;
         }
 
-        /* ----- VIDEO GRID (matching admin card sizing) ----- */
+        /* ----- VIDEO GRID ----- */
         .videos-grid-2x2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -467,23 +467,71 @@
         .like-video-btn.liked {
             color: #e74c3c;
         }
-        .download-video-btn {
+
+        /* ===== CIRCULAR DOWNLOAD PROGRESS ===== */
+        .download-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        .download-wrapper .download-video-btn {
+            position: absolute;
             background: none;
             border: none;
             color: var(--gold);
             cursor: pointer;
             font-size: 0.85rem;
-            padding: 5px 8px;
-            border-radius: 50%;
             transition: var(--transition);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
-        .download-video-btn:hover {
+        .download-wrapper .download-video-btn:hover {
             background: #F5B04218;
             color: #c47f1a;
         }
-        .download-video-btn.hidden-dl {
+        .download-wrapper .download-video-btn.hidden-dl {
             display: none;
         }
+        .download-wrapper svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 36px;
+            height: 36px;
+            transform: rotate(-90deg);
+            z-index: 1;
+        }
+        .download-wrapper svg circle {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+        .download-wrapper svg .bg-circle {
+            stroke: #eaeef3;
+        }
+        .download-wrapper svg .progress-circle {
+            stroke: var(--gold);
+            stroke-dasharray: 94.24778;
+            stroke-dashoffset: 94.24778;
+            transition: stroke-dashoffset 0.25s ease;
+        }
+        .download-wrapper .dl-text {
+            position: absolute;
+            font-size: 0.45rem;
+            font-weight: 700;
+            color: var(--gold);
+            z-index: 3;
+            pointer-events: none;
+        }
+
         .delete-offline-btn {
             background: none;
             border: none;
@@ -499,7 +547,7 @@
             background: #fde8e8;
         }
 
-        /* ----- DOCS (matching admin doc card style) ----- */
+        /* ----- DOCS ----- */
         .docs-list {
             display: flex;
             flex-direction: column;
@@ -618,21 +666,7 @@
             overflow: auto;
         }
 
-        /* ----- PAYMENT / WALLET ----- */
-        .wallet-info-row {
-            display: flex;
-            justify-content: space-between;
-            background: #fef5e8;
-            padding: 0.9rem 1rem;
-            border-radius: var(--radius-md);
-            margin: 0.6rem 0;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .wallet-info-row strong {
-            color: #c47f1a;
-            font-weight: 700;
-        }
+        /* ----- PAYMENT (no wallet, only mobile money) ----- */
         .payment-numbers-box {
             background: #fff;
             border: 2px solid #f0d8a8;
@@ -763,17 +797,6 @@
             border-radius: var(--radius-lg);
             padding: 1.5rem;
             box-shadow: var(--shadow-md);
-        }
-        .wallet-big {
-            font-size: 2.2rem;
-            font-weight: 800;
-            text-align: center;
-            background: #F5B04215;
-            border-radius: 60px;
-            padding: 0.6rem;
-            margin-bottom: 1rem;
-            letter-spacing: -0.5px;
-            color: #c47f1a;
         }
         .info-row {
             display: flex;
@@ -1201,7 +1224,6 @@
         <!-- PROFILE -->
         <div id="profilePage" class="page-container">
             <div class="profile-card">
-                <div class="wallet-big" id="walletAmount">ZMW 0</div>
                 <div class="info-row"><span>Full name</span><span id="profileName"></span></div>
                 <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
                 <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
@@ -1225,18 +1247,10 @@
             <div id="docFullContent" class="full-page-content" style="overflow: auto"></div>
         </div>
 
-        <!-- PAYMENT PAGE -->
+        <!-- PAYMENT PAGE (no wallet, only mobile money) -->
         <div id="paymentPage" class="page-container full-page-container">
             <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom: 0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
             <h2 id="paymentCourseTitle"></h2>
-            <div class="wallet-info-row">
-                <span>Your balance:</span>
-                <strong id="paymentWalletBalance">ZMW 0</strong>
-            </div>
-            <div class="wallet-info-row">
-                <span>Course Price:</span>
-                <strong id="paymentCoursePrice">ZMW 0</strong>
-            </div>
             <div class="payment-numbers-box" id="paymentNumbersBox">
                 <h4><i class="fas fa-money-bill-wave"></i> Deposit Payment To</h4>
                 <div class="deposit-instruction">
@@ -1253,7 +1267,7 @@
                     <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
                 </div>
             </div>
-            <p style="margin: 0.5rem 0; font-size: 0.78rem; color: #8b8fa3;">After admin approval, the amount will be deducted from your wallet.</p>
+            <p style="margin: 0.5rem 0; font-size: 0.78rem; color: #8b8fa3;">After admin approval, the course will be unlocked.</p>
             <div id="paymentUploadBox" class="upload-box">
                 <i class="fas fa-cloud-upload-alt fa-2x"></i>
                 <p>Tap to upload payment screenshot</p>
@@ -1304,7 +1318,7 @@
         const db = getDatabase(app);
 
         let currentUser = null;
-        let userData = { firstName: '', lastName: '', email: '', phone: '', wallet: 0, likedVideos: [], likedDocs: [] };
+        let userData = { firstName: '', lastName: '', email: '', phone: '', likedVideos: [], likedDocs: [] };
         let allCourses = [];
         let allSubfolders = [];
         let allVideos = [];
@@ -1449,10 +1463,9 @@
                 userData = { ...userData, ...snap.val() };
                 userData.likedVideos = userData.likedVideos || [];
                 userData.likedDocs = userData.likedDocs || [];
-                userData.wallet = userData.wallet || 0;
             } else {
-                userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', wallet: 0,
-                    likedVideos: [], likedDocs: [] };
+                userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', likedVideos: [],
+                    likedDocs: [] };
                 await set(userRef, userData);
             }
             updateUserInterface();
@@ -1461,7 +1474,6 @@
         async function saveUserData() {
             if (!currentUser) return;
             await update(ref(db, `users/${currentUser.uid}`), {
-                wallet: userData.wallet,
                 likedVideos: userData.likedVideos,
                 likedDocs: userData.likedDocs,
                 phone: userData.phone
@@ -1474,7 +1486,6 @@
                 'User');
             document.getElementById('compactUserName').innerText = name;
             document.getElementById('compactUserEmail').innerText = currentUser?.email || '';
-            document.getElementById('walletAmount').innerText = `ZMW ${userData.wallet}`;
             document.getElementById('profileName').innerText = name;
             document.getElementById('profileEmail').innerText = currentUser?.email || '';
             document.getElementById('profilePhone').innerText = userData.phone || 'Not set';
@@ -1715,8 +1726,9 @@
             const isLiked = userData.likedVideos.includes(video.id);
             const canDownload = isDownloadableVideo(video);
             const thumbnail = getVideoThumbnail(video);
+            const isOffline = offlineVideos.has(video.id);
             return `
-            <div class="video-card" data-id="${video.id}">
+            <div class="video-card" data-id="${video.id}" data-offline="${isOffline}">
                 <div class="video-thumb-wrapper">
                     <img src="${thumbnail}" alt="${escapeHtml(video.title)}" loading="lazy" />
                     <div class="play-overlay"><i class="fas fa-play"></i></div>
@@ -1725,10 +1737,20 @@
                     <h4>${escapeHtml(video.title)}</h4>
                     <div class="video-meta">
                         <span>${escapeHtml(video.instructor)}</span>
+                        ${isOffline ? '<span style="color:#2ecc71;font-weight:600;"><i class="fas fa-download"></i> Offline</span>' : ''}
                     </div>
                     <div class="card-actions">
                         <button class="like-video-btn ${isLiked?'liked':''}" data-id="${video.id}" title="Like"><i class="far fa-heart"></i></button>
-                        <button class="download-video-btn ${canDownload?'':'hidden-dl'}" data-id="${video.id}" title="Download for offline"><i class="fas fa-download"></i></button>
+                        ${canDownload ? `
+                            <div class="download-wrapper" data-id="${video.id}">
+                                <button class="download-video-btn" data-id="${video.id}" title="Download for offline"><i class="fas fa-download"></i></button>
+                                <svg viewBox="0 0 36 36">
+                                    <circle class="bg-circle" cx="18" cy="18" r="15" />
+                                    <circle class="progress-circle" cx="18" cy="18" r="15" id="progress-${video.id}" />
+                                </svg>
+                                <span class="dl-text" id="dl-text-${video.id}">0%</span>
+                            </div>
+                        ` : `<div style="width:36px;"></div>`}
                     </div>
                 </div>
             </div>`;
@@ -1755,7 +1777,8 @@
         function attachVideoEvents() {
             document.querySelectorAll('.video-card').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    if (e.target.closest('.download-video-btn') || e.target.closest(
+                    if (e.target.closest('.download-wrapper') || e.target.closest(
+                            '.download-video-btn') || e.target.closest(
                             '.like-video-btn') || e.target.closest('.delete-offline-btn')) return;
                     const videoId = card.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
@@ -1765,14 +1788,18 @@
                     }
                 });
             });
-            document.querySelectorAll('.download-video-btn:not(.hidden-dl)').forEach(btn => {
+
+            document.querySelectorAll('.download-video-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const videoId = btn.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
-                    if (video && isDownloadableVideo(video)) await downloadVideoForOffline(video);
+                    if (video && isDownloadableVideo(video)) {
+                        await downloadVideoWithProgress(video);
+                    }
                 });
             });
+
             document.querySelectorAll('.like-video-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -1785,6 +1812,58 @@
                     renderWatchedVideos();
                 });
             });
+        }
+
+        async function downloadVideoWithProgress(video) {
+            if (!isDownloadableVideo(video)) {
+                addNotification('warning', 'This video cannot be downloaded for offline viewing.');
+                return;
+            }
+            try {
+                addNotification('download', `Downloading "${video.title}"...`);
+
+                const wrapper = document.querySelector(`.download-wrapper[data-id="${video.id}"]`);
+                const progCircle = wrapper?.querySelector('.progress-circle');
+                const dlText = wrapper?.querySelector('.dl-text');
+
+                const response = await fetch(video.videoUrl);
+                if (!response.ok) throw new Error('Network error');
+                const contentLength = response.headers.get('content-length');
+                const total = contentLength ? parseInt(contentLength) : null;
+                const reader = response.body.getReader();
+                const chunks = [];
+                let received = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+                    if (total && progCircle && dlText) {
+                        const pct = Math.round((received / total) * 100);
+                        const circumference = 94.24778;
+                        const offset = circumference - (pct / 100) * circumference;
+                        progCircle.style.strokeDashoffset = offset;
+                        dlText.textContent = pct + '%';
+                    }
+                }
+
+                const blob = new Blob(chunks);
+                const tx = offlineDB.transaction('videos', 'readwrite');
+                const store = tx.objectStore('videos');
+                store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
+                await new Promise((res, rej) => { tx.oncomplete = res;
+                    tx.onerror = rej; });
+                offlineVideos.add(video.id);
+                addNotification('success', `"${video.title}" saved for offline viewing.`);
+                renderOfflinePage();
+                if (selectedCourse) renderCourseDetail(selectedCourse);
+                // Reset progress
+                if (progCircle) progCircle.style.strokeDashoffset = 94.24778;
+                if (dlText) dlText.textContent = '0%';
+            } catch (e) {
+                addNotification('danger', 'Download failed: ' + e.message);
+            }
         }
 
         function attachDocEvents() {
@@ -1833,31 +1912,6 @@
             });
         }
 
-        async function downloadVideoForOffline(video) {
-            if (!isDownloadableVideo(video)) {
-                addNotification('warning',
-                    'YouTube and Vimeo videos cannot be downloaded for offline viewing due to platform restrictions.'
-                    );
-                return;
-            }
-            try {
-                addNotification('download', `Downloading "${video.title}" for offline access...`);
-                const response = await fetch(video.videoUrl);
-                if (!response.ok) throw new Error('Network error');
-                const blob = await response.blob();
-                const tx = offlineDB.transaction('videos', 'readwrite');
-                const store = tx.objectStore('videos');
-                store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
-                await new Promise((res, rej) => { tx.oncomplete = res;
-                    tx.onerror = rej; });
-                offlineVideos.add(video.id);
-                addNotification('success', `"${video.title}" has been saved for offline viewing.`);
-                renderOfflinePage();
-            } catch (e) {
-                addNotification('danger', 'Download failed: ' + e.message);
-            }
-        }
-
         function playVideoInPlayer(video) {
             const container = document.getElementById('playerEmbedContainer');
             const playerDiv = document.getElementById('persistentPlayer');
@@ -1883,18 +1937,14 @@
             }
             container.innerHTML = embed + (container.querySelector('.yt-logo-cover')?.outerHTML || '');
             playerDiv.style.display = 'block';
-            // Attach fullscreen to the container
+
             const fsBtn = document.getElementById('fullscreenPlayerBtn');
             fsBtn.onclick = () => {
-                const playerContainer = document.querySelector('.player-container');
-                if (playerContainer) {
-                    if (playerContainer.requestFullscreen) {
-                        playerContainer.requestFullscreen();
-                    } else if (playerContainer.webkitRequestFullscreen) {
-                        playerContainer.webkitRequestFullscreen();
-                    } else if (playerContainer.msRequestFullscreen) {
-                        playerContainer.msRequestFullscreen();
-                    }
+                const pc = document.querySelector('.player-container');
+                if (pc) {
+                    if (pc.requestFullscreen) pc.requestFullscreen();
+                    else if (pc.webkitRequestFullscreen) pc.webkitRequestFullscreen();
+                    else if (pc.msRequestFullscreen) pc.msRequestFullscreen();
                 }
             };
             const viewers = video.uniqueViewers || {};
@@ -2047,8 +2097,6 @@
         function openPaymentPage(course) {
             selectedCourse = course;
             document.getElementById('paymentCourseTitle').innerText = course.name;
-            document.getElementById('paymentCoursePrice').innerText = `ZMW ${course.price}`;
-            document.getElementById('paymentWalletBalance').innerText = `ZMW ${userData.wallet}`;
             document.getElementById('depositAmountDisplay').innerText = `ZMW ${course.price}`;
             document.getElementById('paymentScreenshotPreview').innerHTML = '';
             paymentScreenshotUrl = null;
