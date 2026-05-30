@@ -229,6 +229,76 @@
             font-size: 15px;
         }
 
+        /* ===== PERSISTENT PLAYER (borderless, full width) ===== */
+        .persistent-player {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: none;
+            margin: 0 0 10px 0;
+            background: #f4f5f8;
+            padding: 0 8px;
+        }
+        .player-container {
+            background: #000;
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+        .player-container video,
+        .player-container iframe {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: 0;
+            background: black;
+        }
+        .player-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 5px 14px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 22;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .player-close-btn:hover {
+            background: rgba(231, 76, 60, 0.85);
+        }
+        .player-fullscreen-btn {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 22;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .player-fullscreen-btn:hover {
+            background: rgba(245, 176, 66, 0.7);
+            transform: scale(1.08);
+            border-color: #f5b042;
+        }
+
         /* ===== SECTIONS ===== */
         .section {
             display: none;
@@ -1642,6 +1712,19 @@
             font-size: 11px;
             color: #8b8fa3;
         }
+
+        /* YT logo cover */
+        .yt-logo-cover {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 60px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 21;
+            border-radius: 3px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -1663,6 +1746,17 @@
             <div class="header-right">
                 <div class="account-pill" id="accountQuickBtn">
                     <i class="fas fa-user-circle"></i> Account
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PERSISTENT PLAYER ===== -->
+        <div id="persistentPlayer" class="persistent-player">
+            <div class="player-container">
+                <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
+                <button id="fullscreenPlayerBtn" class="player-fullscreen-btn"><i class="fas fa-expand"></i></button>
+                <div id="playerEmbedContainer" style="position: relative; width: 100%; height: 100%;">
+                    <div class="yt-logo-cover"></div>
                 </div>
             </div>
         </div>
@@ -2054,20 +2148,6 @@
         </div>
     </div>
 
-    <!-- Video Player Modal -->
-    <div id="videoPlayerModal" class="modal-overlay">
-        <div class="modal-box" style="max-width:520px;padding:14px;">
-            <div style="aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;position:relative;">
-                <div id="modalPlayerContainer" style="width:100%;height:100%;"></div>
-                <span id="fullscreenModalBtn" style="position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,0.6);color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.2);"><i class="fas fa-expand"></i></span>
-            </div>
-            <div style="padding:12px 4px 0 4px;">
-                <h3 id="modalVideoTitle" style="font-size:16px;font-weight:700;color:#1a1d28;"></h3>
-                <p id="modalVideoInstructor" style="font-size:12px;color:#8b8fa3;"></p>
-            </div>
-        </div>
-    </div>
-
     <!-- ===== NOTIFICATION SIDEBAR (LEFT) ===== -->
     <div id="notifSidebarOverlay" class="sidebar-overlay"></div>
     <div id="notifSidebar" class="sidebar">
@@ -2077,15 +2157,6 @@
         </div>
         <div class="sidebar-body" id="notifSidebarBody">
             <div class="notif-empty"><i class="fas fa-bell-slash"></i> No notifications</div>
-        </div>
-    </div>
-
-    <!-- ===== INLINE PLAYER ===== -->
-    <div id="globalInlinePlayer" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1500;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px;">
-        <div style="width:100%;max-width:750px;aspect-ratio:16/9;background:#000;border-radius:18px;overflow:hidden;position:relative;">
-            <span id="closeInlinePlayer" style="position:absolute;top:14px;right:16px;background:#fff;color:#f5b042;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;font-weight:700;font-size:15px;box-shadow:0 2px 12px rgba(0,0,0,0.25);border:1px solid #f0e0c8;"><i class="fas fa-times"></i></span>
-            <span id="fullscreenInlineBtn" style="position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.6);color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;font-size:16px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.2);"><i class="fas fa-expand"></i></span>
-            <div id="inlinePlayerEmbed" style="width:100%;height:100%;"></div>
         </div>
     </div>
 
@@ -2275,12 +2346,11 @@
             }
         }
 
-        function attachFullscreen(containerId, btnId) {
-            const container = document.getElementById(containerId);
-            const btn = document.getElementById(btnId);
-            if (!container || !btn) return;
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
+        function attachFullscreen() {
+            const fsBtn = document.getElementById('fullscreenPlayerBtn');
+            const container = document.querySelector('.player-container');
+            if (!fsBtn || !container) return;
+            fsBtn.onclick = () => {
                 const video = container.querySelector('video');
                 const iframe = container.querySelector('iframe');
                 if (video) {
@@ -2290,7 +2360,7 @@
                 } else {
                     requestFullscreen(container);
                 }
-            });
+            };
         }
 
         // =================================================================
@@ -2321,11 +2391,15 @@
         }
 
         // =================================================================
-        // PLAY VIDEO
+        // PLAY VIDEO IN PERSISTENT PLAYER
         // =================================================================
-        function playVideoInline(video, startSeconds = 0) {
-            const container = document.getElementById('inlinePlayerEmbed');
-            const playerDiv = document.getElementById('globalInlinePlayer');
+        function playVideoInPlayer(video, startSeconds = 0) {
+            const container = document.getElementById('playerEmbedContainer');
+            const playerDiv = document.getElementById('persistentPlayer');
+            // Remove any existing yt-logo-cover to avoid duplicates
+            const existingCover = container.querySelector('.yt-logo-cover');
+            if (existingCover) existingCover.remove();
+
             let embed = '';
             const url = video.videoUrl;
 
@@ -2334,6 +2408,10 @@
                 const embedUrl = getYouTubeEmbedWithStart(url, startSeconds) ||
                     `https://www.youtube-nocookie.com/embed/${ytId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=1&playsinline=1&autoplay=1`;
                 embed = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
+                // Add YT logo cover
+                const cover = document.createElement('div');
+                cover.className = 'yt-logo-cover';
+                container.appendChild(cover);
             } else if (url.includes('vimeo.com')) {
                 embed =
                     `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
@@ -2342,43 +2420,16 @@
                     `<video controls autoplay style="width:100%;height:100%;object-fit:cover;display:block;"><source src="${url}" type="video/mp4"></video>`;
             }
             container.innerHTML = embed;
-            playerDiv.style.display = 'flex';
-            setTimeout(() => {
-                attachFullscreen('inlinePlayerEmbed', 'fullscreenInlineBtn');
-            }, 100);
-            const viewers = video.uniqueViewers || {};
-            if (!viewers[currentAdmin?.uid]) {
-                viewers[currentAdmin?.uid] = true;
-                update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
+            // Ensure yt-logo-cover is still there if it was added
+            if (ytId && !container.querySelector('.yt-logo-cover')) {
+                const cover = document.createElement('div');
+                cover.className = 'yt-logo-cover';
+                container.appendChild(cover);
             }
-        }
+            playerDiv.style.display = 'block';
+            setTimeout(() => attachFullscreen(), 100);
 
-        function playVideoModal(video, startSeconds = 0) {
-            const container = document.getElementById('modalPlayerContainer');
-            const titleEl = document.getElementById('modalVideoTitle');
-            const instrEl = document.getElementById('modalVideoInstructor');
-            titleEl.textContent = video.title || 'Untitled';
-            instrEl.textContent = video.instructor || 'Instructor';
-            let embed = '';
-            const url = video.videoUrl;
-
-            const ytId = getYouTubeId(url);
-            if (ytId) {
-                const embedUrl = getYouTubeEmbedWithStart(url, startSeconds) ||
-                    `https://www.youtube-nocookie.com/embed/${ytId}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=1&playsinline=1&autoplay=1`;
-                embed = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allowfullscreen allow="autoplay" style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
-            } else if (url.includes('vimeo.com')) {
-                embed =
-                    `<iframe width="100%" height="100%" src="https://player.vimeo.com/video/${url.split('/').pop()}?autoplay=1" frameborder="0" allowfullscreen style="object-fit:cover;width:100%;height:100%;display:block;"></iframe>`;
-            } else {
-                embed =
-                    `<video controls autoplay style="width:100%;height:100%;object-fit:cover;display:block;"><source src="${url}" type="video/mp4"></video>`;
-            }
-            container.innerHTML = embed;
-            document.getElementById('videoPlayerModal').classList.add('open');
-            setTimeout(() => {
-                attachFullscreen('modalPlayerContainer', 'fullscreenModalBtn');
-            }, 100);
+            // Update view count
             const viewers = video.uniqueViewers || {};
             if (!viewers[currentAdmin?.uid]) {
                 viewers[currentAdmin?.uid] = true;
@@ -2487,7 +2538,7 @@
                     const video = videos.find(v => v.id === btn.dataset.id);
                     if (video) {
                         const startSec = 3;
-                        playVideoInline(video, startSec);
+                        playVideoInPlayer(video, startSec);
                     }
                 });
             });
@@ -2495,7 +2546,7 @@
                 card.addEventListener('click', (e) => {
                     if (e.target.closest('.play-badge') || e.target.closest('button')) return;
                     const video = videos.find(v => v.id === card.dataset.id);
-                    if (video) playVideoModal(video, 0);
+                    if (video) playVideoInPlayer(video, 0);
                 });
             });
             document.querySelectorAll('.read-btn').forEach(btn => {
@@ -3108,9 +3159,9 @@
                     if (e.target === this) this.classList.remove('open');
                 });
             });
-            document.getElementById('closeInlinePlayer').addEventListener('click', () => {
-                document.getElementById('globalInlinePlayer').style.display = 'none';
-                document.getElementById('inlinePlayerEmbed').innerHTML = '';
+            document.getElementById('closePlayerBtn').addEventListener('click', () => {
+                document.getElementById('persistentPlayer').style.display = 'none';
+                document.getElementById('playerEmbedContainer').innerHTML = '';
             });
             document.getElementById('bigPostBtn').onclick = () => {
                 document.getElementById('dynamicPostForm').style.display = 'block';
@@ -3439,7 +3490,7 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — Fully mobile-optimized with left sidebar, pill nav, gradient gold, 4 dash cards, bank statement account, and all missing CSS restored.');
+        console.log('✅ UTOM Admin — Persistent player (like user app), borderless, close & fullscreen, documents viewed (not downloaded).');
     </script>
 </body>
 </html>
