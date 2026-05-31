@@ -22,9 +22,6 @@
         body {
             height: 100%;
             overflow: hidden;
-        }
-
-        body {
             background: #f4f5f8;
             color: #1a1d28;
             font-size: 15px;
@@ -43,13 +40,15 @@
             position: relative;
         }
 
+        /* ---------- SCROLL FIX: min-height + proper overflow on flex child ---------- */
         .app-content {
             flex: 1;
             overflow-y: auto;
-            padding: 0 16px 140px 16px;
+            min-height: 0;
+            /* CRITICAL for Chrome/WebKit flex scrolling */
+            padding: 0 16px 130px 16px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
-            overscroll-behavior: contain;
         }
 
         .app-content::-webkit-scrollbar {
@@ -135,11 +134,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 16px 18px 16px;
+            padding: 14px 0 18px 0;
             background: #f4f5f8;
             flex-shrink: 0;
-            position: relative;
-            z-index: 10;
         }
         .header-left {
             display: flex;
@@ -657,28 +654,45 @@
         .form-card {
             background: #fff;
             border-radius: 20px;
-            padding: 18px;
+            padding: 20px 18px;
             margin-bottom: 16px;
             box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
             border: 1px solid #f0f0f5;
+            transition: box-shadow 0.3s ease;
+        }
+        .form-card:hover {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
         }
         .form-card h4 {
             font-size: 14px;
             font-weight: 700;
             color: #1a1d28;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        /* All form inputs, selects, textareas */
+        .form-card h4 i {
+            background: linear-gradient(135deg, #d4952a, #f5b042);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
         .form-row input,
         .form-row select,
         .form-row textarea {
             flex: 1;
             min-width: 130px;
-            padding: 11px 16px;
+            padding: 12px 18px;
             border-radius: 40px;
             border: 1.5px solid #e5e8ed;
-            font-size: 12px;
+            font-size: 13px;
             font-family: inherit;
             transition: all 0.25s ease;
             background: #fff;
@@ -689,7 +703,8 @@
         .form-row textarea:focus {
             outline: none;
             border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.1);
+            background: #fffdf7;
         }
         .form-row textarea {
             border-radius: 16px;
@@ -700,126 +715,54 @@
         .form-row textarea::placeholder {
             color: #b0b4c0;
         }
-
-        /* ———— POST VIDEO FORM SPECIFIC ———— */
-        #linkGroup input,
-        #uploadGroup input,
-        #linkGroup input[type="url"],
-        #uploadGroup input[type="url"] {
-            width: 100%;
-            padding: 12px 18px;
-            border-radius: 40px;
-            border: 1.5px solid #d5d8e0;
+        .radio-group {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            background: #f9f9fc;
+            padding: 8px 18px;
+            border-radius: 50px;
             font-size: 13px;
-            background: #fafbfc;
-            transition: all 0.25s ease;
-            color: #1a1d28;
-            margin-bottom: 8px;
+            font-weight: 500;
+            border: 1px solid #e5e8ed;
+            transition: border-color 0.25s ease;
         }
-        #linkGroup input:focus,
-        #uploadGroup input:focus {
+        .radio-group:focus-within {
             border-color: #f5b042;
             box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
-            background: #fff;
         }
-
-        /* Description textarea in video form */
-        #videoDesc {
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 16px;
-            border: 1.5px solid #d5d8e0;
-            font-size: 13px;
-            background: #fafbfc;
-            font-family: inherit;
-            transition: all 0.25s ease;
-            min-height: 80px;
-            resize: vertical;
-            color: #1a1d28;
-        }
-        #videoDesc:focus {
-            outline: none;
-            border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
-            background: #fff;
-        }
-
-        /* Price display pill */
-        #videoPriceDisplay {
-            background: rgba(245, 176, 66, 0.12);
-            border-radius: 30px;
-            padding: 6px 18px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #d4952a;
-            display: inline-flex;
-            align-items: center;
-            white-space: nowrap;
-        }
-
-        /* File info inside upload group */
-        .file-info {
+        .radio-group label {
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            background: #f5f6f8;
-            border-radius: 40px;
-            margin-top: 6px;
-            font-size: 11px;
-        }
-        .file-info i {
-            background: linear-gradient(135deg, #d4952a, #f5b042);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 14px;
-        }
-        .file-info .fname {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .file-info .ftype {
-            background: #e8ecf1;
-            padding: 2px 10px;
+            gap: 6px;
+            padding: 2px 6px;
             border-radius: 30px;
-            font-size: 10px;
-            font-weight: 700;
-            color: #5f6377;
+            transition: all 0.2s ease;
+        }
+        .radio-group label:hover {
+            background: rgba(245, 176, 66, 0.06);
+        }
+        .radio-group input[type="radio"] {
+            accent-color: #f5b042;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
         }
 
-        /* Thumbnail preview */
-        .thumb-preview {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 6px;
-        }
-        .thumb-preview img {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            object-fit: cover;
-            border: 2px solid #f0e8d8;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-        .thumb-preview span {
-            font-size: 11px;
-            color: #8b8fa3;
-        }
-
-        /* Upload progress */
+        /* ===== UPLOAD PROGRESS ===== */
         .upload-progress {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 6px;
+            margin-top: 8px;
+            padding: 4px 6px;
+            background: #fafbfc;
+            border-radius: 30px;
         }
         .upload-progress .bar {
             flex: 1;
-            height: 4px;
+            height: 5px;
             background: #e8ecf1;
             border-radius: 20px;
             overflow: hidden;
@@ -832,32 +775,72 @@
             transition: width 0.3s ease;
         }
         .upload-progress .percent {
-            font-size: 11px;
+            font-size: 12px;
             color: #8b8fa3;
-            min-width: 40px;
+            min-width: 44px;
             text-align: right;
+            font-weight: 600;
         }
 
-        /* ———— DOC FORM SPECIFIC ———— */
-        #docTextGroup .btn-outline {
-            width: 100%;
-            padding: 10px;
-            font-size: 12px;
-        }
-        #docLinkGroup input[type="url"] {
-            width: 100%;
-            padding: 12px 18px;
+        /* ===== FILE INFO ===== */
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: #f5f6f8;
             border-radius: 40px;
-            border: 1.5px solid #d5d8e0;
-            font-size: 13px;
-            background: #fafbfc;
-            transition: all 0.25s ease;
-            color: #1a1d28;
+            margin-top: 6px;
+            font-size: 12px;
+            border: 1px solid #edf0f4;
         }
-        #docLinkGroup input:focus {
-            border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
-            background: #fff;
+        .file-info i {
+            background: linear-gradient(135deg, #d4952a, #f5b042);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 16px;
+        }
+        .file-info .fname {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .file-info .ftype {
+            background: #e8ecf1;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #5f6377;
+            letter-spacing: 0.3px;
+        }
+
+        /* ===== THUMBNAIL PREVIEW ===== */
+        .thumb-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            padding: 8px 14px;
+            background: #fafbfc;
+            border-radius: 16px;
+            border: 1px dashed #d5d8e0;
+        }
+        .thumb-preview img {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #f0e8d8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .thumb-preview span {
+            font-size: 12px;
+            color: #8b8fa3;
+            font-weight: 500;
         }
 
         /* ===== USERS ===== */
@@ -1615,6 +1598,306 @@
             border-radius: 3px;
             pointer-events: none;
         }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 520px) {
+            .app-content {
+                padding: 0 12px 110px 12px;
+            }
+            .bottom-nav {
+                height: 58px;
+                padding: 4px 8px;
+                width: 94%;
+                max-width: 360px;
+                bottom: 16px;
+                border-radius: 30px;
+            }
+            .nav-item i {
+                font-size: 18px;
+            }
+            .nav-item span {
+                font-size: 6px;
+            }
+            .header-title {
+                font-size: 16px;
+            }
+            .account-pill {
+                font-size: 11px;
+                padding: 6px 14px;
+            }
+            .header {
+                padding: 10px 0 14px 0;
+            }
+            .notif-bell {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+            .dash-grid {
+                gap: 10px;
+            }
+            .dash-card {
+                padding: 12px 12px;
+            }
+            .dash-card .dash-number {
+                font-size: 20px;
+            }
+            .video-grid {
+                gap: 10px;
+            }
+            .video-card .info h4 {
+                font-size: 12px;
+            }
+            .video-card .info .instructor {
+                font-size: 9px;
+            }
+            .video-card .info .meta {
+                font-size: 9px;
+            }
+            .recent-grid {
+                gap: 10px;
+            }
+            .recent-item .r-title {
+                font-size: 12px;
+            }
+            .big-earnings {
+                font-size: 26px;
+            }
+            .filter-pill {
+                font-size: 10px;
+                padding: 6px 14px;
+            }
+            .tx-card .tx-main .tx-user {
+                font-size: 12px;
+            }
+            .tx-amount {
+                font-size: 14px;
+                padding: 4px 12px;
+            }
+            .modal-box {
+                padding: 18px 16px;
+                max-width: 94%;
+            }
+            .modal-box h3 {
+                font-size: 16px;
+            }
+            .sidebar {
+                width: 320px;
+                left: -340px;
+            }
+            .form-row input,
+            .form-row select,
+            .form-row textarea {
+                font-size: 11px;
+                padding: 9px 14px;
+                min-width: 100px;
+            }
+            .radio-group {
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+            .btn-primary {
+                font-size: 12px;
+                padding: 10px 18px;
+            }
+            .setting-row span {
+                font-size: 12px;
+            }
+            .setting-row input,
+            .setting-row select {
+                width: 120px;
+                font-size: 11px;
+            }
+            .course-header {
+                font-size: 12px;
+                padding: 10px 14px;
+            }
+            .subfolder-item {
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+            .doc-item h3 {
+                font-size: 13px;
+            }
+            .doc-item .doc-snippet {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .dash-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .video-grid {
+                gap: 8px;
+            }
+            .video-card .info {
+                padding: 8px 10px 10px;
+            }
+            .video-card .info h4 {
+                font-size: 11px;
+            }
+            .recent-grid {
+                grid-template-columns: 1fr;
+            }
+            .bottom-nav {
+                height: 52px;
+                padding: 4px 6px;
+                max-width: 320px;
+            }
+            .nav-item i {
+                font-size: 16px;
+            }
+            .nav-item span {
+                font-size: 5px;
+            }
+        }
+
+        /* ===== EXTRA FORM ENHANCEMENTS ===== */
+        .form-card .form-row .btn-primary {
+            padding: 6px 18px;
+            font-size: 12px;
+            border-radius: 40px;
+        }
+        .form-card .form-row .btn-outline {
+            padding: 6px 18px;
+            font-size: 12px;
+            border-radius: 40px;
+        }
+        .form-card .form-row input[type="number"] {
+            min-width: 80px;
+            width: 80px;
+        }
+        #videoPriceDisplay,
+        #docPriceDisplay {
+            background: rgba(245, 176, 66, 0.12);
+            border-radius: 30px;
+            padding: 6px 18px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #d4952a;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        .thumb-preview img {
+            border-radius: 12px;
+            border: 2px solid #f0e8d8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .upload-progress .bar {
+            height: 5px;
+            background: #e8ecf1;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .upload-progress .bar .fill {
+            height: 100%;
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .upload-progress .percent {
+            font-size: 12px;
+            color: #8b8fa3;
+            min-width: 44px;
+            text-align: right;
+            font-weight: 600;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: #f5f6f8;
+            border-radius: 40px;
+            margin-top: 6px;
+            font-size: 12px;
+            border: 1px solid #edf0f4;
+        }
+        .file-info i {
+            background: linear-gradient(135deg, #d4952a, #f5b042);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 16px;
+        }
+        .file-info .fname {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .file-info .ftype {
+            background: #e8ecf1;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #5f6377;
+            letter-spacing: 0.3px;
+        }
+        .thumb-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            padding: 8px 14px;
+            background: #fafbfc;
+            border-radius: 16px;
+            border: 1px dashed #d5d8e0;
+        }
+        .thumb-preview img {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #f0e8d8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .thumb-preview span {
+            font-size: 12px;
+            color: #8b8fa3;
+            font-weight: 500;
+        }
+        .form-card .radio-group {
+            background: #f9f9fc;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #e5e8ed;
+            transition: border-color 0.25s ease;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-card .radio-group:focus-within {
+            border-color: #f5b042;
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+        }
+        .form-card .radio-group label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 6px;
+            border-radius: 30px;
+            transition: all 0.2s ease;
+        }
+        .form-card .radio-group label:hover {
+            background: rgba(245, 176, 66, 0.06);
+        }
+        .form-card .radio-group input[type="radio"] {
+            accent-color: #f5b042;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -1667,14 +1950,14 @@
                             </div>
                             <div class="form-row">
                                 <select id="courseSelectHome"></select>
-                                <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;">Price: FREE</span>
+                                <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:12px;font-weight:600;color:#d4952a;display:flex;align-items:center;white-space:nowrap;">Price: FREE</span>
                             </div>
                             <div class="form-row">
                                 <select id="subfolderSelectHome"></select>
                                 <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:11px;">Add</button>
+                                <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:6px 18px;font-size:12px;border-radius:40px;">Add</button>
                             </div>
-                            <textarea id="videoDesc" rows="3" placeholder="Write a detailed description of your video..."></textarea>
+                            <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
                             <div class="form-row">
                                 <div class="radio-group">
                                     <label><input type="radio" name="videoSource" value="link" checked> Link</label>
@@ -1682,20 +1965,20 @@
                                 </div>
                             </div>
                             <div id="linkGroup">
-                                <input type="url" id="videoUrlInput" placeholder="Video URL (YouTube, Vimeo, or direct link)">
-                                <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail image URL (optional)">
+                                <input type="url" id="videoUrlInput" placeholder="Video URL">
+                                <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:6px;">
                             </div>
                             <div id="uploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
+                                <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:8px 18px;font-size:12px;border-radius:40px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
                                 <div class="upload-progress" id="uploadProgressArea" style="margin-top:8px;">
                                     <div class="bar"><div class="fill" id="uploadProgressFill"></div></div>
                                     <span class="percent" id="uploadPercentText">0%</span>
                                 </div>
                                 <input type="hidden" id="cloudinaryVideoUrl">
                                 <div style="margin-top:10px;">
-                                    <label style="font-size:11px;font-weight:500;">Thumbnail frame (sec):</label>
-                                    <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:60px;display:inline-block;margin-left:6px;">
-                                    <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 14px;font-size:10px;">Generate</button>
+                                    <label style="font-size:12px;font-weight:500;">Thumbnail frame (sec):</label>
+                                    <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:60px;display:inline-block;margin-left:6px;padding:6px 10px;border-radius:30px;border:1.5px solid #e5e8ed;">
+                                    <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 16px;font-size:11px;border-radius:40px;">Generate</button>
                                 </div>
                                 <input type="hidden" id="generatedThumbnailUrl">
                                 <div class="thumb-preview" id="thumbnailPreviewContainer" style="display:none;">
@@ -1705,8 +1988,8 @@
                             </div>
                             <input type="hidden" id="videoPriceHidden" value="0">
                             <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-                                <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:11px;">PUBLISH</button>
+                                <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;">Cancel</button>
+                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:12px;border-radius:40px;">PUBLISH</button>
                             </div>
                         </form>
                     </div>
@@ -1815,7 +2098,7 @@
                         <option value="paid">Paid</option>
                     </select>
                     <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:100px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;display:none;">
-                    <button id="addCourseBtn" class="btn-primary" style="padding:10px 20px;font-size:12px;">+ Add</button>
+                    <button id="addCourseBtn" class="btn-primary" style="padding:10px 20px;font-size:12px;border-radius:40px;">+ Add</button>
                 </div>
                 <div id="coursesAccordionContainer"></div>
             </div>
@@ -1835,12 +2118,12 @@
                             </div>
                             <div class="form-row">
                                 <select id="docCourseSelect"></select>
-                                <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;">Price: FREE</span>
+                                <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:12px;font-weight:600;color:#d4952a;display:flex;align-items:center;white-space:nowrap;">Price: FREE</span>
                             </div>
                             <div class="form-row">
                                 <select id="docSubfolderSelect"></select>
                                 <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:11px;">Add</button>
+                                <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:6px 18px;font-size:12px;border-radius:40px;">Add</button>
                             </div>
                             <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
                             <div class="form-row">
@@ -1851,11 +2134,11 @@
                                 </div>
                             </div>
                             <div id="docTextGroup">
-                                <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:10px;font-size:12px;"><i class="fas fa-pen"></i> Open Full Editor</button>
+                                <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:10px;font-size:12px;border-radius:40px;"><i class="fas fa-pen"></i> Open Full Editor</button>
                                 <input type="hidden" id="docContentHidden">
                             </div>
                             <div id="docUploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
+                                <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:8px 18px;font-size:12px;border-radius:40px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
                                 <div class="upload-progress" id="docUploadProgress" style="margin-top:8px;">
                                     <div class="bar"><div class="fill" id="docProgressFill"></div></div>
                                     <span class="percent" id="docPercentText">0%</span>
@@ -1872,8 +2155,8 @@
                             </div>
                             <input type="hidden" id="docPriceHidden" value="0">
                             <div style="margin-top:12px;display:flex;gap:10px;">
-                                <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:11px;">PUBLISH DOC</button>
+                                <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;">Cancel</button>
+                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:12px;border-radius:40px;">PUBLISH DOC</button>
                             </div>
                         </form>
                     </div>
@@ -1924,21 +2207,21 @@
                 </div>
                 <div class="setting-row">
                     <span>Save Payment Numbers</span>
-                    <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:6px 16px;font-size:11px;"><i class="fas fa-save"></i> Save</button>
+                    <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:6px 16px;font-size:11px;border-radius:40px;"><i class="fas fa-save"></i> Save</button>
                 </div>
                 <div class="setting-row">
                     <span>Banned Users</span>
                     <span style="font-size:11px;color:#8b8fa3;">Scroll below</span>
                 </div>
                 <div id="bannedUsersList" style="margin-top:8px;"></div>
-                <button id="logoutBtn" class="btn-primary full" style="margin-top:16px;">Logout</button>
+                <button id="logoutBtn" class="btn-primary full" style="margin-top:16px;border-radius:40px;">Logout</button>
             </div>
         </div>
 
         <!-- ===== SUBFOLDER VIEW ===== -->
         <div id="subfolderViewSection" class="section">
             <div style="padding:0 0 4px 0;">
-                <button id="backFromSubfolderBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
+                <button id="backFromSubfolderBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
                 <h2 id="subfolderViewTitle" style="font-size:18px;font-weight:700;color:#1a1d28;margin:0 0 10px 0;">Subfolder</h2>
                 <div id="subfolderVideosContainer" class="video-grid"></div>
                 <h3 style="font-size:14px;font-weight:700;color:#1a1d28;margin:14px 0 8px 0;">Documents</h3>
@@ -1951,7 +2234,7 @@
             <div style="padding:0 0 4px 0;">
                 <div id="docFullContent"></div>
                 <div style="margin-top:14px;text-align:center;">
-                    <button id="backFromDocBtn" class="btn-outline" style="padding:8px 24px;font-size:12px;"><i class="fas fa-arrow-left"></i> Back to Docs</button>
+                    <button id="backFromDocBtn" class="btn-outline" style="padding:8px 24px;font-size:12px;border-radius:40px;"><i class="fas fa-arrow-left"></i> Back to Docs</button>
                 </div>
             </div>
         </div>
@@ -1960,8 +2243,8 @@
         <div id="docEditorPage" class="section">
             <div style="padding:0 0 4px 0;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-                    <button id="cancelDocEditorBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;"><i class="fas fa-times"></i> Cancel</button>
-                    <button id="doneDocEditorBtn" class="btn-primary" style="padding:8px 20px;font-size:12px;"><i class="fas fa-check"></i> Done</button>
+                    <button id="cancelDocEditorBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;"><i class="fas fa-times"></i> Cancel</button>
+                    <button id="doneDocEditorBtn" class="btn-primary" style="padding:8px 20px;font-size:12px;border-radius:40px;"><i class="fas fa-check"></i> Done</button>
                 </div>
                 <div id="fullPageEditor" style="background:#fff;border-radius:20px;padding:20px;min-height:55vh;border:1px solid #f0f0f5;outline:none;font-size:15px;line-height:1.8;box-shadow:0 2px 10px rgba(0,0,0,0.04);" contenteditable="true"></div>
             </div>
@@ -1988,7 +2271,7 @@
             <h3><i class="fas fa-user-circle"></i> User Profile</h3>
             <table id="userModalTable"></table>
             <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px;">
-                <button id="userModalBanBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;"><i class="fas fa-ban"></i> Toggle Ban</button>
+                <button id="userModalBanBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;"><i class="fas fa-ban"></i> Toggle Ban</button>
             </div>
         </div>
     </div>
@@ -2020,19 +2303,19 @@
                 </div>
                 <div class="form-row" style="align-items:center;">
                     <label style="font-weight:600;margin-right:6px;font-size:12px;">Price Type:</label>
-                    <select id="editPriceType" style="width:auto;font-size:12px;padding:5px 12px;">
+                    <select id="editPriceType" style="width:auto;font-size:12px;padding:5px 12px;border-radius:40px;border:1.5px solid #e5e8ed;">
                         <option value="free">Free</option>
                         <option value="paid">Paid</option>
                     </select>
-                    <input type="number" id="editPriceAmount" placeholder="Price ZMW" style="width:90px;font-size:12px;">
+                    <input type="number" id="editPriceAmount" placeholder="Price ZMW" style="width:90px;font-size:12px;padding:8px 12px;border-radius:40px;border:1.5px solid #e5e8ed;">
                 </div>
                 <textarea id="editDescription" rows="2" placeholder="Description"></textarea>
                 <div id="editThumbnailGroup">
                     <input type="url" id="editThumbnailUrl" placeholder="Thumbnail URL">
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-                    <button type="button" id="cancelEditBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;">Cancel</button>
-                    <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:12px;"><i class="fas fa-check"></i> Save</button>
+                    <button type="button" id="cancelEditBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;border-radius:40px;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:12px;border-radius:40px;"><i class="fas fa-check"></i> Save</button>
                 </div>
             </form>
         </div>
@@ -3336,7 +3619,7 @@
             container.innerHTML = bannedUsers.map(u => `
             <div style="display:flex;justify-content:space-between;padding:8px 0;align-items:center;">
                 <span>${escapeHtml(u.email)}</span>
-                <button data-uid="${u.uid}" class="btn-outline" style="padding:4px 14px;font-size:10px;">Unban</button>
+                <button data-uid="${u.uid}" class="btn-outline" style="padding:4px 14px;font-size:10px;border-radius:40px;">Unban</button>
             </div>`).join('') || '<span style="color:#8b8fa3;font-size:12px;">No banned users</span>';
             document.querySelectorAll('.btn-outline[data-uid]').forEach(b => b.addEventListener('click', async () => {
                 await remove(ref(db, `bannedUsers/${b.dataset.uid}`));
@@ -3376,7 +3659,7 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — White pill nav with thin orange border, yellow/orange icons, everything scrolls properly, enhanced form styling.');
+        console.log('✅ UTOM Admin — White pill nav with thin orange border, yellow/orange icons, everything scrolls up above nav, persistent player, documents view (not download).');
     </script>
 </body>
 </html>
