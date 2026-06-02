@@ -43,7 +43,8 @@
         /* ===== FIXED SCROLLING — CRITICAL FIX ===== */
         .app-content {
             flex: 1 1 auto;
-            overflow-y: scroll !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
             height: 100%;
             min-height: 0;
             max-height: 100%;
@@ -1487,7 +1488,7 @@
             pointer-events: none;
         }
 
-        /* ===== DOC FULL PAGE - IMPROVED VIEWER ===== */
+        /* ===== DOC FULL PAGE — ENHANCED VIEWER ===== */
         #docFullContent {
             width: 100%;
             min-height: 60vh;
@@ -2727,7 +2728,7 @@
         }
 
         // =================================================================
-        // IMPROVED DOCUMENT VIEWER — Supports PDF, Excel, Word & more
+        // ENHANCED DOCUMENT VIEWER — PDF, Word, Excel, PowerPoint & more
         // =================================================================
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -2753,7 +2754,7 @@
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 const fileExt = fileExtension || '';
 
-                // Common office document extensions
+                // Detect file types
                 const isWord = ['doc', 'docx'].includes(fileExt);
                 const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
                 const isPdf = ['pdf'].includes(fileExt);
@@ -2761,17 +2762,27 @@
                 const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
                 const isText = ['txt', 'rtf', 'md'].includes(fileExt);
 
-                // Google Docs viewer works for PDF, Word, Excel, PowerPoint
+                // Google Docs Viewer — works for PDF, Word, Excel, PowerPoint
                 const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
 
+                // File type badge and toolbar
+                let fileTypeLabel = fileExt.toUpperCase();
+                if (isWord) fileTypeLabel = '📝 Word';
+                else if (isExcel) fileTypeLabel = '📊 Excel';
+                else if (isPdf) fileTypeLabel = '📄 PDF';
+                else if (isPowerpoint) fileTypeLabel = '📊 PowerPoint';
+                else if (isImage) fileTypeLabel = '🖼️ Image';
+                else if (isText) fileTypeLabel = '📃 Text';
+                else fileTypeLabel = '📎 File';
+
                 html += `<div class="doc-viewer-toolbar">
-                    <span class="file-badge"><i class="fas fa-file"></i> ${fileExt.toUpperCase()}</span>
+                    <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
                     <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
                     <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
                     <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
                 </div>`;
 
-                // PDF: embed with fallback
+                // PDF: embed + fallback
                 if (isPdf) {
                     html += `
                         <embed src="${doc.docUrl}" type="application/pdf" width="100%" height="550px" style="border:none;border-radius:12px;background:#f5f6f8;" />
@@ -2782,7 +2793,7 @@
                         </div>
                     `;
                 }
-                // Word / Excel / PowerPoint: use Google Docs Viewer (most reliable)
+                // Word / Excel / PowerPoint: Google Docs Viewer (most reliable) + fallback
                 else if (isWord || isExcel || isPowerpoint) {
                     html += `
                         <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
@@ -2812,10 +2823,10 @@
                         </div>
                     `;
                 }
-                // Other file types: iframe + download
+                // Other file types: try Google Viewer, then fallback
                 else {
                     html += `
-                        <iframe src="${doc.docUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
+                        <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
                         <div class="doc-viewer-fallback">
                             <i class="fas fa-info-circle"></i> 
                             If the file doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
@@ -3629,7 +3640,7 @@
             // Force scroll after render
             setTimeout(() => {
                 const el = document.querySelector('.app-content');
-                if (el) el.style.overflowY = 'scroll';
+                if (el) el.style.overflowY = 'auto';
             }, 100);
         }
 
@@ -3640,8 +3651,8 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content height:100%, overflow-y:scroll');
-        console.log('✅ UTOM Admin — DOC VIEWER: Now supports PDF, Excel, Word, PowerPoint, Images & more!');
+        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content height:100%, overflow-y:auto');
+        console.log('✅ UTOM Admin — DOC VIEWER: Now supports PDF, Word, Excel, PowerPoint & more!');
     </script>
 </body>
 </html>
