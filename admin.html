@@ -1487,6 +1487,80 @@
             pointer-events: none;
         }
 
+        /* ===== DOC FULL PAGE - IMPROVED VIEWER ===== */
+        #docFullContent {
+            width: 100%;
+            min-height: 60vh;
+        }
+        #docFullContent embed,
+        #docFullContent iframe {
+            width: 100%;
+            min-height: 550px;
+            border: none;
+            border-radius: 12px;
+            background: #f5f6f8;
+        }
+        .doc-viewer-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 14px 0 10px 0;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0f0f5;
+            align-items: center;
+        }
+        .doc-viewer-toolbar .file-badge {
+            background: #f5f6f8;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #5f6377;
+        }
+        .doc-viewer-toolbar .file-badge i {
+            margin-right: 4px;
+            color: #d4952a;
+        }
+        .doc-viewer-toolbar .btn-download {
+            background: #f5b042;
+            color: #fff;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .doc-viewer-toolbar .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+        }
+        .doc-viewer-fallback {
+            margin-top: 8px;
+            padding: 10px 16px;
+            background: #fff8ed;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #5f6377;
+            text-align: center;
+            border: 1px solid #f0e0c8;
+        }
+        .doc-viewer-fallback a {
+            color: #d4952a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .doc-viewer-fallback a:hover {
+            text-decoration: underline;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 520px) {
             .app-content {
@@ -1609,6 +1683,10 @@
             }
             .doc-item .doc-snippet {
                 font-size: 10px;
+            }
+            #docFullContent embed,
+            #docFullContent iframe {
+                min-height: 350px;
             }
         }
 
@@ -2648,10 +2726,15 @@
             sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
         }
 
+        // =================================================================
+        // IMPROVED DOCUMENT VIEWER — Supports PDF, Excel, Word & more
+        // =================================================================
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById('docFullPage').classList.add('active');
             const content = document.getElementById('docFullContent');
+
+            // Build document header
             let html = `
                 <div style="margin-bottom:18px;">
                     <h1 style="font-size:22px;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
@@ -2663,32 +2746,101 @@
                     </div>
                     ${doc.description ? `<div style="margin-top:10px;padding:12px 16px;background:#fff8ed;border-radius:14px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
                 </div>
-                <div style="background:transparent !important;box-shadow:none !important;border:none !important;border-radius:0 !important;padding:0 !important;min-height:350px;">
             `;
+
+            // Document viewer
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                if (['pdf'].includes(fileExtension)) {
-                    html += `<embed src="${doc.docUrl}" type="application/pdf" width="100%" height="520px" style="border:none;border-radius:12px;background:#f5f6f8;" />`;
-                    html +=
-                        `<div style="margin-top:10px;text-align:center;font-size:12px;color:#8b8fa3;">If PDF doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#f5b042;">click here to open</a></div>`;
-                } else if (['doc', 'docx'].includes(fileExtension)) {
-                    const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
-                    html +=
-                        `<iframe src="${viewerUrl}" style="width:100%;min-height:520px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
-                    html +=
-                        `<div style="margin-top:10px;text-align:center;font-size:12px;color:#8b8fa3;">If document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#f5b042;">click here to open</a></div>`;
-                } else {
-                    html +=
-                        `<iframe src="${doc.docUrl}" style="width:100%;min-height:520px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>`;
+                const fileExt = fileExtension || '';
+
+                // Common office document extensions
+                const isWord = ['doc', 'docx'].includes(fileExt);
+                const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
+                const isPdf = ['pdf'].includes(fileExt);
+                const isPowerpoint = ['ppt', 'pptx'].includes(fileExt);
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
+                const isText = ['txt', 'rtf', 'md'].includes(fileExt);
+
+                // Google Docs viewer works for PDF, Word, Excel, PowerPoint
+                const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
+
+                html += `<div class="doc-viewer-toolbar">
+                    <span class="file-badge"><i class="fas fa-file"></i> ${fileExt.toUpperCase()}</span>
+                    <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
+                    <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
+                    <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
+                </div>`;
+
+                // PDF: embed with fallback
+                if (isPdf) {
+                    html += `
+                        <embed src="${doc.docUrl}" type="application/pdf" width="100%" height="550px" style="border:none;border-radius:12px;background:#f5f6f8;" />
+                        <div class="doc-viewer-fallback">
+                            <i class="fas fa-info-circle"></i> 
+                            If the PDF doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                            or <a href="${doc.docUrl}" download>download it</a>.
+                        </div>
+                    `;
+                }
+                // Word / Excel / PowerPoint: use Google Docs Viewer (most reliable)
+                else if (isWord || isExcel || isPowerpoint) {
+                    html += `
+                        <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
+                        <div class="doc-viewer-fallback">
+                            <i class="fas fa-info-circle"></i> 
+                            If the document doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                            or <a href="${doc.docUrl}" download>download it</a>.
+                        </div>
+                    `;
+                }
+                // Images: display directly
+                else if (isImage) {
+                    html += `
+                        <div style="background:#f5f6f8;border-radius:12px;padding:20px;text-align:center;">
+                            <img src="${doc.docUrl}" style="max-width:100%;max-height:600px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.08);" alt="${escapeHtml(doc.title)}" />
+                        </div>
+                    `;
+                }
+                // Text files: embed or display
+                else if (isText) {
+                    html += `
+                        <iframe src="${doc.docUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
+                        <div class="doc-viewer-fallback">
+                            <i class="fas fa-info-circle"></i> 
+                            If the file doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                            or <a href="${doc.docUrl}" download>download it</a>.
+                        </div>
+                    `;
+                }
+                // Other file types: iframe + download
+                else {
+                    html += `
+                        <iframe src="${doc.docUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
+                        <div class="doc-viewer-fallback">
+                            <i class="fas fa-info-circle"></i> 
+                            If the file doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                            or <a href="${doc.docUrl}" download>download it</a>.
+                        </div>
+                    `;
                 }
             } else if (doc.content) {
-                html += `<div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:20px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">${doc.content}</div>`;
+                // Text content (written in editor)
+                html += `
+                    <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:20px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+                        ${doc.content}
+                    </div>
+                `;
             } else {
-                html +=
-                    `<div style="text-align:center;padding:48px;color:#8b8fa3;font-size:14px;">📄 No content available for this document.</div>`;
+                html += `
+                    <div style="text-align:center;padding:48px;color:#8b8fa3;font-size:14px;">
+                        <i class="fas fa-file-alt" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.3;"></i>
+                        No content available for this document.
+                    </div>
+                `;
             }
-            html += `</div>`;
+
             content.innerHTML = html;
+            // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
@@ -2969,7 +3121,7 @@
                     resourceType: isVideo ? 'video' : 'auto',
                     clientAllowedFormats: isVideo ? ['mp4', 'mov', 'avi',
                         'webm'
-                    ] : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf'],
+                    ] : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'csv', 'md'],
                     maxFiles: 1
                 };
                 cloudinary.openUploadWidget(options, (err, res) => {
@@ -3489,6 +3641,7 @@
         }
 
         console.log('✅ UTOM Admin — SCROLL FIXED: .app-content height:100%, overflow-y:scroll');
+        console.log('✅ UTOM Admin — DOC VIEWER: Now supports PDF, Excel, Word, PowerPoint, Images & more!');
     </script>
 </body>
 </html>
