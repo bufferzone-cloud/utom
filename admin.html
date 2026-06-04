@@ -45,15 +45,15 @@
             flex: 1 1 auto;
             overflow-y: auto !important;
             overflow-x: hidden;
-            height: 100%;
             min-height: 0;
-            max-height: 100%;
-            padding: 0 16px 170px 16px; /* increased bottom padding so content clears nav */
+            padding: 0 16px 160px 16px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             position: relative;
             display: block;
             width: 100%;
+            height: auto;
+            max-height: none;
         }
 
         .app-content::-webkit-scrollbar {
@@ -1542,32 +1542,48 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
         }
-
-        /* ===== DOC VIEWER CLOSE BUTTON ===== */
-        .doc-close-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        .doc-viewer-toolbar .btn-close-doc {
             background: #e74c3c;
             color: #fff;
             border: none;
             padding: 6px 18px;
             border-radius: 30px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             margin-left: auto;
         }
-        .doc-close-btn:hover {
-            background: #c0392b;
-            transform: scale(1.05);
+        .doc-viewer-toolbar .btn-close-doc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+        }
+        .doc-viewer-fallback {
+            margin-top: 8px;
+            padding: 10px 16px;
+            background: #fff8ed;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #5f6377;
+            text-align: center;
+            border: 1px solid #f0e0c8;
+        }
+        .doc-viewer-fallback a {
+            color: #d4952a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .doc-viewer-fallback a:hover {
+            text-decoration: underline;
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 520px) {
             .app-content {
-                padding: 0 12px 150px 12px;
+                padding: 0 12px 140px 12px;
             }
             .bottom-nav {
                 height: 58px;
@@ -2729,31 +2745,28 @@
         }
 
         // =================================================================
-        // ENHANCED DOCUMENT VIEWER — ALL DOCS VIA GOOGLE DOCS VIEWER (including PDF)
+        // ENHANCED DOCUMENT VIEWER — ALL DOCS VIA GOOGLE DOCS VIEWER
         // =================================================================
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById('docFullPage').classList.add('active');
             const content = document.getElementById('docFullContent');
 
-            // Build document header with a prominent close button
+            // Build document header
             let html = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;">
-                    <div>
-                        <h1 style="font-size:22px;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
-                        <div style="color:#8b8fa3;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;">
-                            <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
-                            <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
-                            <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
-                            <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
-                        </div>
-                        ${doc.description ? `<div style="margin-top:10px;padding:12px 16px;background:#fff8ed;border-radius:14px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
+                <div style="margin-bottom:18px;">
+                    <h1 style="font-size:22px;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
+                    <div style="color:#8b8fa3;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;">
+                        <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
+                        <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
+                        <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
+                        <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
                     </div>
-                    <button class="doc-close-btn" id="docCloseBtn"><i class="fas fa-times"></i> Close</button>
+                    ${doc.description ? `<div style="margin-top:10px;padding:12px 16px;background:#fff8ed;border-radius:14px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
                 </div>
             `;
 
-            // Document viewer — use Google Docs Viewer for ALL file types, including PDF
+            // Document viewer — use Google Docs Viewer for ALL file types
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 const fileExt = fileExtension || '';
@@ -2782,17 +2795,18 @@
                 html += `<div class="doc-viewer-toolbar">
                     <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
                     <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
-                    <a href="${doc.docUrl}" target="_blank" class="btn-download" style="text-decoration:none;background:#f5b042;color:#fff;padding:6px 18px;border-radius:30px;font-weight:700;font-size:12px;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-external-link-alt"></i> Open in new tab</a>
-                    <a href="${doc.docUrl}" download class="btn-download" style="text-decoration:none;background:#2ecc71;color:#fff;padding:6px 18px;border-radius:30px;font-weight:700;font-size:12px;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> Download</a>
+                    <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
+                    <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
+                    <button class="btn-close-doc" id="closeDocViewerBtn"><i class="fas fa-times"></i> Close</button>
                 </div>`;
 
                 // Use Google Docs Viewer for all documents (PDF, Word, Excel, PowerPoint, etc.)
                 html += `
                     <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
-                    <div class="doc-viewer-fallback" style="margin-top:8px;padding:10px 16px;background:#fff8ed;border-radius:30px;font-size:12px;color:#5f6377;text-align:center;border:1px solid #f0e0c8;">
+                    <div class="doc-viewer-fallback">
                         <i class="fas fa-info-circle"></i> 
-                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;text-decoration:none;">click here to open it directly</a> 
-                        or <a href="${doc.docUrl}" download style="color:#d4952a;font-weight:600;text-decoration:none;">download it</a>.
+                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                        or <a href="${doc.docUrl}" download>download it</a>.
                     </div>
                 `;
             } else if (doc.content) {
@@ -2801,6 +2815,9 @@
                     <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:20px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
                         ${doc.content}
                     </div>
+                    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+                        <button class="btn-close-doc" id="closeDocViewerBtn" style="background:#e74c3c;color:#fff;border:none;padding:8px 24px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;"><i class="fas fa-times"></i> Close</button>
+                    </div>
                 `;
             } else {
                 html += `
@@ -2808,20 +2825,21 @@
                         <i class="fas fa-file-alt" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.3;"></i>
                         No content available for this document.
                     </div>
+                    <div style="margin-top:16px;display:flex;justify-content:center;">
+                        <button class="btn-close-doc" id="closeDocViewerBtn" style="background:#e74c3c;color:#fff;border:none;padding:8px 24px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;"><i class="fas fa-times"></i> Close</button>
+                    </div>
                 `;
             }
 
             content.innerHTML = html;
 
-            // Attach close button event
-            document.getElementById('docCloseBtn').addEventListener('click', () => {
-                document.querySelector('.nav-item[data-section="docs"]').click();
-            });
-
-            // Also attach the existing back button
-            document.getElementById('backFromDocBtn').addEventListener('click', () => {
-                document.querySelector('.nav-item[data-section="docs"]').click();
-            });
+            // Close button handler
+            const closeBtn = document.getElementById('closeDocViewerBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    document.querySelector('.nav-item[data-section="docs"]').click();
+                });
+            }
 
             // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
@@ -3623,8 +3641,8 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content height:100%, overflow-y:auto, bottom padding increased');
-        console.log('✅ UTOM Admin — DOC VIEWER: All documents (including PDF) open via Google Docs Viewer with a Close button');
+        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content flex:1, overflow-y:auto, padding-bottom:160px');
+        console.log('✅ UTOM Admin — DOC VIEWER: All documents open via Google Docs Viewer with Close button');
     </script>
 </body>
 </html>
