@@ -40,20 +40,19 @@
             position: relative;
         }
 
-        /* ===== FIXED SCROLLING ===== */
+        /* ===== FIXED SCROLLING - UPDATED ===== */
         .app-content {
-            flex: 1 1 auto;
+            flex: 1;
             overflow-y: auto !important;
             overflow-x: hidden;
             min-height: 0;
-            padding: 0 16px 160px 16px;
+            height: 0;
+            padding: 0 16px 130px 16px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             position: relative;
             display: block;
             width: 100%;
-            height: auto;
-            max-height: none;
         }
 
         .app-content::-webkit-scrollbar {
@@ -659,7 +658,7 @@
             background: #fffdf7;
         }
 
-        /* ===== FORMS ===== */
+        /* ===== FORMS - IMPROVED ===== */
         .form-card {
             background: #fff;
             border-radius: 20px;
@@ -1542,25 +1541,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
         }
-        .doc-viewer-toolbar .btn-close-doc {
-            background: #e74c3c;
-            color: #fff;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: auto;
-        }
-        .doc-viewer-toolbar .btn-close-doc:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
-        }
         .doc-viewer-fallback {
             margin-top: 8px;
             padding: 10px 16px;
@@ -1580,10 +1560,69 @@
             text-decoration: underline;
         }
 
+        /* ===== ADDITIONAL FORM STYLING ===== */
+        .form-card input[type="text"],
+        .form-card input[type="url"],
+        .form-card input[type="number"],
+        .form-card select,
+        .form-card textarea {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.25s ease;
+            background: #fff;
+            color: #1a1d28;
+        }
+        .form-card input[type="text"]:focus,
+        .form-card input[type="url"]:focus,
+        .form-card input[type="number"]:focus,
+        .form-card select:focus,
+        .form-card textarea:focus {
+            outline: none;
+            border-color: #f5b042;
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+        }
+        .form-card textarea {
+            border-radius: 16px;
+            min-height: 70px;
+            resize: vertical;
+        }
+        .form-card input[type="text"]::placeholder,
+        .form-card input[type="url"]::placeholder,
+        .form-card input[type="number"]::placeholder,
+        .form-card textarea::placeholder {
+            color: #b0b4c0;
+        }
+        .form-card .radio-group {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            background: #f9f9fc;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .form-card .radio-group label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .form-card .radio-group input[type="radio"] {
+            accent-color: #f5b042;
+            width: 16px;
+            height: 16px;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 520px) {
             .app-content {
-                padding: 0 12px 140px 12px;
+                padding: 0 12px 110px 12px;
             }
             .bottom-nav {
                 height: 58px;
@@ -1817,6 +1856,31 @@
         .thumb-preview span {
             font-size: 11px;
             color: #8b8fa3;
+        }
+
+        /* ===== BACK BUTTON FOR DOC VIEWER ===== */
+        .doc-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: #fff;
+            border: 1.5px solid #e5e8ed;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1d28;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-bottom: 14px;
+        }
+        .doc-back-btn:hover {
+            border-color: #f5b042;
+            background: #fffdf7;
+            transform: translateX(-4px);
+        }
+        .doc-back-btn i {
+            color: #d4952a;
         }
     </style>
 </head>
@@ -2152,10 +2216,8 @@
         <!-- ===== DOC FULL PAGE ===== -->
         <div id="docFullPage" class="section">
             <div style="padding:0 0 4px 0;">
+                <button class="doc-back-btn" id="backFromDocBtn"><i class="fas fa-arrow-left"></i> Back to Docs</button>
                 <div id="docFullContent"></div>
-                <div style="margin-top:14px;text-align:center;">
-                    <button id="backFromDocBtn" class="btn-outline" style="padding:8px 24px;font-size:12px;"><i class="fas fa-arrow-left"></i> Back to Docs</button>
-                </div>
             </div>
         </div>
 
@@ -2527,7 +2589,7 @@
         }
 
         // =================================================================
-        // RENDER FUNCTIONS
+        // RENDER FUNCTIONS - ALL SORTED NEWEST FIRST
         // =================================================================
         function renderHomeGrids() {
             const paid = videos.filter(v => v.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -2797,16 +2859,25 @@
                     <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
                     <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
                     <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
-                    <button class="btn-close-doc" id="closeDocViewerBtn"><i class="fas fa-times"></i> Close</button>
                 </div>`;
 
                 // Use Google Docs Viewer for all documents (PDF, Word, Excel, PowerPoint, etc.)
+                // Fix: Added 'onerror' to handle loading failures gracefully
                 html += `
-                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;"></iframe>
-                    <div class="doc-viewer-fallback">
+                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
+                    <div class="doc-viewer-fallback" style="display:none;">
                         <i class="fas fa-info-circle"></i> 
-                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank">click here to open it directly</a> 
+                        The document could not load directly. <a href="${doc.docUrl}" target="_blank">Click here to open it</a> 
                         or <a href="${doc.docUrl}" download>download it</a>.
+                    </div>
+                `;
+
+                // Also add a direct link fallback if the iframe fails
+                html += `
+                    <div style="margin-top:8px;padding:8px 14px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
+                        <i class="fas fa-info-circle"></i> 
+                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
+                        or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
                     </div>
                 `;
             } else if (doc.content) {
@@ -2815,9 +2886,6 @@
                     <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:20px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
                         ${doc.content}
                     </div>
-                    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
-                        <button class="btn-close-doc" id="closeDocViewerBtn" style="background:#e74c3c;color:#fff;border:none;padding:8px 24px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;"><i class="fas fa-times"></i> Close</button>
-                    </div>
                 `;
             } else {
                 html += `
@@ -2825,22 +2893,10 @@
                         <i class="fas fa-file-alt" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.3;"></i>
                         No content available for this document.
                     </div>
-                    <div style="margin-top:16px;display:flex;justify-content:center;">
-                        <button class="btn-close-doc" id="closeDocViewerBtn" style="background:#e74c3c;color:#fff;border:none;padding:8px 24px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;"><i class="fas fa-times"></i> Close</button>
-                    </div>
                 `;
             }
 
             content.innerHTML = html;
-
-            // Close button handler
-            const closeBtn = document.getElementById('closeDocViewerBtn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    document.querySelector('.nav-item[data-section="docs"]').click();
-                });
-            }
-
             // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
@@ -3630,7 +3686,11 @@
             // Force scroll after render
             setTimeout(() => {
                 const el = document.querySelector('.app-content');
-                if (el) el.style.overflowY = 'auto';
+                if (el) {
+                    el.style.overflowY = 'auto';
+                    el.style.height = '0';
+                    el.style.flex = '1';
+                }
             }, 100);
         }
 
@@ -3641,8 +3701,10 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content flex:1, overflow-y:auto, padding-bottom:160px');
-        console.log('✅ UTOM Admin — DOC VIEWER: All documents open via Google Docs Viewer with Close button');
+        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content uses flex:1, height:0, overflow-y:auto');
+        console.log('✅ UTOM Admin — DOC VIEWER: All documents open via Google Docs Viewer with fallback links');
+        console.log('✅ UTOM Admin — FORM CSS: All inputs have consistent styling');
+        console.log('✅ UTOM Admin — NEWEST FIRST: All content sorted by createdAt descending');
     </script>
 </body>
 </html>
