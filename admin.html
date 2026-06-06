@@ -41,124 +41,12 @@
             position: relative;
         }
 
-        /* ===== SCROLLING CONTENT — FLEX:1, NO HEIGHT, AUTO OVERFLOW ===== */
-        .app-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-height: 0;
-            padding: 0 18px 130px 18px;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            width: 100%;
-            display: block;
-        }
-
-        .app-content::-webkit-scrollbar {
-            width: 4px;
-        }
-        .app-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .app-content::-webkit-scrollbar-thumb {
-            background: rgba(245, 176, 66, 0.35);
-            border-radius: 20px;
-        }
-
-        /* ===== FLOATING PILL NAV — GLASS, CURVED, SHADOW ===== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 92%;
-            max-width: 440px;
-            height: 68px;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 40px;
-            padding: 6px 12px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 500;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
-            flex-shrink: 0;
-            pointer-events: auto;
-            border: 1.5px solid rgba(245, 176, 66, 0.20);
-            transition: all 0.3s ease;
-        }
-        .bottom-nav:hover {
-            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            color: #b0b4c0;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            flex: 1;
-            background: none;
-            border: none;
-            font-size: 6px;
-            gap: 2px;
-            user-select: none;
-            padding: 6px 0;
-            border-radius: 30px;
-            position: relative;
-        }
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 1px;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: #b0b4c0;
-        }
-        .nav-item span {
-            font-size: 7px;
-            font-weight: 600;
-            letter-spacing: 0.6px;
-            transition: all 0.3s ease;
-            color: #b0b4c0;
-        }
-        .nav-item.active i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            transform: scale(1.12) translateY(-2px);
-        }
-        .nav-item.active span {
-            color: #f5b042;
-            font-weight: 700;
-        }
-        .nav-item:active {
-            transform: scale(0.90);
-        }
-        .nav-item::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) scaleX(0);
-            width: 20px;
-            height: 3px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
-            transition: transform 0.3s ease;
-        }
-        .nav-item.active::after {
-            transform: translateX(-50%) scaleX(1);
-        }
-
-        /* ===== HEADER ===== */
+        /* ===== HEADER — inside scrollable content but at top ===== */
         .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 0 18px 0;
+            padding: 16px 18px 14px 18px;
             background: #f0f1f5;
             flex-shrink: 0;
             position: relative;
@@ -250,6 +138,205 @@
             font-size: 16px;
         }
 
+        /* ===== PERSISTENT PLAYER — STICKY TOP, NO SCROLL ===== */
+        .persistent-player {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            display: none;
+            margin: 0;
+            background: #f0f1f5;
+            padding: 0 18px 6px 18px;
+            flex-shrink: 0;
+        }
+        .player-container {
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .player-container video,
+        .player-container iframe {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: 0;
+            background: black;
+        }
+        .player-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.70);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 22;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .player-close-btn:hover {
+            background: rgba(231, 76, 60, 0.85);
+            transform: scale(1.04);
+        }
+        .player-fullscreen-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 22;
+            font-size: 1rem;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+        }
+        .player-fullscreen-btn:hover {
+            background: rgba(245, 176, 66, 0.70);
+            transform: scale(1.08);
+            border-color: #f5b042;
+        }
+        .yt-logo-cover {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 60px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 21;
+            pointer-events: none;
+        }
+
+        /* ===== SCROLLING CONTENT — FLEX:1, AUTO OVERFLOW ===== */
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            padding: 0 18px 130px 18px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            width: 100%;
+            display: block;
+        }
+
+        .app-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .app-content::-webkit-scrollbar-thumb {
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
+        }
+
+        /* ===== BOTTOM NAV — FIXED, FLOATING, NO SCROLL ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 440px;
+            height: 68px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 40px;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 500;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
+            flex-shrink: 0;
+            pointer-events: auto;
+            border: 1.5px solid rgba(245, 176, 66, 0.20);
+            transition: all 0.3s ease;
+        }
+        .bottom-nav:hover {
+            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            color: #b0b4c0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex: 1;
+            background: none;
+            border: none;
+            font-size: 6px;
+            gap: 2px;
+            user-select: none;
+            padding: 6px 0;
+            border-radius: 30px;
+            position: relative;
+        }
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #b0b4c0;
+        }
+        .nav-item span {
+            font-size: 7px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            transition: all 0.3s ease;
+            color: #b0b4c0;
+        }
+        .nav-item.active i {
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.12) translateY(-2px);
+        }
+        .nav-item.active span {
+            color: #f5b042;
+            font-weight: 700;
+        }
+        .nav-item:active {
+            transform: scale(0.90);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            transition: transform 0.3s ease;
+        }
+        .nav-item.active::after {
+            transform: translateX(-50%) scaleX(1);
+        }
+
         /* ===== SECTIONS ===== */
         .section {
             display: none;
@@ -271,7 +358,7 @@
             }
         }
 
-        /* ===== DASHBOARD CARDS — FLOATING, CURVED, GLASS ===== */
+        /* ===== DASHBOARD CARDS ===== */
         .dash-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -330,17 +417,6 @@
             color: #b0b4c0;
             margin-top: 2px;
             font-weight: 500;
-        }
-        .dash-card .dash-trend {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 12px;
-            border-radius: 30px;
-            background: rgba(46, 204, 113, 0.10);
-            color: #2ecc71;
         }
 
         /* ===== RECENT POSTS ===== */
@@ -707,7 +783,7 @@
             box-shadow: 0 8px 24px rgba(245, 176, 66, 0.08);
         }
 
-        /* ===== FORMS — FLOATING, CURVED, CLEAN ===== */
+        /* ===== FORMS ===== */
         .form-card {
             background: #fff;
             border-radius: 24px;
@@ -979,32 +1055,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.8);
         }
-        .bank-statement .stmt-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #f5f5f8;
-            font-size: 13px;
-        }
-        .bank-statement .stmt-row:last-child {
-            border-bottom: none;
-        }
-        .bank-statement .stmt-row .stmt-label {
-            color: #8b8fa3;
-        }
-        .bank-statement .stmt-row .stmt-value {
-            font-weight: 600;
-            color: #1a1d28;
-        }
-        .bank-statement .stmt-row .stmt-value.approved {
-            color: #2ecc71;
-        }
-        .bank-statement .stmt-row .stmt-value.pending {
-            color: #f5b042;
-        }
-        .bank-statement .stmt-row .stmt-value.rejected {
-            color: #e74c3c;
-        }
         .filter-pills {
             display: flex;
             gap: 12px;
@@ -1185,7 +1235,7 @@
             transform: scale(1.05);
         }
 
-        /* ===== MODALS — FLOATING, CURVED, GLASS ===== */
+        /* ===== MODALS ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -1208,7 +1258,7 @@
             background: #fff;
             border-radius: 28px;
             width: 100%;
-            max-width: 460px;
+            max-width: 480px;
             max-height: 85vh;
             overflow-y: auto;
             padding: 28px 26px;
@@ -1331,8 +1381,8 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -400px;
-            width: 400px;
+            left: -420px;
+            width: 420px;
             max-width: 90vw;
             height: 100%;
             background: #fff;
@@ -1490,228 +1540,6 @@
             }
         }
 
-        /* ===== PERSISTENT PLAYER — STICKY, FLOATING, CURVED ===== */
-        .persistent-player {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            display: none;
-            margin: 0 0 12px 0;
-            background: #f0f1f5;
-            padding: 0 4px;
-        }
-        .player-container {
-            background: #000;
-            border-radius: 24px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .player-container video,
-        .player-container iframe {
-            width: 100%;
-            height: 100%;
-            display: block;
-            border: 0;
-            background: black;
-        }
-        .player-close-btn {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            background: rgba(0, 0, 0, 0.70);
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            padding: 6px 16px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            z-index: 22;
-            font-weight: 600;
-            transition: all 0.25s ease;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .player-close-btn:hover {
-            background: rgba(231, 76, 60, 0.85);
-            transform: scale(1.04);
-        }
-        .player-fullscreen-btn {
-            position: absolute;
-            bottom: 16px;
-            right: 16px;
-            background: rgba(0, 0, 0, 0.65);
-            color: #fff;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 22;
-            font-size: 1rem;
-            transition: all 0.25s ease;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.10);
-        }
-        .player-fullscreen-btn:hover {
-            background: rgba(245, 176, 66, 0.70);
-            transform: scale(1.08);
-            border-color: #f5b042;
-        }
-        .yt-logo-cover {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 60px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 21;
-            pointer-events: none;
-        }
-
-        /* ===== DOC FULL PAGE — GOOGLE DOCS VIEWER ===== */
-        #docFullContent {
-            width: 100%;
-            min-height: 60vh;
-        }
-        #docFullContent iframe {
-            width: 100%;
-            min-height: 550px;
-            border: none;
-            border-radius: 16px;
-            background: #f5f6f8;
-        }
-        .doc-viewer-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin: 14px 0 12px 0;
-            padding: 14px 20px;
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            align-items: center;
-        }
-        .doc-viewer-toolbar .file-badge {
-            background: #f5f6f8;
-            padding: 4px 16px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #5f6377;
-            border: 1px solid #eee;
-        }
-        .doc-viewer-toolbar .file-badge i {
-            margin-right: 4px;
-            color: #d4952a;
-        }
-        .doc-viewer-toolbar .btn-download {
-            background: #f5b042;
-            color: #fff;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.20);
-        }
-        .doc-viewer-toolbar .btn-download:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 28px rgba(245, 176, 66, 0.30);
-        }
-        .doc-viewer-fallback {
-            margin-top: 8px;
-            padding: 12px 18px;
-            background: #fff8ed;
-            border-radius: 30px;
-            font-size: 12px;
-            color: #5f6377;
-            text-align: center;
-            border: 1px solid #f0e0c8;
-        }
-        .doc-viewer-fallback a {
-            color: #d4952a;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        .doc-viewer-fallback a:hover {
-            text-decoration: underline;
-        }
-
-        /* ===== ADDITIONAL FORM STYLING ===== */
-        .form-card input[type="text"],
-        .form-card input[type="url"],
-        .form-card input[type="number"],
-        .form-card select,
-        .form-card textarea {
-            width: 100%;
-            padding: 12px 18px;
-            border-radius: 40px;
-            border: 1.5px solid #e5e8ed;
-            font-size: 12px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.25s ease;
-            background: #fafbfc;
-            color: #1a1d28;
-        }
-        .form-card input[type="text"]:focus,
-        .form-card input[type="url"]:focus,
-        .form-card input[type="number"]:focus,
-        .form-card select:focus,
-        .form-card textarea:focus {
-            outline: none;
-            border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
-            background: #fff;
-        }
-        .form-card textarea {
-            border-radius: 18px;
-            min-height: 80px;
-            resize: vertical;
-        }
-        .form-card input[type="text"]::placeholder,
-        .form-card input[type="url"]::placeholder,
-        .form-card input[type="number"]::placeholder,
-        .form-card textarea::placeholder {
-            color: #b0b4c0;
-        }
-        .form-card .radio-group {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            background: #f8f9fc;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 12px;
-            border: 1px solid #f0f1f5;
-        }
-        .form-card .radio-group label {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .form-card .radio-group input[type="radio"] {
-            accent-color: #f5b042;
-            width: 16px;
-            height: 16px;
-        }
-
         /* ===== UPLOAD PROGRESS ===== */
         .upload-progress {
             display: flex;
@@ -1796,7 +1624,80 @@
             font-weight: 500;
         }
 
-        /* ===== BACK BUTTON ===== */
+        /* ===== DOC VIEWER ===== */
+        #docFullContent {
+            width: 100%;
+            min-height: 60vh;
+        }
+        #docFullContent iframe {
+            width: 100%;
+            min-height: 550px;
+            border: none;
+            border-radius: 16px;
+            background: #f5f6f8;
+        }
+        .doc-viewer-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin: 14px 0 12px 0;
+            padding: 14px 20px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            align-items: center;
+        }
+        .doc-viewer-toolbar .file-badge {
+            background: #f5f6f8;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #5f6377;
+            border: 1px solid #eee;
+        }
+        .doc-viewer-toolbar .file-badge i {
+            margin-right: 4px;
+            color: #d4952a;
+        }
+        .doc-viewer-toolbar .btn-download {
+            background: #f5b042;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.20);
+        }
+        .doc-viewer-toolbar .btn-download:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(245, 176, 66, 0.30);
+        }
+        .doc-viewer-fallback {
+            margin-top: 8px;
+            padding: 12px 18px;
+            background: #fff8ed;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #5f6377;
+            text-align: center;
+            border: 1px solid #f0e0c8;
+        }
+        .doc-viewer-fallback a {
+            color: #d4952a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .doc-viewer-fallback a:hover {
+            text-decoration: underline;
+        }
         .doc-back-btn {
             display: inline-flex;
             align-items: center;
@@ -1951,6 +1852,9 @@
             .player-container {
                 border-radius: 18px;
             }
+            .persistent-player {
+                padding: 0 12px 6px 12px;
+            }
         }
 
         @media (max-width: 400px) {
@@ -1982,45 +1886,6 @@
                 font-size: 5px;
             }
         }
-
-        /* ===== EXTRA FLOATING TOUCHES ===== */
-        .floating-shadow {
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .floating-shadow:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.80);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-        }
-
-        /* Smooth scroll for the entire app */
-        .app-content {
-            scroll-behavior: smooth;
-        }
-
-        /* Ensure content scrolls behind nav */
-        .bottom-nav {
-            pointer-events: auto;
-        }
-        .app-content {
-            padding-bottom: 130px;
-        }
-
-        /* Player sticky fix */
-        .persistent-player {
-            z-index: 20;
-            position: sticky;
-            top: 0;
-        }
-        .header {
-            z-index: 10;
-            position: relative;
-        }
     </style>
 </head>
 <body>
@@ -2030,23 +1895,7 @@
         <!-- ===== TOAST CONTAINER ===== -->
         <div class="toast-container" id="toastContainer"></div>
 
-        <!-- ===== HEADER ===== -->
-        <div class="header">
-            <div class="header-left">
-                <div class="notif-bell" id="notifBell">
-                    <i class="fas fa-bell"></i>
-                    <span class="notif-badge" id="notifBadge">0</span>
-                </div>
-                <span class="header-title">UTOM</span>
-            </div>
-            <div class="header-right">
-                <div class="account-pill" id="accountQuickBtn">
-                    <i class="fas fa-user-circle"></i> Account
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== PERSISTENT PLAYER — STICKY & FLOATING ===== -->
+        <!-- ===== PERSISTENT PLAYER — STICKY TOP, NO SCROLL ===== -->
         <div id="persistentPlayer" class="persistent-player">
             <div class="player-container">
                 <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
@@ -2057,321 +1906,342 @@
             </div>
         </div>
 
-        <!-- ===== CONTENT SECTIONS ===== -->
+        <!-- ===== SCROLLABLE CONTENT ===== -->
+        <div class="app-content">
 
-        <!-- HOME -->
-        <div id="homeSection" class="section active">
-            <div style="padding:0 0 4px 0;">
-                <button id="bigPostBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
-                <div id="dynamicPostForm" style="display:none;margin-top:14px;">
-                    <div class="form-card">
-                        <h4><i class="fas fa-cloud-upload-alt"></i> Upload new video</h4>
-                        <form id="homePostForm">
-                            <div class="form-row">
-                                <input type="text" id="videoTitle" placeholder="Title *" required>
-                                <input type="text" id="instructorName" placeholder="Instructor *" required>
-                            </div>
-                            <div class="form-row">
-                                <select id="courseSelectHome"></select>
-                                <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
-                            </div>
-                            <div class="form-row">
-                                <select id="subfolderSelectHome"></select>
-                                <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
-                            </div>
-                            <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
-                            <div class="form-row">
-                                <div class="radio-group">
-                                    <label><input type="radio" name="videoSource" value="link" checked> Link</label>
-                                    <label><input type="radio" name="videoSource" value="upload"> Upload</label>
-                                </div>
-                            </div>
-                            <div id="linkGroup">
-                                <input type="url" id="videoUrlInput" placeholder="Video URL">
-                                <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:8px;">
-                            </div>
-                            <div id="uploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
-                                <div class="upload-progress" id="uploadProgressArea" style="margin-top:10px;">
-                                    <div class="bar"><div class="fill" id="uploadProgressFill"></div></div>
-                                    <span class="percent" id="uploadPercentText">0%</span>
-                                </div>
-                                <input type="hidden" id="cloudinaryVideoUrl">
-                                <div style="margin-top:12px;">
-                                    <label style="font-size:11px;font-weight:500;">Thumbnail frame (sec):</label>
-                                    <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:70px;display:inline-block;margin-left:8px;">
-                                    <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 16px;font-size:10px;">Generate</button>
-                                </div>
-                                <input type="hidden" id="generatedThumbnailUrl">
-                                <div class="thumb-preview" id="thumbnailPreviewContainer" style="display:none;">
-                                    <img id="thumbnailPreviewImg" src="" alt="thumbnail">
-                                    <span>Thumbnail preview</span>
-                                </div>
-                            </div>
-                            <input type="hidden" id="videoPriceHidden" value="0">
-                            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
-                                <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH</button>
-                            </div>
-                        </form>
+            <!-- ===== HEADER ===== -->
+            <div class="header">
+                <div class="header-left">
+                    <div class="notif-bell" id="notifBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notifBadge">0</span>
                     </div>
+                    <span class="header-title">UTOM</span>
                 </div>
-
-                <!-- Dashboard Cards -->
-                <div class="dash-grid" id="dashboardCards">
-                    <div class="dash-card">
-                        <div class="dash-glow"></div>
-                        <div class="dash-icon"><i class="fas fa-user-graduate"></i></div>
-                        <div class="dash-number" id="dashStudents">0</div>
-                        <div class="dash-label">Students</div>
+                <div class="header-right">
+                    <div class="account-pill" id="accountQuickBtn">
+                        <i class="fas fa-user-circle"></i> Account
                     </div>
-                    <div class="dash-card">
-                        <div class="dash-glow"></div>
-                        <div class="dash-icon"><i class="fas fa-book-open"></i></div>
-                        <div class="dash-number" id="dashCourses">0</div>
-                        <div class="dash-label">Courses</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="dash-glow"></div>
-                        <div class="dash-icon"><i class="fas fa-coins"></i></div>
-                        <div class="dash-number" id="dashApproved">ZMW 0</div>
-                        <div class="dash-label">Total Approved</div>
-                    </div>
-                    <div class="dash-card">
-                        <div class="dash-glow"></div>
-                        <div class="dash-icon"><i class="fas fa-clock"></i></div>
-                        <div class="dash-number" id="dashPending">ZMW 0</div>
-                        <div class="dash-label">Pending Payment</div>
-                        <div class="dash-sub" id="dashPendingCount">0 transactions</div>
-                    </div>
-                </div>
-
-                <!-- Recent Posts -->
-                <div style="padding:0 0 6px 0;">
-                    <h4 style="font-size:15px;font-weight:700;color:#1a1d28;display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-clock" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
-                        Recent Posts
-                    </h4>
-                </div>
-                <div class="recent-grid" id="recentPostsContainer">
-                    <div style="color:#8b8fa3;font-size:12px;padding:14px;grid-column:1/-1;text-align:center;">Loading...</div>
-                </div>
-
-                <!-- Video Sections -->
-                <div class="section-header">
-                    <i class="fas fa-crown"></i>
-                    <h3>Paid Videos</h3>
-                    <span class="badge" id="paidCount">0</span>
-                </div>
-                <div id="homePaidGrid" class="video-grid"></div>
-
-                <div class="section-header">
-                    <i class="fas fa-gift"></i>
-                    <h3>Free Videos</h3>
-                    <span class="badge" id="freeCount">0</span>
-                </div>
-                <div id="homeFreeGrid" class="video-grid"></div>
-
-                <div style="text-align:center;padding:12px;color:#8b8fa3;font-size:11px;border-top:1px solid #e8e8ed;margin-top:4px;">
-                    <span><i class="fas fa-video"></i> <span id="statVideos">0</span> videos · </span>
-                    <span><i class="fas fa-users"></i> <span id="statUsers">0</span> users · </span>
-                    <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
                 </div>
             </div>
-        </div>
 
-        <!-- VIDEOS -->
-        <div id="videosSection" class="section">
-            <div style="padding:0 0 4px 0;">
-                <div class="form-card" style="margin-bottom:14px;">
-                    <h2 style="font-size:16px;margin-bottom:10px;"><i class="fas fa-video"></i> Video Library</h2>
-                    <div class="form-row">
-                        <input type="text" id="searchVideoInput" placeholder="Search..." style="flex:2;">
-                        <select id="filterCourseSelect" style="flex:1;"><option value="all">All courses</option></select>
-                        <select id="filterPriceSelect" style="flex:1;">
-                            <option value="all">All</option>
+            <!-- ===== SECTIONS ===== -->
+
+            <!-- HOME -->
+            <div id="homeSection" class="section active">
+                <div style="padding:0 0 4px 0;">
+                    <button id="bigPostBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
+                    <div id="dynamicPostForm" style="display:none;margin-top:14px;">
+                        <div class="form-card">
+                            <h4><i class="fas fa-cloud-upload-alt"></i> Upload new video</h4>
+                            <form id="homePostForm">
+                                <div class="form-row">
+                                    <input type="text" id="videoTitle" placeholder="Title *" required>
+                                    <input type="text" id="instructorName" placeholder="Instructor *" required>
+                                </div>
+                                <div class="form-row">
+                                    <select id="courseSelectHome"></select>
+                                    <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
+                                </div>
+                                <div class="form-row">
+                                    <select id="subfolderSelectHome"></select>
+                                    <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
+                                    <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
+                                </div>
+                                <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
+                                <div class="form-row">
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="videoSource" value="link" checked> Link</label>
+                                        <label><input type="radio" name="videoSource" value="upload"> Upload</label>
+                                    </div>
+                                </div>
+                                <div id="linkGroup">
+                                    <input type="url" id="videoUrlInput" placeholder="Video URL">
+                                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:8px;">
+                                </div>
+                                <div id="uploadGroup" style="display:none;">
+                                    <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
+                                    <div class="upload-progress" id="uploadProgressArea" style="margin-top:10px;">
+                                        <div class="bar"><div class="fill" id="uploadProgressFill"></div></div>
+                                        <span class="percent" id="uploadPercentText">0%</span>
+                                    </div>
+                                    <input type="hidden" id="cloudinaryVideoUrl">
+                                    <div style="margin-top:12px;">
+                                        <label style="font-size:11px;font-weight:500;">Thumbnail frame (sec):</label>
+                                        <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:70px;display:inline-block;margin-left:8px;">
+                                        <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 16px;font-size:10px;">Generate</button>
+                                    </div>
+                                    <input type="hidden" id="generatedThumbnailUrl">
+                                    <div class="thumb-preview" id="thumbnailPreviewContainer" style="display:none;">
+                                        <img id="thumbnailPreviewImg" src="" alt="thumbnail">
+                                        <span>Thumbnail preview</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="videoPriceHidden" value="0">
+                                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
+                                    <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
+                                    <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Cards -->
+                    <div class="dash-grid" id="dashboardCards">
+                        <div class="dash-card">
+                            <div class="dash-glow"></div>
+                            <div class="dash-icon"><i class="fas fa-user-graduate"></i></div>
+                            <div class="dash-number" id="dashStudents">0</div>
+                            <div class="dash-label">Students</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="dash-glow"></div>
+                            <div class="dash-icon"><i class="fas fa-book-open"></i></div>
+                            <div class="dash-number" id="dashCourses">0</div>
+                            <div class="dash-label">Courses</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="dash-glow"></div>
+                            <div class="dash-icon"><i class="fas fa-coins"></i></div>
+                            <div class="dash-number" id="dashApproved">ZMW 0</div>
+                            <div class="dash-label">Total Approved</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="dash-glow"></div>
+                            <div class="dash-icon"><i class="fas fa-clock"></i></div>
+                            <div class="dash-number" id="dashPending">ZMW 0</div>
+                            <div class="dash-label">Pending Payment</div>
+                            <div class="dash-sub" id="dashPendingCount">0 transactions</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Posts -->
+                    <div style="padding:0 0 6px 0;">
+                        <h4 style="font-size:15px;font-weight:700;color:#1a1d28;display:flex;align-items:center;gap:10px;">
+                            <i class="fas fa-clock" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
+                            Recent Posts
+                        </h4>
+                    </div>
+                    <div class="recent-grid" id="recentPostsContainer">
+                        <div style="color:#8b8fa3;font-size:13px;padding:14px;grid-column:1/-1;text-align:center;">Loading...</div>
+                    </div>
+
+                    <!-- Video Sections -->
+                    <div class="section-header">
+                        <i class="fas fa-crown"></i>
+                        <h3>Paid Videos</h3>
+                        <span class="badge" id="paidCount">0</span>
+                    </div>
+                    <div id="homePaidGrid" class="video-grid"></div>
+
+                    <div class="section-header">
+                        <i class="fas fa-gift"></i>
+                        <h3>Free Videos</h3>
+                        <span class="badge" id="freeCount">0</span>
+                    </div>
+                    <div id="homeFreeGrid" class="video-grid"></div>
+
+                    <div style="text-align:center;padding:12px;color:#8b8fa3;font-size:11px;border-top:1px solid #e8e8ed;margin-top:4px;">
+                        <span><i class="fas fa-video"></i> <span id="statVideos">0</span> videos · </span>
+                        <span><i class="fas fa-users"></i> <span id="statUsers">0</span> users · </span>
+                        <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIDEOS -->
+            <div id="videosSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <div class="form-card" style="margin-bottom:14px;">
+                        <h2 style="font-size:16px;margin-bottom:10px;"><i class="fas fa-video"></i> Video Library</h2>
+                        <div class="form-row">
+                            <input type="text" id="searchVideoInput" placeholder="Search..." style="flex:2;">
+                            <select id="filterCourseSelect" style="flex:1;"><option value="all">All courses</option></select>
+                            <select id="filterPriceSelect" style="flex:1;">
+                                <option value="all">All</option>
+                                <option value="free">Free</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="postedVideosGrid" class="video-grid"></div>
+                </div>
+            </div>
+
+            <!-- USERS -->
+            <div id="usersSection" class="section">
+                <div class="form-card">
+                    <h3><i class="fas fa-users" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i> Registered Learners</h3>
+                    <div class="users-search">
+                        <input type="text" id="usersSearchInput" placeholder="Search users by name, email or phone...">
+                    </div>
+                    <div id="usersListContainer"></div>
+                </div>
+            </div>
+
+            <!-- COURSES -->
+            <div id="coursesSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <div style="display:flex;gap:10px;margin:0 0 14px 0;flex-wrap:wrap;background:transparent;">
+                        <input type="text" id="newCourseName" placeholder="Course name" style="flex:2;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
+                        <select id="newCoursePriceType" style="flex:1;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
                             <option value="free">Free</option>
                             <option value="paid">Paid</option>
                         </select>
+                        <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:110px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;display:none;">
+                        <button id="addCourseBtn" class="btn-primary" style="padding:12px 24px;font-size:12px;">+ Add</button>
+                    </div>
+                    <div id="coursesAccordionContainer"></div>
+                </div>
+            </div>
+
+            <!-- DOCS -->
+            <div id="docsSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="bigPostDocBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST DOCUMENT</button>
+                    <div id="docPostFormContainer" style="display:none;margin-top:14px;">
+                        <div class="form-card">
+                            <h4><i class="fas fa-file-alt"></i> Add Document / Notes</h4>
+                            <form id="docPostForm">
+                                <div class="form-row">
+                                    <input type="text" id="docTitle" placeholder="Title *" required>
+                                    <input type="text" id="docInstructor" placeholder="Instructor *" required>
+                                </div>
+                                <div class="form-row">
+                                    <select id="docCourseSelect"></select>
+                                    <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
+                                </div>
+                                <div class="form-row">
+                                    <select id="docSubfolderSelect"></select>
+                                    <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
+                                    <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
+                                </div>
+                                <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
+                                <div class="form-row">
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="docSource" value="text" checked> Write Text</label>
+                                        <label><input type="radio" name="docSource" value="upload"> Upload Doc</label>
+                                        <label><input type="radio" name="docSource" value="link"> Paste Link</label>
+                                    </div>
+                                </div>
+                                <div id="docTextGroup">
+                                    <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:12px;font-size:12px;"><i class="fas fa-pen"></i> Open Full Editor</button>
+                                    <input type="hidden" id="docContentHidden">
+                                </div>
+                                <div id="docUploadGroup" style="display:none;">
+                                    <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
+                                    <div class="upload-progress" id="docUploadProgress" style="margin-top:10px;">
+                                        <div class="bar"><div class="fill" id="docProgressFill"></div></div>
+                                        <span class="percent" id="docPercentText">0%</span>
+                                    </div>
+                                    <div class="file-info" id="docUploadFileInfo" style="display:none;">
+                                        <i class="fas fa-file"></i>
+                                        <span class="fname" id="docUploadFileName"></span>
+                                        <span class="ftype" id="docUploadFileType"></span>
+                                    </div>
+                                    <input type="hidden" id="cloudinaryDocUrl">
+                                </div>
+                                <div id="docLinkGroup" style="display:none;">
+                                    <input type="url" id="docLinkInput" placeholder="https://... (Document URL)">
+                                </div>
+                                <input type="hidden" id="docPriceHidden" value="0">
+                                <div style="margin-top:14px;display:flex;gap:12px;">
+                                    <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
+                                    <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH DOC</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <h3 style="font-size:16px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Document Library</h3>
+                    <div id="docsListContainer" class="docs-list"></div>
+                </div>
+            </div>
+
+            <!-- ACCOUNT -->
+            <div id="accountSection" class="section">
+                <div class="form-card" style="background:linear-gradient(160deg,#fffdf7,#fff8ed);">
+                    <div class="big-earnings" id="bigEarningsDisplay">ZMW 0</div>
+                    <div class="filter-pills">
+                        <button class="filter-pill approved" data-filter="approved">Approved</button>
+                        <button class="filter-pill pending active" data-filter="pending">Pending</button>
+                        <button class="filter-pill rejected" data-filter="rejected">Rejected</button>
+                    </div>
+                    <div class="bank-statement">
+                        <div id="filteredTransactionsList"></div>
                     </div>
                 </div>
-                <div id="postedVideosGrid" class="video-grid"></div>
             </div>
-        </div>
 
-        <!-- USERS -->
-        <div id="usersSection" class="section">
-            <div class="form-card">
-                <h3><i class="fas fa-users" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i> Registered Learners</h3>
-                <div class="users-search">
-                    <input type="text" id="usersSearchInput" placeholder="Search users by name, email or phone...">
-                </div>
-                <div id="usersListContainer"></div>
-            </div>
-        </div>
-
-        <!-- COURSES -->
-        <div id="coursesSection" class="section">
-            <div style="padding:0 0 4px 0;">
-                <div style="display:flex;gap:10px;margin:0 0 14px 0;flex-wrap:wrap;background:transparent;">
-                    <input type="text" id="newCourseName" placeholder="Course name" style="flex:2;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
-                    <select id="newCoursePriceType" style="flex:1;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
-                        <option value="free">Free</option>
-                        <option value="paid">Paid</option>
-                    </select>
-                    <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:110px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;display:none;">
-                    <button id="addCourseBtn" class="btn-primary" style="padding:12px 24px;font-size:12px;">+ Add</button>
-                </div>
-                <div id="coursesAccordionContainer"></div>
-            </div>
-        </div>
-
-        <!-- DOCS -->
-        <div id="docsSection" class="section">
-            <div style="padding:0 0 4px 0;">
-                <button id="bigPostDocBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST DOCUMENT</button>
-                <div id="docPostFormContainer" style="display:none;margin-top:14px;">
-                    <div class="form-card">
-                        <h4><i class="fas fa-file-alt"></i> Add Document / Notes</h4>
-                        <form id="docPostForm">
-                            <div class="form-row">
-                                <input type="text" id="docTitle" placeholder="Title *" required>
-                                <input type="text" id="docInstructor" placeholder="Instructor *" required>
-                            </div>
-                            <div class="form-row">
-                                <select id="docCourseSelect"></select>
-                                <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
-                            </div>
-                            <div class="form-row">
-                                <select id="docSubfolderSelect"></select>
-                                <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
-                            </div>
-                            <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
-                            <div class="form-row">
-                                <div class="radio-group">
-                                    <label><input type="radio" name="docSource" value="text" checked> Write Text</label>
-                                    <label><input type="radio" name="docSource" value="upload"> Upload Doc</label>
-                                    <label><input type="radio" name="docSource" value="link"> Paste Link</label>
-                                </div>
-                            </div>
-                            <div id="docTextGroup">
-                                <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:12px;font-size:12px;"><i class="fas fa-pen"></i> Open Full Editor</button>
-                                <input type="hidden" id="docContentHidden">
-                            </div>
-                            <div id="docUploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
-                                <div class="upload-progress" id="docUploadProgress" style="margin-top:10px;">
-                                    <div class="bar"><div class="fill" id="docProgressFill"></div></div>
-                                    <span class="percent" id="docPercentText">0%</span>
-                                </div>
-                                <div class="file-info" id="docUploadFileInfo" style="display:none;">
-                                    <i class="fas fa-file"></i>
-                                    <span class="fname" id="docUploadFileName"></span>
-                                    <span class="ftype" id="docUploadFileType"></span>
-                                </div>
-                                <input type="hidden" id="cloudinaryDocUrl">
-                            </div>
-                            <div id="docLinkGroup" style="display:none;">
-                                <input type="url" id="docLinkInput" placeholder="https://... (Document URL)">
-                            </div>
-                            <input type="hidden" id="docPriceHidden" value="0">
-                            <div style="margin-top:14px;display:flex;gap:12px;">
-                                <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH DOC</button>
-                            </div>
-                        </form>
+            <!-- SETTINGS -->
+            <div id="settingsSection" class="section">
+                <div class="form-card">
+                    <h3><i class="fas fa-cog" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i> Settings</h3>
+                    <div class="setting-row">
+                        <span>App Active Mode</span>
+                        <div id="appToggle" class="toggle-switch active"></div>
                     </div>
+                    <div class="setting-row">
+                        <span>Payment Method</span>
+                        <select id="paymentMethodSelect" style="width:160px;">
+                            <option>MTN Mobile Money</option>
+                            <option>Airtel Money</option>
+                            <option>Visa Card</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span><i class="fas fa-phone" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:6px;"></i> MTN Number</span>
+                        <input type="text" id="mtnNumberInput" class="setting-input" placeholder="097...">
+                    </div>
+                    <div class="setting-row">
+                        <span><i class="fas fa-phone" style="color:#e74c3c;margin-right:6px;"></i> Airtel Number</span>
+                        <input type="text" id="airtelNumberInput" class="setting-input" placeholder="097...">
+                    </div>
+                    <div class="setting-row">
+                        <span>Save Payment Numbers</span>
+                        <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                    <div class="setting-row">
+                        <span>Banned Users</span>
+                        <span style="font-size:11px;color:#8b8fa3;">Scroll below</span>
+                    </div>
+                    <div id="bannedUsersList" style="margin-top:10px;"></div>
+                    <button id="logoutBtn" class="btn-primary full" style="margin-top:20px;">Logout</button>
                 </div>
-                <h3 style="font-size:16px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Document Library</h3>
-                <div id="docsListContainer" class="docs-list"></div>
             </div>
-        </div>
 
-        <!-- ACCOUNT -->
-        <div id="accountSection" class="section">
-            <div class="form-card" style="background:linear-gradient(160deg,#fffdf7,#fff8ed);">
-                <div class="big-earnings" id="bigEarningsDisplay">ZMW 0</div>
-                <div class="filter-pills">
-                    <button class="filter-pill approved" data-filter="approved">Approved</button>
-                    <button class="filter-pill pending active" data-filter="pending">Pending</button>
-                    <button class="filter-pill rejected" data-filter="rejected">Rejected</button>
-                </div>
-                <div class="bank-statement">
-                    <div id="filteredTransactionsList"></div>
+            <!-- ===== SUBFOLDER VIEW ===== -->
+            <div id="subfolderViewSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="backFromSubfolderBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;margin-bottom:12px;"><i class="fas fa-arrow-left"></i> Back</button>
+                    <h2 id="subfolderViewTitle" style="font-size:20px;font-weight:700;color:#1a1d28;margin:0 0 12px 0;">Subfolder</h2>
+                    <div id="subfolderVideosContainer" class="video-grid"></div>
+                    <h3 style="font-size:15px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Documents</h3>
+                    <div id="subfolderDocsContainer" class="docs-list"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- SETTINGS -->
-        <div id="settingsSection" class="section">
-            <div class="form-card">
-                <h3><i class="fas fa-cog" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i> Settings</h3>
-                <div class="setting-row">
-                    <span>App Active Mode</span>
-                    <div id="appToggle" class="toggle-switch active"></div>
+            <!-- ===== DOC FULL PAGE ===== -->
+            <div id="docFullPage" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <button class="doc-back-btn" id="backFromDocBtn"><i class="fas fa-arrow-left"></i> Back to Docs</button>
+                    <div id="docFullContent"></div>
                 </div>
-                <div class="setting-row">
-                    <span>Payment Method</span>
-                    <select id="paymentMethodSelect" style="width:160px;">
-                        <option>MTN Mobile Money</option>
-                        <option>Airtel Money</option>
-                        <option>Visa Card</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <span><i class="fas fa-phone" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:6px;"></i> MTN Number</span>
-                    <input type="text" id="mtnNumberInput" class="setting-input" placeholder="097...">
-                </div>
-                <div class="setting-row">
-                    <span><i class="fas fa-phone" style="color:#e74c3c;margin-right:6px;"></i> Airtel Number</span>
-                    <input type="text" id="airtelNumberInput" class="setting-input" placeholder="097...">
-                </div>
-                <div class="setting-row">
-                    <span>Save Payment Numbers</span>
-                    <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-save"></i> Save</button>
-                </div>
-                <div class="setting-row">
-                    <span>Banned Users</span>
-                    <span style="font-size:11px;color:#8b8fa3;">Scroll below</span>
-                </div>
-                <div id="bannedUsersList" style="margin-top:10px;"></div>
-                <button id="logoutBtn" class="btn-primary full" style="margin-top:20px;">Logout</button>
             </div>
-        </div>
 
-        <!-- ===== SUBFOLDER VIEW ===== -->
-        <div id="subfolderViewSection" class="section">
-            <div style="padding:0 0 4px 0;">
-                <button id="backFromSubfolderBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;margin-bottom:12px;"><i class="fas fa-arrow-left"></i> Back</button>
-                <h2 id="subfolderViewTitle" style="font-size:20px;font-weight:700;color:#1a1d28;margin:0 0 12px 0;">Subfolder</h2>
-                <div id="subfolderVideosContainer" class="video-grid"></div>
-                <h3 style="font-size:15px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Documents</h3>
-                <div id="subfolderDocsContainer" class="docs-list"></div>
-            </div>
-        </div>
-
-        <!-- ===== DOC FULL PAGE ===== -->
-        <div id="docFullPage" class="section">
-            <div style="padding:0 0 4px 0;">
-                <button class="doc-back-btn" id="backFromDocBtn"><i class="fas fa-arrow-left"></i> Back to Docs</button>
-                <div id="docFullContent"></div>
-            </div>
-        </div>
-
-        <!-- ===== DOC EDITOR ===== -->
-        <div id="docEditorPage" class="section">
-            <div style="padding:0 0 4px 0;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
-                    <button id="cancelDocEditorBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;"><i class="fas fa-times"></i> Cancel</button>
-                    <button id="doneDocEditorBtn" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Done</button>
+            <!-- ===== DOC EDITOR ===== -->
+            <div id="docEditorPage" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
+                        <button id="cancelDocEditorBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;"><i class="fas fa-times"></i> Cancel</button>
+                        <button id="doneDocEditorBtn" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Done</button>
+                    </div>
+                    <div id="fullPageEditor" style="background:#fff;border-radius:24px;padding:24px;min-height:55vh;border:1px solid #f0f0f5;outline:none;font-size:15px;line-height:1.8;box-shadow:0 4px 20px rgba(0,0,0,0.04);" contenteditable="true"></div>
                 </div>
-                <div id="fullPageEditor" style="background:#fff;border-radius:24px;padding:24px;min-height:55vh;border:1px solid #f0f0f5;outline:none;font-size:15px;line-height:1.8;box-shadow:0 4px 20px rgba(0,0,0,0.04);" contenteditable="true"></div>
             </div>
-        </div>
 
-        <!-- ===== BOTTOM NAV — FLOATING PILL ===== -->
+        </div> <!-- end app-content -->
+
+        <!-- ===== BOTTOM NAV — FIXED, NO SCROLL ===== -->
         <div class="bottom-nav">
             <button class="nav-item active" data-section="home"><i class="fas fa-home"></i><span>Home</span></button>
             <button class="nav-item" data-section="videos"><i class="fas fa-video"></i><span>Videos</span></button>
@@ -2381,7 +2251,7 @@
             <button class="nav-item" data-section="settings"><i class="fas fa-cog"></i><span>Settings</span></button>
         </div>
 
-    </div>
+    </div> <!-- end app-root -->
 
     <!-- ===== MODALS ===== -->
 
@@ -2406,7 +2276,7 @@
         </div>
     </div>
 
-    <!-- Edit Item Modal -->
+    <!-- ===== EDIT ITEM MODAL — with Delete button ===== -->
     <div id="editItemModal" class="modal-overlay">
         <div class="modal-box">
             <button class="close-modal" id="closeEditModal">&times;</button>
@@ -2439,10 +2309,13 @@
                     <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Save</button>
                 </div>
             </form>
+            <div style="margin-top:20px;border-top:1px solid #f0f0f5;padding-top:16px;display:flex;justify-content:center;">
+                <button id="deleteFromEditBtn" class="btn-primary" style="background:linear-gradient(135deg,#e74c3c,#c0392b);box-shadow:0 4px 20px rgba(231,76,60,0.30);padding:10px 28px;font-size:12px;"><i class="fas fa-trash-alt"></i> DELETE THIS ITEM</button>
+            </div>
         </div>
     </div>
 
-    <!-- ===== NOTIFICATION SIDEBAR (LEFT) ===== -->
+    <!-- ===== NOTIFICATION SIDEBAR ===== -->
     <div id="notifSidebarOverlay" class="sidebar-overlay"></div>
     <div id="notifSidebar" class="sidebar">
         <div class="sidebar-header">
@@ -2728,7 +2601,7 @@
         }
 
         // =================================================================
-        // RENDER FUNCTIONS - ALL SORTED NEWEST FIRST
+        // RENDER FUNCTIONS
         // =================================================================
         function renderHomeGrids() {
             const paid = videos.filter(v => v.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -2891,8 +2764,24 @@
             setTimeout(() => {
                 document.getElementById('editSubfolderSelect').value = item.subfolderId || '';
             }, 100);
+            // Show delete button
+            document.getElementById('deleteFromEditBtn').style.display = 'flex';
+            document.getElementById('deleteFromEditBtn').dataset.id = id;
+            document.getElementById('deleteFromEditBtn').dataset.type = type;
             document.getElementById('editItemModal').classList.add('open');
         }
+
+        document.getElementById('deleteFromEditBtn').addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const type = this.dataset.type;
+            if (!id || !type) return;
+            if (confirm(`⚠️ Permanently delete this ${type}?`)) {
+                await remove(ref(db, `${type}s/${id}`));
+                document.getElementById('editItemModal').classList.remove('open');
+                showToast(`${type} deleted`, 'info');
+            }
+        });
+
         document.getElementById('editPriceType').addEventListener('change', function() {
             document.getElementById('editPriceAmount').style.display = this.value === 'paid' ? 'inline-block' :
                 'none';
@@ -2946,7 +2835,7 @@
         }
 
         // =================================================================
-        // ENHANCED DOCUMENT VIEWER — ALL DOCS VIA GOOGLE DOCS VIEWER
+        // DOCUMENT VIEWER
         // =================================================================
         function openDocFullPage(doc) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -2969,21 +2858,15 @@
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 const fileExt = fileExtension || '';
-
                 const isWord = ['doc', 'docx'].includes(fileExt);
                 const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
                 const isPdf = ['pdf'].includes(fileExt);
                 const isPowerpoint = ['ppt', 'pptx'].includes(fileExt);
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
-                const isText = ['txt', 'rtf', 'md'].includes(fileExt);
-
                 let fileTypeLabel = fileExt.toUpperCase();
                 if (isWord) fileTypeLabel = '📝 Word';
                 else if (isExcel) fileTypeLabel = '📊 Excel';
                 else if (isPdf) fileTypeLabel = '📄 PDF';
                 else if (isPowerpoint) fileTypeLabel = '📊 PowerPoint';
-                else if (isImage) fileTypeLabel = '🖼️ Image';
-                else if (isText) fileTypeLabel = '📃 Text';
                 else fileTypeLabel = '📎 File';
 
                 const googleViewerUrl =
@@ -3004,7 +2887,6 @@
                         or <a href="${doc.docUrl}" download>download it</a>.
                     </div>
                 `;
-
                 html += `
                     <div style="margin-top:10px;padding:10px 16px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
                         <i class="fas fa-info-circle"></i> 
@@ -3026,7 +2908,6 @@
                     </div>
                 `;
             }
-
             content.innerHTML = html;
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
@@ -3828,9 +3709,10 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — Floating, curved, glass design with sticky player + fixed nav');
-        console.log('✅ UTOM Admin — All content scrolls freely behind nav and player');
-        console.log('✅ UTOM Admin — Professional spacing and floating card effects');
+        console.log('✅ UTOM Admin — Scroll fixed: Nav + Player stay fixed, content scrolls freely');
+        console.log('✅ UTOM Admin — Delete button added inside Edit modal for videos & docs');
+        console.log('✅ UTOM Admin — Edit form shows existing data with full edit + delete capabilities');
+        console.log('✅ UTOM Admin — Floating, curved, glass design with professional spacing');
     </script>
 </body>
 </html>
