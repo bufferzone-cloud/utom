@@ -8,12 +8,20 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js">
     </script>
     <style>
-        /* ... (all existing styles unchanged) ... */
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         :root {
             --gold: #F5B042;
             --gold-dark: #c47f1a;
             --gold-light: #fff8ed;
-            --bg: #f8f9fc;
+            --bg: #f4f5f8;
             --card-bg: #ffffff;
             --text: #1a1d28;
             --text-secondary: #5f6377;
@@ -23,27 +31,60 @@
             --radius-sm: 14px;
             --radius-md: 20px;
             --radius-lg: 28px;
-            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             --green: #2ecc71;
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
+        html,
         body {
+            height: 100%;
+            overflow: hidden;
             background: var(--bg);
-            padding-bottom: 80px;
             color: var(--text);
-            -webkit-font-smoothing: antialiased;
+            font-size: 15px;
+            line-height: 1.5;
         }
 
-        /* ----- OVERLAYS ----- */
+        /* ===== APP ROOT ===== */
+        .app-root {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 100vw;
+            margin: 0 auto;
+            background: var(--bg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== SCROLLABLE CONTENT ===== */
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            padding: 0 16px 130px 16px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            width: 100%;
+            display: block;
+        }
+        .app-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .app-content::-webkit-scrollbar-thumb {
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
+        }
+
+        /* ===== OVERLAYS ===== */
         .overlay {
             position: fixed;
             top: 0;
@@ -64,7 +105,7 @@
             margin-bottom: 1rem;
         }
 
-        /* ----- TOP BAR ----- */
+        /* ===== TOP BAR ===== */
         .top-bar {
             background: white;
             padding: 0.85rem 1.2rem;
@@ -81,16 +122,10 @@
             display: flex;
             align-items: center;
         }
-        .logo-img {
-            height: 38px;
-            width: auto;
-            max-width: 120px;
-            object-fit: contain;
-        }
         .logo-fallback {
             font-weight: 800;
             font-size: 1.4rem;
-            background: linear-gradient(135deg, #1a1d28 30%, #F5B042 80%);
+            background: linear-gradient(135deg, #1a1d28 30%, var(--gold) 80%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -110,7 +145,7 @@
         }
         .header-icons i:hover {
             color: var(--gold);
-            background: #F5B04212;
+            background: rgba(245, 176, 66, 0.12);
         }
         .notif-icon-wrapper {
             position: relative;
@@ -135,7 +170,7 @@
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
 
-        /* ----- COMPACT USER CARD ----- */
+        /* ===== COMPACT USER CARD ===== */
         .compact-user-card {
             background: white;
             margin: 0.8rem 0.9rem 0.4rem;
@@ -145,13 +180,13 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border: 1px solid #fff3e0;
+            border: 1px solid rgba(245, 176, 66, 0.12);
         }
         .user-avatar-small {
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: #F5B04220;
+            background: rgba(245, 176, 66, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -184,7 +219,7 @@
             background: #fde8e8;
         }
 
-        /* ----- SEARCH BAR ----- */
+        /* ===== SEARCH BAR ===== */
         .search-bar {
             display: flex;
             gap: 8px;
@@ -205,7 +240,7 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.1);
         }
 
-        /* ----- PERSISTENT PLAYER (borderless, full width) ----- */
+        /* ===== PERSISTENT PLAYER ===== */
         .persistent-player {
             position: sticky;
             top: 56px;
@@ -221,6 +256,7 @@
             box-shadow: var(--shadow-lg);
             width: 100%;
             aspect-ratio: 16 / 9;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .player-container video,
         .player-container iframe {
@@ -248,21 +284,6 @@
         .player-close-btn:hover {
             background: rgba(231, 76, 60, 0.85);
         }
-
-        /* ----- YOUTUBE BRANDING COVER (hide tiny logo) ----- */
-        .yt-logo-cover {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 60px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 19;
-            border-radius: 3px;
-            pointer-events: none;
-        }
-
-        /* ----- FULLSCREEN BUTTON (overlay) ----- */
         .player-fullscreen-btn {
             position: absolute;
             bottom: 14px;
@@ -287,13 +308,24 @@
             transform: scale(1.08);
             border-color: var(--gold);
         }
+        .yt-logo-cover {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 60px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 19;
+            border-radius: 3px;
+            pointer-events: none;
+        }
 
-        /* ----- COURSES GRID ----- */
+        /* ===== COURSES GRID ===== */
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 0.8rem;
-            padding: 0.5rem 0.9rem;
+            padding: 0.5rem 0;
         }
         @media (min-width: 600px) {
             .courses-grid {
@@ -312,7 +344,7 @@
         .course-card:hover {
             transform: translateY(-3px);
             box-shadow: var(--shadow-md);
-            border-color: #f0d8a8;
+            border-color: rgba(245, 176, 66, 0.2);
         }
         .course-card img {
             width: 100%;
@@ -344,7 +376,7 @@
             gap: 4px;
         }
         .course-price {
-            background: #F5B04218;
+            background: rgba(245, 176, 66, 0.12);
             padding: 3px 10px;
             border-radius: 30px;
             font-weight: 700;
@@ -355,15 +387,15 @@
             font-size: 0.6rem;
             padding: 3px 10px;
             border-radius: 20px;
-            background: #f39c12;
+            background: var(--yellow);
             color: #fff;
             font-weight: 600;
         }
         .course-status.approved {
-            background: #2ecc71;
+            background: var(--green);
         }
 
-        /* ----- VIDEO GRID ----- */
+        /* ===== VIDEO GRID ===== */
         .videos-grid-2x2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -388,7 +420,7 @@
         .video-card:hover {
             transform: translateY(-3px);
             box-shadow: var(--shadow-md);
-            border-color: #f0d8a8;
+            border-color: rgba(245, 176, 66, 0.2);
         }
         .video-card .video-thumb-wrapper {
             position: relative;
@@ -495,8 +527,8 @@
             z-index: 2;
         }
         .download-wrapper .download-video-btn:hover {
-            background: #F5B04218;
-            color: #c47f1a;
+            background: rgba(245, 176, 66, 0.12);
+            color: var(--gold-dark);
         }
         .download-wrapper .download-video-btn.hidden-dl {
             display: none;
@@ -548,7 +580,7 @@
             background: #fde8e8;
         }
 
-        /* ----- DOCS ----- */
+        /* ===== DOCS LIST ===== */
         .docs-list {
             display: flex;
             flex-direction: column;
@@ -560,12 +592,13 @@
             border-radius: var(--radius-lg);
             padding: 1.1rem;
             box-shadow: var(--shadow-sm);
-            border: 1px solid #fff3e0;
+            border: 1px solid rgba(245, 176, 66, 0.10);
             transition: var(--transition);
         }
         .doc-card:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
+            border-color: rgba(245, 176, 66, 0.25);
         }
         .doc-card h3 {
             font-size: 1rem;
@@ -629,9 +662,9 @@
             text-decoration: none;
         }
         .download-doc-btn:hover {
-            background: #F5B04218;
-            border-color: #c47f1a;
-            color: #c47f1a;
+            background: rgba(245, 176, 66, 0.12);
+            border-color: var(--gold-dark);
+            color: var(--gold-dark);
             transform: translateY(-1px);
         }
         .like-doc-btn {
@@ -652,9 +685,9 @@
             color: #e74c3c;
         }
 
-        /* ----- FULL PAGE CONTAINERS ----- */
+        /* ===== FULL PAGE CONTAINERS ===== */
         .full-page-container {
-            padding: 0.8rem;
+            padding: 0.8rem 0;
         }
         .full-page-content {
             background: #fff;
@@ -667,10 +700,10 @@
             overflow: auto;
         }
 
-        /* ----- PAYMENT (no wallet, only mobile money) ----- */
+        /* ===== PAYMENT ===== */
         .payment-numbers-box {
             background: #fff;
-            border: 2px solid #f0d8a8;
+            border: 2px solid rgba(245, 176, 66, 0.2);
             border-radius: var(--radius-md);
             padding: 1.2rem;
             margin: 1rem 0;
@@ -701,7 +734,7 @@
         }
         .payment-number-row .number-label {
             font-weight: 800;
-            color: #c47f1a;
+            color: var(--gold-dark);
             min-width: 55px;
         }
         .payment-number-row .number-value {
@@ -723,7 +756,7 @@
             transition: var(--transition);
         }
         .payment-number-row .copy-num-btn:hover {
-            background: #e8a830;
+            background: var(--gold-dark);
             transform: scale(1.03);
         }
         .deposit-instruction {
@@ -753,7 +786,7 @@
             background: #fffdf5;
         }
         .upload-box i {
-            color: #c47f1a;
+            color: var(--gold-dark);
         }
         .upload-box img {
             max-width: 100%;
@@ -762,10 +795,10 @@
             margin-top: 0.5rem;
         }
 
-        /* ----- PAGE CONTAINERS ----- */
+        /* ===== PAGE CONTAINERS ===== */
         .page-container {
             display: none;
-            animation: fadeIn 0.22s ease;
+            animation: fadeIn 0.3s ease;
         }
         .active-page {
             display: block;
@@ -773,7 +806,7 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(6px);
+                transform: translateY(8px);
             }
             to {
                 opacity: 1;
@@ -785,7 +818,6 @@
             justify-content: space-between;
             align-items: baseline;
             margin-bottom: 0.6rem;
-            padding: 0 0.9rem;
             font-weight: 700;
             font-size: 0.95rem;
         }
@@ -794,10 +826,10 @@
         }
         .profile-card {
             background: #fff;
-            margin: 0.8rem;
             border-radius: var(--radius-lg);
             padding: 1.5rem;
             box-shadow: var(--shadow-md);
+            border: 1px solid rgba(245, 176, 66, 0.08);
         }
         .info-row {
             display: flex;
@@ -833,7 +865,7 @@
             gap: 8px;
         }
         .btn-profile:hover {
-            background: #e8a830;
+            background: var(--gold-dark);
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(245, 176, 66, 0.4);
         }
@@ -853,8 +885,8 @@
         }
         .btn-outline:hover {
             border-color: var(--gold);
-            color: #c47f1a;
-            background: #fffdf7;
+            color: var(--gold-dark);
+            background: rgba(255, 253, 247, 0.6);
         }
         .btn-transaction {
             background: #fff;
@@ -863,9 +895,9 @@
             border-radius: 60px;
             font-weight: 700;
             margin-top: 10px;
-            border: 2px solid #f0d8a8;
+            border: 2px solid rgba(245, 176, 66, 0.2);
             cursor: pointer;
-            color: #c47f1a;
+            color: var(--gold-dark);
             font-size: 0.9rem;
             transition: var(--transition);
             display: flex;
@@ -880,7 +912,7 @@
             box-shadow: 0 4px 14px rgba(245, 176, 66, 0.2);
         }
 
-        /* ----- TRANSACTION CARDS ----- */
+        /* ===== TRANSACTION CARDS ===== */
         .transaction-card {
             background: #fff;
             border-radius: var(--radius-md);
@@ -892,7 +924,7 @@
         }
         .transaction-card:hover {
             box-shadow: var(--shadow-md);
-            border-color: #f0d8a8;
+            border-color: rgba(245, 176, 66, 0.2);
         }
         .transaction-header {
             display: flex;
@@ -939,7 +971,7 @@
         }
         .transaction-amount {
             font-weight: 800;
-            color: #c47f1a;
+            color: var(--gold-dark);
             font-size: 0.85rem;
         }
         .transaction-screenshot {
@@ -976,22 +1008,22 @@
             font-size: 0.65rem;
         }
 
-        /* ----- SUBFOLDER ITEMS ----- */
+        /* ===== SUBFOLDER ITEMS ===== */
         .subfolder-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 12px 16px;
-            background: #fef5e8;
+            background: rgba(245, 176, 66, 0.06);
             border-radius: var(--radius-md);
             margin: 0.4rem 0;
             cursor: pointer;
             font-weight: 700;
             transition: var(--transition);
-            border: 1px solid #f0e0c8;
+            border: 1px solid rgba(245, 176, 66, 0.10);
         }
         .subfolder-header:hover {
-            background: #fff8ed;
+            background: rgba(245, 176, 66, 0.12);
         }
         .subfolder-content {
             display: none;
@@ -1001,19 +1033,20 @@
             display: block;
         }
 
-        /* ----- NOTIFICATION SIDEBAR ----- */
+        /* ===== NOTIFICATION SIDEBAR ===== */
         .side-notif {
             position: fixed;
-            right: -320px;
+            right: -340px;
             top: 0;
-            width: 300px;
+            width: 320px;
             height: 100%;
             background: #fff;
-            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
             z-index: 200;
-            transition: right 0.3s ease;
+            transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
             padding: 1rem;
             overflow-y: auto;
+            border-radius: 28px 0 0 28px;
         }
         .side-notif.open {
             right: 0;
@@ -1027,6 +1060,9 @@
             border-bottom: 2px solid var(--gold);
             font-weight: 700;
         }
+        .notif-header i {
+            color: var(--gold);
+        }
         .notif-item {
             padding: 11px 0;
             border-bottom: 1px solid #f2f2f5;
@@ -1035,14 +1071,11 @@
             display: flex;
             align-items: flex-start;
             gap: 8px;
-            font-style: italic;
         }
         .notif-item i {
-            color: var(--gold);
             font-size: 0.7rem;
             margin-top: 2px;
             flex-shrink: 0;
-            font-style: normal;
         }
         .notif-item .notif-icon-success {
             color: var(--green);
@@ -1069,50 +1102,114 @@
             color: #d0d4dc;
         }
 
-        /* ----- BOTTOM NAV ----- */
+        /* ===== BOTTOM NAV — FLOATING, GLASS, CURVED, YELLOW/ORANGE ===== */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(14px);
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 420px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 40px;
+            padding: 6px 10px;
             display: flex;
             justify-content: space-around;
-            padding: 7px 0 calc(10px + env(safe-area-inset-bottom, 0px));
-            border-top: 1px solid #f0e8d8;
-            z-index: 20;
+            align-items: center;
+            z-index: 500;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
+            flex-shrink: 0;
+            pointer-events: auto;
+            border: 1.5px solid rgba(245, 176, 66, 0.20);
+            transition: all 0.3s ease;
         }
+        .bottom-nav:hover {
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.14);
+        }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
-            font-size: 0.68rem;
-            color: #7b7f8c;
+            cursor: pointer;
+            color: #b0b4c0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex: 1;
             background: none;
             border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-            padding: 4px 8px;
+            font-size: 6px;
+            gap: 2px;
+            user-select: none;
+            padding: 4px 0;
             border-radius: 30px;
+            position: relative;
         }
         .nav-item i {
-            font-size: 1.2rem;
+            font-size: 20px;
+            margin-bottom: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #b0b4c0;
         }
-        .nav-item.active {
-            color: var(--gold);
-            font-weight: 700;
+        .nav-item span {
+            font-size: 7px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            transition: all 0.3s ease;
+            color: #b0b4c0;
         }
         .nav-item.active i {
-            filter: drop-shadow(0 0 4px rgba(245, 176, 66, 0.5));
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.12) translateY(-2px);
+        }
+        .nav-item.active span {
+            color: #f5b042;
+            font-weight: 700;
+        }
+        .nav-item:active {
+            transform: scale(0.92);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            transition: transform 0.3s ease;
+        }
+        .nav-item.active::after {
+            transform: translateX(-50%) scaleX(1);
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 520px) {
+            .app-content {
+                padding: 0 12px 110px 12px;
+            }
+            .bottom-nav {
+                height: 58px;
+                padding: 4px 8px;
+                width: 94%;
+                max-width: 360px;
+                bottom: 16px;
+                border-radius: 32px;
+            }
+            .nav-item i {
+                font-size: 18px;
+            }
+            .nav-item span {
+                font-size: 6px;
+            }
             .courses-grid,
             .videos-grid-2x2 {
-                grid-template-columns: 1fr 1fr;
                 gap: 0.5rem;
             }
             .course-card img,
@@ -1126,174 +1223,201 @@
             .transaction-card {
                 padding: 0.9rem;
             }
+            .side-notif {
+                width: 280px;
+                right: -300px;
+            }
+        }
+        @media (max-width: 400px) {
+            .courses-grid,
+            .videos-grid-2x2 {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.4rem;
+            }
+            .bottom-nav {
+                height: 52px;
+                padding: 4px 6px;
+                max-width: 320px;
+            }
+            .nav-item i {
+                font-size: 16px;
+            }
+            .nav-item span {
+                font-size: 5px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="app-root">
 
-    <!-- BANNED OVERLAY -->
-    <div id="bannedOverlay" class="overlay" style="display: none">
-        <i class="fas fa-ban" style="color:#d9534f;"></i>
-        <h2>Account Suspended</h2>
-        <p>You have been banned from UTOM. Contact support for more information.</p>
-    </div>
+        <!-- ===== TOAST CONTAINER ===== -->
+        <div id="toastContainer" style="position:fixed;top:80px;right:20px;z-index:4000;display:flex;flex-direction:column;gap:10px;"></div>
 
-    <!-- MAINTENANCE OVERLAY -->
-    <div id="maintenanceOverlay" class="overlay" style="display: none">
-        <i class="fas fa-tools" style="color:#F5B042;"></i>
-        <h2>Under Maintenance</h2>
-        <p>The app is currently undergoing maintenance. Please check back later.</p>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="appContent" style="display: none">
-        <!-- TOP BAR -->
-        <div class="top-bar">
-            <div class="logo-area">
-                <img src="logo.png" alt="UTOM" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML = '<div class=\'logo-fallback\'><i class=\'fas fa-chalkboard-user\'></i> UTOM</div>'" />
-            </div>
-            <div class="header-icons">
-                <i class="fas fa-search" id="searchIcon"></i>
-                <span class="notif-icon-wrapper">
-                    <i class="fas fa-bell" id="notifIcon"></i>
-                    <span id="notifBadge" class="notification-badge" style="display: none">0</span>
-                </span>
-                <i class="fas fa-user-circle" id="profileIcon"></i>
-            </div>
+        <!-- ===== OVERLAYS ===== -->
+        <div id="bannedOverlay" class="overlay" style="display:none">
+            <i class="fas fa-ban" style="color:#d9534f;"></i>
+            <h2>Account Suspended</h2>
+            <p>You have been banned from UTOM. Contact support for more information.</p>
+        </div>
+        <div id="maintenanceOverlay" class="overlay" style="display:none">
+            <i class="fas fa-tools" style="color:#F5B042;"></i>
+            <h2>Under Maintenance</h2>
+            <p>The app is currently undergoing maintenance. Please check back later.</p>
         </div>
 
-        <!-- PERSISTENT PLAYER (borderless, full width) -->
-        <div id="persistentPlayer" class="persistent-player">
-            <div class="player-container">
-                <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
-                <button id="fullscreenPlayerBtn" class="player-fullscreen-btn"><i class="fas fa-expand"></i></button>
-                <div id="playerEmbedContainer" style="position: relative; width: 100%; height: 100%;">
-                    <div class="yt-logo-cover"></div>
+        <!-- ===== MAIN APP ===== -->
+        <div id="appContent" style="display:none">
+
+            <!-- ===== TOP BAR ===== -->
+            <div class="top-bar">
+                <div class="logo-area">
+                    <span class="logo-fallback"><i class="fas fa-chalkboard-user"></i> UTOM</span>
+                </div>
+                <div class="header-icons">
+                    <i class="fas fa-search" id="searchIcon"></i>
+                    <span class="notif-icon-wrapper">
+                        <i class="fas fa-bell" id="notifIcon"></i>
+                        <span id="notifBadge" class="notification-badge" style="display:none">0</span>
+                    </span>
+                    <i class="fas fa-user-circle" id="profileIcon"></i>
                 </div>
             </div>
-        </div>
 
-        <!-- COMPACT USER CARD -->
-        <div class="compact-user-card">
-            <div style="display: flex; align-items: center; flex: 1">
-                <div class="user-avatar-small"><i class="fas fa-user-graduate"></i></div>
-                <div class="user-info-compact">
-                    <h4 id="compactUserName">Loading...</h4>
-                    <p id="compactUserEmail"></p>
+            <!-- ===== PERSISTENT PLAYER ===== -->
+            <div id="persistentPlayer" class="persistent-player">
+                <div class="player-container">
+                    <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
+                    <button id="fullscreenPlayerBtn" class="player-fullscreen-btn"><i class="fas fa-expand"></i></button>
+                    <div id="playerEmbedContainer" style="position:relative;width:100%;height:100%;">
+                        <div class="yt-logo-cover"></div>
+                    </div>
                 </div>
             </div>
-            <i class="fas fa-sign-out-alt logout-icon-small" id="logoutBtnSmall"></i>
-        </div>
 
-        <!-- SEARCH BAR -->
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Search courses..." />
-        </div>
-
-        <!-- ===== PAGES ===== -->
-
-        <!-- HOME -->
-        <div id="homePage" class="page-container active-page">
-            <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3></div>
-            <div id="paidCoursesGrid" class="courses-grid"></div>
-            <div class="grid-title" style="margin-top: 1rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3></div>
-            <div id="freeCoursesGrid" class="courses-grid"></div>
-        </div>
-
-        <!-- COURSE DETAIL -->
-        <div id="courseDetailPage" class="page-container full-page-container">
-            <button id="backFromCourseBtn" class="btn-outline" style="margin-bottom: 0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
-            <h2 id="courseDetailTitle"></h2>
-            <div id="subfoldersContainer"></div>
-        </div>
-
-        <!-- MY LEARNING -->
-        <div id="mylearningPage" class="page-container">
-            <div class="grid-title"><h3><i class="fas fa-play-circle"></i> Continue Watching</h3></div>
-            <div class="videos-grid-2x2" id="watchedVideosGrid"></div>
-            <div class="grid-title" style="margin-top: 1.2rem"><h3><i class="fas fa-check-circle" style="color:#2ecc71;"></i> My Paid Courses</h3></div>
-            <div id="myPaidCoursesGrid" class="courses-grid"></div>
-        </div>
-
-        <!-- OFFLINE -->
-        <div id="offlinePage" class="page-container">
-            <div class="grid-title"><h3><i class="fas fa-download"></i> Offline Videos</h3></div>
-            <div class="videos-grid-2x2" id="offlineVideosGrid"></div>
-            <div id="emptyOfflineMsg" class="empty-state"><i class="fas fa-cloud-download-alt"></i> No offline videos yet.<br /><small>Tap download on any downloadable video.</small></div>
-        </div>
-
-        <!-- PROFILE -->
-        <div id="profilePage" class="page-container">
-            <div class="profile-card">
-                <div class="info-row"><span>Full name</span><span id="profileName"></span></div>
-                <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
-                <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
-                <button class="btn-transaction" id="transactionHistoryBtn"><i class="fas fa-receipt"></i> Transaction History</button>
-                <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
-                <button class="btn-profile btn-outline" id="logoutBtn" style="margin-top: 6px"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <!-- ===== COMPACT USER CARD ===== -->
+            <div class="compact-user-card">
+                <div style="display:flex;align-items:center;flex:1">
+                    <div class="user-avatar-small"><i class="fas fa-user-graduate"></i></div>
+                    <div class="user-info-compact">
+                        <h4 id="compactUserName">Loading...</h4>
+                        <p id="compactUserEmail"></p>
+                    </div>
+                </div>
+                <i class="fas fa-sign-out-alt logout-icon-small" id="logoutBtnSmall"></i>
             </div>
-        </div>
 
-        <!-- TRANSACTION HISTORY -->
-        <div id="transactionHistoryPage" class="page-container full-page-container">
-            <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom: 0.8rem"><i class="fas fa-arrow-left"></i> Back to Profile</button>
-            <h2 style="margin-bottom: 1rem"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
-            <div id="transactionHistoryList"></div>
-            <div id="emptyTransactionMsg" class="empty-state" style="display: none"><i class="fas fa-inbox"></i> No transactions yet.<br /><small>Purchase a course to see your history here.</small></div>
-        </div>
+            <!-- ===== SEARCH BAR ===== -->
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search courses..." />
+            </div>
 
-        <!-- DOC FULL PAGE -->
-        <div id="docFullPage" class="page-container full-page-container">
-            <button id="backFromDocBtn" class="btn-outline" style="margin-bottom: 0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
-            <div id="docFullContent" class="full-page-content" style="overflow: auto"></div>
-        </div>
+            <!-- ===== PAGES ===== -->
 
-        <!-- PAYMENT PAGE (no wallet, only mobile money) -->
-        <div id="paymentPage" class="page-container full-page-container">
-            <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom: 0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
-            <h2 id="paymentCourseTitle"></h2>
-            <div class="payment-numbers-box" id="paymentNumbersBox">
-                <h4><i class="fas fa-money-bill-wave"></i> Deposit Payment To</h4>
-                <div class="deposit-instruction">
-                    <i class="fas fa-info-circle"></i> Please deposit exactly <strong id="depositAmountDisplay">ZMW 0</strong> into one of the numbers below, then upload your payment screenshot.
-                </div>
-                <div class="payment-number-row" id="mtnNumberRow">
-                    <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
-                    <span class="number-value" id="mtnNumberDisplay">Not set</span>
-                    <button class="copy-num-btn" id="copyMtnBtn"><i class="fas fa-copy"></i> Copy</button>
-                </div>
-                <div class="payment-number-row" id="airtelNumberRow">
-                    <span class="number-label"><i class="fas fa-mobile-alt" style="color:#e74c3c;"></i> Airtel:</span>
-                    <span class="number-value" id="airtelNumberDisplay">Not set</span>
-                    <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
+            <!-- HOME -->
+            <div id="homePage" class="page-container active-page">
+                <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3></div>
+                <div id="paidCoursesGrid" class="courses-grid"></div>
+                <div class="grid-title" style="margin-top:1rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3></div>
+                <div id="freeCoursesGrid" class="courses-grid"></div>
+            </div>
+
+            <!-- COURSE DETAIL -->
+            <div id="courseDetailPage" class="page-container full-page-container">
+                <button id="backFromCourseBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="courseDetailTitle"></h2>
+                <div id="subfoldersContainer"></div>
+            </div>
+
+            <!-- MY LEARNING -->
+            <div id="mylearningPage" class="page-container">
+                <div class="grid-title"><h3><i class="fas fa-play-circle"></i> Continue Watching</h3></div>
+                <div class="videos-grid-2x2" id="watchedVideosGrid"></div>
+                <div class="grid-title" style="margin-top:1.2rem"><h3><i class="fas fa-check-circle" style="color:#2ecc71;"></i> My Paid Courses</h3></div>
+                <div id="myPaidCoursesGrid" class="courses-grid"></div>
+            </div>
+
+            <!-- OFFLINE -->
+            <div id="offlinePage" class="page-container">
+                <div class="grid-title"><h3><i class="fas fa-download"></i> Offline Videos</h3></div>
+                <div class="videos-grid-2x2" id="offlineVideosGrid"></div>
+                <div id="emptyOfflineMsg" class="empty-state"><i class="fas fa-cloud-download-alt"></i> No offline videos yet.<br /><small>Tap download on any downloadable video.</small></div>
+            </div>
+
+            <!-- PROFILE -->
+            <div id="profilePage" class="page-container">
+                <div class="profile-card">
+                    <div class="info-row"><span>Full name</span><span id="profileName"></span></div>
+                    <div class="info-row"><span>Email</span><span id="profileEmail"></span></div>
+                    <div class="info-row"><span>Phone</span><span id="profilePhone"></span></div>
+                    <button class="btn-transaction" id="transactionHistoryBtn"><i class="fas fa-receipt"></i> Transaction History</button>
+                    <button class="btn-profile" id="changePasswordBtn"><i class="fas fa-key"></i> Change Password</button>
+                    <button class="btn-profile btn-outline" id="logoutBtn" style="margin-top:6px"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </div>
-            <p style="margin: 0.5rem 0; font-size: 0.78rem; color: #8b8fa3;">After admin approval, the course will be unlocked.</p>
-            <div id="paymentUploadBox" class="upload-box">
-                <i class="fas fa-cloud-upload-alt fa-2x"></i>
-                <p>Tap to upload payment screenshot</p>
-                <div id="paymentScreenshotPreview"></div>
-            </div>
-            <button id="submitPaymentPageBtn" class="btn-profile"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
-        </div>
 
-        <!-- NOTIFICATION SIDEBAR -->
-        <div id="sideNotif" class="side-notif">
-            <div class="notif-header">
-                <span><i class="fas fa-bell"></i> Notifications</span>
-                <i class="fas fa-times" id="closeNotif" style="cursor: pointer"></i>
+            <!-- TRANSACTION HISTORY -->
+            <div id="transactionHistoryPage" class="page-container full-page-container">
+                <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back to Profile</button>
+                <h2 style="margin-bottom:1rem"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
+                <div id="transactionHistoryList"></div>
+                <div id="emptyTransactionMsg" class="empty-state" style="display:none"><i class="fas fa-inbox"></i> No transactions yet.<br /><small>Purchase a course to see your history here.</small></div>
             </div>
-            <div id="notifList"></div>
-        </div>
 
-        <!-- BOTTOM NAV -->
-        <div class="bottom-nav">
-            <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></button>
-            <button class="nav-item" data-page="mylearning"><i class="fas fa-book-open"></i><span>My Learn</span></button>
-            <button class="nav-item" data-page="offline"><i class="fas fa-download"></i><span>Offline</span></button>
-            <button class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></button>
-        </div>
-    </div>
+            <!-- DOC FULL PAGE -->
+            <div id="docFullPage" class="page-container full-page-container">
+                <button id="backFromDocBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
+                <div id="docFullContent" class="full-page-content" style="overflow:auto;min-height:60vh;"></div>
+            </div>
+
+            <!-- PAYMENT PAGE -->
+            <div id="paymentPage" class="page-container full-page-container">
+                <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="paymentCourseTitle"></h2>
+                <div class="payment-numbers-box" id="paymentNumbersBox">
+                    <h4><i class="fas fa-money-bill-wave"></i> Deposit Payment To</h4>
+                    <div class="deposit-instruction">
+                        <i class="fas fa-info-circle"></i> Please deposit exactly <strong id="depositAmountDisplay">ZMW 0</strong> into one of the numbers below, then upload your payment screenshot.
+                    </div>
+                    <div class="payment-number-row" id="mtnNumberRow">
+                        <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
+                        <span class="number-value" id="mtnNumberDisplay">Not set</span>
+                        <button class="copy-num-btn" id="copyMtnBtn"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                    <div class="payment-number-row" id="airtelNumberRow">
+                        <span class="number-label"><i class="fas fa-mobile-alt" style="color:#e74c3c;"></i> Airtel:</span>
+                        <span class="number-value" id="airtelNumberDisplay">Not set</span>
+                        <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+                <p style="margin:0.5rem 0;font-size:0.78rem;color:#8b8fa3;">After admin approval, the course will be unlocked.</p>
+                <div id="paymentUploadBox" class="upload-box">
+                    <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                    <p>Tap to upload payment screenshot</p>
+                    <div id="paymentScreenshotPreview"></div>
+                </div>
+                <button id="submitPaymentPageBtn" class="btn-profile"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
+            </div>
+
+            <!-- ===== NOTIFICATION SIDEBAR ===== -->
+            <div id="sideNotif" class="side-notif">
+                <div class="notif-header">
+                    <span><i class="fas fa-bell"></i> Notifications</span>
+                    <i class="fas fa-times" id="closeNotif" style="cursor:pointer"></i>
+                </div>
+                <div id="notifList"></div>
+            </div>
+
+            <!-- ===== BOTTOM NAV — FLOATING, CURVED, YELLOW/ORANGE ===== -->
+            <div class="bottom-nav">
+                <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></button>
+                <button class="nav-item" data-page="mylearning"><i class="fas fa-book-open"></i><span>My Learn</span></button>
+                <button class="nav-item" data-page="offline"><i class="fas fa-download"></i><span>Offline</span></button>
+                <button class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></button>
+            </div>
+
+        </div><!-- end appContent -->
+    </div><!-- end app-root -->
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
@@ -1670,8 +1794,10 @@
             const container = document.getElementById('subfoldersContainer');
             const subfolders = allSubfolders.filter(s => s.courseId === course.id);
             container.innerHTML = subfolders.map(sf => {
-                const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id);
-                const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id);
+                const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id).sort(
+                (a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a,
+                    b) => (b.createdAt || 0) - (a.createdAt || 0));
                 return `
                 <div class="subfolder-item">
                     <div class="subfolder-header">
@@ -1815,7 +1941,6 @@
             });
         }
 
-        // ======== MODIFIED DOWNLOAD FUNCTION ========
         async function downloadVideoWithProgress(video) {
             if (!isDownloadableVideo(video)) {
                 addNotification('warning', 'This video cannot be downloaded for offline viewing.');
@@ -1851,29 +1976,25 @@
                 }
 
                 const blob = new Blob(chunks);
-                
-                // 1) Save to IndexedDB (for offline playback within the app)
+
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
                 store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
                 await new Promise((res, rej) => { tx.oncomplete = res;
                     tx.onerror = rej; });
                 offlineVideos.add(video.id);
-                
-                // 2) Trigger download to user's device download folder
+
                 const blobUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = blobUrl;
-                // Extract file extension; fallback to .mp4
                 const ext = video.videoUrl.split('.').pop().split('?')[0] || 'mp4';
                 const filename = `${video.title || 'video'}.${ext}`;
                 a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                // Revoke blob URL after a delay to allow download to start
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                
+
                 addNotification('success', `"${video.title}" saved offline and downloaded to your device.`);
                 renderOfflinePage();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
@@ -1883,7 +2004,6 @@
                 addNotification('danger', 'Download failed: ' + e.message);
             }
         }
-        // ============================================
 
         function attachDocEvents() {
             document.querySelectorAll('.read-btn').forEach(btn => {
@@ -1973,39 +2093,96 @@
             }
         }
 
+        // ===== ENHANCED DOC FULL PAGE — GOOGLE DOCS VIEWER =====
         function openDocFullPage(doc) {
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             document.getElementById('docFullPage').classList.add('active-page');
-            let html =
-                `<h2>${escapeHtml(doc.title)}</h2><p style="color:#8b8fa3;">${escapeHtml(doc.instructor)}</p><hr style="margin:1rem 0;">`;
+            const content = document.getElementById('docFullContent');
+
+            let html = `
+                <div style="margin-bottom:20px;">
+                    <h1 style="font-size:24px;font-weight:800;color:#1a1d28;margin-bottom:6px;">${escapeHtml(doc.title)}</h1>
+                    <div style="color:#8b8fa3;font-size:13px;display:flex;gap:18px;flex-wrap:wrap;">
+                        <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
+                        <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
+                        <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
+                        <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
+                    </div>
+                    ${doc.description ? `<div style="margin-top:12px;padding:14px 20px;background:#fff8ed;border-radius:16px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
+                </div>
+            `;
 
             if (doc.docUrl) {
-                const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                if (['pdf'].includes(fileExtension)) {
-                    html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;" allow="fullscreen"></iframe>`;
-                } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExtension)) {
-                    const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
-                    html +=
-                        `<iframe src="${viewerUrl}" width="100%" height="800px" style="border:none;border-radius:14px;"></iframe>`;
-                } else {
-                    html +=
-                        `<iframe src="${doc.docUrl}" width="100%" height="800px" style="border:none;border-radius:14px;" allow="fullscreen"></iframe>`;
-                }
-                html += `<p style="margin-top:12px;font-size:0.8rem;color:#8b8fa3;">If the document does not load, <a href="${escapeHtml(doc.docUrl)}" target="_blank" style="color:var(--gold);">open in new tab</a>.</p>`;
+                const fileExt = doc.docUrl.split('.').pop().split('?')[0].toLowerCase() || '';
+                const isWord = ['doc', 'docx'].includes(fileExt);
+                const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
+                const isPdf = ['pdf'].includes(fileExt);
+                const isPowerpoint = ['ppt', 'pptx'].includes(fileExt);
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
+                const isText = ['txt', 'rtf', 'md'].includes(fileExt);
+
+                let fileTypeLabel = fileExt.toUpperCase();
+                if (isWord) fileTypeLabel = '📝 Word';
+                else if (isExcel) fileTypeLabel = '📊 Excel';
+                else if (isPdf) fileTypeLabel = '📄 PDF';
+                else if (isPowerpoint) fileTypeLabel = '📊 PowerPoint';
+                else if (isImage) fileTypeLabel = '🖼️ Image';
+                else if (isText) fileTypeLabel = '📃 Text';
+                else fileTypeLabel = '📎 File';
+
+                const googleViewerUrl =
+                    `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
+
+                html += `<div class="doc-viewer-toolbar" style="display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 12px 0;padding:14px 20px;background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);align-items:center;">
+                    <span class="file-badge" style="background:#f5f6f8;padding:4px 16px;border-radius:30px;font-size:11px;font-weight:600;color:#5f6377;border:1px solid #eee;"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
+                    <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
+                    <a href="${doc.docUrl}" target="_blank" class="btn-download" style="background:#f5b042;color:#fff;border:none;padding:8px 20px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(245,176,66,0.20);text-decoration:none;"><i class="fas fa-external-link-alt"></i> Open</a>
+                    <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;color:#fff;border:none;padding:8px 20px;border-radius:30px;font-weight:700;font-size:12px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(46,204,113,0.20);text-decoration:none;"><i class="fas fa-download"></i> Download</a>
+                </div>`;
+
+                // Use Google Docs Viewer for documents
+                html += `
+                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:16px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
+                    <div class="doc-viewer-fallback" style="display:none;margin-top:8px;padding:12px 18px;background:#fff8ed;border-radius:30px;font-size:12px;color:#5f6377;text-align:center;border:1px solid #f0e0c8;">
+                        <i class="fas fa-info-circle"></i> 
+                        The document could not load directly. <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;text-decoration:none;">Click here to open it</a> 
+                        or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;text-decoration:none;">download</a> it.
+                    </div>
+                `;
+
+                html += `
+                    <div style="margin-top:10px;padding:10px 16px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
+                        <i class="fas fa-info-circle"></i> 
+                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
+                        or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
+                    </div>
+                `;
+            } else if (doc.content) {
+                html += `
+                    <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:24px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid #f0f0f5;">
+                        ${doc.content}
+                    </div>
+                `;
             } else {
-                html +=
-                    `<div style="white-space:pre-wrap;line-height:1.7;">${doc.content || 'No content available.'}</div>`;
+                html += `
+                    <div style="text-align:center;padding:56px;color:#8b8fa3;font-size:14px;">
+                        <i class="fas fa-file-alt" style="font-size:52px;display:block;margin-bottom:14px;opacity:0.25;"></i>
+                        No content available for this document.
+                    </div>
+                `;
             }
-            document.getElementById('docFullContent').innerHTML = html;
+            content.innerHTML = html;
+            // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
         function renderMyLearn() {
-            const watched = allVideos.filter(v => watchedVideos.has(v.id));
+            const watched = allVideos.filter(v => watchedVideos.has(v.id)).sort((a, b) => (b.createdAt || 0) - (a
+            .createdAt || 0));
             document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v)).join('') ||
                 '<p class="empty-state">No watched videos yet</p>';
-            const myPaid = allCourses.filter(c => approvedCourses.has(c.id));
+            const myPaid = allCourses.filter(c => approvedCourses.has(c.id)).sort((a, b) => (b.createdAt || 0) - (a
+                .createdAt || 0));
             document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c => {
                 return `
                 <div class="course-card" data-id="${c.id}">
@@ -2269,6 +2446,28 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // toast helper
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                background: #1a1d28; color: #fff; padding: 14px 24px; border-radius: 40px;
+                box-shadow: 0 12px 40px rgba(0,0,0,0.15); display: flex; align-items: center;
+                gap: 12px; animation: slideInToast 0.4s cubic-bezier(0.34,1.56,0.64,1);
+                max-width: 360px; font-weight: 500; font-size: 12px;
+                border: 1px solid rgba(255,255,255,0.06);
+            `;
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-bell');
+            toast.innerHTML = `<i class="fas ${icon}" style="background:linear-gradient(135deg,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:18px;"></i> ${msg}`;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+        // Inject toast keyframe
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `@keyframes slideInToast { from { opacity:0; transform: translateX(40px) scale(0.95); } to { opacity:1; transform: translateX(0) scale(1); } }`;
+        document.head.appendChild(styleSheet);
+
+        console.log('✅ UTOM User — Newest first sorting, floating curved nav, Google Docs Viewer for all documents');
     </script>
 </body>
 </html>
