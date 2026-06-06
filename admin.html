@@ -22,12 +22,13 @@
         body {
             height: 100%;
             overflow: hidden;
-            background: #f4f5f8;
+            background: #f0f1f5;
             color: #1a1d28;
             font-size: 15px;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
+        /* ===== APP ROOT — FLEX COLUMN, FULL HEIGHT ===== */
         .app-root {
             display: flex;
             flex-direction: column;
@@ -35,18 +36,18 @@
             width: 100%;
             max-width: 100vw;
             margin: 0 auto;
-            background: #f4f5f8;
+            background: #f0f1f5;
             overflow: hidden;
             position: relative;
         }
 
-        /* ===== SCROLLING CONTENT ===== */
+        /* ===== SCROLLING CONTENT — FLEX:1, NO HEIGHT, AUTO OVERFLOW ===== */
         .app-content {
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
             min-height: 0;
-            padding: 0 16px 130px 16px;
+            padding: 0 18px 130px 18px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             width: 100%;
@@ -54,34 +55,42 @@
         }
 
         .app-content::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
         .app-content::-webkit-scrollbar-track {
             background: transparent;
         }
         .app-content::-webkit-scrollbar-thumb {
-            background: rgba(245, 176, 66, 0.3);
-            border-radius: 10px;
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
         }
 
-        /* ===== BOTTOM NAVIGATION — STANDARD MOBILE STYLE ===== */
+        /* ===== FLOATING PILL NAV — GLASS, CURVED, SHADOW ===== */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
-            height: 72px;
-            background: #1c2128;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 440px;
+            height: 68px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 40px;
+            padding: 6px 12px;
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 500;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
             flex-shrink: 0;
             pointer-events: auto;
-            padding: 6px 0 12px 0;
-            border-top: 2px solid #f5b042;
+            border: 1.5px solid rgba(245, 176, 66, 0.20);
+            transition: all 0.3s ease;
+        }
+        .bottom-nav:hover {
+            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
         }
 
         .nav-item {
@@ -89,42 +98,59 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            color: #888;
-            transition: all 0.25s ease;
+            color: #b0b4c0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             flex: 1;
             background: none;
             border: none;
             font-size: 6px;
             gap: 2px;
             user-select: none;
-            padding: 4px 0;
+            padding: 6px 0;
             border-radius: 30px;
             position: relative;
-            -webkit-tap-highlight-color: transparent;
         }
         .nav-item i {
-            font-size: 22px;
-            margin-bottom: 2px;
-            transition: all 0.25s ease;
-            color: #888;
+            font-size: 20px;
+            margin-bottom: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #b0b4c0;
         }
         .nav-item span {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 600;
-            letter-spacing: 0.3px;
-            transition: all 0.25s ease;
-            color: #888;
+            letter-spacing: 0.6px;
+            transition: all 0.3s ease;
+            color: #b0b4c0;
         }
         .nav-item.active i {
-            color: #f5b83d;
-            transform: scale(1.1);
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.12) translateY(-2px);
         }
         .nav-item.active span {
-            color: #f5b83d;
+            color: #f5b042;
             font-weight: 700;
         }
         .nav-item:active {
-            transform: scale(0.92);
+            transform: scale(0.90);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            transition: transform 0.3s ease;
+        }
+        .nav-item.active::after {
+            transform: translateX(-50%) scaleX(1);
         }
 
         /* ===== HEADER ===== */
@@ -132,8 +158,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 0 18px 0;
-            background: #f4f5f8;
+            padding: 16px 0 18px 0;
+            background: #f0f1f5;
             flex-shrink: 0;
             position: relative;
             z-index: 10;
@@ -141,27 +167,28 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
         .notif-bell {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             background: #fff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
             color: #1a1d28;
             font-size: 18px;
             cursor: pointer;
             position: relative;
             flex-shrink: 0;
-            transition: all 0.25s ease;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(245, 176, 66, 0.08);
         }
         .notif-bell:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.15);
+            transform: scale(1.06) translateY(-2px);
+            box-shadow: 0 8px 28px rgba(245, 176, 66, 0.20);
         }
         .notif-badge {
             position: absolute;
@@ -170,24 +197,25 @@
             background: #e63946;
             color: #fff;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 8px;
+            width: 20px;
+            height: 20px;
+            font-size: 9px;
             font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 10px rgba(230, 57, 70, 0.3);
+            box-shadow: 0 2px 12px rgba(230, 57, 70, 0.35);
             transition: all 0.3s ease;
+            border: 2px solid #fff;
         }
         .notif-badge.read {
             background: #b0b4c0;
             opacity: 0.5;
         }
         .header-title {
-            font-size: 18px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #d4952a, #f5b042);
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -196,34 +224,36 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .account-pill {
             background: rgba(245, 176, 66, 0.12);
-            padding: 8px 18px;
-            border-radius: 34px;
+            padding: 10px 22px;
+            border-radius: 40px;
             font-size: 13px;
             font-weight: 700;
             color: #d4952a;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            border: 1px solid rgba(245, 176, 66, 0.15);
+            gap: 10px;
+            transition: all 0.3s ease;
+            border: 1.5px solid rgba(245, 176, 66, 0.15);
+            backdrop-filter: blur(4px);
         }
         .account-pill:hover {
-            background: rgba(245, 176, 66, 0.2);
-            transform: translateY(-2px);
+            background: rgba(245, 176, 66, 0.20);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(245, 176, 66, 0.15);
         }
         .account-pill i {
-            font-size: 15px;
+            font-size: 16px;
         }
 
         /* ===== SECTIONS ===== */
         .section {
             display: none;
-            animation: fadeUp 0.3s ease;
+            animation: fadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             width: 100%;
             min-height: 100px;
         }
@@ -233,7 +263,7 @@
         @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(14px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -241,82 +271,97 @@
             }
         }
 
-        /* ===== DASHBOARD CARDS ===== */
+        /* ===== DASHBOARD CARDS — FLOATING, CURVED, GLASS ===== */
         .dash-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 0 0 16px 0;
+            gap: 14px;
+            padding: 0 0 18px 0;
         }
         .dash-card {
             background: #fff;
-            border-radius: 20px;
-            padding: 16px 14px;
-            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f0f0f5;
-            transition: all 0.25s ease;
+            border-radius: 24px;
+            padding: 20px 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
             overflow: hidden;
         }
         .dash-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(245, 176, 66, 0.06);
+        }
+        .dash-card .dash-glow {
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(245, 176, 66, 0.06);
+            pointer-events: none;
         }
         .dash-card .dash-icon {
-            font-size: 18px;
-            margin-bottom: 4px;
+            font-size: 20px;
+            margin-bottom: 6px;
             background: linear-gradient(135deg, #d4952a, #f5b042);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         .dash-card .dash-number {
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 28px;
+            font-weight: 900;
             color: #1a1d28;
             line-height: 1.2;
+            letter-spacing: -0.5px;
         }
         .dash-card .dash-label {
-            font-size: 10px;
+            font-size: 11px;
             color: #8b8fa3;
-            font-weight: 500;
+            font-weight: 600;
             margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
         }
         .dash-card .dash-sub {
-            font-size: 9px;
+            font-size: 10px;
             color: #b0b4c0;
-            margin-top: 1px;
+            margin-top: 2px;
+            font-weight: 500;
         }
-        .dash-card .dash-glow {
+        .dash-card .dash-trend {
             position: absolute;
-            top: -24px;
-            right: -24px;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(245, 176, 66, 0.04);
-            pointer-events: none;
+            top: 14px;
+            right: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 30px;
+            background: rgba(46, 204, 113, 0.10);
+            color: #2ecc71;
         }
 
         /* ===== RECENT POSTS ===== */
         .recent-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 0 0 16px 0;
+            gap: 14px;
+            padding: 0 0 18px 0;
         }
         .recent-item {
             background: #fff;
-            border-radius: 18px;
-            padding: 14px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
-            transition: all 0.25s ease;
+            border-radius: 22px;
+            padding: 16px 18px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
         }
         .recent-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.07);
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         }
         .recent-item .r-title {
             font-weight: 700;
@@ -326,57 +371,57 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.3;
+            line-height: 1.4;
         }
         .recent-item .r-meta {
             font-size: 10px;
             color: #8b8fa3;
-            margin-top: 5px;
+            margin-top: 6px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
             align-items: center;
         }
         .recent-item .r-badge {
             font-size: 9px;
-            padding: 3px 12px;
+            padding: 4px 14px;
             border-radius: 30px;
             background: rgba(245, 176, 66, 0.12);
             color: #d4952a;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-block;
         }
         .recent-item .r-badge.free {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: rgba(46, 204, 113, 0.12);
+            color: #2ecc71;
         }
 
         /* ===== VIDEO GRID ===== */
         .video-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 0 0 16px 0;
+            gap: 14px;
+            padding: 0 0 18px 0;
         }
         .video-card {
             background: #fff;
-            border-radius: 18px;
+            border-radius: 22px;
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             display: flex;
             flex-direction: column;
         }
         .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(245, 176, 66, 0.06);
         }
         .video-card .thumb {
             position: relative;
             width: 100%;
-            padding-bottom: 62%;
+            padding-bottom: 60%;
             overflow: hidden;
             background: #e8ecf1;
         }
@@ -387,41 +432,44 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.35s ease;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .video-card:hover .thumb img {
-            transform: scale(1.05);
+            transform: scale(1.06);
         }
         .video-card .thumb .play-badge {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            bottom: 12px;
+            right: 12px;
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             color: #fff;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            box-shadow: 0 4px 18px rgba(245, 176, 66, 0.4);
-            transition: all 0.25s ease;
+            font-size: 14px;
+            box-shadow: 0 4px 24px rgba(245, 176, 66, 0.40);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             z-index: 2;
         }
         .video-card:hover .thumb .play-badge {
-            transform: scale(1.1);
+            transform: scale(1.12) rotate(4deg);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.50);
         }
         .video-card .thumb .price-tag {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 4px 12px;
+            top: 12px;
+            left: 12px;
+            padding: 5px 14px;
             border-radius: 30px;
             font-size: 10px;
             font-weight: 700;
             z-index: 2;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.20);
         }
         .price-tag.free {
             background: rgba(232, 245, 233, 0.92);
@@ -432,7 +480,7 @@
             color: #d4952a;
         }
         .video-card .info {
-            padding: 12px 14px 14px;
+            padding: 14px 16px 16px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -442,7 +490,7 @@
             font-size: 14px;
             font-weight: 700;
             color: #1a1d28;
-            line-height: 1.3;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -455,82 +503,84 @@
         }
         .video-card .info .meta {
             display: flex;
-            gap: 12px;
+            gap: 14px;
             font-size: 10px;
             color: #6b6f7c;
             font-weight: 500;
         }
         .video-card .info .meta i {
-            margin-right: 3px;
+            margin-right: 4px;
             color: #b0b4c0;
         }
         .video-card .info .actions {
             display: flex;
-            gap: 6px;
-            margin-top: 6px;
+            gap: 8px;
+            margin-top: 8px;
         }
         .btn-sm {
             background: #f5f6f8;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             color: #6b6f7c;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1px solid transparent;
         }
         .btn-sm:hover {
-            background: #ebedf0;
-            color: #1a1d28;
+            transform: scale(1.08);
         }
         .btn-sm.edit:hover {
             background: #e3f0fd;
             color: #2979c1;
+            border-color: rgba(41, 121, 193, 0.15);
         }
         .btn-sm.delete:hover {
             background: #fde8e8;
             color: #d32f2f;
+            border-color: rgba(211, 47, 47, 0.15);
         }
 
         /* ===== DOCS LIST ===== */
         .docs-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding: 0 0 16px 0;
+            gap: 14px;
+            padding: 0 0 18px 0;
         }
         .doc-item {
             background: #fff;
-            border-radius: 18px;
-            padding: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
-            transition: all 0.25s ease;
+            border-radius: 22px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
         }
         .doc-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.07);
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         }
         .doc-item h3 {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             color: #1a1d28;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         .doc-item .doc-byline {
             font-size: 10px;
             color: #8b8fa3;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
         .doc-item .doc-snippet {
             font-size: 11px;
             color: #4a4e5c;
-            line-height: 1.5;
+            line-height: 1.6;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -540,7 +590,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 12px;
         }
         .doc-item .doc-footer .doc-price {
             font-weight: 700;
@@ -554,26 +604,26 @@
         }
         .doc-item .doc-footer .doc-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
         }
         .btn-read {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             border: none;
-            padding: 8px 18px;
-            border-radius: 34px;
+            padding: 8px 20px;
+            border-radius: 40px;
             font-weight: 700;
             cursor: pointer;
             color: #fff;
             font-size: 10px;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.30);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         .btn-read:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(245, 176, 66, 0.4);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.40);
         }
         .btn-read i {
             margin-right: 4px;
@@ -583,11 +633,11 @@
         .section-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 4px 0 10px 0;
+            gap: 12px;
+            padding: 6px 0 12px 0;
         }
         .section-header h3 {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             color: #1a1d28;
         }
@@ -596,37 +646,39 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 16px;
+            font-size: 18px;
         }
         .section-header .badge {
             background: rgba(245, 176, 66, 0.12);
             color: #d4952a;
-            padding: 3px 12px;
+            padding: 4px 16px;
             border-radius: 30px;
             font-size: 11px;
             font-weight: 700;
             margin-left: auto;
+            border: 1px solid rgba(245, 176, 66, 0.10);
         }
 
         /* ===== BUTTONS ===== */
         .btn-primary {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             border: none;
-            padding: 12px 22px;
+            padding: 14px 28px;
             border-radius: 40px;
             font-weight: 700;
             cursor: pointer;
             color: #fff;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 18px rgba(245, 176, 66, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 24px rgba(245, 176, 66, 0.30);
             font-size: 13px;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 28px rgba(245, 176, 66, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(245, 176, 66, 0.40);
         }
         .btn-primary:active {
             transform: scale(0.96);
@@ -637,54 +689,70 @@
         }
         .btn-outline {
             background: transparent;
-            border: 2px solid #e0d8c8;
-            padding: 10px 20px;
+            border: 2px solid rgba(224, 216, 200, 0.5);
+            padding: 12px 24px;
             border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.25s ease;
+            transition: all 0.3s ease;
             color: #5f6377;
             font-size: 12px;
+            backdrop-filter: blur(4px);
         }
         .btn-outline:hover {
             border-color: #f5b042;
             color: #d4952a;
-            background: #fffdf7;
+            background: rgba(255, 253, 247, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.08);
         }
 
-        /* ===== FORMS ===== */
+        /* ===== FORMS — FLOATING, CURVED, CLEAN ===== */
         .form-card {
             background: #fff;
-            border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
+            border-radius: 24px;
+            padding: 22px 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        .form-card:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
         }
         .form-card h4 {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
             color: #1a1d28;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-card h4 i {
+            background: linear-gradient(135deg, #d4952a, #f5b042);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .form-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
         .form-row input,
         .form-row select,
         .form-row textarea {
             flex: 1;
-            min-width: 130px;
-            padding: 11px 16px;
+            min-width: 140px;
+            padding: 12px 18px;
             border-radius: 40px;
             border: 1.5px solid #e5e8ed;
             font-size: 12px;
             font-family: inherit;
             transition: all 0.25s ease;
-            background: #fff;
+            background: #fafbfc;
             color: #1a1d28;
         }
         .form-row input:focus,
@@ -692,11 +760,12 @@
         .form-row textarea:focus {
             outline: none;
             border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
         }
         .form-row textarea {
-            border-radius: 16px;
-            min-height: 70px;
+            border-radius: 18px;
+            min-height: 80px;
             resize: vertical;
         }
         .form-row input::placeholder,
@@ -705,19 +774,20 @@
         }
         .radio-group {
             display: flex;
-            gap: 14px;
+            gap: 16px;
             align-items: center;
-            background: #f9f9fc;
-            padding: 8px 16px;
+            background: #f8f9fc;
+            padding: 10px 20px;
             border-radius: 50px;
             font-size: 12px;
             font-weight: 500;
+            border: 1px solid #f0f1f5;
         }
         .radio-group label {
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
         .radio-group input[type="radio"] {
             accent-color: #f5b042;
@@ -728,46 +798,47 @@
         /* ===== USERS ===== */
         .users-search {
             display: flex;
-            gap: 10px;
-            margin-bottom: 14px;
+            gap: 12px;
+            margin-bottom: 16px;
             align-items: center;
         }
         .users-search input {
             flex: 1;
-            padding: 11px 16px;
+            padding: 12px 18px;
             border-radius: 40px;
             border: 1.5px solid #e5e8ed;
             font-size: 12px;
-            background: #fff;
+            background: #fafbfc;
             transition: all 0.25s ease;
         }
         .users-search input:focus {
             outline: none;
             border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
         }
         .user-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 16px;
+            padding: 14px 18px;
             background: #fff;
-            border-radius: 16px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .user-row:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
         }
         .user-row .user-info {
             flex: 1;
         }
         .user-row .user-info strong {
-            font-size: 13px;
+            font-size: 14px;
             color: #1a1d28;
         }
         .user-row .user-info small {
@@ -778,19 +849,20 @@
         .user-row .user-status {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .badge-banned {
             background: #fde8e8;
             color: #c62828;
-            padding: 3px 12px;
+            padding: 4px 14px;
             border-radius: 30px;
             font-size: 10px;
             font-weight: 700;
+            border: 1px solid rgba(198, 40, 40, 0.10);
         }
         .toggle-switch {
-            width: 40px;
-            height: 22px;
+            width: 44px;
+            height: 24px;
             background: #d5d8e0;
             border-radius: 30px;
             display: inline-block;
@@ -798,44 +870,49 @@
             cursor: pointer;
             transition: all 0.3s ease;
             flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
         }
         .toggle-switch.active {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
         }
         .toggle-switch:after {
             content: "";
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             background: #fff;
             border-radius: 50%;
             position: absolute;
             top: 2px;
             left: 2px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
         .toggle-switch.active:after {
-            left: 20px;
+            left: 22px;
         }
 
         /* ===== COURSES ===== */
         .course-folder {
             background: #fff;
-            border-radius: 16px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
-            margin-bottom: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .course-folder:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
         }
         .course-header {
             display: flex;
             justify-content: space-between;
-            padding: 12px 16px;
+            padding: 14px 18px;
             background: #fffdf7;
             cursor: pointer;
             font-weight: 700;
             transition: all 0.25s ease;
-            font-size: 13px;
+            font-size: 14px;
             color: #1a1d28;
         }
         .course-header:hover {
@@ -849,8 +926,8 @@
         }
         .subfolders {
             display: none;
-            padding: 10px 14px;
-            gap: 8px;
+            padding: 12px 16px 16px;
+            gap: 10px;
             flex-wrap: wrap;
             background: #fafbfc;
         }
@@ -859,26 +936,27 @@
             flex-direction: column;
         }
         .subfolder-item {
-            padding: 8px 14px;
+            padding: 10px 16px;
             background: #fff;
             border-radius: 40px;
             cursor: pointer;
-            border: 1px solid rgba(245, 176, 66, 0.15);
+            border: 1px solid rgba(245, 176, 66, 0.12);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             font-size: 12px;
         }
         .subfolder-item:hover {
             background: #fff8ed;
             border-color: #f0d8a8;
+            transform: translateX(4px);
         }
         .add-subfolder {
-            margin-top: 6px;
+            margin-top: 8px;
             background: none;
-            border: 2px dashed #e0d0b0;
-            padding: 8px;
+            border: 2px dashed rgba(224, 208, 176, 0.5);
+            padding: 10px;
             border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
@@ -890,21 +968,21 @@
         .add-subfolder:hover {
             border-color: #f5b042;
             color: #d4952a;
-            background: #fffdf7;
+            background: rgba(255, 253, 247, 0.4);
         }
 
         /* ===== ACCOUNT / BANK STATEMENT ===== */
         .bank-statement {
             background: #fff;
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
         .bank-statement .stmt-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #f5f5f8;
             font-size: 13px;
         }
@@ -929,24 +1007,24 @@
         }
         .filter-pills {
             display: flex;
-            gap: 10px;
-            margin: 12px 0 16px 0;
+            gap: 12px;
+            margin: 14px 0 18px 0;
             flex-wrap: wrap;
         }
         .filter-pill {
-            padding: 8px 20px;
+            padding: 10px 24px;
             border-radius: 50px;
             background: #fff;
             cursor: pointer;
             font-weight: 700;
             font-size: 11px;
             border: 2px solid transparent;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
         }
         .filter-pill:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
         }
         .filter-pill.pending {
             background: #f5b042;
@@ -965,15 +1043,15 @@
         }
         .filter-pill.active {
             box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.15);
-            transform: scale(1.03);
+            transform: scale(1.04);
         }
         .big-earnings {
-            font-size: 32px;
-            font-weight: 800;
+            font-size: 36px;
+            font-weight: 900;
             text-align: center;
-            margin: 6px 0 10px 0;
+            margin: 6px 0 12px 0;
             letter-spacing: -1px;
-            background: linear-gradient(135deg, #d4952a, #f5b042);
+            background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -982,29 +1060,29 @@
         /* ===== TRANSACTION CARDS ===== */
         .tx-card {
             background: #fff;
-            border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
-            transition: all 0.25s ease;
+            border-radius: 20px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .tx-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
         }
         .tx-card .tx-main {
             flex: 2;
-            min-width: 160px;
+            min-width: 180px;
         }
         .tx-card .tx-main .tx-user {
             font-weight: 700;
-            font-size: 13px;
+            font-size: 14px;
             color: #1a1d28;
         }
         .tx-card .tx-main .tx-meta {
@@ -1012,36 +1090,36 @@
             font-size: 11px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 3px;
+            gap: 10px;
+            margin-top: 4px;
         }
         .tx-card .tx-main .tx-meta i {
-            margin-right: 3px;
+            margin-right: 4px;
             color: #b0b4c0;
         }
         .tx-amount {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 800;
             color: #d4952a;
             background: rgba(245, 176, 66, 0.08);
-            padding: 5px 16px;
+            padding: 6px 20px;
             border-radius: 30px;
             white-space: nowrap;
         }
         .tx-status {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-size: 11px;
             font-weight: 600;
-            padding: 4px 12px;
+            padding: 4px 14px;
             border-radius: 30px;
             background: #f5f6f8;
             white-space: nowrap;
         }
         .tx-status .dot {
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
         }
@@ -1066,24 +1144,24 @@
         }
         .tx-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
         }
         .btn-approve {
             background: #2ecc71;
             color: #fff;
             border: none;
-            padding: 5px 14px;
+            padding: 6px 16px;
             border-radius: 30px;
             font-weight: 700;
             cursor: pointer;
             font-size: 10px;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 10px rgba(46, 204, 113, 0.2);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 12px rgba(46, 204, 113, 0.20);
         }
         .btn-approve:hover {
             background: #27ae60;
-            transform: scale(1.03);
+            transform: scale(1.05);
         }
         .btn-approve:disabled {
             opacity: 0.4;
@@ -1094,28 +1172,29 @@
             background: #e74c3c;
             color: #fff;
             border: none;
-            padding: 5px 14px;
+            padding: 6px 16px;
             border-radius: 30px;
             font-weight: 700;
             cursor: pointer;
             font-size: 10px;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.15);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 12px rgba(231, 76, 60, 0.15);
         }
         .btn-reject:hover {
             background: #c0392b;
-            transform: scale(1.03);
+            transform: scale(1.05);
         }
 
-        /* ===== MODALS ===== */
+        /* ===== MODALS — FLOATING, CURVED, GLASS ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.50);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             z-index: 2000;
             display: none;
             align-items: center;
@@ -1127,19 +1206,20 @@
         }
         .modal-box {
             background: #fff;
-            border-radius: 24px;
+            border-radius: 28px;
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             max-height: 85vh;
             overflow-y: auto;
-            padding: 24px 22px;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-            animation: modalIn 0.3s ease;
+            padding: 28px 26px;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         @keyframes modalIn {
             from {
                 opacity: 0;
-                transform: scale(0.92) translateY(20px);
+                transform: scale(0.90) translateY(24px);
             }
             to {
                 opacity: 1;
@@ -1154,20 +1234,27 @@
             color: #aaa;
             cursor: pointer;
             padding: 4px;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .modal-box .close-modal:hover {
             color: #e74c3c;
             transform: rotate(90deg);
+            background: rgba(231, 76, 60, 0.06);
         }
         .modal-box h3 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             color: #1a1d28;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             clear: both;
         }
         .modal-box h3 i {
@@ -1182,7 +1269,7 @@
             font-size: 13px;
         }
         .modal-box table td {
-            padding: 8px 10px;
+            padding: 10px 12px;
             border-bottom: 1px solid #f5f5f8;
         }
         .modal-box table td:first-child {
@@ -1198,7 +1285,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 14px 0;
             border-bottom: 1px solid #f0f0f5;
         }
         .setting-row span {
@@ -1208,11 +1295,11 @@
         }
         .setting-row input,
         .setting-row select {
-            padding: 8px 14px;
+            padding: 10px 16px;
             border-radius: 30px;
             border: 1.5px solid #e5e8ed;
             font-size: 12px;
-            background: #fff;
+            background: #fafbfc;
             width: 160px;
             text-align: right;
             transition: all 0.25s ease;
@@ -1221,7 +1308,8 @@
         .setting-row select:focus {
             outline: none;
             border-color: #f5b042;
-            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
         }
 
         /* ===== LEFT SIDEBAR (NOTIFICATIONS) ===== */
@@ -1231,10 +1319,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.40);
             z-index: 3000;
             display: none;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
         }
         .sidebar-overlay.open {
             display: block;
@@ -1242,24 +1331,24 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -380px;
-            width: 380px;
-            max-width: 88vw;
+            left: -400px;
+            width: 400px;
+            max-width: 90vw;
             height: 100%;
             background: #fff;
             z-index: 3100;
-            box-shadow: 8px 0 40px rgba(0, 0, 0, 0.15);
-            transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 12px 0 56px rgba(0, 0, 0, 0.12);
+            transition: left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
             display: flex;
             flex-direction: column;
-            border-radius: 0 24px 24px 0;
+            border-radius: 0 28px 28px 0;
             overflow: hidden;
         }
         .sidebar.open {
             left: 0;
         }
         .sidebar-header {
-            padding: 16px 20px;
+            padding: 18px 22px;
             border-bottom: 1.5px solid #f0e8d8;
             display: flex;
             justify-content: space-between;
@@ -1268,11 +1357,11 @@
             flex-shrink: 0;
         }
         .sidebar-header h3 {
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .sidebar-header h3 i {
             background: linear-gradient(135deg, #d4952a, #f5b042);
@@ -1281,15 +1370,15 @@
             background-clip: text;
         }
         .sidebar-header .close-sidebar {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: #f5f5f5;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.3s ease;
             font-size: 15px;
             color: #555;
             border: none;
@@ -1302,33 +1391,33 @@
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
-            padding: 10px 8px 10px 14px;
+            padding: 12px 10px 12px 16px;
         }
         .sidebar-body::-webkit-scrollbar {
             width: 4px;
         }
         .sidebar-body::-webkit-scrollbar-thumb {
             background: #f5b042;
-            border-radius: 10px;
+            border-radius: 20px;
         }
         .notif-item {
-            padding: 12px 14px;
+            padding: 14px 16px;
             border-bottom: 1px solid #f3f3f3;
             font-size: 12px;
             cursor: pointer;
             transition: background 0.15s ease;
-            border-radius: 12px;
+            border-radius: 14px;
             margin-right: 4px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .notif-item:hover {
             background: #fffbf3;
         }
         .notif-item .notif-dot {
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #f5b042;
             flex-shrink: 0;
@@ -1347,15 +1436,15 @@
         }
         .notif-empty {
             text-align: center;
-            padding: 34px 14px;
+            padding: 40px 14px;
             color: #b0b4c0;
             font-size: 14px;
         }
         .notif-empty i {
-            font-size: 32px;
-            opacity: 0.3;
+            font-size: 36px;
+            opacity: 0.25;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         /* ===== TOAST ===== */
@@ -1366,58 +1455,60 @@
             z-index: 4000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
         .toast {
             background: #1a1d28;
             color: #fff;
-            padding: 12px 22px;
+            padding: 14px 24px;
             border-radius: 40px;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
             display: flex;
             align-items: center;
-            gap: 10px;
-            animation: slideInToast 0.3s ease;
-            max-width: 320px;
+            gap: 12px;
+            animation: slideInToast 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 360px;
             font-weight: 500;
             font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
         .toast i {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 16px;
+            font-size: 18px;
         }
         @keyframes slideInToast {
             from {
                 opacity: 0;
-                transform: translateX(30px);
+                transform: translateX(40px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateX(0) scale(1);
             }
         }
 
-        /* ===== PERSISTENT PLAYER ===== */
+        /* ===== PERSISTENT PLAYER — STICKY, FLOATING, CURVED ===== */
         .persistent-player {
             position: sticky;
             top: 0;
             z-index: 20;
             display: none;
-            margin: 0 0 10px 0;
-            background: #f4f5f8;
-            padding: 0 8px;
+            margin: 0 0 12px 0;
+            background: #f0f1f5;
+            padding: 0 4px;
         }
         .player-container {
             background: #000;
-            border-radius: 18px;
+            border-radius: 24px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
             width: 100%;
             aspect-ratio: 16 / 9;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .player-container video,
         .player-container iframe {
@@ -1429,30 +1520,34 @@
         }
         .player-close-btn {
             position: absolute;
-            top: 10px;
-            right: 14px;
-            background: rgba(0, 0, 0, 0.7);
+            top: 12px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.70);
             color: #fff;
             border: none;
             border-radius: 30px;
-            padding: 5px 14px;
+            padding: 6px 16px;
             font-size: 0.7rem;
             cursor: pointer;
             z-index: 22;
             font-weight: 600;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .player-close-btn:hover {
             background: rgba(231, 76, 60, 0.85);
+            transform: scale(1.04);
         }
         .player-fullscreen-btn {
             position: absolute;
-            bottom: 14px;
-            right: 14px;
+            bottom: 16px;
+            right: 16px;
             background: rgba(0, 0, 0, 0.65);
             color: #fff;
-            width: 38px;
-            height: 38px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1460,12 +1555,13 @@
             cursor: pointer;
             z-index: 22;
             font-size: 1rem;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.10);
         }
         .player-fullscreen-btn:hover {
-            background: rgba(245, 176, 66, 0.7);
+            background: rgba(245, 176, 66, 0.70);
             transform: scale(1.08);
             border-color: #f5b042;
         }
@@ -1480,7 +1576,7 @@
             pointer-events: none;
         }
 
-        /* ===== DOC FULL PAGE — GOOGLE DOCS VIEWER (ALL DOCS) ===== */
+        /* ===== DOC FULL PAGE — GOOGLE DOCS VIEWER ===== */
         #docFullContent {
             width: 100%;
             min-height: 60vh;
@@ -1489,28 +1585,29 @@
             width: 100%;
             min-height: 550px;
             border: none;
-            border-radius: 12px;
+            border-radius: 16px;
             background: #f5f6f8;
         }
         .doc-viewer-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin: 14px 0 10px 0;
-            padding: 12px 16px;
+            gap: 14px;
+            margin: 14px 0 12px 0;
+            padding: 14px 20px;
             background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f5;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             align-items: center;
         }
         .doc-viewer-toolbar .file-badge {
             background: #f5f6f8;
-            padding: 4px 14px;
+            padding: 4px 16px;
             border-radius: 30px;
             font-size: 11px;
             font-weight: 600;
             color: #5f6377;
+            border: 1px solid #eee;
         }
         .doc-viewer-toolbar .file-badge i {
             margin-right: 4px;
@@ -1520,23 +1617,24 @@
             background: #f5b042;
             color: #fff;
             border: none;
-            padding: 6px 18px;
+            padding: 8px 20px;
             border-radius: 30px;
             font-weight: 700;
             font-size: 12px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.20);
         }
         .doc-viewer-toolbar .btn-download:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(245, 176, 66, 0.30);
         }
         .doc-viewer-fallback {
             margin-top: 8px;
-            padding: 10px 16px;
+            padding: 12px 18px;
             background: #fff8ed;
             border-radius: 30px;
             font-size: 12px;
@@ -1553,165 +1651,73 @@
             text-decoration: underline;
         }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 520px) {
-            .app-content {
-                padding: 0 12px 100px 12px;
-            }
-            .bottom-nav {
-                height: 64px;
-                padding: 4px 0 8px 0;
-            }
-            .nav-item i {
-                font-size: 18px;
-            }
-            .nav-item span {
-                font-size: 7px;
-            }
-            .header-title {
-                font-size: 16px;
-            }
-            .account-pill {
-                font-size: 11px;
-                padding: 6px 14px;
-            }
-            .header {
-                padding: 10px 0 14px 0;
-            }
-            .notif-bell {
-                width: 38px;
-                height: 38px;
-                font-size: 16px;
-            }
-            .dash-grid {
-                gap: 10px;
-            }
-            .dash-card {
-                padding: 12px 12px;
-            }
-            .dash-card .dash-number {
-                font-size: 20px;
-            }
-            .video-grid {
-                gap: 10px;
-            }
-            .video-card .info h4 {
-                font-size: 12px;
-            }
-            .video-card .info .instructor {
-                font-size: 9px;
-            }
-            .video-card .info .meta {
-                font-size: 9px;
-            }
-            .recent-grid {
-                gap: 10px;
-            }
-            .recent-item .r-title {
-                font-size: 12px;
-            }
-            .big-earnings {
-                font-size: 26px;
-            }
-            .filter-pill {
-                font-size: 10px;
-                padding: 6px 14px;
-            }
-            .tx-card .tx-main .tx-user {
-                font-size: 12px;
-            }
-            .tx-amount {
-                font-size: 14px;
-                padding: 4px 12px;
-            }
-            .modal-box {
-                padding: 18px 16px;
-                max-width: 94%;
-            }
-            .modal-box h3 {
-                font-size: 16px;
-            }
-            .sidebar {
-                width: 320px;
-                left: -340px;
-            }
-            .form-row input,
-            .form-row select,
-            .form-row textarea {
-                font-size: 11px;
-                padding: 9px 14px;
-                min-width: 100px;
-            }
-            .radio-group {
-                font-size: 11px;
-                padding: 6px 12px;
-            }
-            .btn-primary {
-                font-size: 12px;
-                padding: 10px 18px;
-            }
-            .setting-row span {
-                font-size: 12px;
-            }
-            .setting-row input,
-            .setting-row select {
-                width: 120px;
-                font-size: 11px;
-            }
-            .course-header {
-                font-size: 12px;
-                padding: 10px 14px;
-            }
-            .subfolder-item {
-                font-size: 11px;
-                padding: 6px 12px;
-            }
-            .doc-item h3 {
-                font-size: 13px;
-            }
-            .doc-item .doc-snippet {
-                font-size: 10px;
-            }
-            #docFullContent iframe {
-                min-height: 350px;
-            }
+        /* ===== ADDITIONAL FORM STYLING ===== */
+        .form-card input[type="text"],
+        .form-card input[type="url"],
+        .form-card input[type="number"],
+        .form-card select,
+        .form-card textarea {
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.25s ease;
+            background: #fafbfc;
+            color: #1a1d28;
         }
-
-        @media (max-width: 400px) {
-            .dash-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            .video-grid {
-                gap: 8px;
-            }
-            .video-card .info {
-                padding: 8px 10px 10px;
-            }
-            .video-card .info h4 {
-                font-size: 11px;
-            }
-            .recent-grid {
-                grid-template-columns: 1fr;
-            }
-            .bottom-nav {
-                height: 58px;
-                padding: 2px 0 6px 0;
-            }
-            .nav-item i {
-                font-size: 16px;
-            }
-            .nav-item span {
-                font-size: 6px;
-            }
+        .form-card input[type="text"]:focus,
+        .form-card input[type="url"]:focus,
+        .form-card input[type="number"]:focus,
+        .form-card select:focus,
+        .form-card textarea:focus {
+            outline: none;
+            border-color: #f5b042;
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
+        }
+        .form-card textarea {
+            border-radius: 18px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-card input[type="text"]::placeholder,
+        .form-card input[type="url"]::placeholder,
+        .form-card input[type="number"]::placeholder,
+        .form-card textarea::placeholder {
+            color: #b0b4c0;
+        }
+        .form-card .radio-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            background: #f8f9fc;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            border: 1px solid #f0f1f5;
+        }
+        .form-card .radio-group label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .form-card .radio-group input[type="radio"] {
+            accent-color: #f5b042;
+            width: 16px;
+            height: 16px;
         }
 
         /* ===== UPLOAD PROGRESS ===== */
         .upload-progress {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 6px;
+            gap: 12px;
+            margin-top: 8px;
         }
         .upload-progress .bar {
             flex: 1;
@@ -1732,25 +1738,27 @@
             color: #8b8fa3;
             min-width: 40px;
             text-align: right;
+            font-weight: 600;
         }
 
         /* ===== FILE INFO ===== */
         .file-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
+            gap: 12px;
+            padding: 10px 16px;
             background: #f5f6f8;
             border-radius: 40px;
-            margin-top: 6px;
+            margin-top: 8px;
             font-size: 11px;
+            border: 1px solid #eee;
         }
         .file-info i {
             background: linear-gradient(135deg, #d4952a, #f5b042);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 14px;
+            font-size: 16px;
         }
         .file-info .fname {
             flex: 1;
@@ -1760,7 +1768,7 @@
         }
         .file-info .ftype {
             background: #e8ecf1;
-            padding: 2px 10px;
+            padding: 2px 12px;
             border-radius: 30px;
             font-size: 10px;
             font-weight: 700;
@@ -1771,28 +1779,29 @@
         .thumb-preview {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 6px;
+            gap: 12px;
+            margin-top: 8px;
         }
         .thumb-preview img {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
             object-fit: cover;
-            border: 2px solid #f0e8d8;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 2px solid rgba(245, 176, 66, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         }
         .thumb-preview span {
             font-size: 11px;
             color: #8b8fa3;
+            font-weight: 500;
         }
 
-        /* ===== BACK BUTTON FOR DOC VIEWER ===== */
+        /* ===== BACK BUTTON ===== */
         .doc-back-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 20px;
+            gap: 10px;
+            padding: 10px 22px;
             background: #fff;
             border: 1.5px solid #e5e8ed;
             border-radius: 40px;
@@ -1800,16 +1809,217 @@
             font-weight: 600;
             color: #1a1d28;
             cursor: pointer;
-            transition: all 0.25s ease;
-            margin-bottom: 14px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin-bottom: 16px;
         }
         .doc-back-btn:hover {
             border-color: #f5b042;
             background: #fffdf7;
-            transform: translateX(-4px);
+            transform: translateX(-6px);
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.08);
         }
         .doc-back-btn i {
             color: #d4952a;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 520px) {
+            .app-content {
+                padding: 0 12px 110px 12px;
+            }
+            .bottom-nav {
+                height: 60px;
+                padding: 4px 8px;
+                width: 94%;
+                max-width: 360px;
+                bottom: 20px;
+                border-radius: 32px;
+            }
+            .nav-item i {
+                font-size: 18px;
+            }
+            .nav-item span {
+                font-size: 6px;
+            }
+            .header-title {
+                font-size: 17px;
+            }
+            .account-pill {
+                font-size: 11px;
+                padding: 8px 16px;
+            }
+            .header {
+                padding: 12px 0 14px 0;
+            }
+            .notif-bell {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            .dash-grid {
+                gap: 12px;
+            }
+            .dash-card {
+                padding: 16px 14px;
+            }
+            .dash-card .dash-number {
+                font-size: 22px;
+            }
+            .video-grid {
+                gap: 12px;
+            }
+            .video-card .info h4 {
+                font-size: 12px;
+            }
+            .video-card .info .instructor {
+                font-size: 9px;
+            }
+            .video-card .info .meta {
+                font-size: 9px;
+            }
+            .recent-grid {
+                gap: 12px;
+            }
+            .recent-item .r-title {
+                font-size: 12px;
+            }
+            .big-earnings {
+                font-size: 28px;
+            }
+            .filter-pill {
+                font-size: 10px;
+                padding: 8px 16px;
+            }
+            .tx-card .tx-main .tx-user {
+                font-size: 12px;
+            }
+            .tx-amount {
+                font-size: 15px;
+                padding: 4px 14px;
+            }
+            .modal-box {
+                padding: 20px 18px;
+                max-width: 94%;
+            }
+            .modal-box h3 {
+                font-size: 17px;
+            }
+            .sidebar {
+                width: 340px;
+                left: -360px;
+            }
+            .form-row input,
+            .form-row select,
+            .form-row textarea {
+                font-size: 11px;
+                padding: 10px 14px;
+                min-width: 100px;
+            }
+            .radio-group {
+                font-size: 11px;
+                padding: 8px 14px;
+            }
+            .btn-primary {
+                font-size: 12px;
+                padding: 12px 20px;
+            }
+            .setting-row span {
+                font-size: 12px;
+            }
+            .setting-row input,
+            .setting-row select {
+                width: 120px;
+                font-size: 11px;
+            }
+            .course-header {
+                font-size: 12px;
+                padding: 12px 16px;
+            }
+            .subfolder-item {
+                font-size: 11px;
+                padding: 8px 14px;
+            }
+            .doc-item h3 {
+                font-size: 14px;
+            }
+            .doc-item .doc-snippet {
+                font-size: 10px;
+            }
+            #docFullContent iframe {
+                min-height: 350px;
+            }
+            .player-container {
+                border-radius: 18px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .dash-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .video-grid {
+                gap: 10px;
+            }
+            .video-card .info {
+                padding: 10px 12px 12px;
+            }
+            .video-card .info h4 {
+                font-size: 11px;
+            }
+            .recent-grid {
+                grid-template-columns: 1fr;
+            }
+            .bottom-nav {
+                height: 54px;
+                padding: 4px 6px;
+                max-width: 320px;
+            }
+            .nav-item i {
+                font-size: 16px;
+            }
+            .nav-item span {
+                font-size: 5px;
+            }
+        }
+
+        /* ===== EXTRA FLOATING TOUCHES ===== */
+        .floating-shadow {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .floating-shadow:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.80);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* Smooth scroll for the entire app */
+        .app-content {
+            scroll-behavior: smooth;
+        }
+
+        /* Ensure content scrolls behind nav */
+        .bottom-nav {
+            pointer-events: auto;
+        }
+        .app-content {
+            padding-bottom: 130px;
+        }
+
+        /* Player sticky fix */
+        .persistent-player {
+            z-index: 20;
+            position: sticky;
+            top: 0;
+        }
+        .header {
+            z-index: 10;
+            position: relative;
         }
     </style>
 </head>
@@ -1836,7 +2046,7 @@
             </div>
         </div>
 
-        <!-- ===== PERSISTENT PLAYER ===== -->
+        <!-- ===== PERSISTENT PLAYER — STICKY & FLOATING ===== -->
         <div id="persistentPlayer" class="persistent-player">
             <div class="player-container">
                 <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
@@ -1853,7 +2063,7 @@
         <div id="homeSection" class="section active">
             <div style="padding:0 0 4px 0;">
                 <button id="bigPostBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST VIDEO</button>
-                <div id="dynamicPostForm" style="display:none;margin-top:12px;">
+                <div id="dynamicPostForm" style="display:none;margin-top:14px;">
                     <div class="form-card">
                         <h4><i class="fas fa-cloud-upload-alt"></i> Upload new video</h4>
                         <form id="homePostForm">
@@ -1863,12 +2073,12 @@
                             </div>
                             <div class="form-row">
                                 <select id="courseSelectHome"></select>
-                                <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;">Price: FREE</span>
+                                <span id="videoPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
                             </div>
                             <div class="form-row">
                                 <select id="subfolderSelectHome"></select>
                                 <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:11px;">Add</button>
+                                <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
                             </div>
                             <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
                             <div class="form-row">
@@ -1879,19 +2089,19 @@
                             </div>
                             <div id="linkGroup">
                                 <input type="url" id="videoUrlInput" placeholder="Video URL">
-                                <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:6px;">
+                                <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:8px;">
                             </div>
                             <div id="uploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
-                                <div class="upload-progress" id="uploadProgressArea" style="margin-top:8px;">
+                                <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
+                                <div class="upload-progress" id="uploadProgressArea" style="margin-top:10px;">
                                     <div class="bar"><div class="fill" id="uploadProgressFill"></div></div>
                                     <span class="percent" id="uploadPercentText">0%</span>
                                 </div>
                                 <input type="hidden" id="cloudinaryVideoUrl">
-                                <div style="margin-top:10px;">
+                                <div style="margin-top:12px;">
                                     <label style="font-size:11px;font-weight:500;">Thumbnail frame (sec):</label>
-                                    <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:60px;display:inline-block;margin-left:6px;">
-                                    <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 14px;font-size:10px;">Generate</button>
+                                    <input type="number" id="thumbnailOffset" value="3" step="0.5" style="width:70px;display:inline-block;margin-left:8px;">
+                                    <button type="button" id="generateThumbnailBtn" class="btn-outline" style="padding:4px 16px;font-size:10px;">Generate</button>
                                 </div>
                                 <input type="hidden" id="generatedThumbnailUrl">
                                 <div class="thumb-preview" id="thumbnailPreviewContainer" style="display:none;">
@@ -1900,9 +2110,9 @@
                                 </div>
                             </div>
                             <input type="hidden" id="videoPriceHidden" value="0">
-                            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-                                <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:11px;">PUBLISH</button>
+                            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
+                                <button type="button" id="cancelPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
+                                <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH</button>
                             </div>
                         </form>
                     </div>
@@ -1939,13 +2149,13 @@
 
                 <!-- Recent Posts -->
                 <div style="padding:0 0 6px 0;">
-                    <h4 style="font-size:14px;font-weight:700;color:#1a1d28;display:flex;align-items:center;gap:8px;">
+                    <h4 style="font-size:15px;font-weight:700;color:#1a1d28;display:flex;align-items:center;gap:10px;">
                         <i class="fas fa-clock" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
                         Recent Posts
                     </h4>
                 </div>
                 <div class="recent-grid" id="recentPostsContainer">
-                    <div style="color:#8b8fa3;font-size:12px;padding:12px;grid-column:1/-1;text-align:center;">Loading...</div>
+                    <div style="color:#8b8fa3;font-size:12px;padding:14px;grid-column:1/-1;text-align:center;">Loading...</div>
                 </div>
 
                 <!-- Video Sections -->
@@ -1963,7 +2173,7 @@
                 </div>
                 <div id="homeFreeGrid" class="video-grid"></div>
 
-                <div style="text-align:center;padding:8px;color:#8b8fa3;font-size:11px;">
+                <div style="text-align:center;padding:12px;color:#8b8fa3;font-size:11px;border-top:1px solid #e8e8ed;margin-top:4px;">
                     <span><i class="fas fa-video"></i> <span id="statVideos">0</span> videos · </span>
                     <span><i class="fas fa-users"></i> <span id="statUsers">0</span> users · </span>
                     <span><i class="fas fa-chart-line"></i> <span id="statEarnings">0</span> ZMW</span>
@@ -1974,8 +2184,8 @@
         <!-- VIDEOS -->
         <div id="videosSection" class="section">
             <div style="padding:0 0 4px 0;">
-                <div class="form-card" style="margin-bottom:12px;">
-                    <h2 style="font-size:15px;margin-bottom:8px;"><i class="fas fa-video"></i> Video Library</h2>
+                <div class="form-card" style="margin-bottom:14px;">
+                    <h2 style="font-size:16px;margin-bottom:10px;"><i class="fas fa-video"></i> Video Library</h2>
                     <div class="form-row">
                         <input type="text" id="searchVideoInput" placeholder="Search..." style="flex:2;">
                         <select id="filterCourseSelect" style="flex:1;"><option value="all">All courses</option></select>
@@ -2004,14 +2214,14 @@
         <!-- COURSES -->
         <div id="coursesSection" class="section">
             <div style="padding:0 0 4px 0;">
-                <div style="display:flex;gap:8px;margin:0 0 12px 0;flex-wrap:wrap;background:transparent;">
-                    <input type="text" id="newCourseName" placeholder="Course name" style="flex:2;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;">
-                    <select id="newCoursePriceType" style="flex:1;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;">
+                <div style="display:flex;gap:10px;margin:0 0 14px 0;flex-wrap:wrap;background:transparent;">
+                    <input type="text" id="newCourseName" placeholder="Course name" style="flex:2;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
+                    <select id="newCoursePriceType" style="flex:1;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;">
                         <option value="free">Free</option>
                         <option value="paid">Paid</option>
                     </select>
-                    <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:100px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;display:none;">
-                    <button id="addCourseBtn" class="btn-primary" style="padding:10px 20px;font-size:12px;">+ Add</button>
+                    <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:110px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:12px 18px;font-size:12px;display:none;">
+                    <button id="addCourseBtn" class="btn-primary" style="padding:12px 24px;font-size:12px;">+ Add</button>
                 </div>
                 <div id="coursesAccordionContainer"></div>
             </div>
@@ -2021,7 +2231,7 @@
         <div id="docsSection" class="section">
             <div style="padding:0 0 4px 0;">
                 <button id="bigPostDocBtn" class="btn-primary full"><i class="fas fa-plus-circle"></i> POST DOCUMENT</button>
-                <div id="docPostFormContainer" style="display:none;margin-top:12px;">
+                <div id="docPostFormContainer" style="display:none;margin-top:14px;">
                     <div class="form-card">
                         <h4><i class="fas fa-file-alt"></i> Add Document / Notes</h4>
                         <form id="docPostForm">
@@ -2031,12 +2241,12 @@
                             </div>
                             <div class="form-row">
                                 <select id="docCourseSelect"></select>
-                                <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;">Price: FREE</span>
+                                <span id="docPriceDisplay" style="background:rgba(245,176,66,0.12);border-radius:30px;padding:6px 18px;font-size:11px;font-weight:600;color:#d4952a;display:flex;align-items:center;border:1px solid rgba(245,176,66,0.08);">Price: FREE</span>
                             </div>
                             <div class="form-row">
                                 <select id="docSubfolderSelect"></select>
                                 <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
-                                <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:11px;">Add</button>
+                                <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;">Add</button>
                             </div>
                             <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
                             <div class="form-row">
@@ -2047,12 +2257,12 @@
                                 </div>
                             </div>
                             <div id="docTextGroup">
-                                <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:10px;font-size:12px;"><i class="fas fa-pen"></i> Open Full Editor</button>
+                                <button type="button" id="openFullEditorBtn" class="btn-outline" style="width:100%;padding:12px;font-size:12px;"><i class="fas fa-pen"></i> Open Full Editor</button>
                                 <input type="hidden" id="docContentHidden">
                             </div>
                             <div id="docUploadGroup" style="display:none;">
-                                <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:8px 16px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
-                                <div class="upload-progress" id="docUploadProgress" style="margin-top:8px;">
+                                <button type="button" id="cloudinaryDocUploadBtn" class="btn-primary" style="padding:10px 18px;font-size:11px;"><i class="fas fa-cloud-upload-alt"></i> Upload Document</button>
+                                <div class="upload-progress" id="docUploadProgress" style="margin-top:10px;">
                                     <div class="bar"><div class="fill" id="docProgressFill"></div></div>
                                     <span class="percent" id="docPercentText">0%</span>
                                 </div>
@@ -2067,14 +2277,14 @@
                                 <input type="url" id="docLinkInput" placeholder="https://... (Document URL)">
                             </div>
                             <input type="hidden" id="docPriceHidden" value="0">
-                            <div style="margin-top:12px;display:flex;gap:10px;">
-                                <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;">Cancel</button>
-                                <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:11px;">PUBLISH DOC</button>
+                            <div style="margin-top:14px;display:flex;gap:12px;">
+                                <button type="button" id="cancelDocPostBtn" class="btn-outline" style="padding:10px 20px;font-size:11px;">Cancel</button>
+                                <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:11px;">PUBLISH DOC</button>
                             </div>
                         </form>
                     </div>
                 </div>
-                <h3 style="font-size:14px;font-weight:700;color:#1a1d28;margin:14px 0 8px 0;">Document Library</h3>
+                <h3 style="font-size:16px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Document Library</h3>
                 <div id="docsListContainer" class="docs-list"></div>
             </div>
         </div>
@@ -2104,40 +2314,40 @@
                 </div>
                 <div class="setting-row">
                     <span>Payment Method</span>
-                    <select id="paymentMethodSelect" style="width:150px;">
+                    <select id="paymentMethodSelect" style="width:160px;">
                         <option>MTN Mobile Money</option>
                         <option>Airtel Money</option>
                         <option>Visa Card</option>
                     </select>
                 </div>
                 <div class="setting-row">
-                    <span><i class="fas fa-phone" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:4px;"></i> MTN Number</span>
+                    <span><i class="fas fa-phone" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:6px;"></i> MTN Number</span>
                     <input type="text" id="mtnNumberInput" class="setting-input" placeholder="097...">
                 </div>
                 <div class="setting-row">
-                    <span><i class="fas fa-phone" style="color:#e74c3c;margin-right:4px;"></i> Airtel Number</span>
+                    <span><i class="fas fa-phone" style="color:#e74c3c;margin-right:6px;"></i> Airtel Number</span>
                     <input type="text" id="airtelNumberInput" class="setting-input" placeholder="097...">
                 </div>
                 <div class="setting-row">
                     <span>Save Payment Numbers</span>
-                    <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:6px 16px;font-size:11px;"><i class="fas fa-save"></i> Save</button>
+                    <button id="savePaymentNumbersBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-save"></i> Save</button>
                 </div>
                 <div class="setting-row">
                     <span>Banned Users</span>
                     <span style="font-size:11px;color:#8b8fa3;">Scroll below</span>
                 </div>
-                <div id="bannedUsersList" style="margin-top:8px;"></div>
-                <button id="logoutBtn" class="btn-primary full" style="margin-top:16px;">Logout</button>
+                <div id="bannedUsersList" style="margin-top:10px;"></div>
+                <button id="logoutBtn" class="btn-primary full" style="margin-top:20px;">Logout</button>
             </div>
         </div>
 
         <!-- ===== SUBFOLDER VIEW ===== -->
         <div id="subfolderViewSection" class="section">
             <div style="padding:0 0 4px 0;">
-                <button id="backFromSubfolderBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
-                <h2 id="subfolderViewTitle" style="font-size:18px;font-weight:700;color:#1a1d28;margin:0 0 10px 0;">Subfolder</h2>
+                <button id="backFromSubfolderBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;margin-bottom:12px;"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="subfolderViewTitle" style="font-size:20px;font-weight:700;color:#1a1d28;margin:0 0 12px 0;">Subfolder</h2>
                 <div id="subfolderVideosContainer" class="video-grid"></div>
-                <h3 style="font-size:14px;font-weight:700;color:#1a1d28;margin:14px 0 8px 0;">Documents</h3>
+                <h3 style="font-size:15px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Documents</h3>
                 <div id="subfolderDocsContainer" class="docs-list"></div>
             </div>
         </div>
@@ -2153,15 +2363,15 @@
         <!-- ===== DOC EDITOR ===== -->
         <div id="docEditorPage" class="section">
             <div style="padding:0 0 4px 0;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-                    <button id="cancelDocEditorBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;"><i class="fas fa-times"></i> Cancel</button>
-                    <button id="doneDocEditorBtn" class="btn-primary" style="padding:8px 20px;font-size:12px;"><i class="fas fa-check"></i> Done</button>
+                <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
+                    <button id="cancelDocEditorBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;"><i class="fas fa-times"></i> Cancel</button>
+                    <button id="doneDocEditorBtn" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Done</button>
                 </div>
-                <div id="fullPageEditor" style="background:#fff;border-radius:20px;padding:20px;min-height:55vh;border:1px solid #f0f0f5;outline:none;font-size:15px;line-height:1.8;box-shadow:0 2px 10px rgba(0,0,0,0.04);" contenteditable="true"></div>
+                <div id="fullPageEditor" style="background:#fff;border-radius:24px;padding:24px;min-height:55vh;border:1px solid #f0f0f5;outline:none;font-size:15px;line-height:1.8;box-shadow:0 4px 20px rgba(0,0,0,0.04);" contenteditable="true"></div>
             </div>
         </div>
 
-        <!-- ===== BOTTOM NAV ===== -->
+        <!-- ===== BOTTOM NAV — FLOATING PILL ===== -->
         <div class="bottom-nav">
             <button class="nav-item active" data-section="home"><i class="fas fa-home"></i><span>Home</span></button>
             <button class="nav-item" data-section="videos"><i class="fas fa-video"></i><span>Videos</span></button>
@@ -2181,8 +2391,8 @@
             <button class="close-modal">&times;</button>
             <h3><i class="fas fa-user-circle"></i> User Profile</h3>
             <table id="userModalTable"></table>
-            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px;">
-                <button id="userModalBanBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;"><i class="fas fa-ban"></i> Toggle Ban</button>
+            <div style="display:flex;gap:14px;justify-content:flex-end;margin-top:20px;">
+                <button id="userModalBanBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;"><i class="fas fa-ban"></i> Toggle Ban</button>
             </div>
         </div>
     </div>
@@ -2213,20 +2423,20 @@
                     <select id="editSubfolderSelect"></select>
                 </div>
                 <div class="form-row" style="align-items:center;">
-                    <label style="font-weight:600;margin-right:6px;font-size:12px;">Price Type:</label>
-                    <select id="editPriceType" style="width:auto;font-size:12px;padding:5px 12px;">
+                    <label style="font-weight:600;margin-right:8px;font-size:12px;">Price Type:</label>
+                    <select id="editPriceType" style="width:auto;font-size:12px;padding:6px 14px;">
                         <option value="free">Free</option>
                         <option value="paid">Paid</option>
                     </select>
-                    <input type="number" id="editPriceAmount" placeholder="Price ZMW" style="width:90px;font-size:12px;">
+                    <input type="number" id="editPriceAmount" placeholder="Price ZMW" style="width:100px;font-size:12px;">
                 </div>
                 <textarea id="editDescription" rows="2" placeholder="Description"></textarea>
                 <div id="editThumbnailGroup">
                     <input type="url" id="editThumbnailUrl" placeholder="Thumbnail URL">
                 </div>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-                    <button type="button" id="cancelEditBtn" class="btn-outline" style="padding:8px 18px;font-size:12px;">Cancel</button>
-                    <button type="submit" class="btn-primary" style="padding:8px 20px;font-size:12px;"><i class="fas fa-check"></i> Save</button>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
+                    <button type="button" id="cancelEditBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Save</button>
                 </div>
             </form>
         </div>
@@ -2524,9 +2734,9 @@
             const paid = videos.filter(v => v.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             const free = videos.filter(v => v.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             document.getElementById('homePaidGrid').innerHTML = paid.map(v => buildVideoCard(v)).join('') ||
-                '<div style="color:#8b8fa3;font-size:12px;padding:16px;text-align:center;">No paid videos yet</div>';
+                '<div style="color:#8b8fa3;font-size:13px;padding:20px;text-align:center;">No paid videos yet</div>';
             document.getElementById('homeFreeGrid').innerHTML = free.map(v => buildVideoCard(v)).join('') ||
-                '<div style="color:#8b8fa3;font-size:12px;padding:16px;text-align:center;">No free videos yet</div>';
+                '<div style="color:#8b8fa3;font-size:13px;padding:20px;text-align:center;">No free videos yet</div>';
             document.getElementById('paidCount').innerText = paid.length;
             document.getElementById('freeCount').innerText = free.length;
         }
@@ -2572,7 +2782,7 @@
                 <h3>${escapeHtml(doc.title)}</h3>
                 <div class="doc-byline">by ${escapeHtml(doc.instructor)} · ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</div>
                 <div class="doc-snippet">${escapeHtml(doc.description || 'No description')}</div>
-                <div style="display:flex;gap:12px;font-size:11px;color:#6b6f7c;margin-top:4px;">
+                <div style="display:flex;gap:14px;font-size:11px;color:#6b6f7c;margin-top:4px;">
                     <span><i class="fas fa-eye"></i> ${reads}</span>
                     <span><i class="fas fa-heart"></i> ${likes}</span>
                 </div>
@@ -2598,7 +2808,7 @@
             );
             filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             document.getElementById('postedVideosGrid').innerHTML = filtered.map(v => buildVideoCard(v, true)).join('') ||
-                '<div style="color:#8b8fa3;padding:16px;text-align:center;">No videos found</div>';
+                '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos found</div>';
             attachCardEvents();
             attachEditEvents();
         }
@@ -2606,7 +2816,7 @@
         function renderDocsList() {
             const sortedDocs = [...docs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             document.getElementById('docsListContainer').innerHTML = sortedDocs.map(d => buildDocCard(d)).join('') ||
-                '<div style="color:#8b8fa3;padding:16px;text-align:center;">No documents</div>';
+                '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
             attachCardEvents();
             attachEditEvents();
         }
@@ -2743,26 +2953,23 @@
             document.getElementById('docFullPage').classList.add('active');
             const content = document.getElementById('docFullContent');
 
-            // Build document header
             let html = `
-                <div style="margin-bottom:18px;">
-                    <h1 style="font-size:22px;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
-                    <div style="color:#8b8fa3;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="margin-bottom:20px;">
+                    <h1 style="font-size:24px;font-weight:800;color:#1a1d28;margin-bottom:6px;">${escapeHtml(doc.title)}</h1>
+                    <div style="color:#8b8fa3;font-size:13px;display:flex;gap:18px;flex-wrap:wrap;">
                         <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
                         <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
                         <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
                         <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
                     </div>
-                    ${doc.description ? `<div style="margin-top:10px;padding:12px 16px;background:#fff8ed;border-radius:14px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
+                    ${doc.description ? `<div style="margin-top:12px;padding:14px 20px;background:#fff8ed;border-radius:16px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
                 </div>
             `;
 
-            // Document viewer — use Google Docs Viewer for ALL file types
             if (doc.docUrl) {
                 const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
                 const fileExt = fileExtension || '';
 
-                // Detect file types for labeling
                 const isWord = ['doc', 'docx'].includes(fileExt);
                 const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
                 const isPdf = ['pdf'].includes(fileExt);
@@ -2770,7 +2977,6 @@
                 const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
                 const isText = ['txt', 'rtf', 'md'].includes(fileExt);
 
-                // File type badge
                 let fileTypeLabel = fileExt.toUpperCase();
                 if (isWord) fileTypeLabel = '📝 Word';
                 else if (isExcel) fileTypeLabel = '📊 Excel';
@@ -2780,8 +2986,8 @@
                 else if (isText) fileTypeLabel = '📃 Text';
                 else fileTypeLabel = '📎 File';
 
-                // Google Docs Viewer URL (works for PDF, Word, Excel, PowerPoint, and more)
-                const googleViewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
+                const googleViewerUrl =
+                    `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
 
                 html += `<div class="doc-viewer-toolbar">
                     <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
@@ -2790,9 +2996,8 @@
                     <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
                 </div>`;
 
-                // Use Google Docs Viewer for all documents (PDF, Word, Excel, PowerPoint, etc.)
                 html += `
-                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:12px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
+                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:16px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
                     <div class="doc-viewer-fallback" style="display:none;">
                         <i class="fas fa-info-circle"></i> 
                         The document could not load directly. <a href="${doc.docUrl}" target="_blank">Click here to open it</a> 
@@ -2800,32 +3005,29 @@
                     </div>
                 `;
 
-                // Also add a direct link fallback if the iframe fails
                 html += `
-                    <div style="margin-top:8px;padding:8px 14px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
+                    <div style="margin-top:10px;padding:10px 16px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
                         <i class="fas fa-info-circle"></i> 
                         If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
                         or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
                     </div>
                 `;
             } else if (doc.content) {
-                // Text content (written in editor)
                 html += `
-                    <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:20px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+                    <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:24px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid #f0f0f5;">
                         ${doc.content}
                     </div>
                 `;
             } else {
                 html += `
-                    <div style="text-align:center;padding:48px;color:#8b8fa3;font-size:14px;">
-                        <i class="fas fa-file-alt" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.3;"></i>
+                    <div style="text-align:center;padding:56px;color:#8b8fa3;font-size:14px;">
+                        <i class="fas fa-file-alt" style="font-size:52px;display:block;margin-bottom:14px;opacity:0.25;"></i>
                         No content available for this document.
                     </div>
                 `;
             }
 
             content.innerHTML = html;
-            // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
@@ -2855,27 +3057,27 @@
                             <span><i class="fas fa-phone"></i> ${escapeHtml(tx.userPhone || 'N/A')}</span>
                             <span><i class="fas fa-tag"></i> ${itemType}</span>
                             <span><i class="fas fa-clock"></i> ${date}</span>
-                            <span style="background:#f0f2f5;padding:2px 10px;border-radius:30px;font-size:10px;font-weight:600;color:#5f6377;"><i class="fas fa-file"></i> ${escapeHtml(tx.itemTitle)}</span>
+                            <span style="background:#f0f2f5;padding:2px 12px;border-radius:30px;font-size:10px;font-weight:600;color:#5f6377;"><i class="fas fa-file"></i> ${escapeHtml(tx.itemTitle)}</span>
                         </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                         <span class="tx-amount">ZMW ${tx.amount}</span>
                         <span class="tx-status">
                             <span class="dot ${statusClass}"></span> ${statusClass.charAt(0).toUpperCase() + statusClass.slice(1)}
                         </span>
-                        ${hasScreenshot ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:30px;font-size:10px;font-weight:600;"><i class="fas fa-image"></i> Screenshot</span>` : `<span style="display:inline-flex;align-items:center;gap:4px;background:#fde8e8;color:#c62828;padding:3px 10px;border-radius:30px;font-size:10px;font-weight:600;"><i class="fas fa-exclamation-circle"></i> No screenshot</span>`}
+                        ${hasScreenshot ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:30px;font-size:10px;font-weight:600;"><i class="fas fa-image"></i> Screenshot</span>` : `<span style="display:inline-flex;align-items:center;gap:4px;background:#fde8e8;color:#c62828;padding:4px 12px;border-radius:30px;font-size:10px;font-weight:600;"><i class="fas fa-exclamation-circle"></i> No screenshot</span>`}
                     </div>
                     ${isPending ? `
                     <div class="tx-actions" style="margin-top:4px;width:100%;">
                         ${hasScreenshot ? `
                             <button class="btn-approve approve-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}"><i class="fas fa-check"></i> Approve</button>
                         ` : `
-                            <span style="color:#e74c3c;font-size:11px;font-weight:600;background:#fee;padding:4px 12px;border-radius:30px;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-image"></i> Screenshot required</span>
+                            <span style="color:#e74c3c;font-size:11px;font-weight:600;background:#fee;padding:4px 14px;border-radius:30px;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-image"></i> Screenshot required</span>
                         `}
                         <button class="btn-reject reject-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-source="${tx.source}"><i class="fas fa-times"></i> Reject</button>
                     </div>` : ''}
                 </div>`;
-            }).join('') || '<div style="text-align:center;padding:24px;color:#8b8fa3;">No transactions</div>';
+            }).join('') || '<div style="text-align:center;padding:28px;color:#8b8fa3;">No transactions</div>';
             attachTxEvents();
         }
 
@@ -2968,13 +3170,13 @@
             <p><strong>Status:</strong> <span style="color:${tx.status==='approved'?'#2ecc71':(tx.status==='pending'?'#f5b042':'#e74c3c')};font-weight:600;">${tx.status}</span></p>
             <p><strong>Date:</strong> ${tx.date || new Date(tx.timestamp).toLocaleString()}</p>
             <p><strong>Payment Method:</strong> ${tx.paymentMethod || 'N/A'}</p>
-            <p><strong>Transaction ID:</strong> <code style="background:#f5f6f8;padding:2px 8px;border-radius:6px;font-size:12px;">${tx.id}</code></p>`;
+            <p><strong>Transaction ID:</strong> <code style="background:#f5f6f8;padding:2px 10px;border-radius:6px;font-size:12px;">${tx.id}</code></p>`;
             if (tx.screenshot) {
                 html +=
-                    `<div><strong>Screenshot:</strong><br><img src="${tx.screenshot}" style="max-width:100%;border-radius:14px;margin-top:8px;border:2px solid #f0e8d8;box-shadow:0 2px 10px rgba(0,0,0,0.06);" onerror="this.style.display='none'"></div>`;
+                    `<div><strong>Screenshot:</strong><br><img src="${tx.screenshot}" style="max-width:100%;border-radius:16px;margin-top:10px;border:2px solid #f0e8d8;box-shadow:0 4px 16px rgba(0,0,0,0.06);" onerror="this.style.display='none'"></div>`;
             } else {
                 html +=
-                    `<div style="background:#fef0f0;padding:8px 14px;border-radius:30px;color:#c62828;font-weight:600;margin-top:8px;font-size:12px;"><i class="fas fa-exclamation-circle"></i> No screenshot uploaded</div>`;
+                    `<div style="background:#fef0f0;padding:10px 16px;border-radius:30px;color:#c62828;font-weight:600;margin-top:10px;font-size:12px;"><i class="fas fa-exclamation-circle"></i> No screenshot uploaded</div>`;
             }
             content.innerHTML = html;
             document.getElementById('txDetailModal').classList.add('open');
@@ -3000,7 +3202,7 @@
                     ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
                     <div class="toggle-switch ${u.banned ? 'active' : ''}" data-uid="${u.uid}" data-banned="${u.banned}"></div>
                 </div>
-            </div>`).join('') || '<div style="color:#8b8fa3;padding:16px;text-align:center;">No users found</div>';
+            </div>`).join('') || '<div style="color:#8b8fa3;padding:20px;text-align:center;">No users found</div>';
             document.querySelectorAll('.user-row .toggle-switch').forEach(toggle => {
                 toggle.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -3035,15 +3237,15 @@
                 }
             }
             let coursesHtml = enrolledCourses.length > 0 ?
-                enrolledCourses.map(c => `<span style="background:rgba(245,176,66,0.12);padding:2px 12px;border-radius:30px;font-size:11px;display:inline-block;margin:2px;">${escapeHtml(c.name)}</span>`)
+                enrolledCourses.map(c => `<span style="background:rgba(245,176,66,0.12);padding:2px 14px;border-radius:30px;font-size:11px;display:inline-block;margin:2px;">${escapeHtml(c.name)}</span>`)
                 .join('') :
                 '<span style="color:#8b8fa3;font-size:12px;">No approved courses</span>';
             document.getElementById('userModalTable').innerHTML = `
-            <tr><td style="padding:6px 10px;font-weight:600;">Name</td><td style="padding:6px 10px;">${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
-            <tr><td style="padding:6px 10px;font-weight:600;">Email</td><td style="padding:6px 10px;">${escapeHtml(user.email)}</td></tr>
-            <tr><td style="padding:6px 10px;font-weight:600;">Phone</td><td style="padding:6px 10px;">${escapeHtml(user.phone || 'N/A')}</td></tr>
-            <tr><td style="padding:6px 10px;font-weight:600;">Status</td><td style="padding:6px 10px;">${isBanned ? 'Banned' : 'Active'}</td></tr>
-            <tr><td style="padding:6px 10px;font-weight:600;">Courses Enrolled</td><td style="padding:6px 10px;">${coursesHtml}</td></tr>`;
+            <tr><td style="padding:8px 12px;font-weight:600;">Name</td><td style="padding:8px 12px;">${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
+            <tr><td style="padding:8px 12px;font-weight:600;">Email</td><td style="padding:8px 12px;">${escapeHtml(user.email)}</td></tr>
+            <tr><td style="padding:8px 12px;font-weight:600;">Phone</td><td style="padding:8px 12px;">${escapeHtml(user.phone || 'N/A')}</td></tr>
+            <tr><td style="padding:8px 12px;font-weight:600;">Status</td><td style="padding:8px 12px;">${isBanned ? 'Banned' : 'Active'}</td></tr>
+            <tr><td style="padding:8px 12px;font-weight:600;">Courses Enrolled</td><td style="padding:8px 12px;">${coursesHtml}</td></tr>`;
             modal.classList.add('open');
             modal.dataset.uid = user.uid;
             document.getElementById('userModalBanBtn').onclick = async () => {
@@ -3443,7 +3645,7 @@
             const allPosts = [...videos, ...docs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 2);
             if (allPosts.length === 0) {
                 container.innerHTML =
-                    '<div style="color:#8b8fa3;font-size:12px;padding:12px;grid-column:1/-1;text-align:center;">No recent posts</div>';
+                    '<div style="color:#8b8fa3;font-size:13px;padding:14px;grid-column:1/-1;text-align:center;">No recent posts</div>';
                 return;
             }
             container.innerHTML = allPosts.map(item => {
@@ -3564,9 +3766,9 @@
             const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a, b) => (b.createdAt || 0) - (a
                 .createdAt || 0));
             document.getElementById('subfolderVideosContainer').innerHTML = subVideos.map(v => buildVideoCard(v, true))
-                .join('') || '<div style="color:#8b8fa3;padding:16px;text-align:center;">No videos</div>';
+                .join('') || '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos</div>';
             document.getElementById('subfolderDocsContainer').innerHTML = subDocs.map(d => buildDocCard(d)).join('') ||
-                '<div style="color:#8b8fa3;padding:16px;text-align:center;">No documents</div>';
+                '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
             attachCardEvents();
             attachEditEvents();
             document.getElementById('backFromSubfolderBtn').onclick = () => {
@@ -3578,10 +3780,10 @@
             const container = document.getElementById('bannedUsersList');
             const bannedUsers = users.filter(u => bannedUsersMap[u.uid]);
             container.innerHTML = bannedUsers.map(u => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;align-items:center;">
+            <div style="display:flex;justify-content:space-between;padding:10px 0;align-items:center;">
                 <span>${escapeHtml(u.email)}</span>
-                <button data-uid="${u.uid}" class="btn-outline" style="padding:4px 14px;font-size:10px;">Unban</button>
-            </div>`).join('') || '<span style="color:#8b8fa3;font-size:12px;">No banned users</span>';
+                <button data-uid="${u.uid}" class="btn-outline" style="padding:4px 16px;font-size:10px;">Unban</button>
+            </div>`).join('') || '<span style="color:#8b8fa3;font-size:13px;">No banned users</span>';
             document.querySelectorAll('.btn-outline[data-uid]').forEach(b => b.addEventListener('click', async () => {
                 await remove(ref(db, `bannedUsers/${b.dataset.uid}`));
                 renderUsers();
@@ -3611,7 +3813,6 @@
             updateStats();
             updateDashboard();
             renderRecentPosts();
-            // Ensure scroll container is ready
             const el = document.querySelector('.app-content');
             if (el) {
                 el.style.overflowY = 'auto';
@@ -3627,10 +3828,9 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — SCROLL FIXED: .app-content uses flex:1, min-height:0, overflow-y:auto');
-        console.log('✅ UTOM Admin — DOC VIEWER: All documents open via Google Docs Viewer with fallback links');
-        console.log('✅ UTOM Admin — FORM CSS: All inputs have consistent styling');
-        console.log('✅ UTOM Admin — NEWEST FIRST: All content sorted by createdAt descending');
+        console.log('✅ UTOM Admin — Floating, curved, glass design with sticky player + fixed nav');
+        console.log('✅ UTOM Admin — All content scrolls freely behind nav and player');
+        console.log('✅ UTOM Admin — Professional spacing and floating card effects');
     </script>
 </body>
 </html>
