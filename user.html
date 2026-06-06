@@ -36,6 +36,8 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
+            --topbar-height: 64px;
+            --player-height: 0px;
         }
 
         html,
@@ -62,20 +64,23 @@
             position: relative;
         }
 
-        /* ===== TOP BAR — fixed at top ===== */
+        /* ===== TOP BAR — fixed at top, never scrolls ===== */
         .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--topbar-height);
             background: white;
-            padding: 0.85rem 1.2rem;
+            padding: 0 1.2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #f0f0f0;
-            flex-shrink: 0;
-            z-index: 20;
+            z-index: 30;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-            position: relative;
+            flex-shrink: 0;
         }
-
         .logo-area {
             display: flex;
             align-items: center;
@@ -128,14 +133,22 @@
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
 
-        /* ===== PERSISTENT PLAYER — fixed below top bar ===== */
-        .persistent-player {
+        /* ===== SPACER for fixed top bar ===== */
+        .topbar-spacer {
+            height: var(--topbar-height);
             flex-shrink: 0;
+            width: 100%;
+        }
+
+        /* ===== PERSISTENT PLAYER — sticky below top bar ===== */
+        .persistent-player {
+            position: sticky;
+            top: var(--topbar-height);
+            z-index: 25;
             display: none;
-            z-index: 15;
             background: #000;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            position: relative;
+            flex-shrink: 0;
             width: 100%;
         }
         .persistent-player.visible {
@@ -219,11 +232,10 @@
             overflow-y: auto;
             overflow-x: hidden;
             min-height: 0;
-            padding: 0 16px 110px 16px;
+            padding: 0 16px 130px 16px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             width: 100%;
-            /* ensure scrollable */
             overscroll-behavior: contain;
         }
         .app-content::-webkit-scrollbar {
@@ -1110,7 +1122,7 @@
             color: #d0d4dc;
         }
 
-        /* ===== BOTTOM NAV — FIXED, FLOATING, GLASS ===== */
+        /* ===== BOTTOM NAV — fixed, floating, glass ===== */
         .bottom-nav {
             position: fixed;
             bottom: 20px;
@@ -1200,7 +1212,7 @@
 
         @media (max-width: 520px) {
             .app-content {
-                padding: 0 12px 100px 12px;
+                padding: 0 12px 110px 12px;
             }
             .bottom-nav {
                 height: 58px;
@@ -1257,6 +1269,7 @@
     </style>
 </head>
 <body>
+
     <div class="app-root">
 
         <!-- ===== TOAST CONTAINER ===== -->
@@ -1292,7 +1305,10 @@
                 </div>
             </div>
 
-            <!-- ===== PERSISTENT PLAYER — fixed below top bar ===== -->
+            <!-- ===== SPACER for fixed top bar ===== -->
+            <div class="topbar-spacer"></div>
+
+            <!-- ===== PERSISTENT PLAYER — sticky below top bar ===== -->
             <div id="persistentPlayer" class="persistent-player">
                 <div class="player-container">
                     <button id="closePlayerBtn" class="player-close-btn"><i class="fas fa-times"></i> Close</button>
@@ -1320,7 +1336,7 @@
                 <input type="text" id="searchInput" placeholder="Search courses..." />
             </div>
 
-            <!-- ===== PAGES (all inside scrollable app-content) ===== -->
+            <!-- ===== PAGES ===== -->
 
             <!-- HOME -->
             <div id="homePage" class="page-container active-page">
@@ -2472,7 +2488,8 @@
         styleSheet.textContent = `@keyframes slideInToast { from { opacity:0; transform: translateX(40px) scale(0.95); } to { opacity:1; transform: translateX(0) scale(1); } }`;
         document.head.appendChild(styleSheet);
 
-        console.log('✅ UTOM User — Fixed scrolling layout, persistent player stays at top, bottom nav fixed.');
+        console.log('✅ UTOM User — Fixed top bar, sticky player, scrollable content, fixed bottom nav');
+        console.log('✅ Like Facebook: top bar + player stay put, content scrolls, bottom nav fixed');
     </script>
 </body>
 </html>
