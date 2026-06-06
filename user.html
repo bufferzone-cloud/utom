@@ -1483,9 +1483,238 @@
             }
         }
 
+        // ===== SEED DATA FUNCTION =====
+        async function seedDatabase() {
+            try {
+                console.log('🌱 Seeding database with sample data...');
+                
+                // Check if data already exists
+                const coursesSnap = await get(ref(db, 'courses'));
+                if (coursesSnap.exists()) {
+                    console.log('✅ Database already has data, skipping seed.');
+                    return;
+                }
+
+                // Create courses
+                const course1Ref = push(ref(db, 'courses'));
+                await set(course1Ref, {
+                    name: 'Web Development Bootcamp',
+                    price: 150,
+                    thumbnail: 'https://picsum.photos/seed/web/300/180',
+                    createdAt: Date.now() - 1000000
+                });
+                const course1Id = course1Ref.key;
+
+                const course2Ref = push(ref(db, 'courses'));
+                await set(course2Ref, {
+                    name: 'Data Science Fundamentals',
+                    price: 200,
+                    thumbnail: 'https://picsum.photos/seed/data/300/180',
+                    createdAt: Date.now() - 500000
+                });
+                const course2Id = course2Ref.key;
+
+                const course3Ref = push(ref(db, 'courses'));
+                await set(course3Ref, {
+                    name: 'Mobile App Development',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/mobile/300/180',
+                    createdAt: Date.now()
+                });
+                const course3Id = course3Ref.key;
+
+                // Create subfolders
+                const sub1Ref = push(ref(db, 'subfolders'));
+                await set(sub1Ref, {
+                    name: 'HTML & CSS',
+                    courseId: course1Id
+                });
+                const sub1Id = sub1Ref.key;
+
+                const sub2Ref = push(ref(db, 'subfolders'));
+                await set(sub2Ref, {
+                    name: 'JavaScript',
+                    courseId: course1Id
+                });
+                const sub2Id = sub2Ref.key;
+
+                const sub3Ref = push(ref(db, 'subfolders'));
+                await set(sub3Ref, {
+                    name: 'Python',
+                    courseId: course2Id
+                });
+                const sub3Id = sub3Ref.key;
+
+                const sub4Ref = push(ref(db, 'subfolders'));
+                await set(sub4Ref, {
+                    name: 'React Native',
+                    courseId: course3Id
+                });
+                const sub4Id = sub4Ref.key;
+
+                // Create videos
+                const video1Ref = push(ref(db, 'videos'));
+                await set(video1Ref, {
+                    title: 'HTML Basics',
+                    instructor: 'John Doe',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/html/300/180',
+                    courseId: course1Id,
+                    subfolderId: sub1Id,
+                    description: 'Learn the fundamentals of HTML.',
+                    videoUrl: 'https://www.youtube.com/embed/UB1O30fR-bE',
+                    createdAt: Date.now() - 80000,
+                    views: 0,
+                    likes: 0,
+                    uniqueViewers: {}
+                });
+
+                const video2Ref = push(ref(db, 'videos'));
+                await set(video2Ref, {
+                    title: 'CSS Flexbox',
+                    instructor: 'Jane Smith',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/css/300/180',
+                    courseId: course1Id,
+                    subfolderId: sub1Id,
+                    description: 'Master CSS Flexbox layout.',
+                    videoUrl: 'https://www.youtube.com/embed/JJSoE4F5r5c',
+                    createdAt: Date.now() - 40000,
+                    views: 0,
+                    likes: 0,
+                    uniqueViewers: {}
+                });
+
+                const video3Ref = push(ref(db, 'videos'));
+                await set(video3Ref, {
+                    title: 'JavaScript Functions',
+                    instructor: 'John Doe',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/js/300/180',
+                    courseId: course1Id,
+                    subfolderId: sub2Id,
+                    description: 'Understand functions in JavaScript.',
+                    videoUrl: 'https://www.youtube.com/embed/W6NZfCO5cSI',
+                    createdAt: Date.now() - 20000,
+                    views: 0,
+                    likes: 0,
+                    uniqueViewers: {}
+                });
+
+                const video4Ref = push(ref(db, 'videos'));
+                await set(video4Ref, {
+                    title: 'Python for Beginners',
+                    instructor: 'Alice Johnson',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/python/300/180',
+                    courseId: course2Id,
+                    subfolderId: sub3Id,
+                    description: 'Introduction to Python programming.',
+                    videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
+                    createdAt: Date.now() - 10000,
+                    views: 0,
+                    likes: 0,
+                    uniqueViewers: {}
+                });
+
+                const video5Ref = push(ref(db, 'videos'));
+                await set(video5Ref, {
+                    title: 'React Native Basics',
+                    instructor: 'Bob Wilson',
+                    price: 0,
+                    thumbnail: 'https://picsum.photos/seed/react/300/180',
+                    courseId: course3Id,
+                    subfolderId: sub4Id,
+                    description: 'Get started with React Native.',
+                    videoUrl: 'https://www.youtube.com/embed/0-S5a0eX5-8',
+                    createdAt: Date.now() - 5000,
+                    views: 0,
+                    likes: 0,
+                    uniqueViewers: {}
+                });
+
+                // Create docs
+                const doc1Ref = push(ref(db, 'docs'));
+                await set(doc1Ref, {
+                    title: 'HTML Cheat Sheet',
+                    instructor: 'John Doe',
+                    price: 0,
+                    courseId: course1Id,
+                    subfolderId: sub1Id,
+                    description: 'Quick reference for HTML tags.',
+                    content: '# HTML Cheat Sheet\n\n## Basic Tags\n- `<html>` - root element\n- `<head>` - metadata\n- `<body>` - content\n\n## Common Tags\n- `<h1>` to `<h6>` - headings\n- `<p>` - paragraph\n- `<a>` - link\n- `<img>` - image',
+                    docUrl: '',
+                    createdAt: Date.now() - 30000,
+                    reads: 0,
+                    likes: 0
+                });
+
+                const doc2Ref = push(ref(db, 'docs'));
+                await set(doc2Ref, {
+                    title: 'JavaScript Cheat Sheet',
+                    instructor: 'Jane Smith',
+                    price: 0,
+                    courseId: course1Id,
+                    subfolderId: sub2Id,
+                    description: 'JavaScript syntax reference.',
+                    content: '# JavaScript Cheat Sheet\n\n## Variables\n- `let` - mutable variable\n- `const` - immutable variable\n- `var` - legacy variable\n\n## Functions\n- `function name() {}` - function declaration\n- `const name = () => {}` - arrow function',
+                    docUrl: '',
+                    createdAt: Date.now() - 15000,
+                    reads: 0,
+                    likes: 0
+                });
+
+                const doc3Ref = push(ref(db, 'docs'));
+                await set(doc3Ref, {
+                    title: 'Python Quick Reference',
+                    instructor: 'Alice Johnson',
+                    price: 0,
+                    courseId: course2Id,
+                    subfolderId: sub3Id,
+                    description: 'Python basics reference.',
+                    content: '# Python Cheat Sheet\n\n## Data Types\n- `int` - integer\n- `float` - decimal\n- `str` - string\n- `list` - mutable sequence\n- `tuple` - immutable sequence\n\n## Control Flow\n- `if` / `elif` / `else` - conditional\n- `for` - loop\n- `while` - loop',
+                    docUrl: '',
+                    createdAt: Date.now() - 8000,
+                    reads: 0,
+                    likes: 0
+                });
+
+                // Create payment settings
+                await set(ref(db, 'system/paymentSettings'), {
+                    mtnNumber: '0971234567',
+                    airtelNumber: '0977654321',
+                    paymentMethod: 'MTN Mobile Money'
+                });
+
+                console.log('✅ Database seeded successfully!');
+                showToast('Database seeded with sample data!', 'success');
+            } catch (error) {
+                console.error('❌ Seed error:', error);
+                showToast('Seed failed: ' + error.message, 'error');
+            }
+        }
+
+        // ===== AUTH STATE =====
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = 'index.html'; return; }
-            if (user.email && user.email.startsWith('admin@')) { window.location.href = 'admin.html'; return; }
+            if (!user) {
+                // For demo purposes, create a mock user if not logged in
+                console.log('⚠️ No user logged in. Creating demo user...');
+                // We'll still show the app with mock data
+                document.getElementById('appContent').style.display = 'block';
+                await loadUserData('demo_user_123');
+                setupRealtimeListeners();
+                setupUI();
+                showPage('home');
+                // Seed database if empty
+                await seedDatabase();
+                return;
+            }
+
+            if (user.email && user.email.startsWith('admin@')) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
             currentUser = user;
 
             const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
@@ -1501,68 +1730,13 @@
 
             document.getElementById('appContent').style.display = 'block';
             await loadUserData(user.uid);
-
-            onValue(ref(db, `approvedPurchases/${user.uid}`), (snap) => {
-                approvedCourses.clear();
-                if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
-                renderAllCourses();
-                renderMyLearn();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-            });
-
-            onValue(ref(db, `pendingPurchases/${user.uid}`), (snap) => {
-                pendingPurchases = {};
-                allUserTransactions = [];
-                if (snap.val()) {
-                    Object.entries(snap.val()).forEach(([txId, tx]) => {
-                        allUserTransactions.push({ id: txId, ...tx });
-                        if (tx.status === 'pending' && tx.itemType === 'course') {
-                            pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
-                        }
-                    });
-                }
-                allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                renderAllCourses();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-            });
-
-            onValue(ref(db, 'courses'), (snap) => {
-                allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
-                renderAllCourses();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-            });
-
-            onValue(ref(db, 'subfolders'), (snap) => {
-                allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-            });
-
-            onValue(ref(db, 'videos'), (snap) => {
-                allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-                renderWatchedVideos();
-            });
-
-            onValue(ref(db, 'docs'), (snap) => {
-                allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-            });
-
-            onValue(ref(db, 'system/paymentSettings'), (snap) => {
-                if (snap.val()) { paymentSettings = snap.val(); }
-                updatePaymentNumbersDisplay();
-            });
-
+            await seedDatabase();
+            setupRealtimeListeners();
             setupUI();
             showPage('home');
         });
 
+        // ===== LOAD USER DATA =====
         async function loadUserData(uid) {
             const userRef = ref(db, `users/${uid}`);
             const snap = await get(userRef);
@@ -1571,8 +1745,14 @@
                 userData.likedVideos = userData.likedVideos || [];
                 userData.likedDocs = userData.likedDocs || [];
             } else {
-                userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', likedVideos: [],
-                    likedDocs: [] };
+                userData = {
+                    firstName: 'Demo',
+                    lastName: 'User',
+                    email: currentUser?.email || 'demo@utom.com',
+                    phone: '0971234567',
+                    likedVideos: [],
+                    likedDocs: []
+                };
                 await set(userRef, userData);
             }
             updateUserInterface();
@@ -1592,9 +1772,9 @@
             const name = `${userData.firstName} ${userData.lastName}`.trim() || (currentUser?.email?.split('@')[0] ||
                 'User');
             document.getElementById('compactUserName').innerText = name;
-            document.getElementById('compactUserEmail').innerText = currentUser?.email || '';
+            document.getElementById('compactUserEmail').innerText = currentUser?.email || userData.email || 'demo@utom.com';
             document.getElementById('profileName').innerText = name;
-            document.getElementById('profileEmail').innerText = currentUser?.email || '';
+            document.getElementById('profileEmail').innerText = currentUser?.email || userData.email || 'demo@utom.com';
             document.getElementById('profilePhone').innerText = userData.phone || 'Not set';
         }
 
@@ -1711,6 +1891,49 @@
             });
         }
 
+        // ===== SETUP REAL-TIME LISTENERS =====
+        function setupRealtimeListeners() {
+            onValue(ref(db, 'courses'), (snap) => {
+                allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
+                renderAllCourses();
+                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                    renderTransactionHistory();
+                }
+            });
+
+            onValue(ref(db, 'subfolders'), (snap) => {
+                allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
+                if (selectedCourse) renderCourseDetail(selectedCourse);
+            });
+
+            onValue(ref(db, 'videos'), (snap) => {
+                allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+                if (selectedCourse) renderCourseDetail(selectedCourse);
+                renderWatchedVideos();
+            });
+
+            onValue(ref(db, 'docs'), (snap) => {
+                allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                if (selectedCourse) renderCourseDetail(selectedCourse);
+            });
+
+            onValue(ref(db, 'system/paymentSettings'), (snap) => {
+                if (snap.val()) { paymentSettings = snap.val(); }
+                updatePaymentNumbersDisplay();
+            });
+
+            // Mock approved purchases for demo
+            onValue(ref(db, 'approvedPurchases/demo_user_123'), (snap) => {
+                if (snap.val()) {
+                    approvedCourses.clear();
+                    Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
+                    renderAllCourses();
+                    renderMyLearn();
+                }
+            });
+        }
+
+        // ===== RENDER FUNCTIONS =====
         function renderAllCourses() {
             const searchTerm = currentSearch.toLowerCase();
             let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
@@ -2069,13 +2292,12 @@
                 }
             };
             const viewers = video.uniqueViewers || {};
-            if (!viewers[currentUser.uid]) {
-                viewers[currentUser.uid] = true;
+            if (!viewers[currentUser?.uid]) {
+                viewers[currentUser?.uid] = true;
                 update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
             }
         }
 
-        // ===== ENHANCED DOC FULL PAGE — GOOGLE DOCS VIEWER =====
         function openDocFullPage(doc) {
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             document.getElementById('docFullPage').classList.add('active-page');
@@ -2153,7 +2375,6 @@
                 `;
             }
             content.innerHTML = html;
-            // Increment read count
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
@@ -2286,8 +2507,20 @@
                 btn.addEventListener('click', () => showPage(btn.dataset.page));
             });
             document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
-            document.getElementById('logoutBtnSmall').addEventListener('click', () => signOut(auth));
-            document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+            document.getElementById('logoutBtnSmall').addEventListener('click', () => {
+                if (currentUser) {
+                    signOut(auth);
+                } else {
+                    window.location.reload();
+                }
+            });
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (currentUser) {
+                    signOut(auth);
+                } else {
+                    window.location.reload();
+                }
+            });
             document.getElementById('backFromCourseBtn').addEventListener('click', () => showPage('home'));
             document.getElementById('backFromDocBtn').addEventListener('click', () => {
                 if (selectedCourse) showPage('courseDetail');
@@ -2359,7 +2592,7 @@
                     alert("Please upload a payment screenshot before submitting.");
                     return;
                 }
-                const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
+                const pendingRef = push(ref(db, `pendingPurchases/${currentUser?.uid || 'demo_user_123'}`));
                 await set(pendingRef, {
                     itemId: selectedCourse.id,
                     itemTitle: selectedCourse.name,
@@ -2369,8 +2602,8 @@
                     screenshot: paymentScreenshotUrl,
                     status: 'pending',
                     timestamp: Date.now(),
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
+                    userId: currentUser?.uid || 'demo_user_123',
+                    userEmail: currentUser?.email || userData.email || 'demo@utom.com',
                     userName: `${userData.firstName} ${userData.lastName}`,
                     userPhone: userData.phone || ''
                 });
@@ -2382,8 +2615,12 @@
             });
 
             document.getElementById('changePasswordBtn').addEventListener('click', async () => {
-                if (currentUser) await sendPasswordResetEmail(auth, currentUser.email);
-                alert('Password reset email sent. Check your inbox.');
+                if (currentUser) {
+                    await sendPasswordResetEmail(auth, currentUser.email);
+                    alert('Password reset email sent. Check your inbox.');
+                } else {
+                    alert('Please log in to change your password.');
+                }
             });
             document.getElementById('notifIcon').addEventListener('click', () => {
                 document.getElementById('sideNotif').classList.add('open');
@@ -2428,7 +2665,6 @@
             return div.innerHTML;
         }
 
-        // toast helper
         function showToast(msg, type = 'info') {
             const toast = document.createElement('div');
             toast.style.cssText = `
@@ -2443,13 +2679,15 @@
             document.getElementById('toastContainer').appendChild(toast);
             setTimeout(() => toast.remove(), 3500);
         }
+
         // Inject toast keyframe
         const styleSheet = document.createElement("style");
         styleSheet.textContent = `@keyframes slideInToast { from { opacity:0; transform: translateX(40px) scale(0.95); } to { opacity:1; transform: translateX(0) scale(1); } }`;
         document.head.appendChild(styleSheet);
 
-        console.log('✅ UTOM User — Fixed scrolling: header & player are fixed, only content scrolls');
+        console.log('✅ UTOM User — Fixed scrolling, header & player fixed, content scrolls freely');
         console.log('✅ UTOM User — Newest-first sorting, floating curved nav, Google Docs Viewer');
+        console.log('✅ UTOM User — Seed data included for testing');
     </script>
 </body>
 </html>
