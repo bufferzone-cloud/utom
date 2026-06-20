@@ -515,6 +515,35 @@
             background: var(--green);
         }
 
+        /* ===== SHOW MORE BUTTON ===== */
+        .show-more-container {
+            text-align: center;
+            padding: 0.8rem 0 1.2rem 0;
+            grid-column: 1 / -1;
+        }
+        .show-more-btn {
+            background: transparent;
+            border: 2px solid var(--gold);
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--gold-dark);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .show-more-btn:hover {
+            background: rgba(245, 176, 66, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.15);
+        }
+        .show-more-btn i {
+            font-size: 0.7rem;
+        }
+
         /* ===== VIDEO GRID ===== */
         .videos-grid-2x2 {
             display: grid;
@@ -1635,17 +1664,21 @@
             <div id="homePage" class="page-container active-page">
                 <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
                 <div id="paidCoursesGrid" class="courses-grid"></div>
-                <div class="grid-title" style="margin-top:1rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3><span class="badge-count" id="freeCourseCount">0</span></div>
+                <div class="show-more-container" id="paidShowMoreContainer">
+                    <button class="show-more-btn" id="paidShowMoreBtn"><i class="fas fa-chevron-down"></i> Show more</button>
+                </div>
+
+                <div class="grid-title" style="margin-top:1.5rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3><span class="badge-count" id="freeCourseCount">0</span></div>
                 <div id="freeCoursesGrid" class="courses-grid"></div>
+                <div class="show-more-container" id="freeShowMoreContainer">
+                    <button class="show-more-btn" id="freeShowMoreBtn"><i class="fas fa-chevron-down"></i> Show more</button>
+                </div>
 
                 <div class="grid-title" style="margin-top:1.5rem"><h3><i class="fas fa-video" style="color:#F5B042;"></i> Paid Videos</h3><span class="badge-count" id="paidVideosBadge">0</span></div>
                 <div id="homePaidVideos" class="videos-grid-2x2"></div>
 
                 <div class="grid-title" style="margin-top:1rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Videos</h3><span class="badge-count" id="freeVideosBadge">0</span></div>
                 <div id="homeFreeVideos" class="videos-grid-2x2"></div>
-
-                <div class="grid-title" style="margin-top:1.5rem"><h3><i class="fas fa-file-alt" style="color:#3b82f6;"></i> Recent Documents</h3></div>
-                <div id="homeRecentDocs" class="docs-list"></div>
             </div>
 
             <!-- COURSE DETAIL -->
@@ -1908,7 +1941,6 @@
 
             onValue(ref(db, 'docs'), (snap) => {
                 allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                renderHomeDocs();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
             });
 
@@ -2077,19 +2109,54 @@
             });
         }
 
-        // ===== HOME: COURSES =====
+        // ===== HOME: COURSES with Show More =====
+        let paidShowAll = false;
+        let freeShowAll = false;
+
         function renderAllCourses() {
             const searchTerm = currentSearch.toLowerCase();
             let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
             const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             const free = filtered.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            document.getElementById('paidCoursesGrid').innerHTML = paid.map(c => buildCourseCard(c)).join('') ||
-                '<div class="empty-state">No paid courses found</div>';
-            document.getElementById('freeCoursesGrid').innerHTML = free.map(c => buildCourseCard(c)).join('') ||
-                '<div class="empty-state">No free courses found</div>';
+
+            renderCourseGrid('paidCoursesGrid', paid, 'paid');
+            renderCourseGrid('freeCoursesGrid', free, 'free');
+
             document.getElementById('paidCourseCount').innerText = paid.length;
             document.getElementById('freeCourseCount').innerText = free.length;
             attachCourseEvents();
+        }
+
+        function renderCourseGrid(containerId, courses, type) {
+            const container = document.getElementById(containerId);
+            const showAll = type === 'paid' ? paidShowAll : freeShowAll;
+            const displayCount = showAll ? courses.length : Math.min(4, courses.length);
+            const displayed = courses.slice(0, displayCount);
+
+            container.innerHTML = displayed.map(c => buildCourseCard(c)).join('') ||
+                '<div class="empty-state">No courses found</div>';
+
+            // Show/hide show more button
+            const showMoreContainer = document.getElementById(type === 'paid' ? 'paidShowMoreContainer' :
+                'freeShowMoreContainer');
+            const showMoreBtn = document.getElementById(type === 'paid' ? 'paidShowMoreBtn' : 'freeShowMoreBtn');
+
+            if (courses.length <= 4) {
+                showMoreContainer.style.display = 'none';
+            } else {
+                showMoreContainer.style.display = 'block';
+                showMoreBtn.innerHTML = showAll ?
+                    '<i class="fas fa-chevron-up"></i> Show less' :
+                    `<i class="fas fa-chevron-down"></i> Show more (${courses.length - 4} more)`;
+                showMoreBtn.onclick = () => {
+                    if (type === 'paid') {
+                        paidShowAll = !paidShowAll;
+                    } else {
+                        freeShowAll = !freeShowAll;
+                    }
+                    renderAllCourses();
+                };
+            }
         }
 
         function buildCourseCard(course) {
@@ -2151,19 +2218,6 @@
             document.getElementById('paidVideosBadge').innerText = paid.length;
             document.getElementById('freeVideosBadge').innerText = free.length;
             attachVideoEvents();
-        }
-
-        // ===== HOME: DOCS =====
-        function renderHomeDocs() {
-            const searchTerm = currentSearch.toLowerCase();
-            let filtered = allDocs.filter(d =>
-                d.title.toLowerCase().includes(searchTerm) ||
-                d.instructor.toLowerCase().includes(searchTerm)
-            );
-            const sorted = filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 6);
-            document.getElementById('homeRecentDocs').innerHTML = sorted.map(d => buildDocCard(d)).join('') ||
-                '<div class="empty-state">No documents yet</div>';
-            attachDocEvents();
         }
 
         // ===== COURSE DETAIL =====
@@ -2346,7 +2400,6 @@
                     else userData.likedDocs.splice(idx, 1);
                     await saveUserData();
                     if (selectedCourse) renderCourseDetail(selectedCourse);
-                    renderHomeDocs();
                 });
             });
             document.querySelectorAll('.download-doc-btn').forEach(btn => {
@@ -2400,7 +2453,6 @@
         const fullscreenBtn = document.getElementById('floatingFullscreenBtn');
         const playerContainer = document.getElementById('playerContainerInner');
 
-        // Center the player when first shown
         function centerPlayer() {
             const w = playerState.width;
             const h = playerState.height;
@@ -2575,7 +2627,6 @@
         });
 
         minimizeBtn.addEventListener('click', () => {
-            // Minimize: shrink to small size
             const newWidth = 260;
             const newHeight = 146;
             player.style.width = newWidth + 'px';
@@ -2598,7 +2649,6 @@
             player.classList.add('visible');
             playerState.isVisible = true;
             localStorage.setItem('playerVisible', 'true');
-            // Ensure it's centered if no saved position
             const savedX = localStorage.getItem('playerPosX');
             if (!savedX) {
                 centerPlayer();
@@ -2965,7 +3015,6 @@
                 currentSearch = e.target.value.toLowerCase();
                 renderAllCourses();
                 renderHomeVideos();
-                renderHomeDocs();
             });
             document.getElementById('searchIcon').addEventListener('click', () => {
                 document.getElementById('searchInput').focus();
@@ -3071,7 +3120,6 @@
             if (pageId === 'home') {
                 renderAllCourses();
                 renderHomeVideos();
-                renderHomeDocs();
             }
             if (pageId === 'mylearning') renderMyLearn();
             if (pageId === 'offline') renderOfflinePage();
@@ -3096,7 +3144,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Player appears centered, no S/M/L presets. Draggable, resizable, position saved.');
+        console.log('✅ UTOM User — Player appears only on video click. Recent docs removed. Show more for courses.');
     </script>
 </body>
 </html>
