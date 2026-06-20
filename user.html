@@ -143,9 +143,10 @@
         .floating-player {
             position: fixed;
             z-index: 1000;
-            top: 80px;
-            right: 20px;
-            width: 380px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
             min-width: 200px;
             min-height: 120px;
             background: #000;
@@ -265,39 +266,6 @@
         }
         .floating-player .resize-handle i {
             transform: rotate(45deg);
-        }
-        .floating-player .size-presets {
-            position: absolute;
-            bottom: 28px;
-            right: 8px;
-            display: flex;
-            gap: 4px;
-            z-index: 9;
-            background: rgba(0, 0, 0, 0.60);
-            backdrop-filter: blur(8px);
-            padding: 4px 6px;
-            border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .floating-player .size-presets button {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            padding: 3px 8px;
-            border-radius: 30px;
-            font-size: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.3px;
-        }
-        .floating-player .size-presets button:hover {
-            background: rgba(245, 176, 66, 0.3);
-            color: #fff;
-        }
-        .floating-player .size-presets button.active-size {
-            background: rgba(245, 176, 66, 0.35);
-            color: #fff;
         }
         .floating-player .fullscreen-btn {
             position: absolute;
@@ -1433,8 +1401,9 @@
             }
             .floating-player {
                 width: 300px;
-                top: 72px;
-                right: 12px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
             }
         }
         @media (max-width: 400px) {
@@ -1456,8 +1425,9 @@
             }
             .floating-player {
                 width: 260px;
-                top: 68px;
-                right: 8px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
             }
         }
 
@@ -1643,11 +1613,6 @@
             <div class="player-container-inner" id="playerContainerInner">
                 <div class="yt-logo-cover"></div>
                 <div id="playerEmbedContainer" style="width:100%;height:100%;"></div>
-            </div>
-            <div class="size-presets" id="sizePresets">
-                <button data-size="small">S</button>
-                <button data-size="medium" class="active-size">M</button>
-                <button data-size="large">L</button>
             </div>
             <button class="fullscreen-btn" id="floatingFullscreenBtn"><i class="fas fa-expand"></i></button>
             <div class="resize-handle" id="resizeHandle"><i class="fas fa-grip-lines"></i></div>
@@ -2413,11 +2378,10 @@
         // ===== PLAYER — floating, draggable, resizable =====
         let playerState = {
             isVisible: false,
-            size: 'medium',
             posX: null,
             posY: null,
-            width: 380,
-            height: null, // auto
+            width: 400,
+            height: 225,
             isDragging: false,
             dragOffsetX: 0,
             dragOffsetY: 0,
@@ -2434,55 +2398,53 @@
         const closeBtn = document.getElementById('playerCloseBtn');
         const minimizeBtn = document.getElementById('playerMinimizeBtn');
         const fullscreenBtn = document.getElementById('floatingFullscreenBtn');
-        const sizePresets = document.getElementById('sizePresets');
         const playerContainer = document.getElementById('playerContainerInner');
 
-        const SIZE_MAP = {
-            small: { width: 260, height: 160 },
-            medium: { width: 380, height: 220 },
-            large: { width: 520, height: 300 },
-        };
-
-        function setPlayerSize(sizeKey) {
-            const size = SIZE_MAP[sizeKey];
-            if (!size) return;
-            playerState.size = sizeKey;
-            player.style.width = size.width + 'px';
-            // height auto via aspect ratio
-            const inner = player.querySelector('.player-container-inner');
-            if (inner) {
-                inner.style.height = size.height + 'px';
-            }
-            // update active button
-            sizePresets.querySelectorAll('button').forEach(b => b.classList.remove('active-size'));
-            const btn = sizePresets.querySelector(`[data-size="${sizeKey}"]`);
-            if (btn) btn.classList.add('active-size');
-            localStorage.setItem('playerSize', sizeKey);
+        // Center the player when first shown
+        function centerPlayer() {
+            const w = playerState.width;
+            const h = playerState.height;
+            const x = (window.innerWidth - w) / 2;
+            const y = (window.innerHeight - h) / 2;
+            player.style.left = x + 'px';
+            player.style.top = y + 'px';
+            player.style.right = 'auto';
+            player.style.transform = 'none';
+            playerState.posX = x;
+            playerState.posY = y;
+            localStorage.setItem('playerPosX', x + 'px');
+            localStorage.setItem('playerPosY', y + 'px');
         }
 
         function loadPlayerState() {
-            const savedSize = localStorage.getItem('playerSize') || 'medium';
             const savedX = localStorage.getItem('playerPosX');
             const savedY = localStorage.getItem('playerPosY');
+            const savedWidth = localStorage.getItem('playerWidth');
+            const savedHeight = localStorage.getItem('playerHeight');
+
+            if (savedWidth) playerState.width = parseInt(savedWidth);
+            if (savedHeight) playerState.height = parseInt(savedHeight);
+            player.style.width = playerState.width + 'px';
+            playerContainer.style.height = playerState.height + 'px';
+
             if (savedX && savedY) {
                 playerState.posX = parseInt(savedX);
                 playerState.posY = parseInt(savedY);
                 player.style.left = playerState.posX + 'px';
                 player.style.top = playerState.posY + 'px';
                 player.style.right = 'auto';
+                player.style.transform = 'none';
             } else {
-                // default: top-right
-                player.style.top = '80px';
-                player.style.right = '20px';
-                player.style.left = 'auto';
+                centerPlayer();
             }
-            setPlayerSize(savedSize);
         }
 
         function savePlayerPosition() {
             const rect = player.getBoundingClientRect();
             localStorage.setItem('playerPosX', rect.left + 'px');
             localStorage.setItem('playerPosY', rect.top + 'px');
+            localStorage.setItem('playerWidth', rect.width + 'px');
+            localStorage.setItem('playerHeight', rect.height + 'px');
         }
 
         // drag
@@ -2500,12 +2462,12 @@
             if (!playerState.isDragging) return;
             const newX = e.clientX - playerState.dragOffsetX;
             const newY = e.clientY - playerState.dragOffsetY;
-            // clamp to viewport
             const maxX = window.innerWidth - player.offsetWidth - 10;
             const maxY = window.innerHeight - player.offsetHeight - 10;
             player.style.left = Math.max(10, Math.min(maxX, newX)) + 'px';
             player.style.top = Math.max(10, Math.min(maxY, newY)) + 'px';
             player.style.right = 'auto';
+            player.style.transform = 'none';
         });
 
         document.addEventListener('mouseup', () => {
@@ -2540,6 +2502,7 @@
             player.style.left = Math.max(10, Math.min(maxX, newX)) + 'px';
             player.style.top = Math.max(10, Math.min(maxY, newY)) + 'px';
             player.style.right = 'auto';
+            player.style.transform = 'none';
         }, { passive: true });
 
         document.addEventListener('touchend', () => {
@@ -2567,18 +2530,9 @@
             const newWidth = Math.max(200, playerState.resizeStartWidth + dx);
             const newHeight = Math.max(120, playerState.resizeStartHeight + dy);
             player.style.width = newWidth + 'px';
-            const inner = player.querySelector('.player-container-inner');
-            if (inner) inner.style.height = newHeight + 'px';
-            // update size preset
-            let closest = 'medium';
-            for (const [key, val] of Object.entries(SIZE_MAP)) {
-                if (Math.abs(val.width - newWidth) < 40) closest = key;
-            }
-            sizePresets.querySelectorAll('button').forEach(b => b.classList.remove('active-size'));
-            const btn = sizePresets.querySelector(`[data-size="${closest}"]`);
-            if (btn) btn.classList.add('active-size');
-            playerState.size = closest;
-            localStorage.setItem('playerSize', closest);
+            playerContainer.style.height = newHeight + 'px';
+            playerState.width = newWidth;
+            playerState.height = newHeight;
         });
 
         // touch resize
@@ -2600,8 +2554,9 @@
             const newWidth = Math.max(200, playerState.resizeStartWidth + dx);
             const newHeight = Math.max(120, playerState.resizeStartHeight + dy);
             player.style.width = newWidth + 'px';
-            const inner = player.querySelector('.player-container-inner');
-            if (inner) inner.style.height = newHeight + 'px';
+            playerContainer.style.height = newHeight + 'px';
+            playerState.width = newWidth;
+            playerState.height = newHeight;
         }, { passive: true });
 
         document.addEventListener('touchend', () => {
@@ -2610,14 +2565,6 @@
                 savePlayerPosition();
             }
         }, { passive: true });
-
-        // size presets
-        sizePresets.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('click', () => {
-                setPlayerSize(btn.dataset.size);
-                savePlayerPosition();
-            });
-        });
 
         closeBtn.addEventListener('click', () => {
             player.classList.remove('visible');
@@ -2628,14 +2575,14 @@
         });
 
         minimizeBtn.addEventListener('click', () => {
-            const currentSize = playerState.size;
-            if (currentSize === 'small') {
-                // hide completely
-                closeBtn.click();
-            } else {
-                setPlayerSize('small');
-                savePlayerPosition();
-            }
+            // Minimize: shrink to small size
+            const newWidth = 260;
+            const newHeight = 146;
+            player.style.width = newWidth + 'px';
+            playerContainer.style.height = newHeight + 'px';
+            playerState.width = newWidth;
+            playerState.height = newHeight;
+            savePlayerPosition();
         });
 
         fullscreenBtn.addEventListener('click', () => {
@@ -2651,6 +2598,11 @@
             player.classList.add('visible');
             playerState.isVisible = true;
             localStorage.setItem('playerVisible', 'true');
+            // Ensure it's centered if no saved position
+            const savedX = localStorage.getItem('playerPosX');
+            if (!savedX) {
+                centerPlayer();
+            }
         }
 
         function playVideoInPlayer(video) {
@@ -3144,7 +3096,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Player: draggable, resizable (S/M/L), persists across pages. Home: cleaner, orange/gold accents.');
+        console.log('✅ UTOM User — Player appears centered, no S/M/L presets. Draggable, resizable, position saved.');
     </script>
 </body>
 </html>
