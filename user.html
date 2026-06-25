@@ -3131,21 +3131,43 @@
                 btn.addEventListener('click', () => showPage(btn.dataset.page));
             });
 
-            // Profile icon
+            // Profile icon navigation
             document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
 
-            // Logout buttons
-            document.getElementById('logoutBtnSmall').addEventListener('click', () => signOut(auth));
-            document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+            // Logout button - FIXED
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to logout?')) {
+                        signOut(auth);
+                    }
+                });
+            }
 
-            // Back buttons
-            document.getElementById('backFromCourseBtn').addEventListener('click', () => showPage('home'));
-            document.getElementById('backFromDocBtn').addEventListener('click', () => {
-                if (selectedCourse) showPage('courseDetail');
-                else showPage('home');
+            // Back buttons - FIXED
+            document.getElementById('backFromCourseBtn').addEventListener('click', () => {
+                selectedCourse = null;
+                showPage('home');
             });
-            document.getElementById('backFromPaymentBtn').addEventListener('click', () => showPage('home'));
-            document.getElementById('backFromTransactionBtn').addEventListener('click', () => showPage('profile'));
+
+            document.getElementById('backFromDocBtn').addEventListener('click', () => {
+                if (selectedCourse) {
+                    showPage('courseDetail');
+                } else {
+                    showPage('home');
+                }
+            });
+
+            document.getElementById('backFromPaymentBtn').addEventListener('click', () => {
+                selectedCourse = null;
+                paymentScreenshotUrl = null;
+                document.getElementById('paymentScreenshotPreview').innerHTML = '';
+                showPage('home');
+            });
+
+            document.getElementById('backFromTransactionBtn').addEventListener('click', () => {
+                showPage('profile');
+            });
 
             // Transaction history
             document.getElementById('transactionHistoryBtn').addEventListener('click', () => {
@@ -3153,11 +3175,15 @@
                 showPage('transactionHistory');
             });
 
-            // Search
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                currentSearch = e.target.value.toLowerCase();
-                renderAllCourses();
-            });
+            // Search - FIXED
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    currentSearch = e.target.value.toLowerCase();
+                    renderAllCourses();
+                });
+            }
+            
             document.getElementById('searchIcon').addEventListener('click', () => {
                 document.getElementById('searchInput').focus();
             });
@@ -3176,6 +3202,7 @@
                     addNotification('warning', 'No MTN number has been set by admin yet.');
                 }
             });
+            
             document.getElementById('copyAirtelBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const num = paymentSettings.airtelNumber || '';
@@ -3217,32 +3244,43 @@
                     alert("Please upload a payment screenshot before submitting.");
                     return;
                 }
-                const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
-                await set(pendingRef, {
-                    itemId: selectedCourse.id,
-                    itemTitle: selectedCourse.name,
-                    itemType: 'course',
-                    amount: selectedCourse.price,
-                    provider: 'MTN/Airtel',
-                    screenshot: paymentScreenshotUrl,
-                    status: 'pending',
-                    timestamp: Date.now(),
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
-                    userName: `${userData.firstName} ${userData.lastName}`,
-                    userPhone: userData.phone || ''
-                });
-                addNotification('purchase',
-                    `Purchase request submitted for "${selectedCourse.name}". Awaiting admin approval.`);
-                showPage('home');
-                selectedCourse = null;
-                paymentScreenshotUrl = null;
+                try {
+                    const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
+                    await set(pendingRef, {
+                        itemId: selectedCourse.id,
+                        itemTitle: selectedCourse.name,
+                        itemType: 'course',
+                        amount: selectedCourse.price,
+                        provider: 'MTN/Airtel',
+                        screenshot: paymentScreenshotUrl,
+                        status: 'pending',
+                        timestamp: Date.now(),
+                        userId: currentUser.uid,
+                        userEmail: currentUser.email,
+                        userName: `${userData.firstName} ${userData.lastName}`,
+                        userPhone: userData.phone || ''
+                    });
+                    addNotification('purchase',
+                        `Purchase request submitted for "${selectedCourse.name}". Awaiting admin approval.`);
+                    showPage('home');
+                    selectedCourse = null;
+                    paymentScreenshotUrl = null;
+                    document.getElementById('paymentScreenshotPreview').innerHTML = '';
+                } catch (error) {
+                    addNotification('danger', 'Failed to submit payment: ' + error.message);
+                }
             });
 
             // Change password
             document.getElementById('changePasswordBtn').addEventListener('click', async () => {
-                if (currentUser) await sendPasswordResetEmail(auth, currentUser.email);
-                alert('Password reset email sent. Check your inbox.');
+                if (currentUser) {
+                    try {
+                        await sendPasswordResetEmail(auth, currentUser.email);
+                        alert('Password reset email sent. Check your inbox.');
+                    } catch (error) {
+                        addNotification('danger', 'Failed to send reset email: ' + error.message);
+                    }
+                }
             });
 
             // Notifications
