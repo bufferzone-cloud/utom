@@ -1807,7 +1807,7 @@
             <!-- ===== PAGES ===== -->
 
             <!-- HOME -->
-            <div id="homePage" class="page-container active-page">
+            <div id="homePage" class="page-container">
                 <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
                 <div id="paidCoursesGrid" class="courses-grid"></div>
                 <div class="show-more-container" id="paidShowMoreContainer">
@@ -2085,7 +2085,8 @@
             });
 
             setupUI();
-            showPage('home');
+            // Initialize hash routing
+            handleHashChange();
         });
 
         // ===== USER DATA =====
@@ -2339,7 +2340,7 @@
         function openCourseDetail(course) {
             selectedCourse = course;
             renderCourseDetail(course);
-            showPage('courseDetail');
+            showPage('courseDetail', { courseId: course.id });
         }
 
         function renderCourseDetail(course) {
@@ -2822,8 +2823,16 @@
 
         // ===== DOC FULL PAGE — full view =====
         function openDocFullPage(doc) {
-            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
-            document.getElementById('docFullPage').classList.add('active-page');
+            showPage('docFull', { docId: doc.id });
+        }
+
+        function renderDocFullPage(docId) {
+            const doc = allDocs.find(d => d.id === docId);
+            if (!doc) {
+                document.getElementById('docFullContent').innerHTML =
+                    '<div class="empty-state">Document not found</div>';
+                return;
+            }
             const content = document.getElementById('docFullContent');
 
             let html = `
@@ -3092,7 +3101,7 @@
             document.getElementById('paymentScreenshotPreview').innerHTML = '';
             paymentScreenshotUrl = null;
             updatePaymentNumbersDisplay();
-            showPage('payment');
+            showPage('payment', { courseId: course.id });
         }
 
         // ===== UI SETUP =====
@@ -3128,7 +3137,18 @@
 
             // Navigation
             document.querySelectorAll('.nav-item').forEach(btn => {
-                btn.addEventListener('click', () => showPage(btn.dataset.page));
+                btn.addEventListener('click', () => {
+                    const page = btn.dataset.page;
+                    if (page === 'home') {
+                        showPage('home');
+                    } else if (page === 'mylearning') {
+                        showPage('mylearning');
+                    } else if (page === 'offline') {
+                        showPage('offline');
+                    } else if (page === 'profile') {
+                        showPage('profile');
+                    }
+                });
             });
 
             // Profile icon navigation
@@ -3152,7 +3172,7 @@
 
             document.getElementById('backFromDocBtn').addEventListener('click', () => {
                 if (selectedCourse) {
-                    showPage('courseDetail');
+                    showPage('courseDetail', { courseId: selectedCourse.id });
                 } else {
                     showPage('home');
                 }
@@ -3292,8 +3312,24 @@
             });
         }
 
-        // ===== PAGE NAVIGATION =====
-        function showPage(pageId) {
+        // ===== PAGE NAVIGATION with hash routing =====
+        function showPage(pageId, params = {}) {
+            // Build hash string
+            let hash = '#' + pageId;
+            if (Object.keys(params).length > 0) {
+                hash += '?' + new URLSearchParams(params).toString();
+            }
+            // Only set if different from current
+            if (window.location.hash !== hash) {
+                window.location.hash = hash;
+            } else {
+                // If same, still ensure page is shown (e.g., when back button triggers same hash)
+                navigateToPage(pageId, params);
+            }
+        }
+
+        function navigateToPage(pageId, params) {
+            // Show the page based on pageId and params
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             const targetPage = document.getElementById(pageId + 'Page');
             if (targetPage) {
@@ -3303,21 +3339,90 @@
                 btn.classList.remove('active');
                 if (btn.dataset.page === pageId) btn.classList.add('active');
             });
-            if (pageId === 'home') {
-                renderAllCourses();
-            }
-            if (pageId === 'mylearning') renderMyLearn();
-            if (pageId === 'offline') renderOfflinePage();
-            if (pageId === 'profile') updateUserInterface();
-            if (pageId === 'courseDetail' && selectedCourse) renderCourseDetail(selectedCourse);
-            if (pageId === 'payment' && selectedCourse) {
-                updatePaymentNumbersDisplay();
-                document.getElementById('depositAmountDisplay').innerText = `ZMW ${selectedCourse.price}`;
-            }
-            if (pageId === 'transactionHistory') {
-                renderTransactionHistory();
+
+            // Handle page-specific logic
+            switch (pageId) {
+                case 'home':
+                    renderAllCourses();
+                    break;
+                case 'mylearning':
+                    renderMyLearn();
+                    break;
+                case 'offline':
+                    renderOfflinePage();
+                    break;
+                case 'profile':
+                    updateUserInterface();
+                    break;
+                case 'courseDetail':
+                    if (params.courseId) {
+                        const course = allCourses.find(c => c.id === params.courseId);
+                        if (course) {
+                            selectedCourse = course;
+                            renderCourseDetail(course);
+                        } else {
+                            // fallback to home if course not found
+                            showPage('home');
+                            return;
+                        }
+                    } else if (selectedCourse) {
+                        renderCourseDetail(selectedCourse);
+                    } else {
+                        showPage('home');
+                        return;
+                    }
+                    break;
+                case 'payment':
+                    if (params.courseId) {
+                        const course = allCourses.find(c => c.id === params.courseId);
+                        if (course) {
+                            selectedCourse = course;
+                            updatePaymentNumbersDisplay();
+                            document.getElementById('depositAmountDisplay').innerText = `ZMW ${course.price}`;
+                            document.getElementById('paymentCourseTitle').innerText = course.name;
+                        } else {
+                            showPage('home');
+                            return;
+                        }
+                    } else {
+                        showPage('home');
+                        return;
+                    }
+                    break;
+                case 'docFull':
+                    if (params.docId) {
+                        renderDocFullPage(params.docId);
+                    } else {
+                        showPage('home');
+                        return;
+                    }
+                    break;
+                case 'transactionHistory':
+                    renderTransactionHistory();
+                    break;
+                default:
+                    break;
             }
         }
+
+        // ===== Hash change handler =====
+        function handleHashChange() {
+            const hash = window.location.hash;
+            if (!hash || hash === '#') {
+                // Set default to home
+                window.location.hash = '#home';
+                return;
+            }
+            const [pageId, query] = hash.slice(1).split('?');
+            const params = query ? new URLSearchParams(query) : new URLSearchParams();
+            const paramObj = {};
+            for (const [key, value] of params.entries()) {
+                paramObj[key] = value;
+            }
+            navigateToPage(pageId, paramObj);
+        }
+
+        window.addEventListener('hashchange', handleHashChange);
 
         // ===== TOAST =====
         function showToast(msg, type = 'info') {
@@ -3329,7 +3434,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — All buttons fixed, search works, dark mode icons fixed, full document view, YouTube thumbnails work, home shows only courses.');
+        console.log('✅ UTOM User — Hash routing enabled: back/forward navigation works, all pages restored.');
     </script>
 </body>
 </html>
