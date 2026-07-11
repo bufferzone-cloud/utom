@@ -162,7 +162,6 @@
             width: 100%;
             aspect-ratio: 16 / 9;
             max-height: 58vh;
-            /* 👈 limit height so it doesn't dominate */
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .player-container video,
@@ -2079,7 +2078,6 @@
             .player-container {
                 border-radius: 18px;
                 max-height: 40vh;
-                /* smaller on mobile */
             }
             .persistent-player {
                 padding: 0 12px 6px 12px;
@@ -2818,6 +2816,12 @@
             setupRealtime();
             setupUI();
             refreshAll();
+            // Initial hash routing
+            if (!window.location.hash || window.location.hash === '#') {
+                window.location.hash = '#home';
+            } else {
+                handleHashChange();
+            }
         });
 
         async function loadReadNotifications() {
@@ -3266,8 +3270,16 @@
         // DOCUMENT VIEWER
         // =================================================================
         function openDocFullPage(doc) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById('docFullPage').classList.add('active');
+            showSection('docFull', { docId: doc.id });
+        }
+
+        function renderDocFullPage(docId) {
+            const doc = docs.find(d => d.id === docId);
+            if (!doc) {
+                document.getElementById('docFullContent').innerHTML =
+                    '<div style="text-align:center;padding:40px;color:#8b8fa3;">Document not found</div>';
+                return;
+            }
             const content = document.getElementById('docFullContent');
 
             let html = `
@@ -3751,6 +3763,136 @@
             document.getElementById('docUploadFileInfo').style.display = 'none';
         });
 
+        // =================================================================
+        // HASH‑BASED ROUTING (BACK BUTTON FIX)
+        // =================================================================
+
+        function showSection(sectionId, params = {}) {
+            let hash = '#' + sectionId;
+            if (Object.keys(params).length > 0) {
+                hash += '?' + new URLSearchParams(params).toString();
+            }
+            if (window.location.hash !== hash) {
+                window.location.hash = hash;
+            } else {
+                // If same hash, still ensure the page is shown (e.g., when back button triggers same hash)
+                navigateToSection(sectionId, params);
+            }
+        }
+
+        function navigateToSection(sectionId, params) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+            // Handle special sections that are not standard nav items
+            if (sectionId === 'subfolder') {
+                const sfId = params.sfId;
+                const subfolder = subfolders.find(s => s.id === sfId);
+                if (subfolder) {
+                    const course = courses.find(c => c.id === subfolder.courseId);
+                    document.getElementById('subfolderViewTitle').innerText = `${course?.name || ''} / ${subfolder.name}`;
+                    const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a, b) => (b
+                        .createdAt || 0) - (a.createdAt || 0));
+                    const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a, b) => (b
+                        .createdAt || 0) - (a.createdAt || 0));
+                    document.getElementById('subfolderVideosContainer').innerHTML = subVideos.map(v =>
+                        buildVideoCard(v, true)).join('') ||
+                        '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos</div>';
+                    document.getElementById('subfolderDocsContainer').innerHTML = subDocs.map(d => buildDocCard(d))
+                        .join('') ||
+                        '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
+                    attachCardEvents();
+                    attachEditEvents();
+                    document.getElementById('subfolderViewSection').classList.add('active');
+                    // Update nav items: no active nav
+                    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                } else {
+                    // If subfolder not found, go to courses
+                    showSection('courses');
+                    return;
+                }
+                return;
+            } else if (sectionId === 'docFull') {
+                const docId = params.docId;
+                if (docId) {
+                    renderDocFullPage(docId);
+                    document.getElementById('docFullPage').classList.add('active');
+                    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                } else {
+                    showSection('docs');
+                    return;
+                }
+                return;
+            } else if (sectionId === 'docEditor') {
+                // Doc editor: set content if needed, or just show
+                document.getElementById('docEditorPage').classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                return;
+            }
+
+            // Standard sections: home, videos, users, courses, docs, account, settings
+            const target = document.getElementById(sectionId + 'Section');
+            if (target) {
+                target.classList.add('active');
+            }
+
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+            if (navItem) navItem.classList.add('active');
+
+            // Render content for the section
+            switch (sectionId) {
+                case 'home':
+                    renderHomeGrids();
+                    renderRecentPosts();
+                    updateStats();
+                    updateDashboard();
+                    break;
+                case 'videos':
+                    renderPostedGrid();
+                    break;
+                case 'users':
+                    renderUsers();
+                    break;
+                case 'courses':
+                    renderCoursesAccordion();
+                    break;
+                case 'docs':
+                    renderDocsList();
+                    break;
+                case 'account':
+                    renderAccount();
+                    break;
+                case 'settings':
+                    updateBannedList();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        function handleHashChange() {
+            const hash = window.location.hash;
+            if (!hash || hash === '#') {
+                window.location.hash = '#home';
+                return;
+            }
+            const [sectionId, query] = hash.slice(1).split('?');
+            const params = query ? new URLSearchParams(query) : new URLSearchParams();
+            const paramObj = {};
+            for (const [key, value] of params.entries()) {
+                paramObj[key] = value;
+            }
+            navigateToSection(sectionId, paramObj);
+        }
+
+        window.addEventListener('hashchange', handleHashChange);
+
+        // =================================================================
+        // SETUP UI (modified to use showSection)
+        // =================================================================
+
         function setupUI() {
             // DARK MODE TOGGLE
             const darkModeToggle = document.getElementById('darkModeToggle');
@@ -3768,25 +3910,11 @@
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const sec = btn.dataset.section;
-                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                    const target = document.getElementById(sec + 'Section');
-                    if (target) target.classList.add('active');
-                    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    if (sec === 'videos') renderPostedGrid();
-                    if (sec === 'users') renderUsers();
-                    if (sec === 'account') renderAccount();
-                    if (sec === 'courses') renderCoursesAccordion();
-                    if (sec === 'docs') renderDocsList();
+                    showSection(sec);
                 });
             });
             document.getElementById('accountQuickBtn').addEventListener('click', () => {
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById('accountSection').classList.add('active');
-                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                renderAccount();
-                const accBtn = document.querySelector('.nav-item[data-section="account"]');
-                if (accBtn) accBtn.classList.add('active');
+                showSection('account');
             });
 
             document.getElementById('notifBell').addEventListener('click', (e) => {
@@ -3804,8 +3932,14 @@
                 document.getElementById('notifSidebar').classList.remove('open');
             });
 
-            document.getElementById('backFromDocBtn').addEventListener('click', () => document.querySelector(
-                '.nav-item[data-section="docs"]').click());
+            document.getElementById('backFromDocBtn').addEventListener('click', () => {
+                // Go back to docs, but preserve hash
+                showSection('docs');
+            });
+            document.getElementById('backFromSubfolderBtn').addEventListener('click', () => {
+                showSection('courses');
+            });
+
             document.querySelectorAll('.modal-overlay .close-modal').forEach(el => el.addEventListener('click', () => el
                 .closest('.modal-overlay').classList.remove('open')));
             document.querySelectorAll('.modal-overlay').forEach(m => {
@@ -3850,15 +3984,15 @@
             document.getElementById('openFullEditorBtn').addEventListener('click', () => {
                 document.getElementById('fullPageEditor').innerHTML = document.getElementById(
                     'docContentHidden').value;
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById('docEditorPage').classList.add('active');
+                showSection('docEditor');
             });
-            document.getElementById('cancelDocEditorBtn').addEventListener('click', () => document.querySelector(
-                '.nav-item[data-section="docs"]').click());
+            document.getElementById('cancelDocEditorBtn').addEventListener('click', () => {
+                showSection('docs');
+            });
             document.getElementById('doneDocEditorBtn').addEventListener('click', () => {
                 document.getElementById('docContentHidden').value = document.getElementById('fullPageEditor')
                     .innerHTML;
-                document.querySelector('.nav-item[data-section="docs"]').click();
+                showSection('docs');
             });
             document.getElementById('quickAddSubfolderBtn').addEventListener('click', () => {
                 const name = document.getElementById('newSubfolderNameHome').value.trim();
@@ -4077,7 +4211,9 @@
                     e.stopPropagation();
                     const sfId = item.dataset.subfolderId;
                     const sf = subfolders.find(s => s.id === sfId);
-                    if (sf) openSubfolderView(sf);
+                    if (sf) {
+                        showSection('subfolder', { sfId: sfId });
+                    }
                 });
             });
             document.querySelectorAll('.add-subfolder').forEach(btn => {
@@ -4126,26 +4262,6 @@
                 pendingDeleteCourseId = null;
             }
         });
-
-        function openSubfolderView(subfolder) {
-            const course = courses.find(c => c.id === subfolder.courseId);
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById('subfolderViewSection').classList.add('active');
-            document.getElementById('subfolderViewTitle').innerText = `${course?.name || ''} / ${subfolder.name}`;
-            const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a, b) => (b.createdAt || 0) - (a
-                .createdAt || 0));
-            const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a, b) => (b.createdAt || 0) - (a
-                .createdAt || 0));
-            document.getElementById('subfolderVideosContainer').innerHTML = subVideos.map(v => buildVideoCard(v, true))
-                .join('') || '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos</div>';
-            document.getElementById('subfolderDocsContainer').innerHTML = subDocs.map(d => buildDocCard(d)).join('') ||
-                '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
-            attachCardEvents();
-            attachEditEvents();
-            document.getElementById('backFromSubfolderBtn').onclick = () => {
-                document.querySelector('.nav-item[data-section="courses"]').click();
-            };
-        }
 
         async function updateBannedList() {
             const container = document.getElementById('bannedUsersList');
@@ -4199,11 +4315,7 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — All input fields, textareas, URL fields fully styled');
-        console.log('✅ UTOM Admin — Radio groups perfectly aligned (link/upload, text/upload/link)');
-        console.log('✅ UTOM Admin — Player height reduced to max 58vh, smaller on mobile');
-        console.log('✅ UTOM Admin — Dark mode toggle works everywhere');
-        console.log('✅ UTOM Admin — Floating bottom nav, glass design, responsive');
+        console.log('✅ UTOM Admin — Hash routing enabled: back/forward navigation works, no logout.');
     </script>
 </body>
 </html>
