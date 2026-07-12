@@ -1975,8 +1975,102 @@
             font-size: 12px;
             min-width: 80px;
         }
+        .course-edit-modal .form-row input,
+        .course-edit-modal .form-row select,
+        .course-edit-modal .form-row textarea {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 18px;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            font-size: 12px;
+            font-family: inherit;
+            transition: all 0.25s ease;
+            background: #fafbfc;
+            color: #1a1d28;
+        }
+        .course-edit-modal .form-row input:focus,
+        .course-edit-modal .form-row select:focus,
+        .course-edit-modal .form-row textarea:focus {
+            outline: none;
+            border-color: #f5b042;
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
+        }
+        .course-edit-modal .form-row textarea {
+            border-radius: 18px;
+            min-height: 80px;
+            resize: vertical;
+            width: 100%;
+            padding: 14px 18px;
+            line-height: 1.6;
+        }
         .course-edit-modal .radio-group {
             margin-top: 4px;
+        }
+
+        /* ===== VIDEO UPLOAD REPLACEMENT SQUARE ===== */
+        .video-upload-square {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            background: #e8ecf1;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px dashed #c0c4d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .video-upload-square:hover {
+            border-color: #f5b042;
+            background: #f5f6f8;
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.15);
+        }
+        .video-upload-square img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-upload-square .upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.40);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 14px;
+        }
+        .video-upload-square:hover .upload-overlay {
+            opacity: 1;
+        }
+        .video-upload-square .upload-overlay i {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        .video-upload-square .upload-overlay span {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .video-upload-square .upload-overlay .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* ===== RESPONSIVE ===== */
@@ -2796,9 +2890,27 @@
                     <input type="number" id="editPriceAmount" placeholder="Price ZMW" style="width:100px;font-size:12px;">
                 </div>
                 <textarea id="editDescription" rows="2" placeholder="Description"></textarea>
-                <div id="editThumbnailGroup">
-                    <input type="url" id="editThumbnailUrl" placeholder="Thumbnail URL">
+
+                <!-- VIDEO UPLOAD SQUARE REPLACEMENT -->
+                <div id="editVideoUploadArea" style="margin-top:12px;">
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;">Video Thumbnail / Upload</label>
+                    <div class="video-upload-square" id="videoUploadSquare">
+                        <img id="editVideoThumbDisplay" src="" alt="Video thumbnail">
+                        <div class="upload-overlay">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Click to replace video</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editVideoUrl" value="">
+                    <div class="upload-progress" id="editVideoUploadProgress" style="margin-top:8px;display:none;">
+                        <div class="bar"><div class="fill" id="editVideoProgressFill"></div></div>
+                        <span class="percent" id="editVideoPercentText">0%</span>
+                    </div>
+                    <div id="editThumbnailGroup" style="margin-top:8px;">
+                        <input type="url" id="editThumbnailUrl" placeholder="Thumbnail URL (optional)">
+                    </div>
                 </div>
+
                 <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
                     <button type="button" id="cancelEditBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;">Cancel</button>
                     <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Save</button>
@@ -3245,6 +3357,9 @@
             });
         }
 
+        // =================================================================
+        // EDIT MODAL WITH VIDEO UPLOAD SQUARE
+        // =================================================================
         function openEditModal(id, type) {
             const item = type === 'video' ? videos.find(v => v.id === id) : docs.find(d => d.id === id);
             if (!item) return;
@@ -3256,11 +3371,23 @@
             document.getElementById('editPriceType').value = (item.price === 0) ? 'free' : 'paid';
             document.getElementById('editPriceAmount').value = item.price || 0;
             document.getElementById('editPriceAmount').style.display = (item.price === 0) ? 'none' : 'inline-block';
+
+            const videoUploadArea = document.getElementById('editVideoUploadArea');
+            const thumbnailGroup = document.getElementById('editThumbnailGroup');
+
             if (type === 'video') {
-                document.getElementById('editThumbnailGroup').style.display = 'block';
+                videoUploadArea.style.display = 'block';
+                thumbnailGroup.style.display = 'block';
+                const thumbDisplay = document.getElementById('editVideoThumbDisplay');
+                const thumbUrl = item.thumbnail || 'https://picsum.photos/400/300';
+                thumbDisplay.src = thumbUrl;
                 document.getElementById('editThumbnailUrl').value = item.thumbnail || '';
+                document.getElementById('editVideoUrl').value = item.videoUrl || '';
+                // Store current video URL for replacement
+                document.getElementById('editVideoUrl').dataset.original = item.videoUrl || '';
             } else {
-                document.getElementById('editThumbnailGroup').style.display = 'none';
+                videoUploadArea.style.display = 'none';
+                thumbnailGroup.style.display = 'none';
             }
             updateEditCourseSelects(item.courseId);
             setTimeout(() => {
@@ -3271,6 +3398,51 @@
             document.getElementById('deleteFromEditBtn').dataset.type = type;
             document.getElementById('editItemModal').classList.add('open');
         }
+
+        // Video upload square replacement
+        document.getElementById('videoUploadSquare').addEventListener('click', function() {
+            const options = {
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url'],
+                maxFileSize: 155000000,
+                resourceType: 'video',
+                clientAllowedFormats: ['mp4', 'mov', 'avi', 'webm'],
+                maxFiles: 1
+            };
+            const progressDiv = document.getElementById('editVideoUploadProgress');
+            const fill = document.getElementById('editVideoProgressFill');
+            const percentText = document.getElementById('editVideoPercentText');
+            progressDiv.style.display = 'flex';
+
+            cloudinary.openUploadWidget(options, (err, res) => {
+                if (err) {
+                    progressDiv.style.display = 'none';
+                    return;
+                }
+                if (res.event === 'progress') {
+                    const p = Math.round(res.info.progress);
+                    fill.style.width = p + '%';
+                    percentText.innerText = p + '%';
+                }
+                if (res.event === 'success') {
+                    const info = res.info;
+                    const videoUrl = info.secure_url;
+                    document.getElementById('editVideoUrl').value = videoUrl;
+                    // Generate thumbnail from video
+                    const thumb = videoUrl.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
+                    document.getElementById('editVideoThumbDisplay').src = thumb;
+                    document.getElementById('editThumbnailUrl').value = thumb;
+                    showToast('Video uploaded! Thumbnail generated.', 'success');
+                    progressDiv.style.display = 'none';
+                    fill.style.width = '0%';
+                    percentText.innerText = '0%';
+                }
+                if (res.event === 'close') {
+                    progressDiv.style.display = 'none';
+                }
+            });
+        });
 
         document.getElementById('deleteFromEditBtn').addEventListener('click', async function() {
             const id = this.dataset.id;
@@ -3306,6 +3478,10 @@
             if (!title || !instructor) return alert('Title and Instructor are required');
             const updateData = { title, instructor, price, courseId, subfolderId, description };
             if (type === 'video') {
+                const newVideoUrl = document.getElementById('editVideoUrl').value;
+                if (newVideoUrl) {
+                    updateData.videoUrl = newVideoUrl;
+                }
                 updateData.thumbnail = document.getElementById('editThumbnailUrl').value;
                 await update(ref(db, `videos/${id}`), updateData);
             } else {
@@ -4435,7 +4611,7 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — Full course/video/doc editing enabled.');
+        console.log('✅ UTOM Admin — Full course/video/doc editing with video replacement square.');
     </script>
 </body>
 </html>
