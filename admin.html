@@ -1124,6 +1124,25 @@
             transform: scale(1.05) translateY(-2px);
             box-shadow: 0 6px 20px rgba(231, 76, 60, 0.30);
         }
+        .course-header .course-actions .btn-edit-course {
+            background: linear-gradient(135deg, #4a90d9, #2979c1);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            font-size: 10px;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 12px rgba(41, 121, 193, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .course-header .course-actions .btn-edit-course:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(41, 121, 193, 0.30);
+        }
         .subfolders {
             display: none;
             padding: 12px 16px 16px;
@@ -1944,6 +1963,22 @@
             box-shadow: 0 8px 28px rgba(231, 76, 60, 0.35);
         }
 
+        /* ===== COURSE EDIT MODAL ===== */
+        .course-edit-modal .modal-box {
+            max-width: 520px;
+        }
+        .course-edit-modal .form-row {
+            margin-bottom: 16px;
+        }
+        .course-edit-modal .form-row label {
+            font-weight: 600;
+            font-size: 12px;
+            min-width: 80px;
+        }
+        .course-edit-modal .radio-group {
+            margin-top: 4px;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 520px) {
             .app-content {
@@ -2058,7 +2093,8 @@
                 font-size: 12px;
                 padding: 12px 16px;
             }
-            .course-header .course-actions .btn-delete-course {
+            .course-header .course-actions .btn-delete-course,
+            .course-header .course-actions .btn-edit-course {
                 font-size: 9px;
                 padding: 4px 12px;
             }
@@ -2678,6 +2714,40 @@
         </div>
     </div>
 
+    <!-- ===== COURSE EDIT MODAL ===== -->
+    <div id="courseEditModal" class="modal-overlay course-edit-modal">
+        <div class="modal-box">
+            <button class="close-modal" id="closeCourseEditModal">&times;</button>
+            <h3><i class="fas fa-pen-to-square"></i> Edit Course</h3>
+            <form id="courseEditForm">
+                <input type="hidden" id="editCourseId">
+                <div class="form-row">
+                    <label>Course Name</label>
+                    <input type="text" id="editCourseName" placeholder="Course name" required>
+                </div>
+                <div class="form-row">
+                    <label>Price Type</label>
+                    <select id="editCoursePriceType" style="flex:1;">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Price (ZMW)</label>
+                    <input type="number" id="editCoursePrice" placeholder="0" min="0" step="0.01">
+                </div>
+                <div class="form-row">
+                    <label>Description</label>
+                    <textarea id="editCourseDescription" rows="3" placeholder="Course description (optional)"></textarea>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:14px;">
+                    <button type="button" id="cancelCourseEditBtn" class="btn-outline" style="padding:10px 20px;font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-check"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ===== MODALS ===== -->
 
     <!-- User Details Modal -->
@@ -2754,7 +2824,7 @@
 
     <script type="module">
         // =================================================================
-        // FIREBASE SETUP (SAME AS BEFORE) & DARK MODE TOGGLE
+        // FIREBASE SETUP
         // =================================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
@@ -2790,6 +2860,7 @@
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
         let readNotifications = new Set();
         let pendingDeleteCourseId = null;
+        let pendingEditCourseId = null;
 
         const videosRef = ref(db, 'videos');
         const usersRef = ref(db, 'users');
@@ -2816,7 +2887,6 @@
             setupRealtime();
             setupUI();
             refreshAll();
-            // Initial hash routing
             if (!window.location.hash || window.location.hash === '#') {
                 window.location.hash = '#home';
             } else {
@@ -3196,7 +3266,6 @@
             setTimeout(() => {
                 document.getElementById('editSubfolderSelect').value = item.subfolderId || '';
             }, 100);
-            // Show delete button
             document.getElementById('deleteFromEditBtn').style.display = 'flex';
             document.getElementById('deleteFromEditBtn').dataset.id = id;
             document.getElementById('deleteFromEditBtn').dataset.type = type;
@@ -3265,6 +3334,60 @@
             const subs = subfolders.filter(s => s.courseId === courseId);
             sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
         }
+
+        // =================================================================
+        // COURSE EDIT MODAL
+        // =================================================================
+        function openCourseEditModal(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            if (!course) return;
+            pendingEditCourseId = courseId;
+            document.getElementById('editCourseId').value = courseId;
+            document.getElementById('editCourseName').value = course.name || '';
+            document.getElementById('editCoursePriceType').value = (course.price === 0) ? 'free' : 'paid';
+            document.getElementById('editCoursePrice').value = course.price || 0;
+            document.getElementById('editCoursePrice').style.display = (course.price === 0) ? 'none' : 'inline-block';
+            document.getElementById('editCourseDescription').value = course.description || '';
+            document.getElementById('courseEditModal').classList.add('open');
+        }
+
+        document.getElementById('closeCourseEditModal').addEventListener('click', () => {
+            document.getElementById('courseEditModal').classList.remove('open');
+            pendingEditCourseId = null;
+        });
+        document.getElementById('cancelCourseEditBtn').addEventListener('click', () => {
+            document.getElementById('courseEditModal').classList.remove('open');
+            pendingEditCourseId = null;
+        });
+        document.getElementById('courseEditModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('courseEditModal').classList.remove('open');
+                pendingEditCourseId = null;
+            }
+        });
+        document.getElementById('editCoursePriceType').addEventListener('change', function() {
+            document.getElementById('editCoursePrice').style.display = this.value === 'paid' ? 'inline-block' :
+                'none';
+            if (this.value === 'free') document.getElementById('editCoursePrice').value = '0';
+        });
+        document.getElementById('courseEditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editCourseId').value;
+            const name = document.getElementById('editCourseName').value.trim();
+            const priceType = document.getElementById('editCoursePriceType').value;
+            const price = priceType === 'free' ? 0 : (parseFloat(document.getElementById('editCoursePrice')
+                .value) || 0);
+            const description = document.getElementById('editCourseDescription').value.trim();
+            if (!name) return alert('Course name is required');
+            await update(ref(db, `courses/${id}`), { name, price, description });
+            document.getElementById('courseEditModal').classList.remove('open');
+            pendingEditCourseId = null;
+            showToast('Course updated!', 'success');
+            push(notificationsRef, {
+                message: `✏️ Course "${name}" updated`,
+                timestamp: serverTimestamp()
+            });
+        });
 
         // =================================================================
         // DOCUMENT VIEWER
@@ -3775,16 +3898,13 @@
             if (window.location.hash !== hash) {
                 window.location.hash = hash;
             } else {
-                // If same hash, still ensure the page is shown (e.g., when back button triggers same hash)
                 navigateToSection(sectionId, params);
             }
         }
 
         function navigateToSection(sectionId, params) {
-            // Hide all sections
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
 
-            // Handle special sections that are not standard nav items
             if (sectionId === 'subfolder') {
                 const sfId = params.sfId;
                 const subfolder = subfolders.find(s => s.id === sfId);
@@ -3804,10 +3924,8 @@
                     attachCardEvents();
                     attachEditEvents();
                     document.getElementById('subfolderViewSection').classList.add('active');
-                    // Update nav items: no active nav
                     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 } else {
-                    // If subfolder not found, go to courses
                     showSection('courses');
                     return;
                 }
@@ -3824,24 +3942,20 @@
                 }
                 return;
             } else if (sectionId === 'docEditor') {
-                // Doc editor: set content if needed, or just show
                 document.getElementById('docEditorPage').classList.add('active');
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 return;
             }
 
-            // Standard sections: home, videos, users, courses, docs, account, settings
             const target = document.getElementById(sectionId + 'Section');
             if (target) {
                 target.classList.add('active');
             }
 
-            // Update nav items
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
             if (navItem) navItem.classList.add('active');
 
-            // Render content for the section
             switch (sectionId) {
                 case 'home':
                     renderHomeGrids();
@@ -3890,11 +4004,10 @@
         window.addEventListener('hashchange', handleHashChange);
 
         // =================================================================
-        // SETUP UI (modified to use showSection)
+        // SETUP UI
         // =================================================================
 
         function setupUI() {
-            // DARK MODE TOGGLE
             const darkModeToggle = document.getElementById('darkModeToggle');
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
             if (savedDarkMode) {
@@ -3933,7 +4046,6 @@
             });
 
             document.getElementById('backFromDocBtn').addEventListener('click', () => {
-                // Go back to docs, but preserve hash
                 showSection('docs');
             });
             document.getElementById('backFromSubfolderBtn').addEventListener('click', () => {
@@ -4168,6 +4280,7 @@
                     <div class="course-header">
                         <span><i class="fas fa-book"></i> ${escapeHtml(course.name)} ${course.price > 0 ? '(ZMW '+course.price+')' : '(Free)'}</span>
                         <div class="course-actions">
+                            <button class="btn-edit-course" data-course-id="${course.id}"><i class="fas fa-pen-to-square"></i> Edit</button>
                             <button class="btn-delete-course" data-course-id="${course.id}" data-course-name="${escapeHtml(course.name)}"><i class="fas fa-trash-alt"></i> Delete</button>
                             <i class="fas fa-chevron-down"></i>
                         </div>
@@ -4186,7 +4299,15 @@
                     </div>
                 </div>`;
             }).join('');
-            // Attach delete course handler
+
+            document.querySelectorAll('.btn-edit-course').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const courseId = btn.dataset.courseId;
+                    openCourseEditModal(courseId);
+                });
+            });
+
             document.querySelectorAll('.btn-delete-course').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -4199,7 +4320,8 @@
             });
             document.querySelectorAll('.course-header').forEach(header => {
                 header.addEventListener('click', (e) => {
-                    if (e.target.closest('.btn-delete-course')) return;
+                    if (e.target.closest('.btn-edit-course') || e.target.closest('.btn-delete-course'))
+                        return;
                     const list = header.nextElementSibling;
                     list.classList.toggle('open');
                     header.querySelector('.fa-chevron-down').style.transform = list.classList.contains(
@@ -4243,12 +4365,10 @@
         document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async () => {
             if (pendingDeleteCourseId) {
                 try {
-                    // Delete all subfolders under this course first
                     const subsToDelete = subfolders.filter(s => s.courseId === pendingDeleteCourseId);
                     for (const sub of subsToDelete) {
                         await remove(ref(db, `subfolders/${sub.id}`));
                     }
-                    // Delete the course itself
                     await remove(ref(db, `courses/${pendingDeleteCourseId}`));
                     showToast('Course deleted successfully!', 'success');
                     push(notificationsRef, {
@@ -4315,7 +4435,7 @@
             return div.innerHTML;
         }
 
-        console.log('✅ UTOM Admin — Hash routing enabled: back/forward navigation works, no logout.');
+        console.log('✅ UTOM Admin — Full course/video/doc editing enabled.');
     </script>
 </body>
 </html>
