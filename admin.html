@@ -744,6 +744,11 @@
             color: #d32f2f;
             border-color: rgba(211, 47, 47, 0.15);
         }
+        .btn-sm.danger:hover {
+            background: #fde8e8;
+            color: #d32f2f;
+            border-color: rgba(211, 47, 47, 0.15);
+        }
 
         /* ===== COMMENT SYSTEM (Facebook-style) ===== */
         .comment-controls {
@@ -1507,6 +1512,25 @@
         }
         .account-page .account-toolbar .btn-csv.users-csv:hover {
             box-shadow: 0 8px 28px rgba(41, 128, 185, 0.30);
+        }
+        .account-page .account-toolbar .btn-danger-clear {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(231, 76, 60, 0.20);
+        }
+        .account-page .account-toolbar .btn-danger-clear:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(231, 76, 60, 0.30);
         }
 
         /* ===== TRANSACTION CARDS (Account page) ===== */
@@ -3188,6 +3212,7 @@
                     <div class="account-toolbar">
                         <button id="downloadTxCsvBtn" class="btn-csv"><i class="fas fa-file-csv"></i> Transactions CSV</button>
                         <button id="downloadUsersCsvBtn" class="btn-csv users-csv"><i class="fas fa-file-csv"></i> Users CSV</button>
+                        <button id="clearTransactionsBtn" class="btn-danger-clear"><i class="fas fa-trash-alt"></i> Clear All</button>
                     </div>
 
                     <div class="filter-pills">
@@ -4549,6 +4574,57 @@
         });
 
         // =================================================================
+        // CLEAR TRANSACTIONS — download CSV first, then delete
+        // =================================================================
+        document.getElementById('clearTransactionsBtn').addEventListener('click', async () => {
+            if (allTransactions.length === 0) {
+                showToast('No transactions to clear', 'info');
+                return;
+            }
+            // First download CSV backup
+            const rows = [
+                ['ID', 'User Name', 'User Email', 'User Phone', 'Item Title', 'Item Type', 'Amount', 'Status',
+                    'Payment Method', 'Date', 'Has Screenshot'
+                ]
+            ];
+            allTransactions.forEach(tx => {
+                rows.push([
+                    escapeCsv(tx.id),
+                    escapeCsv(tx.userName),
+                    escapeCsv(tx.userEmail),
+                    escapeCsv(tx.userPhone || ''),
+                    escapeCsv(tx.itemTitle),
+                    escapeCsv(tx.itemType || 'course'),
+                    escapeCsv(tx.amount),
+                    escapeCsv(tx.status),
+                    escapeCsv(tx.paymentMethod || ''),
+                    escapeCsv(tx.date || (tx.timestamp ? new Date(tx.timestamp).toLocaleString() : '')),
+                    escapeCsv(tx.screenshot ? 'Yes' : 'No')
+                ]);
+            });
+            downloadCSV('transactions_backup_before_clear.csv', rows);
+            showToast('CSV backup downloaded. Now clearing transactions...', 'info');
+
+            // Now delete all transactions
+            if (!confirm('This will permanently delete ALL transactions. Continue?')) return;
+            try {
+                // Clear transactions
+                await set(transactionsRef, null);
+                // Clear pending purchases
+                await set(pendingPurchasesRef, null);
+                // Clear approved purchases
+                await set(approvedPurchasesRef, null);
+                showToast('All transactions cleared!', 'success');
+                push(notificationsRef, {
+                    message: `🗑️ All transactions cleared by admin`,
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                showToast('Error clearing transactions: ' + err.message, 'error');
+            }
+        });
+
+        // =================================================================
         // USERS
         // =================================================================
         function renderUsers() {
@@ -4570,8 +4646,11 @@
                 <div class="user-status">
                     ${u.banned ? '<span class="badge-banned">Banned</span>' : ''}
                     <div class="toggle-switch ${u.banned ? 'active' : ''}" data-uid="${u.uid}" data-banned="${u.banned}"></div>
+                    <button class="btn-sm danger delete-user-btn" data-uid="${u.uid}" title="Delete user"><i class="fas fa-trash-alt"></i></button>
                 </div>
             </div>`).join('') || '<div style="color:#8b8fa3;padding:20px;text-align:center;">No users found</div>';
+
+            // Ban/Unban toggle
             document.querySelectorAll('.user-row .toggle-switch').forEach(toggle => {
                 toggle.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -4584,9 +4663,38 @@
                     showToast(currentlyBanned ? 'User unbanned' : 'User banned');
                 });
             });
+
+            // Delete user
+            document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const uid = btn.dataset.uid;
+                    const user = users.find(u => u.uid === uid);
+                    if (!user) return;
+                    if (!confirm(`⚠️ Permanently delete user ${user.email || uid}? This cannot be undone.`)) return;
+                    try {
+                        // Remove user data
+                        await remove(ref(db, `users/${uid}`));
+                        // Remove banned status if any
+                        await remove(ref(db, `bannedUsers/${uid}`));
+                        // Remove user's pending purchases
+                        await remove(ref(db, `pendingPurchases/${uid}`));
+                        // Remove user's approved purchases
+                        await remove(ref(db, `approvedPurchases/${uid}`));
+                        showToast('User deleted successfully!', 'success');
+                        push(notificationsRef, {
+                            message: `🗑️ User ${user.email || uid} deleted`,
+                            timestamp: serverTimestamp()
+                        });
+                    } catch (err) {
+                        showToast('Error deleting user: ' + err.message, 'error');
+                    }
+                });
+            });
+
             document.querySelectorAll('.user-row').forEach(row => {
                 row.addEventListener('click', (e) => {
-                    if (e.target.closest('.toggle-switch')) return;
+                    if (e.target.closest('.toggle-switch') || e.target.closest('.delete-user-btn')) return;
                     const user = users.find(u => u.uid === row.dataset.uid);
                     if (user) showUserDetailsModal(user);
                 });
@@ -4781,7 +4889,7 @@
                 views: 0,
                 likes: 0,
                 uniqueViewers: {},
-                commentsEnabled: false
+                commentsEnabled: true // 🔥 comments enabled by default
             });
             push(notificationsRef, {
                 message: `🎬 New video "${title}" by ${instructor} published`,
@@ -5541,7 +5649,7 @@
             onValue(pendingPurchasesRef, fetchTransactions);
         }
 
-        console.log('✅ UTOM Admin — Video cards are 1 column with Facebook-style comments (name above text). "View Comments" button toggles the comment section. iPhone toggle controls whether users can post. Account page transactions are cards with name/amount, expandable details, and a square expandable screenshot box.');
+        console.log('✅ UTOM Admin — Comments enabled by default. Delete user button added. Clear transactions with CSV backup added.');
     </script>
 </body>
 </html>
