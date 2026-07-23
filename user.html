@@ -1229,11 +1229,11 @@
             box-shadow: 0 4px 14px rgba(245, 176, 66, 0.2);
         }
 
-        /* ===== TRANSACTION CARDS ===== */
+        /* ===== IMPROVED TRANSACTION CARDS (matching admin) ===== */
         .transaction-card {
             background: #fff;
             border-radius: var(--radius-md);
-            padding: 1.1rem;
+            padding: 1.1rem 1.2rem;
             margin-bottom: 0.8rem;
             box-shadow: var(--shadow-sm);
             border: 1px solid #f2f2f5;
@@ -2071,6 +2071,13 @@
             text-align: center;
             font-weight: 500;
         }
+        .comment-disabled {
+            color: #e74c3c;
+            font-size: 0.75rem;
+            padding: 8px 0;
+            text-align: center;
+            font-weight: 500;
+        }
 
         body.dark-mode .comment-section {
             background: #1a1a1a !important;
@@ -2221,7 +2228,7 @@
                 </div>
             </div>
 
-            <!-- TRANSACTION HISTORY -->
+            <!-- TRANSACTION HISTORY (improved) -->
             <div id="transactionHistoryPage" class="page-container full-page-container">
                 <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back to Profile</button>
                 <h2 style="margin-bottom:1rem;border-left:4px solid var(--gold);padding-left:14px;"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
@@ -2565,7 +2572,7 @@
             return date.toLocaleDateString('en-US', options);
         }
 
-        // ===== TRANSACTION HISTORY =====
+        // ===== IMPROVED TRANSACTION HISTORY =====
         function renderTransactionHistory() {
             const container = document.getElementById('transactionHistoryList');
             const emptyMsg = document.getElementById('emptyTransactionMsg');
@@ -2850,7 +2857,8 @@
             const isOffline = offlineVideos.has(video.id);
             const isFree = video.price === 0 || (video.price === undefined);
             const isEnrolled = approvedCourses.has(video.courseId);
-            const canComment = isFree || isEnrolled;
+            // Only allow commenting if the user is enrolled (or video is free) AND comments are enabled by admin
+            const canComment = (isFree || isEnrolled) && video.commentsEnabled !== false;
 
             const comments = commentsCache.get(video.id) || [];
             const commentCount = comments.length;
@@ -2886,10 +2894,14 @@
                     </button>
                     <div class="comment-section" id="comment-section-${video.id}" style="display:none;">
                         ${canComment ? `
-                            <div class="comment-form" data-video-id="${video.id}">
-                                <input type="text" placeholder="Write a comment..." class="comment-input" data-video-id="${video.id}" />
-                                <button class="comment-submit-btn" data-video-id="${video.id}"><i class="fas fa-paper-plane"></i> Post</button>
-                            </div>
+                            ${video.commentsEnabled !== false ? `
+                                <div class="comment-form" data-video-id="${video.id}">
+                                    <input type="text" placeholder="Write a comment..." class="comment-input" data-video-id="${video.id}" />
+                                    <button class="comment-submit-btn" data-video-id="${video.id}"><i class="fas fa-paper-plane"></i> Post</button>
+                                </div>
+                            ` : `
+                                <div class="comment-disabled">Comments are disabled by admin.</div>
+                            `}
                             <div class="comment-list" id="comment-list-${video.id}">
                                 ${renderCommentsList(video.id)}
                             </div>
@@ -3112,6 +3124,11 @@
                     const isEnrolled = approvedCourses.has(video.courseId);
                     if (!isFree && !isEnrolled) {
                         addNotification('warning', 'You must be enrolled to comment on this video.');
+                        return;
+                    }
+                    // Also check if comments are enabled
+                    if (video.commentsEnabled === false) {
+                        addNotification('warning', 'Comments are disabled by admin.');
                         return;
                     }
 
@@ -4159,7 +4176,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Layout updated: courses 2×2, videos 1×1 with larger cards for proper comment spacing.');
+        console.log('✅ UTOM User — Layout updated: courses 2×2, videos 1×1 with larger cards for proper comment spacing. Comments are disabled if admin toggled them off; transaction history matches admin card design.');
     </script>
 </body>
 </html>
