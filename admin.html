@@ -817,17 +817,21 @@
             border-color: rgba(245, 176, 66, 0.25);
         }
 
+        /* ===== FIXED DROPDOWN CSS ===== */
         .comments-dropdown {
             margin-top: 10px;
             overflow: hidden;
             transition: all 0.3s ease;
             max-height: 0;
             opacity: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
         .comments-dropdown.open {
-            max-height: 800px;
+            max-height: 1000px;
             opacity: 1;
         }
+
         .comments-dropdown-inner {
             background: #f8f9fc;
             border-radius: 18px;
@@ -3625,20 +3629,21 @@
                 });
             });
 
-            // View Comments button (toggle dropdown)
+            // ===== FIXED: View Comments button (toggle dropdown) =====
             document.querySelectorAll('.comment-view-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const videoId = btn.dataset.videoId;
-                    const dropdown = document.querySelector(`.comments-dropdown[data-video-id="${videoId}"]`);
-                    if (dropdown) {
-                        const isOpen = dropdown.classList.contains('open');
-                        dropdown.classList.toggle('open');
-                        btn.classList.toggle('active');
-                        btn.innerHTML = isOpen ?
-                            '<i class="fas fa-comment"></i> <span>View Comments</span>' :
-                            '<i class="fas fa-comment"></i> <span>Hide Comments</span>';
-                    }
+                    const card = btn.closest('.video-card');
+                    if (!card) return;
+                    const dropdown = card.querySelector('.comments-dropdown');
+                    if (!dropdown) return;
+                    
+                    const isOpen = dropdown.classList.contains('open');
+                    dropdown.classList.toggle('open');
+                    btn.classList.toggle('active');
+                    btn.innerHTML = isOpen
+                        ? '<i class="fas fa-comment"></i> <span>View Comments</span>'
+                        : '<i class="fas fa-comment"></i> <span>Hide Comments</span>';
                 });
             });
 
