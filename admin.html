@@ -1259,7 +1259,7 @@
 
         /* ===== ACCOUNT PAGE — redesigned: white background, floating cards ===== */
         .account-page {
-            background: #fff;
+            background: #ffffff;
             border-radius: 28px;
             padding: 24px 20px 28px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
@@ -1370,7 +1370,7 @@
             border-color: rgba(245, 176, 66, 0.18);
         }
 
-        /* ===== MODALS — all white, properly styled ===== */
+        /* ===== MODALS — all white with title on top ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -1470,7 +1470,7 @@
             justify-content: flex-end;
             margin-top: 20px;
         }
-        .modal-box .btn-group .btn-cancel {
+        .modal-box .btn-cancel {
             background: transparent;
             border: 2px solid #e5e8ed;
             padding: 10px 24px;
@@ -1481,11 +1481,11 @@
             font-size: 13px;
             transition: all 0.3s ease;
         }
-        .modal-box .btn-group .btn-cancel:hover {
+        .modal-box .btn-cancel:hover {
             border-color: #8b8fa3;
             background: #f8f9fc;
         }
-        .modal-box .btn-group .btn-confirm {
+        .modal-box .btn-confirm {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             border: none;
             padding: 10px 24px;
@@ -1500,11 +1500,11 @@
             align-items: center;
             gap: 8px;
         }
-        .modal-box .btn-group .btn-confirm:hover {
+        .modal-box .btn-confirm:hover {
             transform: translateY(-2px) scale(1.02);
             box-shadow: 0 8px 28px rgba(245, 176, 66, 0.30);
         }
-        .modal-box .btn-group .btn-danger {
+        .modal-box .btn-danger {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             border: none;
             padding: 10px 24px;
@@ -1519,7 +1519,7 @@
             align-items: center;
             gap: 8px;
         }
-        .modal-box .btn-group .btn-danger:hover {
+        .modal-box .btn-danger:hover {
             transform: translateY(-2px) scale(1.02);
             box-shadow: 0 8px 28px rgba(231, 76, 60, 0.30);
         }
@@ -1937,7 +1937,7 @@
             display: flex;
         }
         .delete-confirm-box {
-            background: #fff;
+            background: #ffffff;
             border-radius: 28px;
             width: 100%;
             max-width: 420px;
@@ -2012,6 +2012,30 @@
         .delete-confirm-box .btn-group .btn-confirm-delete:hover {
             transform: translateY(-3px) scale(1.02);
             box-shadow: 0 8px 28px rgba(231, 76, 60, 0.35);
+        }
+
+        /* ===== SUBFOLDER EDIT MODAL ===== */
+        #subfolderEditModal .modal-box {
+            max-width: 460px;
+        }
+        #subfolderEditModal .form-row {
+            margin-top: 8px;
+        }
+        #subfolderEditModal .form-row input {
+            flex: 1;
+            padding: 12px 18px;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            font-size: 14px;
+            background: #fafbfc;
+            color: #1a1d28;
+            transition: all 0.25s ease;
+        }
+        #subfolderEditModal .form-row input:focus {
+            outline: none;
+            border-color: #f5b042;
+            box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.10);
+            background: #fff;
         }
 
         /* ===== COURSE EDIT MODAL ===== */
@@ -3020,6 +3044,22 @@
         </div>
     </div>
 
+    <!-- ===== SUBFOLDER EDIT MODAL (white with title on top) ===== -->
+    <div id="subfolderEditModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-modal" id="closeSubfolderEditModal">&times;</button>
+            <h3><i class="fas fa-pen-to-square"></i> Edit Subfolder</h3>
+            <div class="form-row">
+                <label style="font-weight:600;min-width:80px;">Subfolder Name</label>
+                <input type="text" id="editSubfolderNameInput" placeholder="Enter new name" style="flex:1;">
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px;">
+                <button id="cancelSubfolderEditBtn" class="btn-cancel">Cancel</button>
+                <button id="confirmSubfolderEditBtn" class="btn-confirm"><i class="fas fa-check"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== NOTIFICATION SIDEBAR ===== -->
     <div id="notifSidebarOverlay" class="sidebar-overlay"></div>
     <div id="notifSidebar" class="sidebar">
@@ -3074,6 +3114,8 @@
         let readNotifications = new Set();
         let pendingDeleteCourseId = null;
         let pendingEditCourseId = null;
+        let pendingEditSubfolderId = null;
+        let pendingEditSubfolderName = null;
         let commentsCache = {};
 
         const videosRef = ref(db, 'videos');
@@ -3337,7 +3379,6 @@
             const paid = videos.filter(v => v.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             const free = videos.filter(v => v.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-            // Paid videos: show first 4, hide rest
             const paidVisible = paid.slice(0, 4);
             const paidHidden = paid.slice(4);
             document.getElementById('homePaidGrid').innerHTML = paidVisible.map(v => renderVideoCardWithComments(v,
@@ -3350,7 +3391,6 @@
             document.getElementById('paidViewMoreBtn').innerHTML =
                 `<i class="fas fa-chevron-down"></i> View More (${paidHidden.length})`;
 
-            // Free videos: show first 4, hide rest
             const freeVisible = free.slice(0, 4);
             const freeHidden = free.slice(4);
             document.getElementById('homeFreeGrid').innerHTML = freeVisible.map(v => renderVideoCardWithComments(v,
@@ -3368,7 +3408,6 @@
             attachCardEvents();
             attachCommentEvents();
 
-            // View More handlers
             document.getElementById('paidViewMoreBtn').onclick = function() {
                 const container = document.getElementById('paidHiddenVideos');
                 container.classList.toggle('open');
@@ -3688,6 +3727,51 @@
                 message: `✏️ Course "${name}" updated`,
                 timestamp: serverTimestamp()
             });
+        });
+
+        // =================================================================
+        // SUBFOLDER EDIT MODAL (white with title on top)
+        // =================================================================
+        document.querySelectorAll('.sf-edit').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const sfId = btn.dataset.subfolderId;
+                const sf = subfolders.find(s => s.id === sfId);
+                if (!sf) return;
+                pendingEditSubfolderId = sfId;
+                pendingEditSubfolderName = sf.name;
+                document.getElementById('editSubfolderNameInput').value = sf.name;
+                document.getElementById('subfolderEditModal').classList.add('open');
+            });
+        });
+
+        document.getElementById('closeSubfolderEditModal').addEventListener('click', () => {
+            document.getElementById('subfolderEditModal').classList.remove('open');
+            pendingEditSubfolderId = null;
+        });
+        document.getElementById('cancelSubfolderEditBtn').addEventListener('click', () => {
+            document.getElementById('subfolderEditModal').classList.remove('open');
+            pendingEditSubfolderId = null;
+        });
+        document.getElementById('subfolderEditModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('subfolderEditModal').classList.remove('open');
+                pendingEditSubfolderId = null;
+            }
+        });
+        document.getElementById('confirmSubfolderEditBtn').addEventListener('click', async () => {
+            if (!pendingEditSubfolderId) return;
+            const newName = document.getElementById('editSubfolderNameInput').value.trim();
+            if (!newName) return showToast('Subfolder name cannot be empty', 'error');
+            if (newName === pendingEditSubfolderName) {
+                document.getElementById('subfolderEditModal').classList.remove('open');
+                pendingEditSubfolderId = null;
+                return;
+            }
+            await update(ref(db, `subfolders/${pendingEditSubfolderId}`), { name: newName });
+            document.getElementById('subfolderEditModal').classList.remove('open');
+            showToast('Subfolder renamed!', 'success');
+            pendingEditSubfolderId = null;
         });
 
         // =================================================================
@@ -4808,20 +4892,8 @@
                 });
             });
 
-            document.querySelectorAll('.sf-edit').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const sfId = btn.dataset.subfolderId;
-                    const sf = subfolders.find(s => s.id === sfId);
-                    if (!sf) return;
-                    const newName = prompt('Edit subfolder name:', sf.name);
-                    if (newName && newName.trim() !== sf.name) {
-                        await update(ref(db, `subfolders/${sfId}`), { name: newName.trim() });
-                        showToast('Subfolder renamed!', 'success');
-                    }
-                });
-            });
-
+            // Subfolder edit is now handled by the dedicated modal above
+            // Deleting subfolder
             document.querySelectorAll('.sf-delete').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -5038,7 +5110,7 @@
             onValue(pendingPurchasesRef, fetchTransactions);
         }
 
-        console.log('✅ UTOM Admin — Account page redesigned with white background, floating cards. Home shows 4 videos with View More.');
+        console.log('✅ UTOM Admin — Ready to deploy. Account page with white background, floating cards, expandable details. Subfolder editing uses a clean modal with title.');
     </script>
 </body>
 </html>
