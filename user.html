@@ -2850,6 +2850,7 @@
             return true;
         }
 
+        // ===== MODIFIED buildVideoCard: comment section now respects admin's 'commentsEnabled' flag =====
         function buildVideoCard(video) {
             const isLiked = userData.likedVideos.includes(video.id);
             const canDownload = isDownloadableVideo(video);
@@ -2859,9 +2860,13 @@
             const isEnrolled = approvedCourses.has(video.courseId);
             // Only allow commenting if the user is enrolled (or video is free) AND comments are enabled by admin
             const canComment = (isFree || isEnrolled) && video.commentsEnabled !== false;
+            const commentsEnabledByAdmin = video.commentsEnabled !== false; // treat undefined as true
 
             const comments = commentsCache.get(video.id) || [];
             const commentCount = comments.length;
+
+            // Show the toggle button only if comments are enabled by admin (and user has access)
+            const showToggle = commentsEnabledByAdmin && (isFree || isEnrolled);
 
             return `
             <div class="video-card" data-id="${video.id}" data-offline="${isOffline}" data-courseid="${video.courseId || ''}" data-price="${video.price || 0}">
@@ -2888,13 +2893,25 @@
                             </div>
                         ` : `<div style="width:44px;"></div>`}
                     </div>
-                    <button class="comment-toggle-btn" data-id="${video.id}" data-open="false">
-                        <i class="fas fa-comment"></i> Comments
-                        <span class="comment-count">${commentCount}</span>
-                    </button>
+                    ${showToggle ? `
+                        <button class="comment-toggle-btn" data-id="${video.id}" data-open="false">
+                            <i class="fas fa-comment"></i> Comments
+                            <span class="comment-count">${commentCount}</span>
+                        </button>
+                    ` : `
+                        ${commentsEnabledByAdmin ? `
+                            <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
+                                <i class="fas fa-lock"></i> You must be enrolled to comment.
+                            </div>
+                        ` : `
+                            <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
+                                <i class="fas fa-ban"></i> Comments are disabled by admin.
+                            </div>
+                        `}
+                    `}
                     <div class="comment-section" id="comment-section-${video.id}" style="display:none;">
                         ${canComment ? `
-                            ${video.commentsEnabled !== false ? `
+                            ${commentsEnabledByAdmin ? `
                                 <div class="comment-form" data-video-id="${video.id}">
                                     <input type="text" placeholder="Write a comment..." class="comment-input" data-video-id="${video.id}" />
                                     <button class="comment-submit-btn" data-video-id="${video.id}"><i class="fas fa-paper-plane"></i> Post</button>
