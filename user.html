@@ -2064,13 +2064,6 @@
             padding: 8px 0;
             text-align: center;
         }
-        .comment-restricted {
-            color: #e74c3c;
-            font-size: 0.75rem;
-            padding: 8px 0;
-            text-align: center;
-            font-weight: 500;
-        }
         .comment-disabled {
             color: #e74c3c;
             font-size: 0.75rem;
@@ -2111,7 +2104,7 @@
         body.dark-mode .comment-empty {
             color: #888 !important;
         }
-        body.dark-mode .comment-restricted {
+        body.dark-mode .comment-disabled {
             color: #e74c3c !important;
         }
         body.dark-mode .comment-item .comment-actions .edit-comment-btn:hover {
@@ -2858,15 +2851,12 @@
             const isOffline = offlineVideos.has(video.id);
             const isFree = video.price === 0 || (video.price === undefined);
             const isEnrolled = approvedCourses.has(video.courseId);
-            // Only allow commenting if the user is enrolled (or video is free) AND comments are enabled by admin
-            const canComment = (isFree || isEnrolled) && video.commentsEnabled !== false;
-            const commentsEnabledByAdmin = video.commentsEnabled !== false; // treat undefined as true
+            // ANY user can comment if admin has enabled comments – no enrollment check
+            const commentsEnabled = video.commentsEnabled !== false;
+            const canComment = commentsEnabled; // any user can comment when enabled
 
             const comments = commentsCache.get(video.id) || [];
             const commentCount = comments.length;
-
-            // Show the toggle button only if comments are enabled by admin (and user has access)
-            const showToggle = commentsEnabledByAdmin && (isFree || isEnrolled);
 
             return `
             <div class="video-card" data-id="${video.id}" data-offline="${isOffline}" data-courseid="${video.courseId || ''}" data-price="${video.price || 0}">
@@ -2893,38 +2883,28 @@
                             </div>
                         ` : `<div style="width:44px;"></div>`}
                     </div>
-                    ${showToggle ? `
+                    ${commentsEnabled ? `
                         <button class="comment-toggle-btn" data-id="${video.id}" data-open="false">
                             <i class="fas fa-comment"></i> Comments
                             <span class="comment-count">${commentCount}</span>
                         </button>
                     ` : `
-                        ${commentsEnabledByAdmin ? `
-                            <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
-                                <i class="fas fa-lock"></i> You must be enrolled to comment.
-                            </div>
-                        ` : `
-                            <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
-                                <i class="fas fa-ban"></i> Comments are disabled by admin.
-                            </div>
-                        `}
+                        <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
+                            <i class="fas fa-ban"></i> Comments are disabled by admin.
+                        </div>
                     `}
                     <div class="comment-section" id="comment-section-${video.id}" style="display:none;">
                         ${canComment ? `
-                            ${commentsEnabledByAdmin ? `
-                                <div class="comment-form" data-video-id="${video.id}">
-                                    <input type="text" placeholder="Write a comment..." class="comment-input" data-video-id="${video.id}" />
-                                    <button class="comment-submit-btn" data-video-id="${video.id}"><i class="fas fa-paper-plane"></i> Post</button>
-                                </div>
-                            ` : `
-                                <div class="comment-disabled">Comments are disabled by admin.</div>
-                            `}
+                            <div class="comment-form" data-video-id="${video.id}">
+                                <input type="text" placeholder="Write a comment..." class="comment-input" data-video-id="${video.id}" />
+                                <button class="comment-submit-btn" data-video-id="${video.id}"><i class="fas fa-paper-plane"></i> Post</button>
+                            </div>
                             <div class="comment-list" id="comment-list-${video.id}">
                                 ${renderCommentsList(video.id)}
                             </div>
                         ` : `
-                            <div class="comment-restricted">
-                                <i class="fas fa-lock"></i> You must be enrolled in this course to comment.
+                            <div class="comment-disabled">
+                                <i class="fas fa-ban"></i> Comments are disabled by admin.
                             </div>
                         `}
                     </div>
@@ -3137,13 +3117,7 @@
 
                     const video = allVideos.find(v => v.id === videoId);
                     if (!video) return;
-                    const isFree = video.price === 0 || video.price === undefined;
-                    const isEnrolled = approvedCourses.has(video.courseId);
-                    if (!isFree && !isEnrolled) {
-                        addNotification('warning', 'You must be enrolled to comment on this video.');
-                        return;
-                    }
-                    // Also check if comments are enabled
+                    // Only check if comments are enabled – no enrollment check
                     if (video.commentsEnabled === false) {
                         addNotification('warning', 'Comments are disabled by admin.');
                         return;
@@ -4193,7 +4167,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Layout updated: courses 2×2, videos 1×1 with larger cards for proper comment spacing. Comments are disabled if admin toggled them off; transaction history matches admin card design.');
+        console.log('✅ UTOM User — Comments now dropdown style and open to everyone (no enrollment required). Admin controls the on/off toggle.');
     </script>
 </body>
 </html>
