@@ -425,6 +425,154 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12), inset 0 0 0 1px rgba(255, 107, 0, 0.08);
         }
 
+        /* ===== PROMO CAROUSEL ===== */
+        .promo-carousel-wrapper {
+            margin: 0 0.9rem 1.2rem 0.9rem;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            position: relative;
+            padding: 12px 0;
+            display: block;
+            border-radius: 40px;
+            background: transparent;
+            box-shadow: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .promo-carousel-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .promo-carousel-track {
+            display: flex;
+            gap: 0;
+            padding: 0;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            height: auto;
+            align-items: center;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .promo-carousel-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .promo-slide {
+            flex: 0 0 80%;
+            max-width: 80%;
+            scroll-snap-align: center;
+            position: relative;
+            border-radius: 40px;
+            overflow: hidden;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.5s ease,
+                box-shadow 0.5s ease;
+            height: auto;
+            aspect-ratio: 1200 / 675;
+            flex-shrink: 0;
+            background: #ffffff;
+            box-shadow: 0 3px 17px rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto 0;
+            transform: scale(0.85);
+            opacity: 0.55;
+            z-index: 1;
+            will-change: transform, opacity;
+            cursor: pointer;
+        }
+        .promo-slide.clickable {
+            cursor: pointer;
+        }
+        .promo-slide:not(.clickable) {
+            cursor: default;
+        }
+        .promo-slide img,
+        .promo-slide video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover !important;
+            display: block;
+            background-color: #ffffff;
+            border-radius: 40px;
+        }
+        .promo-slide .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 17px 17px 17px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.70));
+            min-height: 68px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border-radius: 0 0 40px 40px;
+        }
+        .promo-slide .slide-text {
+            color: #fff;
+            font-size: 19px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        .promo-slide .slide-text small {
+            font-weight: 400;
+            font-size: 12px;
+            opacity: 0.9;
+            display: block;
+            margin-top: 2px;
+            text-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+        }
+        .promo-slide .video-play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        .promo-slide.video-playing .video-play-overlay {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .promo-slide.prev-slide,
+        .promo-slide.next-slide {
+            transform: scale(0.85) !important;
+            opacity: 0.55 !important;
+            z-index: 2;
+        }
+        .promo-slide.active-slide {
+            transform: scale(1.08) !important;
+            opacity: 1 !important;
+            z-index: 3;
+            box-shadow: 0 10px 41px rgba(0, 0, 0, 0.25);
+        }
+        .promo-slide.far-slide {
+            transform: scale(0.70) !important;
+            opacity: 0.20 !important;
+            z-index: 0;
+        }
+
         /* ===== COURSES GRID — 2 columns always ===== */
         .courses-grid {
             display: grid;
@@ -539,13 +687,58 @@
             font-size: 0.7rem;
         }
 
-        /* ===== VIDEO GRID — 1 column (single) ===== */
-        .videos-grid-2x2 {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.2rem;
-            padding: 0.3rem 0;
+        /* ===== VIDEO CARDS — HORIZONTAL SCROLL with 10% peek ===== */
+        .videos-scroll-container {
+            display: flex;
+            gap: 0.8rem;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 0.5rem 0.4rem 0.8rem 0.4rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
+        .videos-scroll-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        .videos-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .videos-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
+        }
+
+        .videos-scroll-container .video-card {
+            flex: 0 0 80%;
+            scroll-snap-align: start;
+            min-width: 220px;
+            max-width: 420px;
+            margin-bottom: 0.5rem;
+        }
+        /* 10% peek: the next/prev cards are partially visible because the container has padding and the card width is 80%, leaving 20% for peeking. We'll adjust to 10% by using 90% width */
+        @media (min-width: 520px) {
+            .videos-scroll-container .video-card {
+                flex: 0 0 80%;
+            }
+        }
+        @media (min-width: 600px) {
+            .videos-scroll-container .video-card {
+                flex: 0 0 60%;
+            }
+        }
+        @media (min-width: 900px) {
+            .videos-scroll-container .video-card {
+                flex: 0 0 45%;
+            }
+        }
+        @media (min-width: 1200px) {
+            .videos-scroll-container .video-card {
+                flex: 0 0 35%;
+            }
+        }
+
         .video-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
@@ -557,8 +750,6 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            max-width: 820px;
-            margin: 0 auto;
             width: 100%;
         }
         .video-card::after {
@@ -587,7 +778,7 @@
         }
         .video-card .video-thumb-wrapper img {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
             background: #eaeef3;
             display: block;
@@ -1642,6 +1833,115 @@
             }
         }
 
+        /* ===== ADMIN NOTIFICATION POPUP (in-app) ===== */
+        .admin-notif-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .admin-notif-overlay.open {
+            display: flex;
+        }
+        .admin-notif-modal {
+            background: #ffffff;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 420px;
+            padding: 0 0 18px 0;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            position: relative;
+        }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .admin-notif-header {
+            background: #1a1d28;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 3px solid var(--gold);
+        }
+        .admin-notif-header .admin-notif-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1d28;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .admin-notif-header span {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            flex: 1;
+        }
+        .admin-notif-body {
+            padding: 18px 18px 10px 18px;
+            text-align: left;
+        }
+        .admin-notif-body p {
+            font-size: 13px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+        .admin-notif-body .media-container {
+            margin-top: 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-notif-body .media-container img,
+        .admin-notif-body .media-container video {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 12px;
+            display: block;
+        }
+        .admin-notif-btn {
+            margin: 12px 18px 0 18px;
+            width: calc(100% - 36px);
+            padding: 10px;
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .admin-notif-btn:active {
+            transform: scale(0.96);
+        }
+
         /* ===== DARK MODE ===== */
         body.dark-mode,
         body.dark-mode .app-root,
@@ -1667,7 +1967,8 @@
         body.dark-mode .transaction-card .transaction-course-name,
         body.dark-mode .doc-full-content,
         body.dark-mode .doc-full-content .doc-viewer-toolbar,
-        body.dark-mode .doc-full-content iframe {
+        body.dark-mode .doc-full-content iframe,
+        body.dark-mode .admin-notif-modal {
             background: #1e1e1e !important;
             color: #e0e0e0 !important;
             border-color: #333 !important;
@@ -1875,6 +2176,15 @@
         }
         body.dark-mode .payment-number-row .number-value {
             color: #e0e0e0 !important;
+        }
+        body.dark-mode .admin-notif-header {
+            background: #1a1a1a !important;
+        }
+        body.dark-mode .admin-notif-body p {
+            color: #ccc !important;
+        }
+        body.dark-mode .admin-notif-btn {
+            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
         }
 
         /* ===== COMMENT SYSTEM ===== */
@@ -2170,6 +2480,13 @@
                 <input type="text" id="searchInput" placeholder="Search courses..." />
             </div>
 
+            <!-- ===== PROMO CAROUSEL (below search bar) ===== -->
+            <div class="promo-carousel-wrapper" id="promoCarouselWrapper">
+                <div class="promo-carousel-track" id="promoCarouselTrack">
+                    <!-- Carousel slides rendered by JS -->
+                </div>
+            </div>
+
             <!-- ===== PAGES ===== -->
 
             <!-- HOME -->
@@ -2197,7 +2514,7 @@
             <!-- MY LEARNING -->
             <div id="mylearningPage" class="page-container">
                 <div class="grid-title"><h3><i class="fas fa-play-circle"></i> Continue Watching</h3></div>
-                <div class="videos-grid-2x2" id="watchedVideosGrid"></div>
+                <div class="videos-scroll-container" id="watchedVideosGrid"></div>
                 <div class="grid-title" style="margin-top:1.2rem"><h3><i class="fas fa-check-circle" style="color:#2ecc71;"></i> My Paid Courses</h3></div>
                 <div id="myPaidCoursesGrid" class="courses-grid"></div>
             </div>
@@ -2205,7 +2522,7 @@
             <!-- OFFLINE -->
             <div id="offlinePage" class="page-container">
                 <div class="grid-title"><h3><i class="fas fa-download"></i> Offline Videos</h3></div>
-                <div class="videos-grid-2x2" id="offlineVideosGrid"></div>
+                <div class="videos-scroll-container" id="offlineVideosGrid"></div>
                 <div id="emptyOfflineMsg" class="empty-state"><i class="fas fa-cloud-download-alt"></i> No offline videos yet.<br /><small>Tap download on any downloadable video.</small></div>
             </div>
 
@@ -2291,6 +2608,21 @@
         <img id="screenshotModalImg" src="" alt="Payment Screenshot" />
     </div>
 
+    <!-- ===== ADMIN NOTIFICATION POPUP (in-app) ===== -->
+    <div class="admin-notif-overlay" id="adminNotifOverlay">
+        <div class="admin-notif-modal">
+            <div class="admin-notif-header">
+                <div class="admin-notif-icon"><i class="fas fa-bullhorn"></i></div>
+                <span id="adminNotifTitle">📢 Admin Message</span>
+            </div>
+            <div class="admin-notif-body">
+                <p id="adminNotifMessage">Loading message...</p>
+                <div class="media-container" id="adminNotifMediaContainer"></div>
+            </div>
+            <button class="admin-notif-btn" id="adminNotifDismiss">Understood</button>
+        </div>
+    </div>
+
     <!-- ===== TOAST CONTAINER ===== -->
     <div id="toastContainer"></div>
 
@@ -2324,6 +2656,7 @@
         let allSubfolders = [];
         let allVideos = [];
         let allDocs = [];
+        let allPromos = []; // for carousel
         let approvedCourses = new Set();
         let pendingPurchases = {};
         let allUserTransactions = [];
@@ -2338,6 +2671,13 @@
         // ----- Comment system state -----
         const commentsCache = new Map(); // videoId -> [comments]
         const commentListeners = new Map(); // videoId -> unsubscribe function
+
+        // ----- Promo carousel state -----
+        let carouselItems = [];
+        let currentCarouselIndex = 0;
+        let autoScrollTimer = null;
+        let isUserInteracting = false;
+        let carouselDirection = 1;
 
         // ===== UTOM THUMBNAIL SVG =====
         const UTOM_THUMBNAIL = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20300%22%20width%3D%22400%22%20height%3D%22300%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22utomGrad%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%220%25%22%3E%3Cstop%20offset%3D%220%25%22%20style%3D%22stop-color%3A%23d4952a%3Bstop-opacity%3A1%22%20%2F%3E%3Cstop%20offset%3D%22100%25%22%20style%3D%22stop-color%3A%23ff6b00%3Bstop-opacity%3A1%22%20%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22%231a1a1a%22%2F%3E%3Ctext%20x%3D%22200%22%20y%3D%22100%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2248%22%20font-weight%3D%22bold%22%20fill%3D%22url(%23utomGrad)%22%20text-anchor%3D%22middle%22%3EUTOM%3C%2Ftext%3E%3Ctext%20x%3D%22200%22%20y%3D%22150%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2220%22%20fill%3D%22%23888888%22%20text-anchor%3D%22middle%22%3ELEARN%20ANYWHERE%3C%2Ftext%3E%3Crect%20x%3D%2250%22%20y%3D%22240%22%20width%3D%22300%22%20height%3D%2215%22%20rx%3D%227%22%20fill%3D%22%23cc0000%22%2F%3E%3C%2Fsvg%3E';
@@ -2463,6 +2803,23 @@
             onValue(ref(db, 'system/paymentSettings'), (snap) => {
                 if (snap.val()) { paymentSettings = snap.val(); }
                 updatePaymentNumbersDisplay();
+            });
+
+            // ----- PROMO CAROUSEL LISTENER -----
+            onValue(ref(db, 'promos'), (snap) => {
+                const data = snap.val();
+                allPromos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
+                renderPromoCarousel();
+            });
+
+            // ----- ADMIN IN-APP NOTIFICATIONS LISTENER -----
+            onValue(ref(db, 'inAppNotifications'), (snap) => {
+                const data = snap.val();
+                if (data) {
+                    // Store in a global for checking popups
+                    window._adminNotifs = data;
+                    checkAdminNotifications();
+                }
             });
 
             setupUI();
@@ -2791,7 +3148,7 @@
                     </div>
                     <div class="subfolder-content">
                         ${videos.length ? '<h4 style="margin:0.5rem 0;font-size:0.8rem;">Videos</h4>' : ''}
-                        <div class="videos-grid-2x2">${videos.map(v => buildVideoCard(v)).join('')}</div>
+                        <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v)).join('')}</div>
                         ${docs.length ? '<h4 style="margin:1rem 0 0.5rem;font-size:0.8rem;">Documents</h4>' : ''}
                         <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
                         ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
@@ -4036,11 +4393,352 @@
                 }
             });
 
+            // Admin notification popup dismiss
+            document.getElementById('adminNotifDismiss').addEventListener('click', () => {
+                const overlay = document.getElementById('adminNotifOverlay');
+                overlay.classList.remove('open');
+                // Mark as shown in user's shownPopups
+                const notifKey = overlay.dataset.notifKey;
+                if (notifKey && currentUser) {
+                    const shownRef = ref(db, `users/${currentUser.uid}/shownAdminNotifs/${notifKey}`);
+                    set(shownRef, true).catch(() => {});
+                }
+                // Check for other popups
+                setTimeout(() => checkAdminNotifications(), 500);
+            });
+
             // Setup comment toggles (initial)
             setTimeout(() => {
                 setupCommentToggle();
                 attachCommentListenersToVisibleVideos();
             }, 500);
+        }
+
+        // ===== PROMO CAROUSEL =====
+        function renderPromoCarousel() {
+            const track = document.getElementById('promoCarouselTrack');
+            const wrapper = document.getElementById('promoCarouselWrapper');
+
+            if (!allPromos || allPromos.length === 0) {
+                track.innerHTML = '';
+                wrapper.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+            carouselItems = allPromos;
+            const entries = carouselItems;
+            // Duplicate first and last for infinite scroll illusion
+            const duplicated = [
+                entries[entries.length - 1],
+                ...entries,
+                entries[0]
+            ];
+
+            track.innerHTML = duplicated.map((p, idx) => {
+                const isClickable = p.clickContent?.enabled === true;
+                const mediaType = p.mediaType || 'image';
+                const mediaHtml = mediaType === 'video' ?
+                    `<video src="${p.imageUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:40px;"></video>
+                       <div class="video-play-overlay"><i class="fas fa-play"></i></div>` :
+                    `<img src="${p.imageUrl}" alt="${p.text || 'Promo'}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:40px;" />`;
+                return `
+                <div class="promo-slide ${isClickable ? 'clickable' : ''}" data-key="${p.id}" data-index="${idx - 1}" data-real-index="${idx - 1 < 0 ? entries.length - 1 : idx - 1 >= entries.length ? 0 : idx - 1}" data-mediatype="${mediaType}">
+                    ${mediaHtml}
+                    <div class="slide-overlay">
+                        <div class="slide-text">
+                            ${escapeHtml(p.text || 'Promo')}
+                            ${p.subtext ? `<small>${escapeHtml(p.subtext)}</small>` : ''}
+                        </div>
+                        ${isClickable ? `<div class="tap-indicator">CLICK ME</div>` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            const slides = track.querySelectorAll('.promo-slide');
+            if (slides.length > 1) {
+                const firstRealSlide = slides[1];
+                const containerWidth = track.clientWidth;
+                const slideWidth = firstRealSlide.offsetWidth;
+                const scrollPos = firstRealSlide.offsetLeft - (containerWidth - slideWidth) / 2;
+                track.scrollLeft = Math.max(0, scrollPos);
+                currentCarouselIndex = 0;
+                carouselDirection = 1;
+                updateCarouselClasses(1);
+            }
+
+            track.addEventListener('scroll', () => {
+                if (isUserInteracting) {
+                    const containerWidth = track.clientWidth;
+                    const scrollLeft = track.scrollLeft;
+                    const slides = track.querySelectorAll('.promo-slide');
+                    let closestIdx = 0;
+                    let closestDist = Infinity;
+                    slides.forEach((slide, i) => {
+                        const rect = slide.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const containerCenter = track.getBoundingClientRect().left + containerWidth / 2;
+                        const dist = Math.abs(centerX - containerCenter);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closestIdx = i;
+                        }
+                    });
+
+                    if (closestIdx === 0) {
+                        const targetSlide = slides[1];
+                        const scrollPos2 = targetSlide.offsetLeft - (containerWidth - targetSlide.offsetWidth) /
+                        2;
+                        track.scrollLeft = Math.max(0, scrollPos2);
+                        closestIdx = 1;
+                    }
+                    if (closestIdx === slides.length - 1) {
+                        const targetSlide = slides[slides.length - 2];
+                        const scrollPos2 = targetSlide.offsetLeft - (containerWidth - targetSlide.offsetWidth) /
+                        2;
+                        track.scrollLeft = Math.max(0, scrollPos2);
+                        closestIdx = slides.length - 2;
+                    }
+
+                    const realIndex = parseInt(slides[closestIdx].dataset.realIndex);
+                    if (realIndex !== currentCarouselIndex) {
+                        if (realIndex > currentCarouselIndex || (realIndex === 0 && currentCarouselIndex ===
+                                carouselItems.length - 1)) {
+                            carouselDirection = 1;
+                        } else if (realIndex < currentCarouselIndex || (realIndex === carouselItems.length - 1 &&
+                                currentCarouselIndex === 0)) {
+                            carouselDirection = -1;
+                        }
+                        currentCarouselIndex = realIndex;
+                        updateCarouselClasses(closestIdx);
+                        resetAutoScroll();
+                    }
+                }
+                isUserInteracting = true;
+                clearTimeout(track._scrollTimeout);
+                track._scrollTimeout = setTimeout(() => {
+                    isUserInteracting = false;
+                    resetAutoScroll();
+                }, 2000);
+            });
+
+            updateCarouselClasses(1);
+
+            setTimeout(() => {
+                const slides2 = track.querySelectorAll('.promo-slide');
+                if (slides2.length > 1) {
+                    const firstReal = slides2[1];
+                    const containerWidth = track.clientWidth;
+                    const slideWidth = firstReal.offsetWidth;
+                    const scrollPos = firstReal.offsetLeft - (containerWidth - slideWidth) / 2;
+                    track.scrollLeft = Math.max(0, scrollPos);
+                }
+            }, 100);
+
+            startAutoScroll();
+
+            slides.forEach(slide => {
+                slide.addEventListener('click', function(e) {
+                    const key = this.dataset.key;
+                    const mediaType = this.dataset.mediatype;
+                    const videoEl = this.querySelector('video');
+                    const playOverlay = this.querySelector('.video-play-overlay');
+
+                    if (videoEl && mediaType === 'video') {
+                        if (videoEl.paused) {
+                            isUserInteracting = true;
+                            if (autoScrollTimer) {
+                                clearInterval(autoScrollTimer);
+                                autoScrollTimer = null;
+                            }
+                            videoEl.muted = false;
+                            videoEl.play();
+                            this.classList.add('video-playing');
+                            if (playOverlay) playOverlay.style.opacity = '0';
+                            e.stopPropagation();
+                            return;
+                        } else {
+                            // If clicking on video, just toggle pause/play? For now, treat as click to open details if clickable
+                            if (key) {
+                                const flyer = allPromos.find(p => p.id === key);
+                                if (flyer && flyer.clickContent?.enabled) {
+                                    // Optional: open flyer detail (not implemented in user side)
+                                    addNotification('info', 'Flyer detail not implemented in user version.');
+                                } else {
+                                    addNotification('info', 'This flyer cannot be enlarged.');
+                                }
+                            }
+                            return;
+                        }
+                    }
+
+                    if (key) {
+                        const flyer = allPromos.find(p => p.id === key);
+                        if (flyer && flyer.clickContent?.enabled) {
+                            // Optional: open flyer detail
+                            addNotification('info', 'Flyer detail not implemented in user version.');
+                        } else {
+                            addNotification('info', 'This flyer cannot be enlarged.');
+                        }
+                    }
+                });
+            });
+
+            slides.forEach(slide => {
+                const videoEl = slide.querySelector('video');
+                if (videoEl) {
+                    videoEl.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (this.paused) {
+                            this.muted = false;
+                            this.play();
+                            slide.classList.add('video-playing');
+                            const overlay = slide.querySelector('.video-play-overlay');
+                            if (overlay) overlay.style.opacity = '0';
+                        } else {
+                            this.pause();
+                            slide.classList.remove('video-playing');
+                            const overlay = slide.querySelector('.video-play-overlay');
+                            if (overlay) overlay.style.opacity = '1';
+                        }
+                    });
+                    videoEl.addEventListener('play', function() {
+                        slide.classList.add('video-playing');
+                        const overlay = slide.querySelector('.video-play-overlay');
+                        if (overlay) overlay.style.opacity = '0';
+                        isUserInteracting = true;
+                        if (autoScrollTimer) {
+                            clearInterval(autoScrollTimer);
+                            autoScrollTimer = null;
+                        }
+                    });
+                    videoEl.addEventListener('pause', function() {
+                        slide.classList.remove('video-playing');
+                        const overlay = slide.querySelector('.video-play-overlay');
+                        if (overlay) overlay.style.opacity = '1';
+                    });
+                }
+            });
+        }
+
+        function updateCarouselClasses(activeDuplicatedIndex) {
+            const slides = document.querySelectorAll('#promoCarouselTrack .promo-slide');
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active-slide', 'prev-slide', 'next-slide', 'far-slide');
+                if (i === activeDuplicatedIndex) {
+                    slide.classList.add('active-slide');
+                } else if (i === activeDuplicatedIndex - 1) {
+                    slide.classList.add('prev-slide');
+                } else if (i === activeDuplicatedIndex + 1) {
+                    slide.classList.add('next-slide');
+                } else {
+                    slide.classList.add('far-slide');
+                }
+            });
+        }
+
+        function goToSlide(realIndex) {
+            const slides = document.querySelectorAll('#promoCarouselTrack .promo-slide');
+            if (slides.length === 0) return;
+            let targetIdx = -1;
+            slides.forEach((slide, i) => {
+                if (parseInt(slide.dataset.realIndex) === realIndex) {
+                    targetIdx = i;
+                }
+            });
+            if (targetIdx === -1) return;
+
+            const containerWidth = document.getElementById('promoCarouselTrack').clientWidth;
+            const slideWidth = slides[targetIdx].offsetWidth;
+            const scrollPos = slides[targetIdx].offsetLeft - (containerWidth - slideWidth) / 2;
+
+            document.getElementById('promoCarouselTrack').scrollTo({
+                left: Math.max(0, scrollPos),
+                behavior: 'smooth'
+            });
+
+            currentCarouselIndex = realIndex;
+            updateCarouselClasses(targetIdx);
+            resetAutoScroll();
+        }
+
+        function startAutoScroll() {
+            if (autoScrollTimer) clearInterval(autoScrollTimer);
+            autoScrollTimer = setInterval(() => {
+                if (!isUserInteracting && carouselItems.length > 0) {
+                    let videoPlaying = false;
+                    const slides = document.querySelectorAll('#promoCarouselTrack .promo-slide');
+                    slides.forEach(s => {
+                        if (s.classList.contains('video-playing')) videoPlaying = true;
+                    });
+                    if (videoPlaying) return;
+
+                    let nextIndex;
+                    if (carouselDirection === 1) {
+                        nextIndex = currentCarouselIndex + 1;
+                        if (nextIndex >= carouselItems.length) {
+                            carouselDirection = -1;
+                            nextIndex = currentCarouselIndex - 1;
+                        }
+                    } else {
+                        nextIndex = currentCarouselIndex - 1;
+                        if (nextIndex < 0) {
+                            carouselDirection = 1;
+                            nextIndex = currentCarouselIndex + 1;
+                        }
+                    }
+                    if (nextIndex < 0) nextIndex = 0;
+                    if (nextIndex >= carouselItems.length) nextIndex = carouselItems.length - 1;
+                    goToSlide(nextIndex);
+                }
+            }, 3000);
+        }
+
+        function resetAutoScroll() {
+            if (autoScrollTimer) {
+                clearInterval(autoScrollTimer);
+                startAutoScroll();
+            }
+        }
+
+        // ===== ADMIN IN-APP NOTIFICATIONS CHECK =====
+        function checkAdminNotifications() {
+            if (!currentUser) return;
+            const notifs = window._adminNotifs || {};
+            const shownRef = ref(db, `users/${currentUser.uid}/shownAdminNotifs`);
+            get(shownRef).then((snapshot) => {
+                const shown = snapshot.val() || {};
+                for (const [key, notif] of Object.entries(notifs)) {
+                    if (notif.recipientType === 'all' || (notif.recipientType === 'specific' && notif.userIds &&
+                            notif.userIds.includes(currentUser.uid))) {
+                        if (!shown[key]) {
+                            showAdminNotifPopup(key, notif);
+                            return;
+                        }
+                    }
+                }
+            }).catch(() => {});
+        }
+
+        function showAdminNotifPopup(key, notif) {
+            const overlay = document.getElementById('adminNotifOverlay');
+            document.getElementById('adminNotifTitle').textContent = notif.title || '📢 Admin Message';
+            document.getElementById('adminNotifMessage').textContent = notif.message || '';
+
+            const mediaContainer = document.getElementById('adminNotifMediaContainer');
+            mediaContainer.innerHTML = '';
+            if (notif.mediaUrl) {
+                const mediaType = notif.mediaType || 'image';
+                if (mediaType === 'video') {
+                    mediaContainer.innerHTML =
+                        `<video src="${notif.mediaUrl}" controls style="width:100%; max-height:200px; border-radius:12px; margin-top:8px;"></video>`;
+                } else {
+                    mediaContainer.innerHTML =
+                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%; max-height:200px; object-fit:contain; border-radius:12px; margin-top:8px;" />`;
+                }
+            }
+            overlay.dataset.notifKey = key;
+            overlay.classList.add('open');
         }
 
         // ===== PAGE NAVIGATION with hash routing =====
@@ -4167,7 +4865,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Comments now dropdown style and open to everyone (no enrollment required). Admin controls the on/off toggle.');
+        console.log('✅ UTOM User — Added promo carousel below search bar, admin popup notifications, and horizontal video scroll with 10% peek.');
     </script>
 </body>
 </html>
