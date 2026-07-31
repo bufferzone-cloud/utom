@@ -3131,9 +3131,11 @@
             const isPending = pendingPurchases[course.id] !== undefined;
             const statusText = isApproved ? 'Enrolled' : (isPending ? 'Pending' : '');
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
+            // Use admin-set imageUrl if available, otherwise fallback
+            const imgSrc = course.imageUrl || UTOM_THUMBNAIL;
             return `
             <div class="course-card" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}">
-                <img src="${UTOM_THUMBNAIL}" alt="${escapeHtml(course.name)}" loading="lazy" />
+                <img src="${imgSrc}" alt="${escapeHtml(course.name)}" loading="lazy" />
                 <div class="course-info">
                     <h4>${escapeHtml(course.name)}</h4>
                     <div class="course-meta">
@@ -4058,9 +4060,10 @@
             const myPaid = allCourses.filter(c => approvedCourses.has(c.id)).sort((a, b) => (b.createdAt || 0) - (a
                 .createdAt || 0));
             document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c => {
+                const imgSrc = c.imageUrl || UTOM_THUMBNAIL;
                 return `
                 <div class="course-card" data-id="${c.id}">
-                    <img src="${UTOM_THUMBNAIL}" alt="${escapeHtml(c.name)}" loading="lazy" />
+                    <img src="${imgSrc}" alt="${escapeHtml(c.name)}" loading="lazy" />
                     <div class="course-info">
                         <h4>${escapeHtml(c.name)}</h4>
                         <div class="course-meta">
@@ -4845,7 +4848,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Curved floating flyers, full-bleed course images, pill back button, progress below circle.');
+        console.log('✅ UTOM User — Curved floating flyers, full-bleed course images with admin fallback, pill back button, progress below circle.');
     </script>
 </body>
 </html>
