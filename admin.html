@@ -18,7 +18,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         body {
-            font-size: 15px; /* relative to 85% root */
+            font-size: 15px;
             line-height: 1.5;
         }
 
@@ -988,38 +988,60 @@
             text-align: center;
         }
 
-        /* ===== DOCS LIST ===== */
-        .docs-list {
+        /* ===== DOCS HORIZONTAL SCROLL ===== */
+        .docs-scroll-container {
             display: flex;
-            flex-direction: column;
             gap: 16px;
-            padding: 0 0 18px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 4px 4px 12px 4px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
-        .doc-item {
+        .docs-scroll-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        .docs-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .docs-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
+        }
+
+        .docs-scroll-container .doc-item {
+            flex: 0 0 70%;
+            scroll-snap-align: start;
+            min-width: 280px;
+            max-width: 480px;
+            padding: 18px 20px;
             background: #fff;
             border-radius: 22px;
-            padding: 18px 20px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.8);
             transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
         }
-        .doc-item:hover {
+        .docs-scroll-container .doc-item:hover {
             transform: translateY(-5px) scale(1.01);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         }
-        .doc-item h3 {
+        .docs-scroll-container .doc-item h3 {
             font-size: 16px;
             font-weight: 700;
             color: #1a1d28;
             margin-bottom: 4px;
         }
-        .doc-item .doc-byline {
+        .docs-scroll-container .doc-item .doc-byline {
             font-size: 10px;
             color: #8b8fa3;
             margin-bottom: 6px;
         }
-        .doc-item .doc-snippet {
+        .docs-scroll-container .doc-item .doc-snippet {
             font-size: 11px;
             color: #4a4e5c;
             line-height: 1.6;
@@ -1027,48 +1049,48 @@
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
-        .doc-item .doc-footer {
+        .docs-scroll-container .doc-item .doc-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 12px;
         }
-        .doc-item .doc-footer .doc-price {
+        .docs-scroll-container .doc-item .doc-footer .doc-price {
             font-weight: 700;
             font-size: 12px;
         }
-        .doc-item .doc-footer .doc-price.free {
+        .docs-scroll-container .doc-item .doc-footer .doc-price.free {
             color: #2e7d32;
         }
-        .doc-item .doc-footer .doc-price.paid {
+        .docs-scroll-container .doc-item .doc-footer .doc-price.paid {
             color: #d4952a;
         }
-        .doc-item .doc-footer .doc-actions {
+        .docs-scroll-container .doc-item .doc-footer .doc-actions {
             display: flex;
             gap: 8px;
         }
-        .btn-read {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-weight: 700;
-            cursor: pointer;
-            color: #fff;
-            font-size: 11px;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.30);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .docs-scroll-container .doc-item .doc-footer .doc-actions .btn-sm {
+            width: 32px;
+            height: 32px;
+            font-size: 13px;
         }
-        .btn-read:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.40);
+
+        @media (min-width: 600px) {
+            .docs-scroll-container .doc-item {
+                flex: 0 0 50%;
+            }
         }
-        .btn-read i {
-            margin-right: 4px;
+        @media (min-width: 900px) {
+            .docs-scroll-container .doc-item {
+                flex: 0 0 35%;
+            }
+        }
+        @media (min-width: 1200px) {
+            .docs-scroll-container .doc-item {
+                flex: 0 0 30%;
+            }
         }
 
         /* ===== SECTION HEADERS ===== */
@@ -4009,8 +4031,9 @@
                             </form>
                         </div>
                     </div>
+                    <!-- Document Library with horizontal scroll -->
                     <h3 style="font-size:16px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Document Library</h3>
-                    <div id="docsListContainer" class="docs-list"></div>
+                    <div id="docsListContainer" class="docs-scroll-container"></div>
                 </div>
             </div>
 
@@ -4106,7 +4129,7 @@
                     <h2 id="subfolderViewTitle" style="font-size:20px;font-weight:700;color:#1a1d28;margin:0 0 12px 0;">Subfolder</h2>
                     <div id="subfolderVideosContainer" class="video-scroll-container"></div>
                     <h3 style="font-size:15px;font-weight:700;color:#1a1d28;margin:16px 0 10px 0;">Documents</h3>
-                    <div id="subfolderDocsContainer" class="docs-list"></div>
+                    <div id="subfolderDocsContainer" class="docs-scroll-container"></div>
                 </div>
             </div>
 
@@ -4934,7 +4957,8 @@
 
         function renderDocsList() {
             const sortedDocs = [...docs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            document.getElementById('docsListContainer').innerHTML = sortedDocs.map(d => buildDocCard(d)).join('') ||
+            const container = document.getElementById('docsListContainer');
+            container.innerHTML = sortedDocs.map(d => buildDocCard(d)).join('') ||
                 '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
             attachCardEvents();
             attachEditEvents();
