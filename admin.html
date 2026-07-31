@@ -3476,6 +3476,8 @@
             background: #fafbfc;
             padding: 4px;
         }
+
+        /* ===== USER ITEM STYLES (Light mode) ===== */
         .popup-notif-container .user-selection-area .user-list-container .user-item {
             display: flex;
             align-items: center;
@@ -3491,6 +3493,10 @@
         }
         .popup-notif-container .user-selection-area .user-list-container .user-item:hover {
             background: #f5f6f8;
+        }
+        .popup-notif-container .user-selection-area .user-list-container .user-item.selected {
+            background: rgba(245, 176, 66, 0.15);
+            border: 2px solid #f5b042;
         }
         .popup-notif-container .user-selection-area .user-list-container .user-item .u-avatar {
             width: 32px;
@@ -3517,10 +3523,7 @@
             font-size: 10px;
             color: #8b8fa3;
         }
-        .popup-notif-container .user-selection-area .user-list-container .user-item.selected {
-            background: rgba(245, 176, 66, 0.15);
-            border: 2px solid #f5b042;
-        }
+
         .popup-notif-container .user-select-all {
             display: flex;
             align-items: center;
@@ -6812,6 +6815,10 @@
                 updateBannedList();
                 updateStats();
                 updateDashboard();
+                // If popup section is active, re-render the user list
+                if (document.getElementById('popupSection')?.classList.contains('active')) {
+                    renderPopupUserList();
+                }
             });
             onValue(coursesRef, snap => {
                 courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
@@ -7074,22 +7081,22 @@
                 `;
             }).join('');
 
-            // Edit buttons
-            container.querySelectorAll('.btn-edit-promo').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+            // FIXED: Use event delegation for edit/delete buttons
+            container.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.btn-edit-promo');
+                if (editBtn) {
                     e.stopPropagation();
-                    const id = btn.dataset.id;
+                    const id = editBtn.dataset.id;
                     showSection('promoUpload', { edit: id });
-                });
-            });
-
-            // Delete buttons
-            container.querySelectorAll('.btn-delete-promo').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                    return;
+                }
+                const delBtn = e.target.closest('.btn-delete-promo');
+                if (delBtn) {
                     e.stopPropagation();
-                    const id = btn.dataset.id;
+                    const id = delBtn.dataset.id;
                     openDeleteConfirm('promo', id);
-                });
+                    return;
+                }
             });
 
             // Click to enlarge (simple: open in new tab)
