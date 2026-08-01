@@ -4889,14 +4889,22 @@
         // Popup state
         let popupSelectedUsers = new Set();
 
+        // =================================================================
+        // FIX #1: Wrap async init in try/catch to guarantee UI executes
+        // =================================================================
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'index.html'; return; }
             if (!user.email?.startsWith('admin@')) { alert('Admin only.');
                 signOut(auth); return; }
             currentAdmin = user;
-            await loadBannedUsers();
-            await loadPaymentSettings();
-            await loadReadNotifications();
+            try {
+                await loadBannedUsers();
+                await loadPaymentSettings();
+                await loadReadNotifications();
+            } catch (err) {
+                console.error('Error loading initial data:', err);
+                // Continue anyway so the UI still initializes
+            }
             setupRealtime();
             setupUI();
             refreshAll();
@@ -6588,180 +6596,184 @@
         // SETUP UI
         // =================================================================
         function setupUI() {
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (savedDarkMode) {
-                document.body.classList.add('dark-mode');
-                darkModeToggle.classList.add('active');
+            try {
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+                if (savedDarkMode) {
+                    document.body.classList.add('dark-mode');
+                    darkModeToggle.classList.add('active');
+                }
+                darkModeToggle.addEventListener('click', () => {
+                    document.body.classList.toggle('dark-mode');
+                    darkModeToggle.classList.toggle('active');
+                    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+                });
+
+                // No bottom nav anymore, all nav via left sidebar.
+                // Account quick button removed.
+
+                document.getElementById('notifBell').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.getElementById('notifSidebarOverlay').classList.add('open');
+                    document.getElementById('notifSidebar').classList.add('open');
+                    renderNotificationsSidebar();
+                });
+                document.getElementById('closeNotifSidebar').addEventListener('click', () => {
+                    document.getElementById('notifSidebarOverlay').classList.remove('open');
+                    document.getElementById('notifSidebar').classList.remove('open');
+                });
+                document.getElementById('notifSidebarOverlay').addEventListener('click', () => {
+                    document.getElementById('notifSidebarOverlay').classList.remove('open');
+                    document.getElementById('notifSidebar').classList.remove('open');
+                });
+
+                document.getElementById('backFromDocBtn').addEventListener('click', () => {
+                    showSection('docs');
+                });
+                document.getElementById('backFromSubfolderBtn').addEventListener('click', () => {
+                    showSection('courses');
+                });
+
+                document.querySelectorAll('.modal-overlay .close-modal').forEach(el => el.addEventListener('click', () => el
+                    .closest('.modal-overlay').classList.remove('open')));
+                document.querySelectorAll('.modal-overlay').forEach(m => {
+                    m.addEventListener('click', function(e) {
+                        if (e.target === this) this.classList.remove('open');
+                    });
+                });
+                document.getElementById('closePlayerBtn').addEventListener('click', () => {
+                    document.getElementById('persistentPlayer').style.display = 'none';
+                    document.getElementById('playerEmbedContainer').innerHTML = '';
+                });
+                document.getElementById('bigPostBtn').onclick = () => {
+                    document.getElementById('dynamicPostForm').style.display = 'block';
+                    document.getElementById('bigPostBtn').style.display = 'none';
+                };
+                document.getElementById('cancelPostBtn').onclick = () => {
+                    document.getElementById('dynamicPostForm').style.display = 'none';
+                    document.getElementById('bigPostBtn').style.display = 'block';
+                };
+                document.getElementById('bigPostDocBtn').onclick = () => {
+                    document.getElementById('docPostFormContainer').style.display = 'block';
+                    document.getElementById('bigPostDocBtn').style.display = 'none';
+                };
+                document.getElementById('cancelDocPostBtn').onclick = () => {
+                    document.getElementById('docPostFormContainer').style.display = 'none';
+                    document.getElementById('bigPostDocBtn').style.display = 'block';
+                };
+                document.querySelectorAll('input[name="videoSource"]').forEach(r => r.addEventListener('change', e => {
+                    document.getElementById('linkGroup').style.display = e.target.value === 'link' ? 'block' :
+                        'none';
+                    document.getElementById('uploadGroup').style.display = e.target.value === 'upload' ? 'block' :
+                        'none';
+                }));
+                document.querySelectorAll('input[name="docSource"]').forEach(r => r.addEventListener('change', e => {
+                    document.getElementById('docTextGroup').style.display = e.target.value === 'text' ? 'block' :
+                        'none';
+                    document.getElementById('docUploadGroup').style.display = e.target.value === 'upload' ?
+                        'block' : 'none';
+                    document.getElementById('docLinkGroup').style.display = e.target.value === 'link' ? 'block' :
+                        'none';
+                }));
+                document.getElementById('openFullEditorBtn').addEventListener('click', () => {
+                    document.getElementById('fullPageEditor').innerHTML = document.getElementById(
+                        'docContentHidden').value;
+                    showSection('docEditor');
+                });
+                document.getElementById('cancelDocEditorBtn').addEventListener('click', () => {
+                    showSection('docs');
+                });
+                document.getElementById('doneDocEditorBtn').addEventListener('click', () => {
+                    document.getElementById('docContentHidden').value = document.getElementById('fullPageEditor')
+                        .innerHTML;
+                    showSection('docs');
+                });
+                document.getElementById('quickAddSubfolderBtn').addEventListener('click', () => {
+                    const name = document.getElementById('newSubfolderNameHome').value.trim();
+                    const courseId = document.getElementById('courseSelectHome').value;
+                    if (name && courseId) {
+                        const r = push(subfoldersRef);
+                        set(r, { name, courseId });
+                        document.getElementById('newSubfolderNameHome').value = '';
+                    }
+                });
+                document.getElementById('quickAddDocSubfolderBtn').addEventListener('click', () => {
+                    const name = document.getElementById('newDocSubfolder').value.trim();
+                    const courseId = document.getElementById('docCourseSelect').value;
+                    if (name && courseId) {
+                        const r = push(subfoldersRef);
+                        set(r, { name, courseId });
+                        document.getElementById('newDocSubfolder').value = '';
+                    }
+                });
+                document.getElementById('addCourseBtn').addEventListener('click', async () => {
+                    const name = document.getElementById('newCourseName').value.trim();
+                    const priceType = document.getElementById('newCoursePriceType').value;
+                    const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('newCoursePrice')
+                        .value) || 0;
+                    const imageUrl = document.getElementById('newCourseImageUrl').value;
+                    if (name) {
+                        const r = push(coursesRef);
+                        const data = { name, price };
+                        if (imageUrl) data.imageUrl = imageUrl;
+                        await set(r, data);
+                        document.getElementById('newCourseName').value = '';
+                        document.getElementById('newCourseImageUrl').value = '';
+                        const preview = document.getElementById('newCourseImagePreview');
+                        preview.innerHTML = `
+                            <div class="placeholder">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Tap to upload image</span>
+                            </div>`;
+                        document.getElementById('newCourseRemoveImageBtn').style.display = 'none';
+                        showToast('Course added!', 'success');
+                    }
+                });
+                document.getElementById('newCoursePriceType').addEventListener('change', e => {
+                    document.getElementById('newCoursePrice').style.display = e.target.value === 'paid' ?
+                        'inline-block' : 'none';
+                });
+                document.getElementById('appToggle').addEventListener('click', async () => {
+                    const snap = await get(maintenanceRef);
+                    await set(maintenanceRef, !(snap.val() === true));
+                });
+                document.getElementById('savePaymentNumbersBtn').addEventListener('click', async () => {
+                    const mtn = document.getElementById('mtnNumberInput').value.trim();
+                    const airtel = document.getElementById('airtelNumberInput').value.trim();
+                    const method = document.getElementById('paymentMethodSelect').value;
+                    await set(paymentSettingsRef, { mtnNumber: mtn, airtelNumber: airtel,
+                        paymentMethod: method });
+                    showToast('Payment numbers saved!', 'success');
+                });
+                document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+                document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
+                document.getElementById('filterCourseSelect')?.addEventListener('change', renderPostedGrid);
+                document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
+                document.getElementById('usersSearchInput')?.addEventListener('input', renderUsers);
+                document.querySelectorAll('.filter-pill').forEach(pill => {
+                    pill.addEventListener('click', () => {
+                        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+                        pill.classList.add('active');
+                        currentTxFilter = pill.dataset.filter;
+                        applyTransactionFilter();
+                    });
+                });
+                document.getElementById('courseSelectHome').addEventListener('change', updateVideoPriceDisplay);
+                document.getElementById('docCourseSelect').addEventListener('change', updateDocPriceDisplay);
+
+                setupMoreOptionsDropdown();
+                setupPromoUI();
+                setupPopupUI();
+
+                videos.forEach(v => {
+                    loadCommentsForVideo(v.id, () => {
+                        renderHomeGrids();
+                        renderPostedGrid();
+                    });
+                });
+            } catch (err) {
+                console.error('Error in setupUI:', err);
             }
-            darkModeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                darkModeToggle.classList.toggle('active');
-                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            });
-
-            // No bottom nav anymore, all nav via left sidebar.
-            // Account quick button removed.
-
-            document.getElementById('notifBell').addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.getElementById('notifSidebarOverlay').classList.add('open');
-                document.getElementById('notifSidebar').classList.add('open');
-                renderNotificationsSidebar();
-            });
-            document.getElementById('closeNotifSidebar').addEventListener('click', () => {
-                document.getElementById('notifSidebarOverlay').classList.remove('open');
-                document.getElementById('notifSidebar').classList.remove('open');
-            });
-            document.getElementById('notifSidebarOverlay').addEventListener('click', () => {
-                document.getElementById('notifSidebarOverlay').classList.remove('open');
-                document.getElementById('notifSidebar').classList.remove('open');
-            });
-
-            document.getElementById('backFromDocBtn').addEventListener('click', () => {
-                showSection('docs');
-            });
-            document.getElementById('backFromSubfolderBtn').addEventListener('click', () => {
-                showSection('courses');
-            });
-
-            document.querySelectorAll('.modal-overlay .close-modal').forEach(el => el.addEventListener('click', () => el
-                .closest('.modal-overlay').classList.remove('open')));
-            document.querySelectorAll('.modal-overlay').forEach(m => {
-                m.addEventListener('click', function(e) {
-                    if (e.target === this) this.classList.remove('open');
-                });
-            });
-            document.getElementById('closePlayerBtn').addEventListener('click', () => {
-                document.getElementById('persistentPlayer').style.display = 'none';
-                document.getElementById('playerEmbedContainer').innerHTML = '';
-            });
-            document.getElementById('bigPostBtn').onclick = () => {
-                document.getElementById('dynamicPostForm').style.display = 'block';
-                document.getElementById('bigPostBtn').style.display = 'none';
-            };
-            document.getElementById('cancelPostBtn').onclick = () => {
-                document.getElementById('dynamicPostForm').style.display = 'none';
-                document.getElementById('bigPostBtn').style.display = 'block';
-            };
-            document.getElementById('bigPostDocBtn').onclick = () => {
-                document.getElementById('docPostFormContainer').style.display = 'block';
-                document.getElementById('bigPostDocBtn').style.display = 'none';
-            };
-            document.getElementById('cancelDocPostBtn').onclick = () => {
-                document.getElementById('docPostFormContainer').style.display = 'none';
-                document.getElementById('bigPostDocBtn').style.display = 'block';
-            };
-            document.querySelectorAll('input[name="videoSource"]').forEach(r => r.addEventListener('change', e => {
-                document.getElementById('linkGroup').style.display = e.target.value === 'link' ? 'block' :
-                    'none';
-                document.getElementById('uploadGroup').style.display = e.target.value === 'upload' ? 'block' :
-                    'none';
-            }));
-            document.querySelectorAll('input[name="docSource"]').forEach(r => r.addEventListener('change', e => {
-                document.getElementById('docTextGroup').style.display = e.target.value === 'text' ? 'block' :
-                    'none';
-                document.getElementById('docUploadGroup').style.display = e.target.value === 'upload' ?
-                    'block' : 'none';
-                document.getElementById('docLinkGroup').style.display = e.target.value === 'link' ? 'block' :
-                    'none';
-            }));
-            document.getElementById('openFullEditorBtn').addEventListener('click', () => {
-                document.getElementById('fullPageEditor').innerHTML = document.getElementById(
-                    'docContentHidden').value;
-                showSection('docEditor');
-            });
-            document.getElementById('cancelDocEditorBtn').addEventListener('click', () => {
-                showSection('docs');
-            });
-            document.getElementById('doneDocEditorBtn').addEventListener('click', () => {
-                document.getElementById('docContentHidden').value = document.getElementById('fullPageEditor')
-                    .innerHTML;
-                showSection('docs');
-            });
-            document.getElementById('quickAddSubfolderBtn').addEventListener('click', () => {
-                const name = document.getElementById('newSubfolderNameHome').value.trim();
-                const courseId = document.getElementById('courseSelectHome').value;
-                if (name && courseId) {
-                    const r = push(subfoldersRef);
-                    set(r, { name, courseId });
-                    document.getElementById('newSubfolderNameHome').value = '';
-                }
-            });
-            document.getElementById('quickAddDocSubfolderBtn').addEventListener('click', () => {
-                const name = document.getElementById('newDocSubfolder').value.trim();
-                const courseId = document.getElementById('docCourseSelect').value;
-                if (name && courseId) {
-                    const r = push(subfoldersRef);
-                    set(r, { name, courseId });
-                    document.getElementById('newDocSubfolder').value = '';
-                }
-            });
-            document.getElementById('addCourseBtn').addEventListener('click', async () => {
-                const name = document.getElementById('newCourseName').value.trim();
-                const priceType = document.getElementById('newCoursePriceType').value;
-                const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('newCoursePrice')
-                    .value) || 0;
-                const imageUrl = document.getElementById('newCourseImageUrl').value;
-                if (name) {
-                    const r = push(coursesRef);
-                    const data = { name, price };
-                    if (imageUrl) data.imageUrl = imageUrl;
-                    await set(r, data);
-                    document.getElementById('newCourseName').value = '';
-                    document.getElementById('newCourseImageUrl').value = '';
-                    const preview = document.getElementById('newCourseImagePreview');
-                    preview.innerHTML = `
-                        <div class="placeholder">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>Tap to upload image</span>
-                        </div>`;
-                    document.getElementById('newCourseRemoveImageBtn').style.display = 'none';
-                    showToast('Course added!', 'success');
-                }
-            });
-            document.getElementById('newCoursePriceType').addEventListener('change', e => {
-                document.getElementById('newCoursePrice').style.display = e.target.value === 'paid' ?
-                    'inline-block' : 'none';
-            });
-            document.getElementById('appToggle').addEventListener('click', async () => {
-                const snap = await get(maintenanceRef);
-                await set(maintenanceRef, !(snap.val() === true));
-            });
-            document.getElementById('savePaymentNumbersBtn').addEventListener('click', async () => {
-                const mtn = document.getElementById('mtnNumberInput').value.trim();
-                const airtel = document.getElementById('airtelNumberInput').value.trim();
-                const method = document.getElementById('paymentMethodSelect').value;
-                await set(paymentSettingsRef, { mtnNumber: mtn, airtelNumber: airtel,
-                    paymentMethod: method });
-                showToast('Payment numbers saved!', 'success');
-            });
-            document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-            document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
-            document.getElementById('filterCourseSelect')?.addEventListener('change', renderPostedGrid);
-            document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
-            document.getElementById('usersSearchInput')?.addEventListener('input', renderUsers);
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.addEventListener('click', () => {
-                    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-                    pill.classList.add('active');
-                    currentTxFilter = pill.dataset.filter;
-                    applyTransactionFilter();
-                });
-            });
-            document.getElementById('courseSelectHome').addEventListener('change', updateVideoPriceDisplay);
-            document.getElementById('docCourseSelect').addEventListener('change', updateDocPriceDisplay);
-
-            setupMoreOptionsDropdown();
-            setupPromoUI();
-            setupPopupUI();
-
-            videos.forEach(v => {
-                loadCommentsForVideo(v.id, () => {
-                    renderHomeGrids();
-                    renderPostedGrid();
-                });
-            });
         }
 
         function setupMoreOptionsDropdown() {
@@ -7761,7 +7773,40 @@
             pendingDeleteAction = null;
         });
 
-        console.log('✅ UTOM Admin — Navigation moved to left sidebar, notification bell moved to right, promo delete fixed.');
+        // =================================================================
+        // FIX #2: Standalone DOMContentLoaded event listener to ensure the
+        // hamburger and sidebar close buttons ALWAYS work, even if setupUI fails.
+        // =================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburger = document.getElementById('hamburgerBtn');
+            const overlay = document.getElementById('leftSidebarOverlay');
+            const sidebar = document.getElementById('leftSidebar');
+            const closeBtn = document.getElementById('leftSidebarClose');
+            
+            if (hamburger) {
+                hamburger.addEventListener('click', () => {
+                    if (overlay) overlay.classList.add('open');
+                    if (sidebar) sidebar.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    if (overlay) overlay.classList.remove('open');
+                    if (sidebar) sidebar.classList.remove('open');
+                    document.body.style.overflow = '';
+                });
+            }
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    overlay.classList.remove('open');
+                    if (sidebar) sidebar.classList.remove('open');
+                    document.body.style.overflow = '';
+                });
+            }
+        });
+
+        console.log('✅ UTOM Admin — Navigation moved to left sidebar, notification bell moved to right, promo delete fixed, sidebar guaranteed to open.');
     </script>
 </body>
 </html>
