@@ -38,7 +38,8 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
-            --topbar-height: 64px;
+            --topbar-height: 160px;
+            /* Increased for new header layout */
         }
 
         html,
@@ -54,7 +55,46 @@
             width: 100%;
         }
 
-        /* ===== APP ROOT — EDGE TO EDGE ===== */
+        /* ===== LOADER ===== */
+        #appLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        #appLoader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #appLoader p {
+            margin-top: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* ===== APP ROOT ===== */
         .app-root {
             display: flex;
             flex-direction: column;
@@ -78,28 +118,36 @@
             background: white;
             padding: 0 1.2rem;
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
             border-bottom: 1px solid #f0f0f0;
             z-index: 40;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
         }
-        .logo-area {
+        .greeting-row {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-top: 12px;
         }
-        .logo-fallback {
+        .greeting-text h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .greeting-text h2 span {
             font-weight: 800;
-            font-size: 1.4rem;
-            background: linear-gradient(135deg, #1a1d28 30%, var(--gold) 80%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+        }
+        .greeting-text p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
         }
         .header-icons {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
+            padding-top: 4px;
         }
         .header-icons i {
             font-size: 1.25rem;
@@ -136,6 +184,87 @@
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
 
+        /* Search Row */
+        .search-row {
+            padding: 6px 0 4px 0;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #f8f9fc;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            padding: 0 6px 0 16px;
+            transition: var(--transition);
+        }
+        .search-bar:focus-within {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12), inset 0 0 0 1px rgba(255, 107, 0, 0.08);
+            background: #fff;
+        }
+        .search-bar .search-icon {
+            color: #8b8fa3;
+            font-size: 0.9rem;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            outline: none;
+            color: var(--text);
+        }
+        .search-bar .filter-btn {
+            background: #1b5e20;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 14px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .search-bar .filter-btn:hover {
+            background: #144f18;
+        }
+
+        /* Category Tabs */
+        .category-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .category-row::-webkit-scrollbar {
+            display: none;
+        }
+        .cat-tab {
+            padding: 6px 18px;
+            border-radius: 40px;
+            border: 1.5px solid transparent;
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+        .cat-tab:hover {
+            background: #f0f2f5;
+        }
+        .cat-tab.active {
+            background: #1b5e20;
+            color: #fff;
+            border-color: #1b5e20;
+        }
+
         /* ===== TOP BAR SPACER ===== */
         .topbar-spacer {
             height: var(--topbar-height);
@@ -143,7 +272,119 @@
             width: 100%;
         }
 
-        /* ===== FLOATING PLAYER — draggable, resizable, persistent ===== */
+        /* ===== SCROLLABLE CONTENT ===== */
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            padding: 0 0 110px 0;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            width: 100%;
+            display: block;
+        }
+
+        .app-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .app-content::-webkit-scrollbar-thumb {
+            background: rgba(245, 176, 66, 0.35);
+            border-radius: 20px;
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 440px;
+            height: 68px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 40px;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 500;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
+            flex-shrink: 0;
+            pointer-events: auto;
+            border: 1.5px solid rgba(245, 176, 66, 0.20);
+            transition: all 0.3s ease;
+        }
+        .bottom-nav:hover {
+            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            color: #b0b4c0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex: 1;
+            background: none;
+            border: none;
+            font-size: 6px;
+            gap: 2px;
+            user-select: none;
+            padding: 6px 0;
+            border-radius: 30px;
+            position: relative;
+        }
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 1px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #b0b4c0;
+        }
+        .nav-item span {
+            font-size: 7px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            transition: all 0.3s ease;
+            color: #b0b4c0;
+        }
+        .nav-item.active i {
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.12) translateY(-2px);
+        }
+        .nav-item.active span {
+            color: #f5b042;
+            font-weight: 700;
+        }
+        .nav-item:active {
+            transform: scale(0.92);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            transition: transform 0.3s ease;
+        }
+        .nav-item.active::after {
+            transform: translateX(-50%) scaleX(1);
+        }
+
+        /* ===== FLOATING PLAYER ===== */
         .floating-player {
             position: fixed;
             z-index: 1000;
@@ -296,140 +537,148 @@
             transform: scale(1.06);
         }
 
-        /* ===== SCROLLABLE CONTENT — EDGE TO EDGE ===== */
-        .app-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-height: 0;
-            padding: 0 0 130px 0;
+        /* ===== COURSES SCROLL GRID ===== */
+        .courses-scroll-container {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5rem 0.9rem 0.8rem 0.9rem;
+            scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            width: 100%;
-            display: block;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
-
-        .app-content::-webkit-scrollbar {
-            width: 4px;
+        .courses-scroll-container::-webkit-scrollbar {
+            height: 4px;
         }
-        .app-content::-webkit-scrollbar-track {
+        .courses-scroll-container::-webkit-scrollbar-track {
             background: transparent;
         }
-        .app-content::-webkit-scrollbar-thumb {
+        .courses-scroll-container::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
         }
 
-        /* ===== BOTTOM NAV — FIXED, FLOATING ===== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 92%;
-            max-width: 440px;
-            height: 68px;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 40px;
-            padding: 6px 12px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 500;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
-            flex-shrink: 0;
-            pointer-events: auto;
-            border: 1.5px solid rgba(245, 176, 66, 0.20);
-            transition: all 0.3s ease;
-        }
-        .bottom-nav:hover {
-            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
+        .courses-scroll-container .course-card-wrapper {
+            flex: 0 0 220px;
+            scroll-snap-align: start;
+            min-width: 200px;
+            max-width: 280px;
+            margin-bottom: 0.5rem;
         }
 
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        /* ===== NEW COURSE CARD DESIGN (Like Picture) ===== */
+        .course-card-wrapper {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
             cursor: pointer;
-            color: #b0b4c0;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            flex: 1;
-            background: none;
-            border: none;
-            font-size: 6px;
-            gap: 2px;
-            user-select: none;
-            padding: 6px 0;
-            border-radius: 30px;
+            transition: var(--transition);
             position: relative;
         }
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 1px;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: #b0b4c0;
+        .course-card-wrapper:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
         }
-        .nav-item span {
-            font-size: 7px;
-            font-weight: 600;
-            letter-spacing: 0.6px;
-            transition: all 0.3s ease;
-            color: #b0b4c0;
-        }
-        .nav-item.active i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            transform: scale(1.12) translateY(-2px);
-        }
-        .nav-item.active span {
-            color: #f5b042;
+        .course-card-img-wrapper {
+            position: relative;
+            height: 140px;
+            background-color: #1b5e20;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
             font-weight: 700;
         }
-        .nav-item:active {
-            transform: scale(0.92);
-        }
-        .nav-item::after {
-            content: '';
+        .course-card-img-wrapper .course-badge {
             position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) scaleX(0);
-            width: 20px;
-            height: 3px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
-            transition: transform 0.3s ease;
+            top: 12px;
+            right: 12px;
+            background: #2ecc71;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
-        .nav-item.active::after {
-            transform: translateX(-50%) scaleX(1);
+        .course-card-img-wrapper .course-badge.free {
+            background: #2ecc71;
         }
-
-        /* ===== SEARCH BAR ===== */
-        .search-bar {
+        .course-card-img-wrapper .course-badge.paid {
+            background: #f39c12;
+        }
+        .course-card-body {
+            padding: 12px 14px 16px;
+        }
+        .course-card-body h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+            color: var(--text);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+        .course-card-body .course-lessons {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .course-progress-row {
             display: flex;
-            gap: 8px;
-            margin: 0.5rem 0.9rem 1.2rem 0.9rem;
+            align-items: center;
+            gap: 10px;
         }
-        .search-bar input {
+        .course-progress-track {
             flex: 1;
-            padding: 11px 16px;
-            border-radius: 40px;
-            border: 1.5px solid #e5e8ed;
-            font-size: 0.85rem;
-            background: #fff;
-            transition: var(--transition);
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
         }
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12), inset 0 0 0 1px rgba(255, 107, 0, 0.08);
+        .course-progress-fill {
+            height: 100%;
+            background: #2ecc71;
+            border-radius: 4px;
+        }
+        .course-progress-text {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 32px;
+            text-align: right;
         }
 
-        /* ===== PROMO CAROUSEL — CURVED EDGES + FLOATING EFFECT ===== */
+        /* ===== TOP COURSES SECTION ===== */
+        .top-courses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 0 0.9rem;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+        .top-courses-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .top-courses-header span {
+            font-size: 0.8rem;
+            color: var(--gold-dark);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ===== PROMO CAROUSEL ===== */
         .promo-carousel-wrapper {
             margin: 0;
             padding: 0;
@@ -474,7 +723,6 @@
             scroll-snap-align: center;
             position: relative;
             border-radius: 40px;
-            /* Curved edges */
             overflow: hidden;
             transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 opacity 0.5s ease,
@@ -484,7 +732,6 @@
             flex-shrink: 0;
             background: #ffffff;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            /* Floating effect */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -497,12 +744,6 @@
         }
         .promo-slide:hover {
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
-        }
-        .promo-slide.clickable {
-            cursor: pointer;
-        }
-        .promo-slide:not(.clickable) {
-            cursor: default;
         }
         .promo-slide img,
         .promo-slide video {
@@ -581,144 +822,6 @@
             transform: scale(0.70) !important;
             opacity: 0.20 !important;
             z-index: 0;
-        }
-
-        /* ===== COURSES GRID — horizontal scroll ===== */
-        .courses-scroll-container {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 0.5rem 0.9rem 0.8rem 0.9rem;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
-        }
-        .courses-scroll-container::-webkit-scrollbar {
-            height: 4px;
-        }
-        .courses-scroll-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .courses-scroll-container::-webkit-scrollbar-thumb {
-            background: rgba(245, 176, 66, 0.35);
-            border-radius: 20px;
-        }
-
-        .courses-scroll-container .course-card {
-            flex: 0 0 70%;
-            scroll-snap-align: start;
-            min-width: 200px;
-            max-width: 360px;
-            margin-bottom: 0.5rem;
-        }
-        @media (min-width: 600px) {
-            .courses-scroll-container .course-card {
-                flex: 0 0 45%;
-            }
-        }
-        @media (min-width: 900px) {
-            .courses-scroll-container .course-card {
-                flex: 0 0 35%;
-            }
-        }
-        @media (min-width: 1200px) {
-            .courses-scroll-container .course-card {
-                flex: 0 0 28%;
-            }
-        }
-
-        /* ===== COURSE CARD — taller image, fill container ===== */
-        .course-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            cursor: pointer;
-            transition: var(--transition);
-            border: 1px solid #f2f2f5;
-            position: relative;
-        }
-        .course-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--orange));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .course-card:hover::before {
-            opacity: 1;
-        }
-        .course-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md);
-            border-color: rgba(245, 176, 66, 0.2);
-        }
-        .course-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            /* Fill the card */
-            background: #eaeef3;
-            display: block;
-        }
-        .course-info {
-            padding: 10px 12px;
-        }
-        .course-info h4 {
-            font-size: 0.82rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #1a1d28;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        /* ----- NEW: course description ----- */
-        .course-desc {
-            font-size: 0.7rem;
-            color: #6b6f7c;
-            line-height: 1.4;
-            margin-bottom: 6px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .course-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.65rem;
-            color: #6b6f7c;
-            margin-top: 6px;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        .course-price {
-            background: rgba(245, 176, 66, 0.12);
-            padding: 3px 10px;
-            border-radius: 30px;
-            font-weight: 700;
-            color: #c47f1a;
-            font-size: 0.68rem;
-        }
-        .course-status {
-            font-size: 0.6rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            background: var(--yellow);
-            color: #fff;
-            font-weight: 600;
-        }
-        .course-status.approved {
-            background: var(--green);
         }
 
         /* ===== VIDEO CARDS ===== */
@@ -803,6 +906,7 @@
             position: relative;
             overflow: hidden;
             width: 100%;
+            background: #1a1a1a;
         }
         .video-card .video-thumb-wrapper img {
             width: 100%;
@@ -855,7 +959,6 @@
             overflow: hidden;
             line-height: 1.4;
         }
-        /* ----- NEW: video description ----- */
         .video-desc {
             font-size: 0.75rem;
             color: #6b6f7c;
@@ -903,90 +1006,6 @@
         }
         .like-video-btn.liked {
             color: #e74c3c;
-        }
-
-        /* ===== CIRCULAR DOWNLOAD PROGRESS — percentage below circle ===== */
-        .download-wrapper {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-        }
-        .download-wrapper .download-video-btn {
-            position: absolute;
-            background: none;
-            border: none;
-            color: var(--gold);
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: var(--transition);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-        .download-wrapper .download-video-btn:hover {
-            background: rgba(245, 176, 66, 0.12);
-            color: var(--gold-dark);
-        }
-        .download-wrapper .download-video-btn.hidden-dl {
-            display: none;
-        }
-        .download-wrapper svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 44px;
-            height: 44px;
-            transform: rotate(-90deg);
-            z-index: 1;
-        }
-        .download-wrapper svg circle {
-            fill: none;
-            stroke-width: 3.5;
-            stroke-linecap: round;
-        }
-        .download-wrapper svg .bg-circle {
-            stroke: #eaeef3;
-        }
-        .download-wrapper svg .progress-circle {
-            stroke: var(--gold);
-            stroke-dasharray: 113.097;
-            stroke-dashoffset: 113.097;
-            transition: stroke-dashoffset 0.25s ease;
-        }
-        .download-wrapper .dl-text {
-            position: absolute;
-            bottom: -18px;
-            /* Below the circle */
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.55rem;
-            font-weight: 700;
-            color: var(--gold);
-            z-index: 3;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-
-        .delete-offline-btn {
-            background: none;
-            border: none;
-            color: #bbb;
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 6px 10px;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-        .delete-offline-btn:hover {
-            color: #e63946;
-            background: #fde8e8;
         }
 
         /* ===== DOCS LIST ===== */
@@ -1110,7 +1129,7 @@
             padding: 0.8rem 0.9rem;
         }
 
-        /* ===== DOC FULL PAGE — FULL WIDTH, CENTERED PILL BACK BUTTON ===== */
+        /* ===== DOC FULL PAGE ===== */
         .doc-full-content {
             background: #fff;
             padding: 1.8rem;
@@ -1206,7 +1225,6 @@
             text-decoration: underline;
         }
 
-        /* ===== FLOATING PILL BACK BUTTON — centered below doc ===== */
         .doc-back-btn-wrapper {
             display: flex;
             justify-content: center;
@@ -1221,14 +1239,12 @@
             background: #fff;
             border: none;
             border-radius: 60px;
-            /* Pill shape */
             font-size: 13px;
             font-weight: 600;
             color: #1a1d28;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
-            /* Floating shadow */
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             background: rgba(255, 255, 255, 0.92);
@@ -1360,6 +1376,7 @@
                 transform: translateY(0);
             }
         }
+
         .grid-title {
             display: flex;
             justify-content: space-between;
@@ -1745,165 +1762,7 @@
             color: #d0d4dc;
         }
 
-        @media (max-width: 520px) {
-            .app-content {
-                padding: 0 0 110px 0;
-            }
-            .bottom-nav {
-                height: 58px;
-                padding: 4px 8px;
-                width: 94%;
-                max-width: 360px;
-                bottom: 16px;
-                border-radius: 32px;
-            }
-            .nav-item i {
-                font-size: 18px;
-            }
-            .nav-item span {
-                font-size: 6px;
-            }
-            .courses-scroll-container .course-card {
-                flex: 0 0 75%;
-            }
-            .course-card img {
-                height: 140px;
-            }
-            .course-info h4 {
-                font-size: 0.7rem;
-            }
-            .transaction-card {
-                padding: 0.9rem;
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
-            }
-            .side-notif {
-                width: 280px;
-                right: -300px;
-            }
-            .floating-player {
-                width: 300px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .video-card .video-thumb-wrapper img {
-                height: 160px;
-            }
-            .video-info {
-                padding: 14px 16px 16px;
-            }
-            .video-info h4 {
-                font-size: 0.9rem;
-            }
-            .video-meta {
-                font-size: 0.72rem;
-            }
-            .video-card .play-overlay {
-                width: 44px;
-                height: 44px;
-                font-size: 1rem;
-            }
-            .video-card:hover .play-overlay {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
-            }
-            .grid-title {
-                padding: 0 0.5rem 2px 0.5rem;
-            }
-            .subfolder-header {
-                margin: 0.4rem 0.5rem;
-            }
-            .docs-list {
-                padding: 0.3rem 0.5rem;
-            }
-            .profile-card {
-                margin: 0 0.5rem;
-            }
-            .full-page-container {
-                padding: 0.8rem 0.5rem;
-            }
-            .transaction-card {
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
-            }
-            .courses-scroll-container {
-                padding: 0.5rem 0.5rem 0.8rem 0.5rem;
-            }
-            .videos-scroll-container {
-                padding: 0.5rem 0.5rem 0.8rem 0.5rem;
-            }
-            .search-bar {
-                margin: 0.5rem 0.5rem 1.2rem 0.5rem;
-            }
-            .doc-full-content {
-                padding: 1rem 0.3rem;
-            }
-            .doc-full-content iframe {
-                min-height: 400px;
-            }
-            .doc-back-btn {
-                padding: 10px 24px;
-                font-size: 12px;
-            }
-        }
-        @media (max-width: 400px) {
-            .courses-scroll-container .course-card {
-                flex: 0 0 80%;
-            }
-            .bottom-nav {
-                height: 52px;
-                padding: 4px 6px;
-                max-width: 320px;
-            }
-            .nav-item i {
-                font-size: 16px;
-            }
-            .nav-item span {
-                font-size: 5px;
-            }
-            .floating-player {
-                width: 260px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .video-card .video-thumb-wrapper img {
-                height: 130px;
-            }
-            .video-info {
-                padding: 12px 14px 14px;
-            }
-            .video-info h4 {
-                font-size: 0.8rem;
-            }
-            .video-meta {
-                font-size: 0.65rem;
-            }
-            .video-card .play-overlay {
-                width: 36px;
-                height: 36px;
-                font-size: 0.85rem;
-            }
-            .video-card:hover .play-overlay {
-                width: 42px;
-                height: 42px;
-                font-size: 1rem;
-            }
-            .course-card img {
-                height: 120px;
-            }
-            .doc-full-content iframe {
-                min-height: 300px;
-            }
-            .doc-back-btn {
-                padding: 8px 20px;
-                font-size: 11px;
-            }
-        }
-
-        /* ===== TOAST CONTAINER ===== */
+        /* ===== TOAST ===== */
         #toastContainer {
             position: fixed;
             top: 80px;
@@ -1947,7 +1806,7 @@
             }
         }
 
-        /* ===== ADMIN NOTIFICATION POPUP ===== */
+        /* ===== ADMIN NOTIFICATION ===== */
         .admin-notif-overlay {
             position: fixed;
             top: 0;
@@ -2065,7 +1924,7 @@
             background: #121212 !important;
             color: #e0e0e0 !important;
         }
-        body.dark-mode .course-card,
+        body.dark-mode .course-card-wrapper,
         body.dark-mode .video-card,
         body.dark-mode .doc-card,
         body.dark-mode .profile-card,
@@ -2073,8 +1932,8 @@
         body.dark-mode .side-notif,
         body.dark-mode .payment-numbers-box,
         body.dark-mode .doc-viewer-toolbar,
-        body.dark-mode .search-bar input,
-        body.dark-mode .course-card .course-info h4,
+        body.dark-mode .search-bar,
+        body.dark-mode .course-card-body h4,
         body.dark-mode .video-card .video-info h4,
         body.dark-mode .doc-card h3,
         body.dark-mode .profile-card .info-row span:last-child,
@@ -2087,7 +1946,7 @@
             color: #e0e0e0 !important;
             border-color: #333 !important;
         }
-        body.dark-mode .search-bar input {
+        body.dark-mode .search-bar {
             border-color: #333 !important;
         }
         body.dark-mode .subfolder-header,
@@ -2147,7 +2006,7 @@
         body.dark-mode .doc-card::before {
             opacity: 0.6 !important;
         }
-        body.dark-mode .course-card::before {
+        body.dark-mode .course-card-wrapper::before {
             opacity: 0.5 !important;
         }
         body.dark-mode .video-card::after {
@@ -2190,108 +2049,181 @@
         body.dark-mode .header-icons i:hover {
             color: #f5b042 !important;
         }
-        body.dark-mode .course-price {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
+        body.dark-mode .course-card-body .course-lessons {
+            color: #999 !important;
         }
-        body.dark-mode .course-status.approved {
+        body.dark-mode .course-progress-text {
+            color: #999 !important;
+        }
+        body.dark-mode .course-progress-track {
+            background: #333 !important;
+        }
+        body.dark-mode .course-progress-fill {
             background: #2ecc71 !important;
-            color: #fff !important;
         }
-        body.dark-mode .course-status {
-            background: var(--yellow) !important;
-            color: #fff !important;
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 520px) {
+            :root {
+                --topbar-height: 150px;
+            }
+            .app-content {
+                padding: 0 0 110px 0;
+            }
+            .bottom-nav {
+                height: 58px;
+                padding: 4px 8px;
+                width: 94%;
+                max-width: 360px;
+                bottom: 16px;
+                border-radius: 32px;
+            }
+            .nav-item i {
+                font-size: 18px;
+            }
+            .nav-item span {
+                font-size: 6px;
+            }
+            .courses-scroll-container .course-card-wrapper {
+                flex: 0 0 160px;
+                min-width: 160px;
+            }
+            .course-card-img-wrapper {
+                height: 100px;
+            }
+            .course-card-body h4 {
+                font-size: 12px;
+            }
+            .transaction-card {
+                padding: 0.9rem;
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+            .side-notif {
+                width: 280px;
+                right: -300px;
+            }
+            .floating-player {
+                width: 300px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            .video-card .video-thumb-wrapper img {
+                height: 160px;
+            }
+            .video-info {
+                padding: 14px 16px 16px;
+            }
+            .video-info h4 {
+                font-size: 0.9rem;
+            }
+            .video-meta {
+                font-size: 0.72rem;
+            }
+            .video-card .play-overlay {
+                width: 44px;
+                height: 44px;
+                font-size: 1rem;
+            }
+            .video-card:hover .play-overlay {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            .top-courses-header {
+                padding: 0 0.5rem;
+            }
+            .subfolder-header {
+                margin: 0.4rem 0.5rem;
+            }
+            .docs-list {
+                padding: 0.3rem 0.5rem;
+            }
+            .profile-card {
+                margin: 0 0.5rem;
+            }
+            .full-page-container {
+                padding: 0.8rem 0.5rem;
+            }
+            .transaction-card {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+            .courses-scroll-container {
+                padding: 0.5rem 0.5rem 0.8rem 0.5rem;
+            }
+            .videos-scroll-container {
+                padding: 0.5rem 0.5rem 0.8rem 0.5rem;
+            }
+            .doc-full-content {
+                padding: 1rem 0.3rem;
+            }
+            .doc-full-content iframe {
+                min-height: 400px;
+            }
+            .doc-back-btn {
+                padding: 10px 24px;
+                font-size: 12px;
+            }
         }
-        body.dark-mode .transaction-status-badge.pending {
-            background: #fef3cd !important;
-            color: #b45309 !important;
-        }
-        body.dark-mode .transaction-status-badge.approved {
-            background: #d4edda !important;
-            color: #155724 !important;
-        }
-        body.dark-mode .transaction-status-badge.rejected {
-            background: #fde8e8 !important;
-            color: #a71d2a !important;
-        }
-        body.dark-mode .like-video-btn,
-        body.dark-mode .like-doc-btn,
-        body.dark-mode .delete-offline-btn {
-            color: #888 !important;
-        }
-        body.dark-mode .like-video-btn:hover,
-        body.dark-mode .like-doc-btn:hover,
-        body.dark-mode .delete-offline-btn:hover {
-            color: #e74c3c !important;
-        }
-        body.dark-mode .like-video-btn.liked,
-        body.dark-mode .like-doc-btn.liked {
-            color: #e74c3c !important;
-        }
-        body.dark-mode .download-video-btn {
-            color: var(--gold) !important;
-        }
-        body.dark-mode .download-video-btn:hover {
-            color: var(--gold-dark) !important;
-        }
-        body.dark-mode .toast i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-        body.dark-mode .logo-fallback {
-            background: linear-gradient(135deg, #e0e0e0 30%, var(--gold) 80%) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-        body.dark-mode .grid-title .badge-count {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .transaction-amount {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .doc-viewer-toolbar .file-badge i {
-            color: #d4952a !important;
-        }
-        body.dark-mode .doc-back-btn i {
-            color: #d4952a !important;
-        }
-        body.dark-mode .notif-header i {
-            color: var(--gold) !important;
-        }
-        body.dark-mode .payment-numbers-box h4 i {
-            color: var(--gold) !important;
-        }
-        body.dark-mode .payment-number-row .number-label {
-            color: var(--gold-dark) !important;
-        }
-        body.dark-mode .upload-box i {
-            color: var(--gold-dark) !important;
-        }
-        body.dark-mode .deposit-instruction {
-            background: #1a1a1a !important;
-            color: #ccc !important;
-            border-left-color: var(--gold) !important;
-        }
-        body.dark-mode .payment-number-row {
-            background: #1a1a1a !important;
-            color: #e0e0e0 !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .payment-number-row .number-value {
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .admin-notif-header {
-            background: #1a1a1a !important;
-        }
-        body.dark-mode .admin-notif-body p {
-            color: #ccc !important;
-        }
-        body.dark-mode .admin-notif-btn {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
+        @media (max-width: 400px) {
+            :root {
+                --topbar-height: 140px;
+            }
+            .courses-scroll-container .course-card-wrapper {
+                flex: 0 0 140px;
+                min-width: 140px;
+            }
+            .course-card-img-wrapper {
+                height: 80px;
+            }
+            .bottom-nav {
+                height: 52px;
+                padding: 4px 6px;
+                max-width: 320px;
+            }
+            .nav-item i {
+                font-size: 16px;
+            }
+            .nav-item span {
+                font-size: 5px;
+            }
+            .floating-player {
+                width: 260px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            .video-card .video-thumb-wrapper img {
+                height: 130px;
+            }
+            .video-info {
+                padding: 12px 14px 14px;
+            }
+            .video-info h4 {
+                font-size: 0.8rem;
+            }
+            .video-meta {
+                font-size: 0.65rem;
+            }
+            .video-card .play-overlay {
+                width: 36px;
+                height: 36px;
+                font-size: 0.85rem;
+            }
+            .video-card:hover .play-overlay {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+            .doc-full-content iframe {
+                min-height: 300px;
+            }
+            .doc-back-btn {
+                padding: 8px 20px;
+                font-size: 11px;
+            }
         }
 
         /* ===== COMMENT SYSTEM ===== */
@@ -2542,24 +2474,46 @@
 </head>
 <body>
 
+    <!-- ===== LOADER ===== -->
+    <div id="appLoader">
+        <div class="loader-spinner"></div>
+        <p>Loading UTOM...</p>
+    </div>
+
     <div class="app-root">
 
         <!-- ===== FIXED TOP BAR ===== -->
         <div class="top-bar">
-            <div class="logo-area">
-                <span class="logo-fallback"><i class="fas fa-chalkboard-user"></i> UTOM</span>
+            <div class="greeting-row">
+                <div class="greeting-text">
+                    <h2>Hi, <span id="userNameGreeting">Learner</span>! 👋</h2>
+                    <p>Explore courses and learn new skills</p>
+                </div>
+                <div class="header-icons">
+                    <span class="notif-icon-wrapper">
+                        <i class="fas fa-bell" id="notifIcon"></i>
+                        <span id="notifBadge" class="notification-badge" style="display:none">0</span>
+                    </span>
+                </div>
             </div>
-            <div class="header-icons">
-                <i class="fas fa-search" id="searchIcon"></i>
-                <span class="notif-icon-wrapper">
-                    <i class="fas fa-bell" id="notifIcon"></i>
-                    <span id="notifBadge" class="notification-badge" style="display:none">0</span>
-                </span>
-                <i class="fas fa-user-circle" id="profileIcon"></i>
+            <div class="search-row">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search for courses, skills or topics..." />
+                    <button class="filter-btn" id="globalFilterBtn"><i class="fas fa-sliders-h"></i></button>
+                </div>
+            </div>
+            <div class="category-row" id="categoryTabs">
+                <button class="cat-tab active" data-cat="all">All</button>
+                <button class="cat-tab" data-cat="development">Development</button>
+                <button class="cat-tab" data-cat="design">Design</button>
+                <button class="cat-tab" data-cat="business">Business</button>
+                <button class="cat-tab" data-cat="marketing">Marketing</button>
+                <button class="cat-tab" data-cat="data">Data</button>
             </div>
         </div>
 
-        <!-- ===== FLOATING PLAYER — draggable, resizable, persistent ===== -->
+        <!-- ===== FLOATING PLAYER ===== -->
         <div id="floatingPlayer" class="floating-player">
             <div class="player-drag-handle" id="playerDragHandle">
                 <span class="handle-label"><i class="fas fa-video"></i> Now Playing</span>
@@ -2582,27 +2536,32 @@
             <!-- ===== TOP BAR SPACER ===== -->
             <div class="topbar-spacer"></div>
 
-            <!-- ===== SEARCH BAR ===== -->
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search courses..." />
-            </div>
-
             <!-- ===== PAGES ===== -->
 
-            <!-- HOME — promo carousel is now INSIDE home page -->
-            <div id="homePage" class="page-container">
-                <!-- PROMO CAROUSEL — edge to edge, 5% peek, curved edges + floating -->
+            <!-- HOME -->
+            <div id="homePage" class="page-container active-page">
+
+                <!-- TOP COURSES (Quick Access) -->
+                <div class="top-courses-header">
+                    <h3><i class="fas fa-fire" style="color:var(--orange);margin-right:6px;"></i> Top Courses</h3>
+                    <span>See all <i class="fas fa-chevron-right"></i></span>
+                </div>
+                <div id="topCoursesGrid" class="courses-scroll-container"></div>
+
+                <!-- PROMO CAROUSEL -->
                 <div class="promo-carousel-wrapper" id="promoCarouselWrapper">
                     <div class="promo-carousel-track" id="promoCarouselTrack">
                         <!-- Carousel slides rendered by JS -->
                     </div>
                 </div>
 
-                <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
-                <div id="paidCoursesGrid" class="courses-scroll-container"></div>
-
+                <!-- FREE COURSES (Swapped above Paid) -->
                 <div class="grid-title" style="margin-top:1.5rem"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3><span class="badge-count" id="freeCourseCount">0</span></div>
                 <div id="freeCoursesGrid" class="courses-scroll-container"></div>
+
+                <!-- PAID COURSES (Swapped below Free) -->
+                <div class="grid-title" style="margin-top:1.5rem"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
+                <div id="paidCoursesGrid" class="courses-scroll-container"></div>
             </div>
 
             <!-- COURSE DETAIL -->
@@ -2647,7 +2606,7 @@
                 <div id="emptyTransactionMsg" class="empty-state" style="display:none"><i class="fas fa-inbox"></i> No transactions yet.<br /><small>Purchase a course to see your history here.</small></div>
             </div>
 
-            <!-- DOC FULL PAGE — FULL WIDTH, CENTERED PILL BACK BUTTON -->
+            <!-- DOC FULL PAGE -->
             <div id="docFullPage" class="page-container full-page-container">
                 <div id="docFullContent" class="doc-full-content"></div>
                 <div class="doc-back-btn-wrapper">
@@ -2695,7 +2654,7 @@
 
         </div><!-- end app-content -->
 
-        <!-- ===== BOTTOM NAV — fixed ===== -->
+        <!-- ===== BOTTOM NAV ===== -->
         <div class="bottom-nav">
             <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></button>
             <button class="nav-item" data-page="mylearning"><i class="fas fa-book-open"></i><span>My Learn</span></button>
@@ -2769,6 +2728,7 @@
         let selectedCourse = null;
         let paymentScreenshotUrl = null;
         let currentSearch = '';
+        let currentCategory = 'all';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
 
         const commentsCache = new Map();
@@ -2824,6 +2784,70 @@
             }
         }
 
+        // ===== VIDEO THUMBNAIL GENERATOR (Canvas) =====
+        const videoThumbnailCache = {};
+
+        function captureVideoFrame(url) {
+            if (videoThumbnailCache[url]) return Promise.resolve(videoThumbnailCache[url]);
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.src = url;
+                video.crossOrigin = 'anonymous';
+                video.muted = true;
+                video.preload = 'metadata';
+                let resolved = false;
+                const timeout = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(UTOM_THUMBNAIL);
+                    }
+                }, 8000);
+
+                video.onloadeddata = () => {
+                    video.currentTime = 1.0;
+                };
+                video.onseeked = () => {
+                    if (resolved) return;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 360;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    videoThumbnailCache[url] = dataUrl;
+                    resolved = true;
+                    clearTimeout(timeout);
+                    resolve(dataUrl);
+                };
+                video.onerror = () => {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeout);
+                        resolve(UTOM_THUMBNAIL);
+                    }
+                };
+            });
+        }
+
+        function getVideoThumbnail(video) {
+            const url = video.videoUrl || '';
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let vidId = null;
+                if (url.includes('youtube.com/watch?v=')) {
+                    vidId = url.split('v=')[1]?.split('&')[0];
+                } else if (url.includes('youtu.be/')) {
+                    vidId = url.split('youtu.be/')[1]?.split('?')[0];
+                } else if (url.includes('youtube.com/embed/')) {
+                    vidId = url.split('embed/')[1]?.split('?')[0];
+                }
+                if (vidId) return `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg`;
+            }
+            if (url.includes('vimeo.com')) {
+                return 'https://picsum.photos/300/180';
+            }
+            return UTOM_THUMBNAIL;
+        }
+
         // ===== AUTH =====
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'index.html'; return; }
@@ -2843,6 +2867,17 @@
 
             await loadUserData(user.uid);
 
+            // Wait for initial data load
+            let dataLoadCount = 0;
+            const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
+            const checkReady = () => {
+                dataLoadCount++;
+                if (dataLoadCount >= dataToLoad.length) {
+                    document.getElementById('appLoader').classList.add('hidden');
+                }
+            };
+
+            // Setup listeners
             onValue(ref(db, `approvedPurchases/${user.uid}`), (snap) => {
                 approvedCourses.clear();
                 if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
@@ -2874,14 +2909,17 @@
             onValue(ref(db, 'courses'), (snap) => {
                 allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
                 renderAllCourses();
+                renderTopCourses();
                 if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
                     renderTransactionHistory();
                 }
+                checkReady();
             });
 
             onValue(ref(db, 'subfolders'), (snap) => {
                 allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
                 if (selectedCourse) renderCourseDetail(selectedCourse);
+                checkReady();
             });
 
             onValue(ref(db, 'videos'), (snap) => {
@@ -2890,11 +2928,13 @@
                 renderWatchedVideos();
                 renderOfflinePage();
                 attachCommentListenersToVisibleVideos();
+                checkReady();
             });
 
             onValue(ref(db, 'docs'), (snap) => {
                 allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 if (selectedCourse) renderCourseDetail(selectedCourse);
+                checkReady();
             });
 
             onValue(ref(db, 'system/paymentSettings'), (snap) => {
@@ -2906,6 +2946,7 @@
                 const data = snap.val();
                 allPromos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
                 renderPromoCarousel();
+                checkReady();
             });
 
             onValue(ref(db, 'inAppNotifications'), (snap) => {
@@ -2948,10 +2989,11 @@
 
         function updateUserInterface() {
             const name = `${userData.firstName} ${userData.lastName}`.trim() || (currentUser?.email?.split('@')[0] ||
-                'User');
+                'Learner');
             document.getElementById('profileName').innerText = name;
             document.getElementById('profileEmail').innerText = currentUser?.email || '';
             document.getElementById('profilePhone').innerText = userData.phone || 'Not set';
+            document.getElementById('userNameGreeting').innerText = name;
         }
 
         function updatePaymentNumbersDisplay() {
@@ -3127,19 +3169,45 @@
             });
         }
 
+        // ===== CATEGORY FILTERING =====
+        function setupCategoryTabs() {
+            document.querySelectorAll('.cat-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentCategory = tab.dataset.cat;
+                    renderAllCourses();
+                });
+            });
+        }
+
         // ===== HOME: COURSES =====
         function renderAllCourses() {
-            const searchTerm = currentSearch.toLowerCase();
-            let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
-            const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            let searchTerm = currentSearch.toLowerCase();
+            let filtered = allCourses.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchTerm);
+                if (currentCategory === 'all') return matchesSearch;
+                return matchesSearch && (c.category || '').toLowerCase() === currentCategory;
+            });
+
+            // Swap: Free first, Paid second
             const free = filtered.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-            renderCourseGrid('paidCoursesGrid', paid);
             renderCourseGrid('freeCoursesGrid', free);
+            renderCourseGrid('paidCoursesGrid', paid);
 
-            document.getElementById('paidCourseCount').innerText = paid.length;
             document.getElementById('freeCourseCount').innerText = free.length;
+            document.getElementById('paidCourseCount').innerText = paid.length;
             attachCourseEvents();
+        }
+
+        function renderTopCourses() {
+            const container = document.getElementById('topCoursesGrid');
+            const top = allCourses.slice(0, 10);
+            container.innerHTML = top.map(c => buildCourseCard(c)).join('') ||
+                '<div class="empty-state">No courses available</div>';
+            attachTopCourseEvents();
         }
 
         function renderCourseGrid(containerId, courses) {
@@ -3148,48 +3216,80 @@
                 '<div class="empty-state">No courses found</div>';
         }
 
+        function getRandomColor() {
+            const colors = ['#1b5e20', '#0d47a1', '#e65100', '#880e4f', '#004d40', '#b71c1c', '#4a148c', '#00695c'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function getCourseImage(course) {
+            if (course.imageUrl && course.imageUrl.trim() !== '') return course.imageUrl;
+            return null;
+        }
+
         function buildCourseCard(course) {
             const isApproved = approvedCourses.has(course.id);
             const isPending = pendingPurchases[course.id] !== undefined;
             const statusText = isApproved ? 'Enrolled' : (isPending ? 'Pending' : '');
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
-            // Use admin-set imageUrl if available, otherwise fallback
-            const imgSrc = course.imageUrl || UTOM_THUMBNAIL;
+
+            const imgUrl = getCourseImage(course);
+            const bgColor = imgUrl ? 'transparent' : getRandomColor();
+            const initial = (course.name || 'C').charAt(0).toUpperCase();
+
+            // Mock progress
+            const progress = Math.floor(Math.random() * 100);
+            const lessons = Math.floor(Math.random() * 20) + 5;
+
             return `
-            <div class="course-card" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}">
-                <img src="${imgSrc}" alt="${escapeHtml(course.name)}" loading="lazy" />
-                <div class="course-info">
+            <div class="course-card-wrapper" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}">
+                <div class="course-card-img-wrapper" style="background-color:${bgColor}; ${imgUrl ? `background-image:url('${imgUrl}');` : ''}">
+                    ${!imgUrl ? `<span style="font-size:2.5rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
+                    <span class="course-badge ${course.price === 0 ? 'free' : 'paid'}">${priceDisplay}</span>
+                </div>
+                <div class="course-card-body">
                     <h4>${escapeHtml(course.name)}</h4>
-                    <!-- NEW: course description -->
-                    <div class="course-desc">${escapeHtml(course.description || '')}</div>
-                    <div class="course-meta">
-                        <span class="course-price">${priceDisplay}</span>
-                        ${statusText ? `<span class="course-status ${isApproved?'approved':''}">${statusText}</span>` : ''}
+                    <div class="course-lessons">Beginner • ${lessons} Lessons</div>
+                    <div class="course-progress-row">
+                        <div class="course-progress-track">
+                            <div class="course-progress-fill" style="width:${progress}%;"></div>
+                        </div>
+                        <span class="course-progress-text">${progress}%</span>
                     </div>
                 </div>
             </div>`;
         }
 
         function attachCourseEvents() {
-            document.querySelectorAll('.course-card').forEach(card => {
+            document.querySelectorAll('#paidCoursesGrid .course-card-wrapper, #freeCoursesGrid .course-card-wrapper')
+                .forEach(card => {
+                    card.addEventListener('click', () => {
+                        const courseId = card.dataset.id;
+                        const course = allCourses.find(c => c.id === courseId);
+                        if (!course) return;
+                        const isApproved = card.dataset.approved === 'true';
+                        const isPending = card.dataset.pending === 'true';
+                        if (course.price === 0) {
+                            openCourseDetail(course);
+                        } else {
+                            if (isApproved) {
+                                openCourseDetail(course);
+                            } else if (isPending) {
+                                addNotification('warning',
+                                    `Payment for "${course.name}" is pending admin approval.`);
+                            } else {
+                                openPaymentPage(course);
+                            }
+                        }
+                    });
+                });
+        }
+
+        function attachTopCourseEvents() {
+            document.querySelectorAll('#topCoursesGrid .course-card-wrapper').forEach(card => {
                 card.addEventListener('click', () => {
                     const courseId = card.dataset.id;
                     const course = allCourses.find(c => c.id === courseId);
-                    if (!course) return;
-                    const isApproved = card.dataset.approved === 'true';
-                    const isPending = card.dataset.pending === 'true';
-                    if (course.price === 0) {
-                        openCourseDetail(course);
-                    } else {
-                        if (isApproved) {
-                            openCourseDetail(course);
-                        } else if (isPending) {
-                            addNotification('warning',
-                                `Payment for "${course.name}" is pending admin approval.`);
-                        } else {
-                            openPaymentPage(course);
-                        }
-                    }
+                    if (course) openCourseDetail(course);
                 });
             });
         }
@@ -3239,29 +3339,6 @@
         }
 
         // ===== VIDEO HELPERS =====
-        function getVideoThumbnail(video) {
-            if (video.thumbnail && video.thumbnail.trim() !== '') return video.thumbnail;
-            const url = video.videoUrl || '';
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                let vidId = null;
-                if (url.includes('youtube.com/watch?v=')) {
-                    vidId = url.split('v=')[1]?.split('&')[0];
-                } else if (url.includes('youtu.be/')) {
-                    vidId = url.split('youtu.be/')[1]?.split('?')[0];
-                } else if (url.includes('youtube.com/embed/')) {
-                    vidId = url.split('embed/')[1]?.split('?')[0];
-                }
-                if (vidId) return `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg`;
-            }
-            if (url.includes('vimeo.com')) {
-                return 'https://picsum.photos/300/180';
-            }
-            if (url.includes('cloudinary.com')) {
-                return url.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
-            }
-            return UTOM_THUMBNAIL;
-        }
-
         function isDownloadableVideo(video) {
             if (!video.videoUrl) return false;
             const url = video.videoUrl.toLowerCase();
@@ -3283,12 +3360,11 @@
             return `
             <div class="video-card" data-id="${video.id}" data-offline="${isOffline}" data-courseid="${video.courseId || ''}" data-price="${video.price || 0}">
                 <div class="video-thumb-wrapper">
-                    <img src="${UTOM_THUMBNAIL}" alt="${escapeHtml(video.title)}" loading="lazy" />
+                    <img src="${thumbnail}" alt="${escapeHtml(video.title)}" loading="lazy" class="video-thumb-img" data-video-url="${escapeHtml(video.videoUrl)}" />
                     <div class="play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="video-info">
                     <h4>${escapeHtml(video.title)}</h4>
-                    <!-- NEW: video description -->
                     <div class="video-desc">${escapeHtml(video.description || '')}</div>
                     <div class="video-meta">
                         <span>${escapeHtml(video.instructor)}</span>
@@ -3544,6 +3620,20 @@
                         if (btn) btn.click();
                     }
                 });
+            });
+        }
+
+        // ===== PROCESS VIDEO THUMBNAILS =====
+        function processVideoThumbnails() {
+            document.querySelectorAll('.video-thumb-img').forEach(async (img) => {
+                const url = img.dataset.videoUrl;
+                if (!url) return;
+                // Only process if it's a generic video (not YouTube/Vimeo)
+                if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
+                const dataUrl = await captureVideoFrame(url);
+                if (dataUrl !== UTOM_THUMBNAIL) {
+                    img.src = dataUrl;
+                }
             });
         }
 
@@ -4085,22 +4175,9 @@
                 '<p class="empty-state">No watched videos yet</p>';
             const myPaid = allCourses.filter(c => approvedCourses.has(c.id)).sort((a, b) => (b.createdAt || 0) - (a
                 .createdAt || 0));
-            document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c => {
-                const imgSrc = c.imageUrl || UTOM_THUMBNAIL;
-                return `
-                <div class="course-card" data-id="${c.id}">
-                    <img src="${imgSrc}" alt="${escapeHtml(c.name)}" loading="lazy" />
-                    <div class="course-info">
-                        <h4>${escapeHtml(c.name)}</h4>
-                        <div class="course-desc">${escapeHtml(c.description || '')}</div>
-                        <div class="course-meta">
-                            <span class="course-price">ZMW ${c.price}</span>
-                            <span class="course-status approved">Enrolled</span>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('') || '<p class="empty-state">No paid courses yet</p>';
-            document.querySelectorAll('#myPaidCoursesGrid .course-card').forEach(card => {
+            document.getElementById('myPaidCoursesGrid').innerHTML = myPaid.map(c => buildCourseCard(c)).join('') ||
+                '<p class="empty-state">No paid courses yet</p>';
+            document.querySelectorAll('#myPaidCoursesGrid .course-card-wrapper').forEach(card => {
                 card.addEventListener('click', () => {
                     const course = allCourses.find(c => c.id === card.dataset.id);
                     if (course) openCourseDetail(course);
@@ -4109,6 +4186,7 @@
             attachVideoEvents();
             setupCommentToggle();
             attachCommentListenersToVisibleVideos();
+            processVideoThumbnails();
         }
 
         function renderWatchedVideos() {
@@ -4253,7 +4331,7 @@
                 });
             });
 
-            document.getElementById('profileIcon').addEventListener('click', () => showPage('profile'));
+            // REMOVED profileIcon reference
 
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
@@ -4298,12 +4376,11 @@
                 searchInput.addEventListener('input', (e) => {
                     currentSearch = e.target.value.toLowerCase();
                     renderAllCourses();
+                    renderTopCourses();
                 });
             }
 
-            document.getElementById('searchIcon').addEventListener('click', () => {
-                document.getElementById('searchInput').focus();
-            });
+            setupCategoryTabs();
 
             document.getElementById('copyMtnBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -4430,7 +4507,7 @@
             }, 500);
         }
 
-        // ===== PROMO CAROUSEL — edge to edge, 5% peek, curved edges + floating =====
+        // ===== PROMO CAROUSEL =====
         function renderPromoCarousel() {
             const track = document.getElementById('promoCarouselTrack');
             const wrapper = document.getElementById('promoCarouselWrapper');
@@ -4781,6 +4858,7 @@
             switch (pageId) {
                 case 'home':
                     renderAllCourses();
+                    renderTopCourses();
                     break;
                 case 'mylearning':
                     renderMyLearn();
@@ -4844,6 +4922,7 @@
                 setTimeout(() => {
                     setupCommentToggle();
                     attachCommentListenersToVisibleVideos();
+                    processVideoThumbnails();
                 }, 300);
             }
         }
