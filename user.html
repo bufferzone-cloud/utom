@@ -38,7 +38,7 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
-            --topbar-height: 130px;
+            --topbar-height: 150px;
         }
 
         html,
@@ -127,7 +127,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-top: 10px;
+            padding-top: 12px;
         }
         .greeting-text h2 {
             font-size: 1.3rem;
@@ -185,7 +185,7 @@
 
         /* Search Row */
         .search-row {
-            padding: 4px 0 2px 0;
+            padding: 4px 0 6px 0;
         }
         .search-bar {
             display: flex;
@@ -207,7 +207,7 @@
         }
         .search-bar input {
             flex: 1;
-            padding: 8px 14px;
+            padding: 10px 14px;
             border: none;
             background: transparent;
             font-size: 0.85rem;
@@ -489,7 +489,7 @@
 
         /* ===== PROMO CAROUSEL ===== */
         .promo-carousel-wrapper {
-            margin: 0;
+            margin-top: 16px;
             padding: 0 0 0.8rem 0;
             overflow-x: auto;
             overflow-y: visible;
@@ -633,7 +633,7 @@
             z-index: 0;
         }
 
-        /* ===== COURSES SCROLL GRID (below carousel) ===== */
+        /* ===== COURSES SECTION ===== */
         .courses-section {
             padding: 0.2rem 0 0.6rem 0;
         }
@@ -2141,7 +2141,7 @@
         /* ===== RESPONSIVE ===== */
         @media (max-width: 520px) {
             :root {
-                --topbar-height: 130px;
+                --topbar-height: 140px;
             }
             .app-content {
                 padding: 0 0 110px 0;
@@ -2234,7 +2234,7 @@
         }
         @media (max-width: 400px) {
             :root {
-                --topbar-height: 120px;
+                --topbar-height: 130px;
             }
             .courses-scroll-container .course-card-wrapper,
             .videos-scroll-container .video-card {
@@ -2478,10 +2478,22 @@
                     </div>
                 </div>
 
-                <!-- ALL COURSES (Free + Paid combined below carousel) -->
+                <!-- ALL COURSES HORIZONTAL SCROLL (between carousel and free courses) -->
                 <div class="courses-section">
-                    <div class="grid-title"><h3><i class="fas fa-graduation-cap" style="color:var(--gold);"></i> All Courses</h3><span class="badge-count" id="totalCourseCount">0</span></div>
+                    <div class="grid-title"><h3><i class="fas fa-th-list" style="color:var(--gold);"></i> All Courses</h3><span class="badge-count" id="totalCourseCount">0</span></div>
                     <div id="allCoursesGrid" class="courses-scroll-container"></div>
+                </div>
+
+                <!-- FREE COURSES GRID -->
+                <div class="courses-section">
+                    <div class="grid-title"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3><span class="badge-count" id="freeCourseCount">0</span></div>
+                    <div id="freeCoursesGrid" class="courses-scroll-container"></div>
+                </div>
+
+                <!-- PAID COURSES GRID -->
+                <div class="courses-section">
+                    <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
+                    <div id="paidCoursesGrid" class="courses-scroll-container"></div>
                 </div>
             </div>
 
@@ -3096,7 +3108,22 @@
             document.getElementById('allCoursesGrid').innerHTML = filtered.map(c => buildCourseCard(c)).join('') ||
                 '<div class="empty-state">No courses found</div>';
             document.getElementById('totalCourseCount').innerText = filtered.length;
+            
+            // Render free and paid grids as well
+            const free = filtered.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            renderCourseGrid('freeCoursesGrid', free);
+            renderCourseGrid('paidCoursesGrid', paid);
+            document.getElementById('freeCourseCount').innerText = free.length;
+            document.getElementById('paidCourseCount').innerText = paid.length;
+            
             attachCourseEvents();
+        }
+
+        function renderCourseGrid(containerId, courses) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = courses.map(c => buildCourseCard(c)).join('') ||
+                '<div class="empty-state">No courses found</div>';
         }
 
         function buildCourseCard(course) {
@@ -3104,6 +3131,7 @@
             const isPending = pendingPurchases[course.id] !== undefined;
             const statusText = isApproved ? 'Enrolled' : (isPending ? 'Pending' : '');
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
+            const subfolderCount = allSubfolders.filter(sf => sf.courseId === course.id).length;
 
             const imgUrl = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
             const bgColor = imgUrl ? 'transparent' : getRandomColor();
@@ -3117,6 +3145,9 @@
                 </div>
                 <div class="course-card-body">
                     <h4>${escapeHtml(course.name)}</h4>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">
+                        <i class="fas fa-folder-open" style="color:var(--gold);"></i> ${subfolderCount} subfolder${subfolderCount !== 1 ? 's' : ''}
+                    </div>
                     <div class="course-desc">${escapeHtml(course.description || 'Learn new skills and advance your career!')}</div>
                     <div class="course-meta">
                         <span class="course-price">${priceDisplay}</span>
@@ -3132,7 +3163,7 @@
         }
 
         function attachCourseEvents() {
-            document.querySelectorAll('#allCoursesGrid .course-card-wrapper').forEach(card => {
+            document.querySelectorAll('#allCoursesGrid .course-card-wrapper, #freeCoursesGrid .course-card-wrapper, #paidCoursesGrid .course-card-wrapper').forEach(card => {
                 card.addEventListener('click', () => {
                     const courseId = card.dataset.id;
                     const course = allCourses.find(c => c.id === courseId);
