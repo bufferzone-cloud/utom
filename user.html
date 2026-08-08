@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=0.85, viewport-fit=cover, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js">
-    </script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
-        /* ===== GLOBAL SCALE: everything reduced by 15% ===== */
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         :root {
-            --scale-factor: 0.85;
             --gold: #F5B042;
             --gold-dark: #c47f1a;
             --gold-light: #fff8ed;
@@ -31,37 +37,21 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
-            --topbar-height: 150px;
+            --topbar-height: 70px;
+            --nav-height: 60px;
+            --peek-percent: 4.75%; /* Reduced by 5% from 5% */
         }
 
-        /* ===== APPLY SCALE TO ALL ELEMENTS (except fixed overlays) ===== */
-        html {
-            font-size: calc(15px * var(--scale-factor));
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html,
-        body {
+        html, body {
             height: 100%;
             overflow: hidden;
             background: var(--bg);
             color: var(--text);
+            font-size: 16px;
             line-height: 1.5;
             margin: 0;
             padding: 0;
             width: 100%;
-            /* scale everything down by 15% */
-            transform: scale(var(--scale-factor));
-            transform-origin: top left;
-            width: calc(100% / var(--scale-factor));
-            height: calc(100% / var(--scale-factor));
         }
 
         /* ===== LOADER ===== */
@@ -91,11 +81,7 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         #appLoader p {
             margin-top: 16px;
             font-weight: 600;
@@ -107,11 +93,8 @@
         .app-root {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100dvh;
             width: 100%;
-            max-width: 100vw;
-            margin: 0;
-            padding: 0;
             background: var(--bg);
             overflow: hidden;
             position: relative;
@@ -125,7 +108,7 @@
             right: 0;
             height: var(--topbar-height);
             background: white;
-            padding: 0 1.2rem;
+            padding: 0 1rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -136,33 +119,31 @@
         .greeting-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            padding-top: 12px;
+            align-items: center;
+            padding-top: 8px;
+            height: 40px;
         }
         .greeting-text h2 {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--text);
         }
-        .greeting-text h2 span {
-            font-weight: 800;
-        }
+        .greeting-text h2 span { font-weight: 800; }
         .greeting-text p {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-top: 2px;
+            display: none;
         }
         .header-icons {
             display: flex;
             gap: 12px;
             align-items: center;
-            padding-top: 4px;
         }
         .header-icons i {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: #2c2c2c;
             cursor: pointer;
-            padding: 7px;
+            padding: 6px;
             border-radius: 50%;
             transition: var(--transition);
         }
@@ -178,15 +159,15 @@
         }
         .notification-badge {
             position: absolute;
-            top: -3px;
-            right: -6px;
+            top: -2px;
+            right: -4px;
             background: #e63946;
             color: #fff;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             font-weight: 700;
             border-radius: 30px;
-            padding: 2px 7px;
-            min-width: 18px;
+            padding: 2px 6px;
+            min-width: 16px;
             text-align: center;
             pointer-events: none;
             line-height: 1.4;
@@ -195,7 +176,7 @@
 
         /* Search Row */
         .search-row {
-            padding: 4px 0 6px 0;
+            padding: 0 0 6px 0;
         }
         .search-bar {
             display: flex;
@@ -208,7 +189,7 @@
         }
         .search-bar:focus-within {
             border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12), inset 0 0 0 1px rgba(255, 107, 0, 0.08);
+            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12);
             background: #fff;
         }
         .search-bar .search-icon {
@@ -217,12 +198,13 @@
         }
         .search-bar input {
             flex: 1;
-            padding: 10px 14px;
+            padding: 8px 14px;
             border: none;
             background: transparent;
             font-size: 0.85rem;
             outline: none;
             color: var(--text);
+            min-width: 0;
         }
 
         /* ===== TOP BAR SPACER ===== */
@@ -238,19 +220,16 @@
             overflow-y: auto;
             overflow-x: hidden;
             min-height: 0;
-            padding: 0 0 110px 0;
+            padding: 0 0 calc(var(--nav-height) + 20px) 0;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             width: 100%;
             display: block;
         }
-
         .app-content::-webkit-scrollbar {
             width: 4px;
         }
-        .app-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .app-content::-webkit-scrollbar-track { background: transparent; }
         .app-content::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
@@ -259,31 +238,24 @@
         /* ===== BOTTOM NAV ===== */
         .bottom-nav {
             position: fixed;
-            bottom: 24px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
             width: 92%;
-            max-width: 440px;
-            height: 68px;
+            max-width: 400px;
+            height: var(--nav-height);
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-radius: 40px;
-            padding: 6px 12px;
+            padding: 4px 8px;
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 500;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.04);
-            flex-shrink: 0;
-            pointer-events: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.04);
             border: 1.5px solid rgba(245, 176, 66, 0.20);
-            transition: all 0.3s ease;
         }
-        .bottom-nav:hover {
-            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.14);
-        }
-
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -319,30 +291,23 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            transform: scale(1.12) translateY(-2px);
+            transform: scale(1.08) translateY(-1px);
         }
-        .nav-item.active span {
-            color: #f5b042;
-            font-weight: 700;
-        }
-        .nav-item:active {
-            transform: scale(0.92);
-        }
+        .nav-item.active span { color: #f5b042; font-weight: 700; }
+        .nav-item:active { transform: scale(0.92); }
         .nav-item::after {
             content: '';
             position: absolute;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%) scaleX(0);
-            width: 20px;
+            width: 16px;
             height: 3px;
             border-radius: 10px;
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             transition: transform 0.3s ease;
         }
-        .nav-item.active::after {
-            transform: translateX(-50%) scaleX(1);
-        }
+        .nav-item.active::after { transform: translateX(-50%) scaleX(1); }
 
         /* ===== FLOATING PLAYER ===== */
         .floating-player {
@@ -351,28 +316,23 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 400px;
-            min-width: 200px;
-            min-height: 120px;
+            width: min(400px, 90vw);
+            aspect-ratio: 16 / 9;
             background: #000;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 16px 56px rgba(0, 0, 0, 0.30);
             border: 1px solid rgba(255, 255, 255, 0.08);
             overflow: hidden;
             display: none;
             touch-action: none;
-            transition: box-shadow 0.2s ease;
-            resize: none;
         }
-        .floating-player.visible {
-            display: block;
-        }
+        .floating-player.visible { display: block; }
         .floating-player .player-drag-handle {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 32px;
+            height: 28px;
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -380,39 +340,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 12px;
+            padding: 0 10px;
             z-index: 5;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             user-select: none;
         }
-        .floating-player .player-drag-handle:active {
-            cursor: grabbing;
-        }
+        .floating-player .player-drag-handle:active { cursor: grabbing; }
         .floating-player .player-drag-handle .handle-label {
-            font-size: 9px;
+            font-size: 8px;
             color: rgba(255, 255, 255, 0.5);
             font-weight: 600;
-            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-        .floating-player .player-drag-handle .handle-label i {
-            font-size: 10px;
+            gap: 4px;
         }
         .floating-player .player-drag-handle .handle-controls {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
         }
         .floating-player .player-drag-handle .handle-controls button {
             background: rgba(255, 255, 255, 0.08);
             border: none;
             color: #fff;
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            font-size: 9px;
+            font-size: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
@@ -428,7 +382,7 @@
         .floating-player .player-container-inner {
             width: 100%;
             height: 100%;
-            padding-top: 32px;
+            padding-top: 28px;
             position: relative;
         }
         .floating-player .player-container-inner video,
@@ -438,15 +392,14 @@
             display: block;
             border: 0;
             background: black;
-            aspect-ratio: 16 / 9;
             object-fit: contain;
         }
         .floating-player .player-container-inner .yt-logo-cover {
             position: absolute;
             bottom: 4px;
             right: 4px;
-            width: 60px;
-            height: 20px;
+            width: 50px;
+            height: 16px;
             background: rgba(0, 0, 0, 0.85);
             z-index: 2;
             pointer-events: none;
@@ -455,38 +408,35 @@
             position: absolute;
             bottom: 4px;
             right: 4px;
-            width: 18px;
-            height: 18px;
+            width: 14px;
+            height: 14px;
             cursor: nw-resize;
             z-index: 10;
             background: rgba(255, 255, 255, 0.10);
-            border-radius: 4px;
+            border-radius: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 8px;
+            font-size: 6px;
             color: rgba(255, 255, 255, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(2px);
         }
-        .floating-player .resize-handle i {
-            transform: rotate(45deg);
-        }
         .floating-player .fullscreen-btn {
             position: absolute;
-            bottom: 8px;
-            right: 56px;
+            bottom: 6px;
+            right: 48px;
             background: rgba(0, 0, 0, 0.55);
             color: #fff;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 9;
-            font-size: 12px;
+            font-size: 10px;
             transition: all 0.25s ease;
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
@@ -497,10 +447,10 @@
             transform: scale(1.06);
         }
 
-        /* ===== PROMO CAROUSEL ===== */
+        /* ===== PROMO CAROUSEL (Adjusted Peek View) ===== */
         .promo-carousel-wrapper {
-            margin-top: 18px;
-            padding: 0 0 0.8rem 0;
+            margin-top: 12px;
+            padding: 0 0 0.6rem 0;
             overflow-x: auto;
             overflow-y: visible;
             scroll-snap-type: x mandatory;
@@ -508,21 +458,17 @@
             scroll-behavior: smooth;
             position: relative;
             display: block;
-            border-radius: 0;
             background: transparent;
-            box-shadow: none;
             scrollbar-width: none;
             -ms-overflow-style: none;
             width: 100%;
         }
-        .promo-carousel-wrapper::-webkit-scrollbar {
-            display: none;
-        }
+        .promo-carousel-wrapper::-webkit-scrollbar { display: none; }
 
         .promo-carousel-track {
             display: flex;
             gap: 0;
-            padding: 0 5%;
+            padding: 0 var(--peek-percent);
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
@@ -532,63 +478,55 @@
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
-        .promo-carousel-track::-webkit-scrollbar {
-            display: none;
-        }
+        .promo-carousel-track::-webkit-scrollbar { display: none; }
 
         .promo-slide {
-            flex: 0 0 80%;
-            max-width: 80%;
+            flex: 0 0 calc(100% - var(--peek-percent) * 2);
+            max-width: calc(100% - var(--peek-percent) * 2);
             scroll-snap-align: center;
             position: relative;
-            border-radius: 40px;
+            border-radius: 28px;
             overflow: hidden;
             transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                opacity 0.5s ease,
-                box-shadow 0.5s ease;
-            height: auto;
+                        opacity 0.5s ease,
+                        box-shadow 0.5s ease;
             aspect-ratio: 1200 / 675;
-            flex-shrink: 0;
             background: #ffffff;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0;
-            transform: scale(0.90) translateY(0);
-            opacity: 0.45;
+            transform: scale(0.92) translateY(0);
+            opacity: 0.5;
             z-index: 1;
             will-change: transform, opacity;
             cursor: pointer;
         }
-        .promo-slide:hover {
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
-        }
-        .promo-slide img,
-        .promo-slide video {
+        .promo-slide:hover { box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15); }
+        .promo-slide img, .promo-slide video {
             width: 100%;
             height: 100%;
             object-fit: cover !important;
             display: block;
             background-color: #ffffff;
-            border-radius: 40px;
+            border-radius: 28px;
         }
         .promo-slide .slide-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 24px 17px 17px 17px;
+            padding: 20px 14px 14px 14px;
             background: linear-gradient(transparent, rgba(0, 0, 0, 0.70));
-            min-height: 68px;
+            min-height: 60px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            border-radius: 0 0 40px 40px;
+            border-radius: 0 0 28px 28px;
         }
         .promo-slide .slide-text {
             color: #fff;
-            font-size: 19px;
+            font-size: 1.1rem;
             font-weight: 700;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
             line-height: 1.2;
@@ -596,7 +534,7 @@
         }
         .promo-slide .slide-text small {
             font-weight: 400;
-            font-size: 12px;
+            font-size: 0.7rem;
             opacity: 0.9;
             display: block;
             margin-top: 2px;
@@ -607,38 +545,37 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
+            width: 48px;
+            height: 48px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 28px;
+            font-size: 22px;
             pointer-events: none;
             z-index: 10;
             transition: opacity 0.3s;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.4);
         }
         .promo-slide.video-playing .video-play-overlay {
             opacity: 0;
             pointer-events: none;
         }
-        .promo-slide.prev-slide,
-        .promo-slide.next-slide {
-            transform: scale(0.90) !important;
-            opacity: 0.45 !important;
+        .promo-slide.prev-slide, .promo-slide.next-slide {
+            transform: scale(0.92) !important;
+            opacity: 0.5 !important;
             z-index: 2;
         }
         .promo-slide.active-slide {
-            transform: scale(1.05) !important;
+            transform: scale(1.02) !important;
             opacity: 1 !important;
             z-index: 3;
-            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.30);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
         }
         .promo-slide.far-slide {
-            transform: scale(0.75) !important;
+            transform: scale(0.80) !important;
             opacity: 0.15 !important;
             z-index: 0;
         }
@@ -646,21 +583,17 @@
         /* ===== ALL COURSES - NAME ONLY ===== */
         .all-courses-name-scroll {
             display: flex;
-            gap: 0.6rem;
+            gap: 0.5rem;
             overflow-x: auto;
             overflow-y: hidden;
-            padding: 0.6rem 0.9rem 0.9rem 0.9rem;
+            padding: 0.4rem 0.6rem 0.8rem 0.6rem;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
             scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
-        .all-courses-name-scroll::-webkit-scrollbar {
-            height: 4px;
-        }
-        .all-courses-name-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .all-courses-name-scroll::-webkit-scrollbar { height: 4px; }
+        .all-courses-name-scroll::-webkit-scrollbar-track { background: transparent; }
         .all-courses-name-scroll::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
@@ -668,12 +601,12 @@
 
         .course-name-item {
             flex: 0 0 auto;
-            padding: 8px 20px;
-            border-radius: 40px;
+            padding: 6px 16px;
+            border-radius: 30px;
             background: #ffffff;
             border: 1.5px solid #e5e8ed;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text);
             cursor: pointer;
             transition: var(--transition);
@@ -687,9 +620,7 @@
             box-shadow: var(--shadow-md);
             background: var(--gold-light);
         }
-        .course-name-item:active {
-            transform: scale(0.96);
-        }
+        .course-name-item:active { transform: scale(0.96); }
         .course-name-item .badge-count-sm {
             display: inline-block;
             background: rgba(245, 176, 66, 0.15);
@@ -704,32 +635,28 @@
         /* ===== COURSE CARDS ===== */
         .courses-scroll-container {
             display: flex;
-            gap: 1rem;
+            gap: 0.8rem;
             overflow-x: auto;
             overflow-y: hidden;
-            padding: 0.5rem 0.9rem 1rem 0.9rem;
+            padding: 0.4rem 0.6rem 0.8rem 0.6rem;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
             scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
-        .courses-scroll-container::-webkit-scrollbar {
-            height: 4px;
-        }
-        .courses-scroll-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .courses-scroll-container::-webkit-scrollbar { height: 4px; }
+        .courses-scroll-container::-webkit-scrollbar-track { background: transparent; }
         .courses-scroll-container::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
         }
 
         .courses-scroll-container .course-card-wrapper {
-            flex: 0 0 280px;
+            flex: 0 0 220px;
             scroll-snap-align: start;
-            min-width: 240px;
-            max-width: 330px;
-            margin-bottom: 0.5rem;
+            min-width: 180px;
+            max-width: 260px;
+            margin-bottom: 0.4rem;
         }
 
         .course-card-wrapper {
@@ -742,12 +669,12 @@
             position: relative;
         }
         .course-card-wrapper:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             box-shadow: var(--shadow-md);
         }
         .course-card-img-wrapper {
             position: relative;
-            height: 150px;
+            height: 110px;
             background-color: #1b5e20;
             background-size: cover;
             background-position: center;
@@ -755,32 +682,28 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
         }
         .course-card-img-wrapper .course-badge {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 10px;
+            right: 10px;
             background: #2ecc71;
             color: white;
             padding: 2px 12px;
             border-radius: 20px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
         }
-        .course-card-img-wrapper .course-badge.free {
-            background: #2ecc71;
-        }
-        .course-card-img-wrapper .course-badge.paid {
-            background: #f39c12;
-        }
+        .course-card-img-wrapper .course-badge.free { background: #2ecc71; }
+        .course-card-img-wrapper .course-badge.paid { background: #f39c12; }
         .course-card-body {
-            padding: 12px 14px 16px;
+            padding: 10px 12px 14px;
         }
         .course-card-body h4 {
-            font-size: 15px;
+            font-size: 0.9rem;
             font-weight: 700;
             margin: 0 0 4px 0;
             color: var(--text);
@@ -791,9 +714,9 @@
             overflow: hidden;
         }
         .course-card-body .course-desc {
-            font-size: 13px;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -817,29 +740,25 @@
             gap: 0.8rem;
             overflow-x: auto;
             overflow-y: visible;
-            padding: 0.5rem 0.9rem 0.8rem 0.9rem;
+            padding: 0.4rem 0.6rem 0.8rem 0.6rem;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
             scrollbar-color: rgba(245, 176, 66, 0.35) transparent;
         }
-        .videos-scroll-container::-webkit-scrollbar {
-            height: 4px;
-        }
-        .videos-scroll-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .videos-scroll-container::-webkit-scrollbar { height: 4px; }
+        .videos-scroll-container::-webkit-scrollbar-track { background: transparent; }
         .videos-scroll-container::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
         }
 
         .videos-scroll-container .video-card {
-            flex: 0 0 300px;
+            flex: 0 0 240px;
             scroll-snap-align: start;
-            min-width: 260px;
-            max-width: 360px;
-            margin-bottom: 0.5rem;
+            min-width: 200px;
+            max-width: 280px;
+            margin-bottom: 0.4rem;
         }
 
         .video-card {
@@ -854,12 +773,12 @@
             flex-direction: column;
         }
         .video-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             box-shadow: var(--shadow-md);
         }
         .video-thumb-wrapper {
             position: relative;
-            height: 160px;
+            height: 120px;
             background-color: #1a1a1a;
             overflow: hidden;
             display: flex;
@@ -878,15 +797,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
             background: rgba(0, 0, 0, 0.65);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 1.2rem;
+            font-size: 1rem;
             pointer-events: none;
             transition: var(--transition);
             backdrop-filter: blur(4px);
@@ -895,19 +814,18 @@
         }
         .video-card:hover .play-overlay {
             background: rgba(245, 176, 66, 0.85);
-            width: 54px;
-            height: 54px;
-            font-size: 1.4rem;
-            border-color: rgba(255, 255, 255, 0.25);
+            width: 44px;
+            height: 44px;
+            font-size: 1.2rem;
         }
         .video-info {
-            padding: 14px 16px 18px;
+            padding: 12px 14px 16px;
             flex: 1;
             display: flex;
             flex-direction: column;
         }
         .video-info h4 {
-            font-size: 15px;
+            font-size: 0.9rem;
             font-weight: 700;
             margin: 0 0 4px 0;
             color: var(--text);
@@ -918,30 +836,27 @@
             overflow: hidden;
         }
         .video-info .video-desc {
-            font-size: 13px;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-bottom: 8px;
-            line-height: 1.5;
+            margin-bottom: 6px;
+            line-height: 1.4;
         }
         .video-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 11px;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             flex-wrap: wrap;
             gap: 4px;
             margin-bottom: 4px;
-        }
-        .video-meta span {
-            font-size: 11px;
         }
         .video-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 4px;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
         .like-video-btn {
@@ -949,26 +864,21 @@
             border: none;
             color: #bbb;
             cursor: pointer;
-            font-size: 1rem;
-            padding: 4px 8px;
+            font-size: 0.9rem;
+            padding: 4px 6px;
             border-radius: 50%;
             transition: var(--transition);
         }
-        .like-video-btn:hover {
-            color: #e74c3c;
-            background: #fde8e8;
-        }
-        .like-video-btn.liked {
-            color: #e74c3c;
-        }
+        .like-video-btn:hover { color: #e74c3c; background: #fde8e8; }
+        .like-video-btn.liked { color: #e74c3c; }
 
         .download-wrapper {
             position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
         }
         .download-wrapper .download-video-btn {
             position: absolute;
@@ -976,10 +886,10 @@
             border: none;
             color: var(--gold);
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
             transition: var(--transition);
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -994,31 +904,29 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             transform: rotate(-90deg);
             z-index: 1;
         }
         .download-wrapper svg circle {
             fill: none;
-            stroke-width: 3.5;
+            stroke-width: 3;
             stroke-linecap: round;
         }
-        .download-wrapper svg .bg-circle {
-            stroke: #eaeef3;
-        }
+        .download-wrapper svg .bg-circle { stroke: #eaeef3; }
         .download-wrapper svg .progress-circle {
             stroke: var(--gold);
-            stroke-dasharray: 113.097;
-            stroke-dashoffset: 113.097;
+            stroke-dasharray: 94.248;
+            stroke-dashoffset: 94.248;
             transition: stroke-dashoffset 0.25s ease;
         }
         .download-wrapper .dl-text {
             position: absolute;
-            bottom: -18px;
+            bottom: -16px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             font-weight: 700;
             color: var(--gold);
             z-index: 3;
@@ -1031,37 +939,32 @@
             border: none;
             color: #bbb;
             cursor: pointer;
-            font-size: 1rem;
-            padding: 4px 8px;
+            font-size: 0.9rem;
+            padding: 4px 6px;
             border-radius: 50%;
             transition: var(--transition);
         }
-        .delete-offline-btn:hover {
-            color: #e63946;
-            background: #fde8e8;
-        }
+        .delete-offline-btn:hover { color: #e63946; background: #fde8e8; }
 
         .comment-toggle-btn {
             background: none;
             border: none;
             color: var(--gold-dark);
             font-weight: 600;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             cursor: pointer;
-            padding: 4px 10px;
+            padding: 4px 8px;
             border-radius: 20px;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             margin-top: 4px;
         }
-        .comment-toggle-btn:hover {
-            background: rgba(245, 176, 66, 0.1);
-        }
+        .comment-toggle-btn:hover { background: rgba(245, 176, 66, 0.1); }
         .comment-toggle-btn .comment-count {
             background: rgba(245, 176, 66, 0.15);
-            padding: 2px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
             font-size: 0.6rem;
             color: var(--gold-dark);
@@ -1072,13 +975,13 @@
         .docs-list {
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
-            padding: 0.3rem 0.9rem;
+            gap: 0.6rem;
+            padding: 0.2rem 0.6rem;
         }
         .doc-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
-            padding: 1.1rem;
+            padding: 0.8rem;
             box-shadow: var(--shadow-sm);
             border: 1px solid rgba(245, 176, 66, 0.10);
             transition: var(--transition);
@@ -1101,21 +1004,21 @@
             border-color: rgba(245, 176, 66, 0.25);
         }
         .doc-card h3 {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             color: #1a1d28;
         }
         .doc-instructor {
             color: #8b8fa3;
-            font-size: 0.75rem;
-            margin-bottom: 10px;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
         }
         .doc-preview {
             color: #4a4e5c;
-            margin: 10px 0;
+            margin: 6px 0;
             line-height: 1.5;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -1125,39 +1028,36 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 14px;
-            gap: 8px;
+            margin-top: 10px;
+            gap: 6px;
             flex-wrap: wrap;
         }
         .read-btn {
             background: linear-gradient(135deg, var(--gold), var(--orange));
             border: none;
-            padding: 9px 20px;
+            padding: 6px 16px;
             border-radius: 60px;
             font-weight: 700;
             cursor: pointer;
             color: #fff;
-            font-size: 0.78rem;
+            font-size: 0.7rem;
             transition: var(--transition);
             box-shadow: 0 3px 10px rgba(245, 176, 66, 0.3);
         }
-        .read-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 16px rgba(245, 176, 66, 0.4);
-        }
+        .read-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(245, 176, 66, 0.4); }
         .download-doc-btn {
             background: transparent;
             border: 1.5px solid var(--gold);
-            padding: 9px 20px;
+            padding: 6px 16px;
             border-radius: 60px;
             font-weight: 700;
             cursor: pointer;
             color: var(--gold);
-            font-size: 0.78rem;
+            font-size: 0.7rem;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             text-decoration: none;
         }
         .download-doc-btn:hover {
@@ -1171,56 +1071,45 @@
             border: none;
             color: #bbb;
             cursor: pointer;
-            font-size: 1.1rem;
-            padding: 6px;
+            font-size: 0.9rem;
+            padding: 4px;
             border-radius: 50%;
             transition: var(--transition);
         }
-        .like-doc-btn:hover {
-            color: #e74c3c;
-            background: #fde8e8;
-        }
-        .like-doc-btn.liked {
-            color: #e74c3c;
-        }
+        .like-doc-btn:hover { color: #e74c3c; background: #fde8e8; }
+        .like-doc-btn.liked { color: #e74c3c; }
 
         /* ===== FULL PAGE CONTAINERS ===== */
-        .full-page-container {
-            padding: 0.8rem 0.9rem;
-        }
+        .full-page-container { padding: 0.6rem 0.8rem; }
 
         /* ===== DOC FULL PAGE ===== */
         .doc-full-content {
             background: #fff;
-            padding: 1.8rem;
+            padding: 1rem;
             border-radius: 0;
             white-space: pre-wrap;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.7;
             box-shadow: none;
             overflow: auto;
-            min-height: 60vh;
+            min-height: 50vh;
             width: 100%;
-            max-width: 100vw;
-            margin: 0;
-            padding: 1.8rem 0.5rem;
         }
         .doc-full-content iframe {
             width: 100%;
-            min-height: 550px;
+            min-height: 400px;
             border: none;
-            border-radius: 16px;
+            border-radius: 12px;
             background: #f5f6f8;
         }
-
         .doc-viewer-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 14px;
-            margin: 14px 0 12px 0;
-            padding: 14px 20px;
+            gap: 10px;
+            margin: 12px 0;
+            padding: 12px 16px;
             background: #fff;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.8);
             align-items: center;
@@ -1228,142 +1117,110 @@
         }
         .doc-viewer-toolbar .file-badge {
             background: #f5f6f8;
-            padding: 4px 16px;
+            padding: 4px 12px;
             border-radius: 30px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             color: #5f6377;
             border: 1px solid #eee;
-        }
-        .doc-viewer-toolbar .file-badge i {
-            margin-right: 4px;
-            color: #d4952a;
         }
         .doc-viewer-toolbar .btn-download {
             background: linear-gradient(135deg, #f5b042, #ff6b00);
             color: #fff;
             border: none;
-            padding: 8px 20px;
+            padding: 6px 16px;
             border-radius: 30px;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             box-shadow: 0 4px 16px rgba(245, 176, 66, 0.20);
             text-decoration: none;
         }
         .doc-viewer-toolbar .btn-download:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 28px rgba(245, 176, 66, 0.30);
         }
         .doc-viewer-toolbar .btn-download.green {
             background: #2ecc71;
             box-shadow: 0 4px 16px rgba(46, 204, 113, 0.20);
         }
-        .doc-viewer-toolbar .btn-download.green:hover {
-            box-shadow: 0 8px 28px rgba(46, 204, 113, 0.30);
-        }
         .doc-viewer-fallback {
-            margin-top: 8px;
-            padding: 12px 18px;
+            margin-top: 6px;
+            padding: 10px 14px;
             background: #fff8ed;
             border-radius: 30px;
-            font-size: 12px;
+            font-size: 11px;
             color: #5f6377;
             text-align: center;
             border: 1px solid #f0e0c8;
         }
-        .doc-viewer-fallback a {
-            color: #d4952a;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        .doc-viewer-fallback a:hover {
-            text-decoration: underline;
-        }
-
+        .doc-viewer-fallback a { color: #d4952a; font-weight: 600; text-decoration: none; }
+        .doc-viewer-fallback a:hover { text-decoration: underline; }
         .doc-back-btn-wrapper {
             display: flex;
             justify-content: center;
-            padding: 16px 0 8px 0;
+            padding: 12px 0 4px 0;
             width: 100%;
         }
         .doc-back-btn {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 32px;
+            gap: 8px;
+            padding: 10px 24px;
             background: #fff;
             border: none;
             border-radius: 60px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #1a1d28;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             background: rgba(255, 255, 255, 0.92);
             border: 1px solid rgba(245, 176, 66, 0.15);
         }
-        .doc-back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            border-color: #f5b042;
-        }
-        .doc-back-btn:active {
-            transform: scale(0.96);
-        }
-        .doc-back-btn i {
-            color: #d4952a;
-        }
+        .doc-back-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); border-color: #f5b042; }
+        .doc-back-btn:active { transform: scale(0.96); }
+        .doc-back-btn i { color: #d4952a; }
 
         /* ===== PAYMENT ===== */
         .payment-numbers-box {
             background: #fff;
             border: 2px solid rgba(245, 176, 66, 0.2);
             border-radius: var(--radius-md);
-            padding: 1.2rem;
-            margin: 1rem 0;
+            padding: 1rem;
+            margin: 0.8rem 0;
             border-left: 4px solid var(--orange);
         }
-        .payment-numbers-box h4 {
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #1a1d28;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .payment-numbers-box h4 i {
-            color: var(--gold);
-        }
+        .payment-numbers-box h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .payment-numbers-box h4 i { color: var(--gold); }
         .payment-number-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
+            gap: 8px;
+            padding: 8px 12px;
             background: #fefdf7;
             border-radius: 40px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             border: 1px solid #f0e8d0;
         }
         .payment-number-row .number-label {
             font-weight: 800;
             color: var(--gold-dark);
-            min-width: 55px;
+            min-width: 50px;
         }
         .payment-number-row .number-value {
             flex: 1;
             font-family: 'SF Mono', 'Courier New', monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             letter-spacing: 0.5px;
             color: #1a1d28;
         }
@@ -1371,80 +1228,56 @@
             background: var(--gold);
             border: none;
             color: #fff;
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 30px;
             cursor: pointer;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 700;
             transition: var(--transition);
         }
-        .payment-number-row .copy-num-btn:hover {
-            background: var(--gold-dark);
-            transform: scale(1.03);
-        }
+        .payment-number-row .copy-num-btn:hover { background: var(--gold-dark); transform: scale(1.03); }
         .deposit-instruction {
             background: #fffdf5;
             border-left: 4px solid var(--gold);
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 0 12px 12px 0;
-            font-size: 0.78rem;
+            font-size: 0.7rem;
             color: #5f5a3c;
-            margin: 10px 0;
+            margin: 8px 0;
             font-weight: 500;
         }
         .upload-box {
             border: 2px dashed #e0d0b0;
             border-radius: var(--radius-md);
-            padding: 1.5rem;
+            padding: 1.2rem;
             text-align: center;
             cursor: pointer;
-            margin: 1rem 0;
+            margin: 0.8rem 0;
             position: relative;
-            min-height: 100px;
+            min-height: 80px;
             transition: var(--transition);
             background: #fefdf7;
         }
-        .upload-box:hover {
-            border-color: var(--gold);
-            background: #fffdf5;
-        }
-        .upload-box i {
-            color: var(--gold-dark);
-        }
-        .upload-box img {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 14px;
-            margin-top: 0.5rem;
-        }
+        .upload-box:hover { border-color: var(--gold); background: #fffdf5; }
+        .upload-box i { color: var(--gold-dark); }
+        .upload-box img { max-width: 100%; max-height: 150px; border-radius: 12px; margin-top: 0.5rem; }
 
         /* ===== PAGE CONTAINERS ===== */
-        .page-container {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        .active-page {
-            display: block;
-        }
+        .page-container { display: none; animation: fadeIn 0.3s ease; }
+        .active-page { display: block; }
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .grid-title {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.4rem;
             font-weight: 700;
-            font-size: 0.95rem;
-            padding: 0 0.9rem 2px 0.9rem;
+            font-size: 0.85rem;
+            padding: 0 0.6rem 2px 0.6rem;
             border-bottom: 2px solid transparent;
             background: linear-gradient(90deg, var(--gold), var(--orange));
             background-size: 0% 2px;
@@ -1452,21 +1285,13 @@
             background-position: left bottom;
             transition: background-size 0.4s ease;
         }
-        .grid-title:hover {
-            background-size: 100% 2px;
-        }
-        .grid-title i {
-            margin-right: 6px;
-        }
-        .grid-title h3 {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .grid-title:hover { background-size: 100% 2px; }
+        .grid-title i { margin-right: 4px; }
+        .grid-title h3 { display: flex; align-items: center; gap: 4px; }
         .grid-title .badge-count {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: rgba(245, 176, 66, 0.15);
-            padding: 2px 10px;
+            padding: 2px 8px;
             border-radius: 30px;
             color: var(--gold-dark);
             font-weight: 600;
@@ -1475,210 +1300,165 @@
         .profile-card {
             background: #fff;
             border-radius: var(--radius-lg);
-            padding: 1.5rem;
+            padding: 1.2rem;
             box-shadow: var(--shadow-md);
             border: 1px solid rgba(245, 176, 66, 0.08);
             border-top: 4px solid var(--gold);
-            margin: 0 0.9rem;
+            margin: 0 0.6rem;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 13px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f3f3f5;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
-        .info-row span:first-child {
-            color: #8b8fa3;
-            font-weight: 500;
-        }
-        .info-row span:last-child {
-            font-weight: 600;
-            color: #1a1d28;
-        }
+        .info-row span:first-child { color: #8b8fa3; font-weight: 500; }
+        .info-row span:last-child { font-weight: 600; color: #1a1d28; }
         .btn-profile {
             background: linear-gradient(135deg, var(--gold), var(--orange));
             width: 100%;
-            padding: 13px;
+            padding: 12px;
             border-radius: 60px;
             font-weight: 700;
-            margin-top: 10px;
+            margin-top: 8px;
             border: none;
             cursor: pointer;
             color: #fff;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: var(--transition);
             box-shadow: 0 4px 14px rgba(245, 176, 66, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
-        .btn-profile:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(245, 176, 66, 0.4);
-        }
+        .btn-profile:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245, 176, 66, 0.4); }
         .btn-outline {
             background: transparent;
             border: 2px solid #e0d8c8;
             color: #5f6377;
-            padding: 9px 18px;
+            padding: 8px 16px;
             border-radius: 60px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            font-size: 0.82rem;
+            gap: 6px;
+            font-size: 0.75rem;
             transition: var(--transition);
         }
-        .btn-outline:hover {
-            border-color: var(--gold);
-            color: var(--gold-dark);
-            background: rgba(255, 253, 247, 0.6);
-        }
+        .btn-outline:hover { border-color: var(--gold); color: var(--gold-dark); background: rgba(255, 253, 247, 0.6); }
         .btn-transaction {
             background: #fff;
             width: 100%;
-            padding: 13px;
+            padding: 12px;
             border-radius: 60px;
             font-weight: 700;
-            margin-top: 10px;
+            margin-top: 8px;
             border: 2px solid rgba(245, 176, 66, 0.2);
             cursor: pointer;
             color: var(--gold-dark);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
-        .btn-transaction:hover {
-            background: #fffdf5;
-            border-color: var(--gold);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(245, 176, 66, 0.2);
-        }
+        .btn-transaction:hover { background: #fffdf5; border-color: var(--gold); transform: translateY(-1px); }
 
         /* ===== TRANSACTION CARDS ===== */
         .transaction-card {
             background: #fff;
             border-radius: var(--radius-md);
-            padding: 1.1rem 1.2rem;
-            margin-bottom: 0.8rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.6rem;
             box-shadow: var(--shadow-sm);
             border: 1px solid #f2f2f5;
             transition: var(--transition);
             border-left: 3px solid var(--gold);
-            margin-left: 0.9rem;
-            margin-right: 0.9rem;
+            margin: 0 0.6rem 0.6rem 0.6rem;
         }
-        .transaction-card:hover {
-            box-shadow: var(--shadow-md);
-            border-color: rgba(245, 176, 66, 0.2);
-        }
+        .transaction-card:hover { box-shadow: var(--shadow-md); border-color: rgba(245, 176, 66, 0.2); }
         .transaction-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.5rem;
-            gap: 8px;
+            margin-bottom: 4px;
+            gap: 6px;
         }
         .transaction-course-name {
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #1a1d28;
             flex: 1;
         }
         .transaction-status-badge {
-            font-size: 0.6rem;
-            padding: 4px 11px;
+            font-size: 0.55rem;
+            padding: 3px 10px;
             border-radius: 20px;
             font-weight: 700;
             white-space: nowrap;
             letter-spacing: 0.3px;
         }
-        .transaction-status-badge.pending {
-            background: #fef3cd;
-            color: #b45309;
-        }
-        .transaction-status-badge.approved {
-            background: #d4edda;
-            color: #155724;
-        }
-        .transaction-status-badge.rejected {
-            background: #fde8e8;
-            color: #a71d2a;
-        }
+        .transaction-status-badge.pending { background: #fef3cd; color: #b45309; }
+        .transaction-status-badge.approved { background: #d4edda; color: #155724; }
+        .transaction-status-badge.rejected { background: #fde8e8; color: #a71d2a; }
         .transaction-detail-row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #8b8fa3;
-            padding: 3px 0;
+            padding: 2px 0;
         }
-        .transaction-detail-row strong {
-            color: #4a4e5c;
-        }
+        .transaction-detail-row strong { color: #4a4e5c; }
         .transaction-amount {
             font-weight: 800;
             color: var(--gold-dark);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         .transaction-date {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.7rem;
+            gap: 4px;
+            font-size: 0.65rem;
             color: #8b8fa3;
         }
-        .transaction-date i {
-            color: #c0c4d0;
-            font-size: 0.65rem;
-        }
-
         .tx-dropdown-toggle {
             cursor: pointer;
             text-align: center;
-            margin-top: 8px;
+            margin-top: 6px;
             color: #F5B042;
             font-weight: 600;
-            font-size: 12px;
-            padding: 6px 0;
+            font-size: 11px;
+            padding: 4px 0;
             border-radius: 30px;
             transition: background 0.2s ease;
         }
-        .tx-dropdown-toggle:hover {
-            background: rgba(245, 176, 66, 0.08);
-        }
+        .tx-dropdown-toggle:hover { background: rgba(245, 176, 66, 0.08); }
         .tx-dropdown-content {
             display: none;
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid #eee;
-            margin-top: 8px;
+            margin-top: 6px;
         }
-        .tx-dropdown-content.open {
-            display: block;
-        }
+        .tx-dropdown-content.open { display: block; }
         .btn-view-screenshot {
             background: linear-gradient(135deg, #4a90d9, #2979c1);
             color: #fff;
             border: none;
-            padding: 8px 20px;
+            padding: 6px 16px;
             border-radius: 30px;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 8px;
             width: 100%;
             box-shadow: 0 4px 16px rgba(41, 121, 193, 0.3);
             transition: var(--transition);
         }
-        .btn-view-screenshot:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(41, 121, 193, 0.4);
-        }
+        .btn-view-screenshot:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(41, 121, 193, 0.4); }
 
         /* ===== SCREENSHOT MODAL ===== */
         #screenshotModal {
@@ -1694,9 +1474,7 @@
             justify-content: center;
             backdrop-filter: blur(4px);
         }
-        #screenshotModal.open {
-            display: flex;
-        }
+        #screenshotModal.open { display: flex; }
         #screenshotModal img {
             max-width: 90%;
             max-height: 90%;
@@ -1712,8 +1490,8 @@
             font-size: 30px;
             cursor: pointer;
             background: rgba(0, 0, 0, 0.5);
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1721,57 +1499,40 @@
             border: none;
             transition: var(--transition);
         }
-        #screenshotModal .close-modal:hover {
-            background: #e74c3c;
-            transform: rotate(90deg);
-        }
+        #screenshotModal .close-modal:hover { background: #e74c3c; transform: rotate(90deg); }
 
-        /* ===== MAC THEMED SUBFOLDER ITEMS ===== */
+        /* ===== SUBFOLDER ITEMS ===== */
         .subfolder-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 18px;
+            padding: 12px 16px;
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: var(--radius-lg);
-            margin: 0.4rem 0.9rem;
+            margin: 0.4rem 0.6rem;
             cursor: pointer;
             font-weight: 600;
             transition: var(--transition);
             border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
             color: var(--text);
         }
         .subfolder-header:hover {
             background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.10);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
             transform: translateY(-2px);
         }
-        .subfolder-header i.fa-folder {
-            color: #1a1d28;
-            margin-right: 12px;
-            font-size: 0.95rem;
-        }
+        .subfolder-header i.fa-folder { color: #1a1d28; margin-right: 10px; font-size: 0.9rem; }
         .subfolder-header .folder-counts {
             display: flex;
-            gap: 12px;
-            font-size: 0.75rem;
+            gap: 10px;
+            font-size: 0.7rem;
             color: var(--text-secondary);
         }
-        .subfolder-header .folder-counts span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .subfolder-content {
-            display: none;
-            padding: 0.4rem 0.2rem;
-        }
-        .subfolder-content.show {
-            display: block;
-        }
+        .subfolder-content { display: none; padding: 0.2rem 0; }
+        .subfolder-content.show { display: block; }
 
         /* ===== NOTIFICATION SIDEBAR ===== */
         .side-notif {
@@ -1789,9 +1550,7 @@
             border-radius: 28px 0 0 28px;
             border-left: 4px solid var(--gold);
         }
-        .side-notif.open {
-            right: 0;
-        }
+        .side-notif.open { right: 0; }
         .notif-header {
             display: flex;
             justify-content: space-between;
@@ -1801,69 +1560,49 @@
             border-bottom: 2px solid var(--gold);
             font-weight: 700;
         }
-        .notif-header i {
-            color: var(--gold);
-        }
         .notif-item {
-            padding: 11px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f2f2f5;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: #4a4e5c;
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: 6px;
         }
-        .notif-item i {
-            font-size: 0.7rem;
-            margin-top: 2px;
-            flex-shrink: 0;
-        }
-        .notif-item .notif-icon-success {
-            color: var(--green);
-        }
-        .notif-item .notif-icon-warning {
-            color: var(--yellow);
-        }
-        .notif-item .notif-icon-danger {
-            color: var(--red);
-        }
-        .notif-item .notif-icon-info {
-            color: var(--blue);
-        }
+        .notif-item i { font-size: 0.7rem; margin-top: 2px; flex-shrink: 0; }
+        .notif-item .notif-icon-success { color: var(--green); }
+        .notif-item .notif-icon-warning { color: var(--yellow); }
+        .notif-item .notif-icon-danger { color: var(--red); }
+        .notif-item .notif-icon-info { color: var(--blue); }
         .empty-state {
             text-align: center;
-            padding: 2rem;
+            padding: 1.5rem;
             color: #b0b4c0;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
-        .empty-state i {
-            display: block;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: #d0d4dc;
-        }
+        .empty-state i { display: block; font-size: 1.5rem; margin-bottom: 0.5rem; color: #d0d4dc; }
 
         /* ===== TOAST ===== */
         #toastContainer {
             position: fixed;
             top: 80px;
-            right: 20px;
+            right: 16px;
             z-index: 4000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         .toast {
             background: #1a1d28;
             color: #fff;
-            padding: 14px 24px;
+            padding: 12px 20px;
             border-radius: 40px;
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             animation: slideInToast 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            max-width: 360px;
+            max-width: 340px;
             font-weight: 500;
             font-size: 12px;
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1874,17 +1613,11 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 18px;
+            font-size: 16px;
         }
         @keyframes slideInToast {
-            from {
-                opacity: 0;
-                transform: translateX(40px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-            }
+            from { opacity: 0; transform: translateX(30px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
         }
 
         /* ===== ADMIN NOTIFICATION (In-App Popup) ===== */
@@ -1902,9 +1635,7 @@
             justify-content: center;
             padding: 20px;
         }
-        .admin-notif-overlay.open {
-            display: flex;
-        }
+        .admin-notif-overlay.open { display: flex; }
         .admin-notif-modal {
             background: #ffffff;
             border-radius: 28px;
@@ -1917,43 +1648,37 @@
             position: relative;
         }
         @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            from { opacity: 0; transform: scale(0.92) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
         .admin-notif-header {
             background: #1a1d28;
-            padding: 16px 18px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             border-bottom: 3px solid var(--gold);
         }
         .admin-notif-header .admin-notif-icon {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: var(--gold);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #1a1d28;
-            font-size: 16px;
+            font-size: 14px;
             flex-shrink: 0;
         }
         .admin-notif-header span {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             color: #fff;
             flex: 1;
         }
         .admin-notif-body {
-            padding: 18px 18px 10px 18px;
+            padding: 16px 18px 8px 18px;
             text-align: left;
         }
         .admin-notif-body p {
@@ -1963,7 +1688,7 @@
             margin-bottom: 4px;
         }
         .admin-notif-body .media-container {
-            margin-top: 10px;
+            margin-top: 8px;
             border-radius: 12px;
             overflow: hidden;
             background: #f5f5f5;
@@ -1974,13 +1699,13 @@
         .admin-notif-body .media-container img,
         .admin-notif-body .media-container video {
             width: 100%;
-            max-height: 200px;
+            max-height: 180px;
             object-fit: contain;
             border-radius: 12px;
             display: block;
         }
         .admin-notif-btn {
-            margin: 12px 18px 0 18px;
+            margin: 10px 18px 0 18px;
             width: calc(100% - 36px);
             padding: 10px;
             background: linear-gradient(135deg, var(--gold), var(--orange));
@@ -1992,9 +1717,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .admin-notif-btn:active {
-            transform: scale(0.96);
-        }
+        .admin-notif-btn:active { transform: scale(0.96); }
 
         /* ===== CUSTOM LOGOUT MODAL ===== */
         #logoutModal {
@@ -2011,174 +1734,93 @@
             justify-content: center;
             padding: 20px;
         }
-        #logoutModal.open {
-            display: flex;
-        }
+        #logoutModal.open { display: flex; }
         .logout-modal-content {
             background: #ffffff;
             border-radius: 28px;
             max-width: 400px;
             width: 100%;
-            padding: 2rem 1.8rem 1.8rem 1.8rem;
+            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
             box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
             animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
             text-align: center;
             border: 1px solid rgba(245, 176, 66, 0.15);
         }
         .logout-modal-content .modal-icon {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: #fff8ed;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px auto;
-            font-size: 28px;
+            margin: 0 auto 12px auto;
+            font-size: 24px;
             color: var(--gold-dark);
             border: 2px solid rgba(245, 176, 66, 0.2);
         }
-        .logout-modal-content h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1a1d28;
-            margin-bottom: 6px;
-        }
-        .logout-modal-content p {
-            font-size: 0.9rem;
-            color: #5f6377;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
+        .logout-modal-content h3 { font-size: 1.2rem; font-weight: 700; color: #1a1d28; margin-bottom: 4px; }
+        .logout-modal-content p { font-size: 0.85rem; color: #5f6377; margin-bottom: 1.2rem; line-height: 1.5; }
         .logout-modal-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
         }
         .logout-modal-actions button {
-            padding: 10px 32px;
+            padding: 10px 28px;
             border-radius: 60px;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: var(--transition);
             border: none;
-            min-width: 120px;
+            min-width: 100px;
         }
-        .logout-modal-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5f6377;
-        }
-        .logout-modal-actions .btn-cancel:hover {
-            background: #e5e7eb;
-            transform: translateY(-2px);
-        }
+        .logout-modal-actions .btn-cancel { background: #f0f2f5; color: #5f6377; }
+        .logout-modal-actions .btn-cancel:hover { background: #e5e7eb; transform: translateY(-2px); }
         .logout-modal-actions .btn-confirm {
             background: linear-gradient(135deg, var(--gold), var(--orange));
             color: #fff;
             box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
         }
-        .logout-modal-actions .btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
-        }
+        .logout-modal-actions .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4); }
 
         /* ===== ELEGANT DARK MODE ===== */
-        body.dark-mode {
-            background: #0f0f0f;
-            color: #e0e0e0;
-        }
-        body.dark-mode .app-root,
-        body.dark-mode .app-content {
-            background: #0f0f0f;
-        }
-        body.dark-mode .top-bar {
-            background: #161616;
-            border-bottom: 1px solid #2a2a2a;
-        }
-        body.dark-mode .greeting-text h2,
-        body.dark-mode .greeting-text p {
-            color: #e0e0e0;
-        }
-        body.dark-mode .header-icons i {
-            color: #e0e0e0;
-        }
-        body.dark-mode .header-icons i:hover {
-            color: #f5b042;
-        }
-        body.dark-mode .search-bar {
-            background: #222;
-            border-color: #333;
-        }
-        body.dark-mode .search-bar input {
-            color: #e0e0e0;
-        }
-        body.dark-mode .search-bar .search-icon {
-            color: #888;
-        }
-        body.dark-mode .course-name-item {
-            background: #1f1f1f !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .course-name-item:hover {
-            border-color: #f5b042 !important;
-            background: #2a2a2a !important;
-        }
-        body.dark-mode .course-card-wrapper,
-        body.dark-mode .video-card,
-        body.dark-mode .doc-card,
-        body.dark-mode .profile-card,
-        body.dark-mode .transaction-card,
-        body.dark-mode .side-notif,
-        body.dark-mode .payment-numbers-box,
-        body.dark-mode .doc-viewer-toolbar,
-        body.dark-mode .admin-notif-modal,
-        body.dark-mode .logout-modal-content {
+        body.dark-mode { background: #0f0f0f; color: #e0e0e0; }
+        body.dark-mode .app-root, body.dark-mode .app-content { background: #0f0f0f; }
+        body.dark-mode .top-bar { background: #161616; border-bottom: 1px solid #2a2a2a; }
+        body.dark-mode .greeting-text h2, body.dark-mode .greeting-text p { color: #e0e0e0; }
+        body.dark-mode .header-icons i { color: #e0e0e0; }
+        body.dark-mode .header-icons i:hover { color: #f5b042; }
+        body.dark-mode .search-bar { background: #222; border-color: #333; }
+        body.dark-mode .search-bar input { color: #e0e0e0; }
+        body.dark-mode .search-bar .search-icon { color: #888; }
+        body.dark-mode .course-name-item { background: #1f1f1f !important; border-color: #333 !important; color: #e0e0e0 !important; }
+        body.dark-mode .course-name-item:hover { border-color: #f5b042 !important; background: #2a2a2a !important; }
+        body.dark-mode .course-card-wrapper, body.dark-mode .video-card, body.dark-mode .doc-card,
+        body.dark-mode .profile-card, body.dark-mode .transaction-card, body.dark-mode .side-notif,
+        body.dark-mode .payment-numbers-box, body.dark-mode .doc-viewer-toolbar,
+        body.dark-mode .admin-notif-modal, body.dark-mode .logout-modal-content {
             background: #1f1f1f !important;
             border-color: #2a2a2a !important;
             color: #e0e0e0 !important;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
         }
-        body.dark-mode .logout-modal-content h3 {
+        body.dark-mode .logout-modal-content h3 { color: #f1f1f1 !important; }
+        body.dark-mode .logout-modal-content p { color: #aaaaaa !important; }
+        body.dark-mode .logout-modal-content .modal-icon { background: #2a2a2a !important; border-color: #444 !important; }
+        body.dark-mode .logout-modal-actions .btn-cancel { background: #2a2a2a !important; color: #aaaaaa !important; }
+        body.dark-mode .logout-modal-actions .btn-cancel:hover { background: #3a3a3a !important; }
+        body.dark-mode .logout-modal-actions .btn-confirm { background: linear-gradient(135deg, #d4952a, #ff6b00) !important; }
+        body.dark-mode .course-card-body h4, body.dark-mode .video-info h4, body.dark-mode .doc-card h3,
+        body.dark-mode .profile-card .info-row span:last-child, body.dark-mode .transaction-card .transaction-course-name {
             color: #f1f1f1 !important;
         }
-        body.dark-mode .logout-modal-content p {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .logout-modal-content .modal-icon {
-            background: #2a2a2a !important;
-            border-color: #444 !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-cancel {
-            background: #2a2a2a !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-cancel:hover {
-            background: #3a3a3a !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-confirm {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .course-card-body h4,
-        body.dark-mode .video-info h4,
-        body.dark-mode .doc-card h3,
-        body.dark-mode .profile-card .info-row span:last-child,
-        body.dark-mode .transaction-card .transaction-course-name {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .course-card-body .course-desc,
-        body.dark-mode .video-info .video-desc,
-        body.dark-mode .doc-preview,
-        body.dark-mode .info-row span:first-child,
-        body.dark-mode .transaction-detail-row {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .course-meta .course-price,
-        body.dark-mode .video-meta span {
-            color: #aaaaaa !important;
-        }
+        body.dark-mode .course-card-body .course-desc, body.dark-mode .video-info .video-desc,
+        body.dark-mode .doc-preview, body.dark-mode .info-row span:first-child,
+        body.dark-mode .transaction-detail-row { color: #aaaaaa !important; }
+        body.dark-mode .course-meta .course-price, body.dark-mode .video-meta span { color: #aaaaaa !important; }
         body.dark-mode .subfolder-header {
             background: rgba(30, 30, 30, 0.8) !important;
             border-color: rgba(255, 255, 255, 0.05) !important;
@@ -2189,377 +1831,174 @@
             background: rgba(50, 50, 50, 0.9) !important;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
         }
-        body.dark-mode .subfolder-header i.fa-folder {
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .subfolder-header .folder-counts {
-            color: #888 !important;
-        }
-        body.dark-mode .subfolder-content {
-            background: #0f0f0f !important;
-        }
-        body.dark-mode .btn-outline {
-            border-color: #333 !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .btn-outline:hover {
-            border-color: #f5b042 !important;
-            color: #f5b042 !important;
-            background: rgba(245, 176, 66, 0.1) !important;
-        }
-        body.dark-mode .btn-profile {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .read-btn {
-            background: #d4952a !important;
-            color: #fff !important;
-        }
-        body.dark-mode .doc-viewer-toolbar .file-badge {
-            background: #161616 !important;
-            color: #aaaaaa !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-viewer-fallback {
-            background: #161616 !important;
-            color: #aaaaaa !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-back-btn {
-            background: #1f1f1f !important;
-            color: #e0e0e0 !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-back-btn:hover {
-            border-color: #f5b042 !important;
-            background: #2a2a2a !important;
-        }
-        body.dark-mode .floating-player .player-drag-handle .handle-label {
-            color: rgba(255, 255, 255, 0.6) !important;
-        }
-        body.dark-mode .grid-title .badge-count {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .transaction-card {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .doc-card::before {
-            opacity: 0.6 !important;
-        }
-        body.dark-mode .video-card:hover::after {
-            opacity: 0.4 !important;
-        }
-        body.dark-mode .payment-numbers-box {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .side-notif {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .doc-viewer-toolbar {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .toast {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .nav-item i,
-        body.dark-mode .nav-item span {
-            color: #888 !important;
-        }
-        body.dark-mode .nav-item.active i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-        body.dark-mode .nav-item.active span {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .download-wrapper svg .bg-circle {
-            stroke: #333 !important;
-        }
-        body.dark-mode .download-wrapper .dl-text {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-toggle-btn {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-toggle-btn .comment-count {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-section {
-            background: #161616 !important;
-            border-top-color: #2a2a2a !important;
-        }
-        body.dark-mode .comment-item {
-            border-bottom-color: #2a2a2a !important;
-        }
-        body.dark-mode .comment-item .comment-user {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .comment-item .comment-text {
-            color: #cccccc !important;
-        }
-        body.dark-mode .comment-form input {
-            background: #1f1f1f !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .comment-empty {
-            color: #888 !important;
-        }
-        body.dark-mode .comment-disabled {
-            color: #e74c3c !important;
-        }
-        body.dark-mode .transaction-amount {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .video-thumb-wrapper img {
-            background: #1f1f1f !important;
-        }
+        body.dark-mode .subfolder-header i.fa-folder { color: #e0e0e0 !important; }
+        body.dark-mode .subfolder-header .folder-counts { color: #888 !important; }
+        body.dark-mode .subfolder-content { background: #0f0f0f !important; }
+        body.dark-mode .btn-outline { border-color: #333 !important; color: #aaaaaa !important; }
+        body.dark-mode .btn-outline:hover { border-color: #f5b042 !important; color: #f5b042 !important; background: rgba(245, 176, 66, 0.1) !important; }
+        body.dark-mode .btn-profile { background: linear-gradient(135deg, #d4952a, #ff6b00) !important; }
+        body.dark-mode .read-btn { background: #d4952a !important; color: #fff !important; }
+        body.dark-mode .doc-viewer-toolbar .file-badge { background: #161616 !important; color: #aaaaaa !important; border-color: #333 !important; }
+        body.dark-mode .doc-viewer-fallback { background: #161616 !important; color: #aaaaaa !important; border-color: #333 !important; }
+        body.dark-mode .doc-back-btn { background: #1f1f1f !important; color: #e0e0e0 !important; border-color: #333 !important; }
+        body.dark-mode .doc-back-btn:hover { border-color: #f5b042 !important; background: #2a2a2a !important; }
+        body.dark-mode .floating-player .player-drag-handle .handle-label { color: rgba(255, 255, 255, 0.6) !important; }
+        body.dark-mode .grid-title .badge-count { background: rgba(245, 176, 66, 0.2) !important; color: #f5b042 !important; }
+        body.dark-mode .transaction-card { border-left-color: #d4952a !important; }
+        body.dark-mode .doc-card::before { opacity: 0.6 !important; }
+        body.dark-mode .video-card:hover::after { opacity: 0.4 !important; }
+        body.dark-mode .payment-numbers-box { border-left-color: #d4952a !important; }
+        body.dark-mode .side-notif { border-left-color: #d4952a !important; }
+        body.dark-mode .doc-viewer-toolbar { border-left-color: #d4952a !important; }
+        body.dark-mode .toast { border-left-color: #d4952a !important; }
+        body.dark-mode .nav-item i, body.dark-mode .nav-item span { color: #888 !important; }
+        body.dark-mode .nav-item.active i { background: linear-gradient(135deg, #f5b042, #ff6b00) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+        body.dark-mode .nav-item.active span { color: #f5b042 !important; }
+        body.dark-mode .download-wrapper svg .bg-circle { stroke: #333 !important; }
+        body.dark-mode .download-wrapper .dl-text { color: #f5b042 !important; }
+        body.dark-mode .comment-toggle-btn { color: #f5b042 !important; }
+        body.dark-mode .comment-toggle-btn .comment-count { background: rgba(245, 176, 66, 0.2) !important; color: #f5b042 !important; }
+        body.dark-mode .comment-section { background: #161616 !important; border-top-color: #2a2a2a !important; }
+        body.dark-mode .comment-item { border-bottom-color: #2a2a2a !important; }
+        body.dark-mode .comment-item .comment-user { color: #f1f1f1 !important; }
+        body.dark-mode .comment-item .comment-text { color: #cccccc !important; }
+        body.dark-mode .comment-form input { background: #1f1f1f !important; border-color: #333 !important; color: #e0e0e0 !important; }
+        body.dark-mode .comment-empty { color: #888 !important; }
+        body.dark-mode .comment-disabled { color: #e74c3c !important; }
+        body.dark-mode .transaction-amount { color: #f5b042 !important; }
+        body.dark-mode .video-thumb-wrapper img { background: #1f1f1f !important; }
 
         /* ===== RESPONSIVE ===== */
-        @media (max-width: 520px) {
+        @media (max-width: 600px) {
             :root {
-                --topbar-height: 140px;
+                --topbar-height: 60px;
+                --nav-height: 56px;
             }
-            .app-content {
-                padding: 0 0 110px 0;
-            }
+            .greeting-text p { display: none; }
+            .app-content { padding: 0 0 calc(var(--nav-height) + 16px) 0; }
             .bottom-nav {
-                height: 58px;
-                padding: 4px 8px;
-                width: 94%;
                 max-width: 360px;
-                bottom: 16px;
+                bottom: 12px;
+                height: var(--nav-height);
                 border-radius: 32px;
             }
-            .nav-item i {
-                font-size: 18px;
-            }
-            .nav-item span {
-                font-size: 6px;
-            }
-            .courses-scroll-container .course-card-wrapper,
-            .videos-scroll-container .video-card {
-                flex: 0 0 230px;
-                min-width: 200px;
-            }
-            .course-card-img-wrapper {
-                height: 120px;
-            }
-            .video-thumb-wrapper {
-                height: 130px;
-            }
-            .course-card-body h4,
-            .video-info h4 {
-                font-size: 14px;
-            }
-            .transaction-card {
-                padding: 0.9rem;
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
-            }
-            .side-notif {
-                width: 280px;
-                right: -300px;
-            }
-            .floating-player {
-                width: 300px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .video-thumb-wrapper .play-overlay {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
-            .video-card:hover .play-overlay {
-                width: 46px;
-                height: 46px;
-                font-size: 1.2rem;
-            }
-            .subfolder-header {
-                margin: 0.4rem 0.5rem;
-                padding: 12px 14px;
-            }
-            .docs-list {
-                padding: 0.3rem 0.5rem;
-            }
-            .profile-card {
-                margin: 0 0.5rem;
-            }
-            .full-page-container {
-                padding: 0.8rem 0.5rem;
-            }
-            .transaction-card {
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
-            }
-            .courses-scroll-container,
-            .videos-scroll-container,
-            .all-courses-name-scroll {
-                padding: 0.5rem 0.5rem 0.8rem 0.5rem;
-            }
-            .doc-full-content {
-                padding: 1rem 0.3rem;
-            }
-            .doc-full-content iframe {
-                min-height: 400px;
-            }
-            .doc-back-btn {
-                padding: 10px 24px;
-                font-size: 12px;
-            }
-            .logout-modal-content {
-                padding: 1.5rem 1.2rem;
-            }
-            .logout-modal-actions button {
-                padding: 8px 24px;
-                min-width: 100px;
-                font-size: 0.8rem;
-            }
-        }
-        @media (max-width: 400px) {
-            :root {
-                --topbar-height: 130px;
-            }
-            .courses-scroll-container .course-card-wrapper,
-            .videos-scroll-container .video-card {
-                flex: 0 0 180px;
-                min-width: 160px;
-            }
-            .course-card-img-wrapper {
-                height: 100px;
-            }
-            .video-thumb-wrapper {
-                height: 110px;
-            }
-            .bottom-nav {
-                height: 52px;
-                padding: 4px 6px;
-                max-width: 320px;
-            }
-            .nav-item i {
-                font-size: 16px;
-            }
-            .nav-item span {
-                font-size: 5px;
-            }
-            .floating-player {
-                width: 260px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-            .doc-full-content iframe {
-                min-height: 300px;
-            }
-            .doc-back-btn {
-                padding: 8px 20px;
-                font-size: 11px;
-            }
+            .nav-item i { font-size: 18px; }
+            .nav-item span { font-size: 6px; }
+            .courses-scroll-container .course-card-wrapper { flex: 0 0 180px; min-width: 150px; }
+            .course-card-img-wrapper { height: 90px; }
+            .videos-scroll-container .video-card { flex: 0 0 200px; min-width: 170px; }
+            .video-thumb-wrapper { height: 100px; }
+            .course-card-body h4, .video-info h4 { font-size: 0.8rem; }
+            .transaction-card { padding: 0.6rem; margin: 0 0.4rem 0.6rem 0.4rem; }
+            .side-notif { width: 280px; right: -300px; }
+            .floating-player { width: min(300px, 92vw); }
+            .video-thumb-wrapper .play-overlay { width: 36px; height: 36px; font-size: 0.9rem; }
+            .video-card:hover .play-overlay { width: 40px; height: 40px; font-size: 1rem; }
+            .subfolder-header { margin: 0.3rem 0.4rem; padding: 10px 12px; }
+            .docs-list { padding: 0.2rem 0.4rem; }
+            .profile-card { margin: 0 0.4rem; }
+            .full-page-container { padding: 0.4rem 0.6rem; }
+            .doc-full-content { padding: 0.8rem; }
+            .doc-full-content iframe { min-height: 300px; }
+            .doc-back-btn { padding: 8px 18px; font-size: 11px; }
+            .logout-modal-content { padding: 1.2rem 1rem; }
+            .logout-modal-actions button { padding: 8px 20px; min-width: 80px; font-size: 0.75rem; }
+            .promo-slide .slide-text { font-size: 0.9rem; }
+            .promo-slide .slide-text small { font-size: 0.6rem; }
+            .promo-slide .video-play-overlay { width: 40px; height: 40px; font-size: 18px; }
+            .admin-notif-modal { max-width: 340px; }
+            .admin-notif-body p { font-size: 12px; }
+            .payment-number-row { font-size: 0.7rem; padding: 6px 10px; }
+            .payment-number-row .number-label { min-width: 40px; }
         }
 
-        /* ===== COMMENT SYSTEM ===== */
+        @media (max-width: 400px) {
+            .courses-scroll-container .course-card-wrapper { flex: 0 0 150px; min-width: 130px; }
+            .course-card-img-wrapper { height: 75px; }
+            .videos-scroll-container .video-card { flex: 0 0 170px; min-width: 140px; }
+            .video-thumb-wrapper { height: 85px; }
+            .bottom-nav { max-width: 300px; height: 50px; }
+            .nav-item i { font-size: 16px; }
+            .nav-item span { font-size: 5px; }
+            .doc-full-content iframe { min-height: 240px; }
+        }
+
+        /* ===== COMMENT SECTION ===== */
         .comment-section {
-            margin-top: 8px;
-            padding: 8px 0 0 0;
+            margin-top: 6px;
+            padding: 6px 0 0 0;
             border-top: 1px solid #eee;
             border-radius: 0;
         }
         .comment-list {
-            max-height: 200px;
+            max-height: 160px;
             overflow-y: auto;
-            margin: 6px 0 4px;
+            margin: 4px 0;
             padding-right: 4px;
         }
-        .comment-list::-webkit-scrollbar {
-            width: 3px;
-        }
-        .comment-list::-webkit-scrollbar-thumb {
-            background: rgba(245, 176, 66, 0.3);
-            border-radius: 20px;
-        }
+        .comment-list::-webkit-scrollbar { width: 3px; }
+        .comment-list::-webkit-scrollbar-thumb { background: rgba(245, 176, 66, 0.3); border-radius: 20px; }
         .comment-item {
             display: flex;
             flex-direction: column;
-            padding: 6px 0;
+            padding: 4px 0;
             border-bottom: 1px solid #f0f0f0;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
-        .comment-item:last-child {
-            border-bottom: none;
-        }
+        .comment-item:last-child { border-bottom: none; }
         .comment-item .comment-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
-        .comment-item .comment-user {
-            font-weight: 700;
-            color: #1a1d28;
-            font-size: 0.75rem;
-        }
-        .comment-item .comment-time {
-            font-size: 0.6rem;
-            color: #b0b4c0;
-        }
+        .comment-item .comment-user { font-weight: 700; color: #1a1d28; font-size: 0.7rem; }
+        .comment-item .comment-time { font-size: 0.55rem; color: #b0b4c0; }
         .comment-item .comment-text {
             margin: 2px 0 4px;
             color: #3a3e4c;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             line-height: 1.5;
             word-break: break-word;
         }
         .comment-item .comment-actions {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
         }
         .comment-item .comment-actions button {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 0.6rem;
-            padding: 2px 8px;
+            font-size: 0.55rem;
+            padding: 2px 6px;
             border-radius: 20px;
             transition: var(--transition);
             font-weight: 600;
         }
-        .comment-item .comment-actions .edit-comment-btn {
-            color: #3b82f6;
-        }
-        .comment-item .comment-actions .edit-comment-btn:hover {
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .comment-item .comment-actions .delete-comment-btn {
-            color: #e63946;
-        }
-        .comment-item .comment-actions .delete-comment-btn:hover {
-            background: rgba(230, 57, 70, 0.1);
-        }
+        .comment-item .comment-actions .edit-comment-btn { color: #3b82f6; }
+        .comment-item .comment-actions .edit-comment-btn:hover { background: rgba(59, 130, 246, 0.1); }
+        .comment-item .comment-actions .delete-comment-btn { color: #e63946; }
+        .comment-item .comment-actions .delete-comment-btn:hover { background: rgba(230, 57, 70, 0.1); }
         .comment-item .comment-actions .comment-own-badge {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             color: #b0b4c0;
             background: #f0f0f0;
-            padding: 1px 10px;
+            padding: 1px 8px;
             border-radius: 30px;
         }
         .comment-form {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             margin-top: 4px;
             align-items: center;
         }
         .comment-form input {
             flex: 1;
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 30px;
             border: 1.5px solid #e5e8ed;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: #fff;
             transition: var(--transition);
             min-width: 0;
@@ -2572,32 +2011,18 @@
         .comment-form button {
             background: linear-gradient(135deg, var(--gold), var(--orange));
             border: none;
-            padding: 6px 14px;
+            padding: 4px 12px;
             border-radius: 30px;
             font-weight: 700;
             color: #fff;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             cursor: pointer;
             transition: var(--transition);
             white-space: nowrap;
         }
-        .comment-form button:hover {
-            transform: scale(1.04);
-            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.3);
-        }
-        .comment-empty {
-            color: #b0b4c0;
-            font-size: 0.7rem;
-            padding: 4px 0;
-            text-align: center;
-        }
-        .comment-disabled {
-            color: #e74c3c;
-            font-size: 0.7rem;
-            padding: 4px 0;
-            text-align: center;
-            font-weight: 500;
-        }
+        .comment-form button:hover { transform: scale(1.04); box-shadow: 0 4px 12px rgba(245, 176, 66, 0.3); }
+        .comment-empty { color: #b0b4c0; font-size: 0.65rem; padding: 4px 0; text-align: center; }
+        .comment-disabled { color: #e74c3c; font-size: 0.65rem; padding: 4px 0; text-align: center; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -2688,8 +2113,8 @@
 
             <!-- COURSE DETAIL -->
             <div id="courseDetailPage" class="page-container full-page-container">
-                <button id="backFromCourseBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
-                <h2 id="courseDetailTitle" style="border-left:4px solid var(--gold);padding-left:14px;"></h2>
+                <button id="backFromCourseBtn" class="btn-outline" style="margin-bottom:0.6rem"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="courseDetailTitle" style="border-left:4px solid var(--gold);padding-left:12px;"></h2>
                 <div id="subfoldersContainer"></div>
             </div>
 
@@ -2697,7 +2122,7 @@
             <div id="mylearningPage" class="page-container">
                 <div class="grid-title"><h3><i class="fas fa-play-circle"></i> Continue Watching</h3></div>
                 <div class="videos-scroll-container" id="watchedVideosGrid"></div>
-                <div class="grid-title" style="margin-top:1.2rem"><h3><i class="fas fa-check-circle" style="color:#2ecc71;"></i> My Paid Courses</h3></div>
+                <div class="grid-title" style="margin-top:1rem"><h3><i class="fas fa-check-circle" style="color:#2ecc71;"></i> My Paid Courses</h3></div>
                 <div id="myPaidCoursesGrid" class="courses-scroll-container"></div>
             </div>
 
@@ -2722,8 +2147,8 @@
 
             <!-- TRANSACTION HISTORY -->
             <div id="transactionHistoryPage" class="page-container full-page-container">
-                <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back to Profile</button>
-                <h2 style="margin-bottom:1rem;border-left:4px solid var(--gold);padding-left:14px;"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
+                <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.6rem"><i class="fas fa-arrow-left"></i> Back to Profile</button>
+                <h2 style="margin-bottom:0.8rem;border-left:4px solid var(--gold);padding-left:12px;"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
                 <div id="transactionHistoryList"></div>
                 <div id="emptyTransactionMsg" class="empty-state" style="display:none"><i class="fas fa-inbox"></i> No transactions yet.<br /><small>Purchase a course to see your history here.</small></div>
             </div>
@@ -2738,8 +2163,8 @@
 
             <!-- PAYMENT PAGE -->
             <div id="paymentPage" class="page-container full-page-container">
-                <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.8rem"><i class="fas fa-arrow-left"></i> Back</button>
-                <h2 id="paymentCourseTitle" style="border-left:4px solid var(--gold);padding-left:14px;"></h2>
+                <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.6rem"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="paymentCourseTitle" style="border-left:4px solid var(--gold);padding-left:12px;"></h2>
                 <div class="payment-numbers-box" id="paymentNumbersBox">
                     <h4><i class="fas fa-money-bill-wave"></i> Deposit Payment To</h4>
                     <div class="deposit-instruction">
@@ -2756,7 +2181,7 @@
                         <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
                     </div>
                 </div>
-                <p style="margin:0.5rem 0;font-size:0.78rem;color:#8b8fa3;">After admin approval, the course will be unlocked.</p>
+                <p style="margin:0.5rem 0;font-size:0.75rem;color:#8b8fa3;">After admin approval, the course will be unlocked.</p>
                 <div id="paymentUploadBox" class="upload-box">
                     <i class="fas fa-cloud-upload-alt fa-2x"></i>
                     <p>Tap to upload payment screenshot</p>
@@ -2792,7 +2217,7 @@
         <img id="screenshotModalImg" src="" alt="Payment Screenshot" />
     </div>
 
-    <!-- ===== ADMIN NOTIFICATION POPUP (In-App, per-user once) ===== -->
+    <!-- ===== ADMIN NOTIFICATION POPUP ===== -->
     <div class="admin-notif-overlay" id="adminNotifOverlay">
         <div class="admin-notif-modal">
             <div class="admin-notif-header">
@@ -2828,7 +2253,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from
         "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-        import { getDatabase, ref, get, set, update, onValue, push, remove, query, orderByChild, equalTo } from
+        import { getDatabase, ref, get, set, update, onValue, push, remove } from
         "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -2864,8 +2289,6 @@
         let paymentScreenshotUrl = null;
         let currentSearch = '';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
-
-        // Track which admin notifications the user has already seen (persistent across devices)
         let shownAdminNotifs = new Set();
 
         const commentsCache = new Map();
@@ -2887,21 +2310,21 @@
                 dbStore.createObjectStore('videos', { keyPath: 'id' });
             }
         };
-        dbRequest.onsuccess = (e) => {
-            offlineDB = e.target.result;
-            loadOfflineVideoList();
-        };
+        dbRequest.onsuccess = (e) => { offlineDB = e.target.result; loadOfflineVideoList(); };
+        dbRequest.onerror = (e) => { console.warn('Offline DB error:', e); };
 
         async function loadOfflineVideoList() {
             if (!offlineDB) return;
-            const tx = offlineDB.transaction('videos', 'readonly');
-            const store = tx.objectStore('videos');
-            const keys = await new Promise((res) => {
-                const req = store.getAllKeys();
-                req.onsuccess = () => res(req.result);
-            });
-            offlineVideos = new Set(keys);
-            renderOfflinePage();
+            try {
+                const tx = offlineDB.transaction('videos', 'readonly');
+                const store = tx.objectStore('videos');
+                const keys = await new Promise((res) => {
+                    const req = store.getAllKeys();
+                    req.onsuccess = () => res(req.result);
+                });
+                offlineVideos = new Set(keys);
+                renderOfflinePage();
+            } catch (e) { console.warn('Failed to load offline videos:', e); }
         }
 
         async function deleteOfflineVideo(videoId) {
@@ -2910,8 +2333,7 @@
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
                 store.delete(videoId);
-                await new Promise((res, rej) => { tx.oncomplete = res;
-                    tx.onerror = rej; });
+                await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
                 offlineVideos.delete(videoId);
                 const videoMeta = allVideos.find(v => v.id === videoId);
                 addNotification('delete', `Offline video removed: "${videoMeta?.title || videoId}"`);
@@ -2921,9 +2343,8 @@
             }
         }
 
-        // ===== VIDEO THUMBNAIL GENERATOR (Canvas) =====
+        // ===== THUMBNAIL GENERATOR =====
         const videoThumbnailCache = {};
-
         function captureVideoFrame(url) {
             if (videoThumbnailCache[url]) return Promise.resolve(videoThumbnailCache[url]);
             return new Promise((resolve) => {
@@ -2934,15 +2355,10 @@
                 video.preload = 'metadata';
                 let resolved = false;
                 const timeout = setTimeout(() => {
-                    if (!resolved) {
-                        resolved = true;
-                        resolve(UTOM_THUMBNAIL);
-                    }
+                    if (!resolved) { resolved = true; resolve(UTOM_THUMBNAIL); }
                 }, 8000);
 
-                video.onloadeddata = () => {
-                    video.currentTime = 1.0;
-                };
+                video.onloadeddata = () => { video.currentTime = 1.0; };
                 video.onseeked = () => {
                     if (resolved) return;
                     const canvas = document.createElement('canvas');
@@ -2957,11 +2373,7 @@
                     resolve(dataUrl);
                 };
                 video.onerror = () => {
-                    if (!resolved) {
-                        resolved = true;
-                        clearTimeout(timeout);
-                        resolve(UTOM_THUMBNAIL);
-                    }
+                    if (!resolved) { resolved = true; clearTimeout(timeout); resolve(UTOM_THUMBNAIL); }
                 };
             });
         }
@@ -2970,18 +2382,12 @@
             const url = video.videoUrl || '';
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = null;
-                if (url.includes('youtube.com/watch?v=')) {
-                    vidId = url.split('v=')[1]?.split('&')[0];
-                } else if (url.includes('youtu.be/')) {
-                    vidId = url.split('youtu.be/')[1]?.split('?')[0];
-                } else if (url.includes('youtube.com/embed/')) {
-                    vidId = url.split('embed/')[1]?.split('?')[0];
-                }
+                if (url.includes('youtube.com/watch?v=')) vidId = url.split('v=')[1]?.split('&')[0];
+                else if (url.includes('youtu.be/')) vidId = url.split('youtu.be/')[1]?.split('?')[0];
+                else if (url.includes('youtube.com/embed/')) vidId = url.split('embed/')[1]?.split('?')[0];
                 if (vidId) return `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg`;
             }
-            if (url.includes('vimeo.com')) {
-                return 'https://picsum.photos/300/180';
-            }
+            if (url.includes('vimeo.com')) return 'https://picsum.photos/300/180';
             return UTOM_THUMBNAIL;
         }
 
@@ -2991,145 +2397,161 @@
             if (user.email && user.email.startsWith('admin@')) { window.location.href = 'admin.html'; return; }
             currentUser = user;
 
-            const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-            if (bannedSnap.val() === true) {
-                document.getElementById('bannedOverlay').style.display = 'flex';
-                return;
-            }
-            const maintSnap = await get(ref(db, 'system/maintenance'));
-            if (maintSnap.val() === true) {
-                document.getElementById('maintenanceOverlay').style.display = 'flex';
-                return;
-            }
+            try {
+                const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
+                if (bannedSnap.val() === true) { /* Handle banned user */ return; }
+                const maintSnap = await get(ref(db, 'system/maintenance'));
+                if (maintSnap.val() === true) { /* Handle maintenance */ return; }
 
-            await loadUserData(user.uid);
-            // Load which admin notifications this user has already seen (persistent)
-            await loadShownAdminNotifs(user.uid);
+                await loadUserData(user.uid);
+                await loadShownAdminNotifs(user.uid);
 
-            let dataLoadCount = 0;
-            const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
-            const checkReady = () => {
-                dataLoadCount++;
-                if (dataLoadCount >= dataToLoad.length) {
-                    document.getElementById('appLoader').classList.add('hidden');
-                }
-            };
+                let dataLoadCount = 0;
+                const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
+                const checkReady = () => {
+                    dataLoadCount++;
+                    if (dataLoadCount >= dataToLoad.length) {
+                        document.getElementById('appLoader').classList.add('hidden');
+                    }
+                };
 
-            onValue(ref(db, `approvedPurchases/${user.uid}`), (snap) => {
-                approvedCourses.clear();
-                if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
-                renderAllCourses();
-                renderMyLearn();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-            });
+                // Approved Courses
+                onValue(ref(db, `approvedPurchases/${user.uid}`), (snap) => {
+                    approvedCourses.clear();
+                    if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
+                    renderAllCourses();
+                    renderMyLearn();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                });
 
-            onValue(ref(db, `pendingPurchases/${user.uid}`), (snap) => {
-                pendingPurchases = {};
-                allUserTransactions = [];
-                if (snap.val()) {
-                    Object.entries(snap.val()).forEach(([txId, tx]) => {
-                        allUserTransactions.push({ id: txId, ...tx });
-                        if (tx.status === 'pending' && tx.itemType === 'course') {
-                            pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
+                // Pending Purchases & Transactions
+                onValue(ref(db, `pendingPurchases/${user.uid}`), (snap) => {
+                    pendingPurchases = {};
+                    allUserTransactions = [];
+                    if (snap.val()) {
+                        Object.entries(snap.val()).forEach(([txId, tx]) => {
+                            allUserTransactions.push({ id: txId, ...tx });
+                            if (tx.status === 'pending' && tx.itemType === 'course') {
+                                pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
+                            }
+                        });
+                    }
+                    allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    renderAllCourses();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                });
+
+                // Courses
+                onValue(ref(db, 'courses'), (snap) => {
+                    try {
+                        allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
+                        renderAllCourses();
+                        if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                            renderTransactionHistory();
                         }
-                    });
-                }
-                allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                renderAllCourses();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-            });
+                        checkReady();
+                    } catch (e) { console.warn('Courses error:', e); }
+                });
 
-            onValue(ref(db, 'courses'), (snap) => {
-                allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
-                renderAllCourses();
-                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                    renderTransactionHistory();
-                }
-                checkReady();
-            });
+                // Subfolders
+                onValue(ref(db, 'subfolders'), (snap) => {
+                    try {
+                        allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
+                        if (selectedCourse) renderCourseDetail(selectedCourse);
+                        checkReady();
+                    } catch (e) { console.warn('Subfolders error:', e); }
+                });
 
-            onValue(ref(db, 'subfolders'), (snap) => {
-                allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-                checkReady();
-            });
+                // Videos
+                onValue(ref(db, 'videos'), (snap) => {
+                    try {
+                        allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+                        if (selectedCourse) renderCourseDetail(selectedCourse);
+                        renderWatchedVideos();
+                        renderOfflinePage();
+                        attachCommentListenersToVisibleVideos();
+                        processVideoThumbnails();
+                        checkReady();
+                    } catch (e) { console.warn('Videos error:', e); }
+                });
 
-            onValue(ref(db, 'videos'), (snap) => {
-                allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-                renderWatchedVideos();
-                renderOfflinePage();
-                attachCommentListenersToVisibleVideos();
-                processVideoThumbnails();
-                checkReady();
-            });
+                // Docs
+                onValue(ref(db, 'docs'), (snap) => {
+                    try {
+                        allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                        if (selectedCourse) renderCourseDetail(selectedCourse);
+                        checkReady();
+                    } catch (e) { console.warn('Docs error:', e); }
+                });
 
-            onValue(ref(db, 'docs'), (snap) => {
-                allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                if (selectedCourse) renderCourseDetail(selectedCourse);
-                checkReady();
-            });
+                // Payment Settings
+                onValue(ref(db, 'system/paymentSettings'), (snap) => {
+                    if (snap.val()) { paymentSettings = snap.val(); }
+                    updatePaymentNumbersDisplay();
+                });
 
-            onValue(ref(db, 'system/paymentSettings'), (snap) => {
-                if (snap.val()) { paymentSettings = snap.val(); }
-                updatePaymentNumbersDisplay();
-            });
+                // Promos
+                onValue(ref(db, 'promos'), (snap) => {
+                    try {
+                        const data = snap.val();
+                        allPromos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
+                        renderPromoCarousel();
+                        checkReady();
+                    } catch (e) { console.warn('Promos error:', e); }
+                });
 
-            onValue(ref(db, 'promos'), (snap) => {
-                const data = snap.val();
-                allPromos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
-                renderPromoCarousel();
-                checkReady();
-            });
+                // In-App Notifications
+                onValue(ref(db, 'inAppNotifications'), (snap) => {
+                    try {
+                        const data = snap.val();
+                        if (data) {
+                            window._adminNotifs = data;
+                            checkAdminNotifications(currentUser.uid);
+                        }
+                    } catch (e) { console.warn('Notifications error:', e); }
+                });
 
-            // Listen for new admin in-app notifications
-            onValue(ref(db, 'inAppNotifications'), (snap) => {
-                const data = snap.val();
-                if (data) {
-                    window._adminNotifs = data;
-                    checkAdminNotifications(currentUser.uid);
-                }
-            });
-
-            setupUI();
-            handleHashChange();
+                setupUI();
+                handleHashChange();
+            } catch (e) {
+                console.error('Auth init error:', e);
+                document.getElementById('appLoader').classList.add('hidden');
+            }
         });
 
-        // ===== LOAD SHOWN ADMIN NOTIFICATIONS (persistent across devices) =====
+        // ===== SHOWN ADMIN NOTIFICATIONS =====
         async function loadShownAdminNotifs(uid) {
-            const shownRef = ref(db, `users/${uid}/shownAdminNotifs`);
-            const snap = await get(shownRef);
-            if (snap.val()) {
-                shownAdminNotifs = new Set(Object.keys(snap.val()));
-            } else {
-                shownAdminNotifs = new Set();
-            }
+            try {
+                const shownRef = ref(db, `users/${uid}/shownAdminNotifs`);
+                const snap = await get(shownRef);
+                if (snap.val()) {
+                    shownAdminNotifs = new Set(Object.keys(snap.val()));
+                } else {
+                    shownAdminNotifs = new Set();
+                }
+            } catch (e) { console.warn('Failed to load shown notifs:', e); }
         }
 
-        // ===== MARK ADMIN NOTIFICATION AS SEEN =====
         async function markAdminNotifSeen(uid, notifKey) {
             if (!notifKey) return;
             shownAdminNotifs.add(notifKey);
-            const shownRef = ref(db, `users/${uid}/shownAdminNotifs/${notifKey}`);
-            await set(shownRef, true);
+            try {
+                const shownRef = ref(db, `users/${uid}/shownAdminNotifs/${notifKey}`);
+                await set(shownRef, true);
+            } catch (e) { console.warn('Failed to mark notif seen:', e); }
         }
 
-        // ===== CHECK AND SHOW ADMIN NOTIFICATIONS (only once per user) =====
         function checkAdminNotifications(uid) {
             if (!uid) return;
             const notifs = window._adminNotifs || {};
-            // Process notifications in order (newest first)
             const keys = Object.keys(notifs).sort((a, b) => (notifs[b].createdAt || 0) - (notifs[a].createdAt || 0));
             for (const key of keys) {
                 const notif = notifs[key];
-                // Skip if already seen by this user
                 if (shownAdminNotifs.has(key)) continue;
-
-                // Check recipient: all users or specific user
                 const recipientType = notif.recipientType || 'all';
                 if (recipientType === 'all') {
                     showAdminNotifPopup(key, notif);
@@ -3148,23 +2570,21 @@
             const overlay = document.getElementById('adminNotifOverlay');
             document.getElementById('adminNotifTitle').textContent = notif.title || '📢 Admin Message';
             document.getElementById('adminNotifMessage').textContent = notif.message || '';
-
             const mediaContainer = document.getElementById('adminNotifMediaContainer');
             mediaContainer.innerHTML = '';
             if (notif.mediaUrl) {
                 const mediaType = notif.mediaType || 'image';
                 if (mediaType === 'video') {
                     mediaContainer.innerHTML =
-                        `<video src="${notif.mediaUrl}" controls style="width:100%; max-height:200px; border-radius:12px; margin-top:8px;"></video>`;
+                        `<video src="${notif.mediaUrl}" controls style="width:100%; max-height:180px; border-radius:12px; margin-top:8px;"></video>`;
                 } else {
                     mediaContainer.innerHTML =
-                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%; max-height:200px; object-fit:contain; border-radius:12px; margin-top:8px;" />`;
+                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%; max-height:180px; object-fit:contain; border-radius:12px; margin-top:8px;" />`;
                 }
             }
             overlay.dataset.notifKey = key;
             overlay.classList.add('open');
 
-            // When dismissed, mark as seen
             const dismissBtn = document.getElementById('adminNotifDismiss');
             const newDismiss = () => {
                 const key2 = overlay.dataset.notifKey;
@@ -3182,28 +2602,32 @@
 
         // ===== USER DATA =====
         async function loadUserData(uid) {
-            const userRef = ref(db, `users/${uid}`);
-            const snap = await get(userRef);
-            if (snap.exists()) {
-                userData = { ...userData, ...snap.val() };
-                userData.likedVideos = userData.likedVideos || [];
-                userData.likedDocs = userData.likedDocs || [];
-            } else {
-                userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', likedVideos: [],
-                    likedDocs: [] };
-                await set(userRef, userData);
-            }
-            updateUserInterface();
+            try {
+                const userRef = ref(db, `users/${uid}`);
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    userData = { ...userData, ...snap.val() };
+                    userData.likedVideos = userData.likedVideos || [];
+                    userData.likedDocs = userData.likedDocs || [];
+                } else {
+                    userData = { firstName: '', lastName: '', email: currentUser.email, phone: '', likedVideos: [],
+                        likedDocs: [] };
+                    await set(userRef, userData);
+                }
+                updateUserInterface();
+            } catch (e) { console.warn('Load user data error:', e); }
         }
 
         async function saveUserData() {
             if (!currentUser) return;
-            await update(ref(db, `users/${currentUser.uid}`), {
-                likedVideos: userData.likedVideos,
-                likedDocs: userData.likedDocs,
-                phone: userData.phone
-            });
-            updateUserInterface();
+            try {
+                await update(ref(db, `users/${currentUser.uid}`), {
+                    likedVideos: userData.likedVideos,
+                    likedDocs: userData.likedDocs,
+                    phone: userData.phone
+                });
+                updateUserInterface();
+            } catch (e) { console.warn('Save user data error:', e); }
         }
 
         function updateUserInterface() {
@@ -3350,7 +2774,7 @@
                                 <i class="fas fa-image"></i> View Screenshot
                             </button>
                         ` : `
-                            <span style="color:#e74c3c; font-weight:600; background:#fef0f0; padding:8px 20px; border-radius:30px; font-size:12px; display:block; text-align:center; margin-top:10px;">
+                            <span style="color:#e74c3c; font-weight:600; background:#fef0f0; padding:6px 16px; border-radius:30px; font-size:11px; display:block; text-align:center; margin-top:8px;">
                                 <i class="fas fa-exclamation-circle"></i> No screenshot uploaded
                             </span>
                         `}
@@ -3363,14 +2787,11 @@
                     e.stopPropagation();
                     const content = toggle.nextElementSibling;
                     const isOpen = content.classList.contains('open');
-                    const icon = toggle.querySelector('i');
                     if (isOpen) {
                         content.classList.remove('open');
-                        icon.className = 'fas fa-chevron-down';
                         toggle.innerHTML = '<i class="fas fa-chevron-down"></i> Show Details';
                     } else {
                         content.classList.add('open');
-                        icon.className = 'fas fa-chevron-up';
                         toggle.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Details';
                     }
                 });
@@ -3388,13 +2809,12 @@
             });
         }
 
-        // ===== HOME: ALL COURSES – name only =====
+        // ===== HOME: ALL COURSES =====
         function renderAllCourses() {
             let searchTerm = currentSearch.toLowerCase();
             let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
             filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-            // Render name-only scroll
             const nameContainer = document.getElementById('allCoursesNameContainer');
             nameContainer.innerHTML = filtered.map(c => {
                 const subfolderCount = allSubfolders.filter(sf => sf.courseId === c.id).length;
@@ -3403,7 +2823,6 @@
 
             document.getElementById('totalCourseCount').innerText = filtered.length;
 
-            // Attach click events to name items
             nameContainer.querySelectorAll('.course-name-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const courseId = el.dataset.id;
@@ -3411,30 +2830,23 @@
                     if (course) {
                         const isApproved = approvedCourses.has(course.id);
                         const isPending = pendingPurchases[course.id] !== undefined;
-                        if (course.price === 0) {
+                        if (course.price === 0 || isApproved) {
                             openCourseDetail(course);
+                        } else if (isPending) {
+                            addNotification('warning', `Payment for "${course.name}" is pending admin approval.`);
                         } else {
-                            if (isApproved) {
-                                openCourseDetail(course);
-                            } else if (isPending) {
-                                addNotification('warning',
-                                    `Payment for "${course.name}" is pending admin approval.`);
-                            } else {
-                                openPaymentPage(course);
-                            }
+                            openPaymentPage(course);
                         }
                     }
                 });
             });
 
-            // Render free and paid grids (cards)
             const free = filtered.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             const paid = filtered.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             renderCourseGrid('freeCoursesGrid', free);
             renderCourseGrid('paidCoursesGrid', paid);
             document.getElementById('freeCourseCount').innerText = free.length;
             document.getElementById('paidCourseCount').innerText = paid.length;
-
             attachCourseEvents();
         }
 
@@ -3450,7 +2862,6 @@
             const statusText = isApproved ? 'Enrolled' : (isPending ? 'Pending' : '');
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
             const subfolderCount = allSubfolders.filter(sf => sf.courseId === course.id).length;
-
             const imgUrl = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
             const bgColor = imgUrl ? 'transparent' : getRandomColor();
             const initial = (course.name || 'C').charAt(0).toUpperCase();
@@ -3458,18 +2869,18 @@
             return `
             <div class="course-card-wrapper" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}">
                 <div class="course-card-img-wrapper" style="background-color:${bgColor}; ${imgUrl ? `background-image:url('${imgUrl}');` : ''}">
-                    ${!imgUrl ? `<span style="font-size:2.5rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
+                    ${!imgUrl ? `<span style="font-size:2rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
                     <span class="course-badge ${course.price === 0 ? 'free' : 'paid'}">${priceDisplay}</span>
                 </div>
                 <div class="course-card-body">
                     <h4>${escapeHtml(course.name)}</h4>
-                    <div style="display:flex; align-items:center; gap:6px; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:4px; font-size:0.65rem; color:var(--text-secondary); margin-bottom:4px;">
                         <i class="fas fa-folder-open" style="color:var(--gold);"></i> ${subfolderCount} subfolder${subfolderCount !== 1 ? 's' : ''}
                     </div>
-                    <div class="course-desc">${escapeHtml(course.description || 'Learn new skills and advance your career!')}</div>
+                    <div class="course-desc">${escapeHtml(course.description || 'Learn new skills!')}</div>
                     <div class="course-meta">
                         <span class="course-price">${priceDisplay}</span>
-                        ${statusText ? `<span style="font-size:10px;font-weight:600;color:#2ecc71;">${statusText}</span>` : ''}
+                        ${statusText ? `<span style="font-size:9px;font-weight:600;color:#2ecc71;">${statusText}</span>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -3489,17 +2900,12 @@
                         if (!course) return;
                         const isApproved = card.dataset.approved === 'true';
                         const isPending = card.dataset.pending === 'true';
-                        if (course.price === 0) {
+                        if (course.price === 0 || isApproved) {
                             openCourseDetail(course);
+                        } else if (isPending) {
+                            addNotification('warning', `Payment for "${course.name}" is pending admin approval.`);
                         } else {
-                            if (isApproved) {
-                                openCourseDetail(course);
-                            } else if (isPending) {
-                                addNotification('warning',
-                                    `Payment for "${course.name}" is pending admin approval.`);
-                            } else {
-                                openPaymentPage(course);
-                            }
+                            openPaymentPage(course);
                         }
                     });
                 });
@@ -3528,20 +2934,21 @@
                             <i class="fas fa-folder"></i> ${escapeHtml(sf.name)}
                         </div>
                         <div class="folder-counts">
-                            <span><i class="fas fa-video" style="font-size:0.7rem;"></i> ${videos.length}</span>
-                            <span><i class="fas fa-file-alt" style="font-size:0.7rem;"></i> ${docs.length}</span>
+                            <span><i class="fas fa-video" style="font-size:0.6rem;"></i> ${videos.length}</span>
+                            <span><i class="fas fa-file-alt" style="font-size:0.6rem;"></i> ${docs.length}</span>
                         </div>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="subfolder-content">
-                        ${videos.length ? '<h4 style="margin:0.5rem 0;font-size:0.8rem;">Videos</h4>' : ''}
+                        ${videos.length ? '<h4 style="margin:0.4rem 0;font-size:0.75rem;">Videos</h4>' : ''}
                         <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v)).join('')}</div>
-                        ${docs.length ? '<h4 style="margin:1rem 0 0.5rem;font-size:0.8rem;">Documents</h4>' : ''}
+                        ${docs.length ? '<h4 style="margin:0.8rem 0 0.4rem;font-size:0.75rem;">Documents</h4>' : ''}
                         <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
                         ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
                     </div>
                 </div>`;
             }).join('') || '<p class="empty-state">No subfolders in this course yet.</p>';
+
             document.querySelectorAll('.subfolder-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const content = header.nextElementSibling;
@@ -3560,8 +2967,7 @@
         function isDownloadableVideo(video) {
             if (!video.videoUrl) return false;
             const url = video.videoUrl.toLowerCase();
-            if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
-            if (url.includes('vimeo.com')) return false;
+            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return false;
             return true;
         }
 
@@ -3607,7 +3013,7 @@
                             <span class="comment-count">${commentCount}</span>
                         </button>
                     ` : `
-                        <div style="margin-top:8px;font-size:0.7rem;color:#e74c3c;">
+                        <div style="margin-top:6px;font-size:0.65rem;color:#e74c3c;">
                             <i class="fas fa-ban"></i> Comments are disabled by admin.
                         </div>
                     `}
@@ -3630,7 +3036,6 @@
             </div>`;
         }
 
-        // ===== PROCESS VIDEO THUMBNAILS =====
         function processVideoThumbnails() {
             document.querySelectorAll('.video-thumb-img').forEach(async (img) => {
                 const url = img.dataset.videoUrl;
@@ -3658,7 +3063,7 @@
                     <div class="comment-item" data-comment-id="${c.id}" data-video-id="${videoId}">
                         <div class="comment-header">
                             <span class="comment-user">${escapeHtml(userName)}</span>
-                            <div style="display:flex;align-items:center;gap:6px;">
+                            <div style="display:flex;align-items:center;gap:4px;">
                                 <span class="comment-time">${timeStr}${editedStr}</span>
                                 ${isOwn ? `<span class="comment-own-badge">You</span>` : ''}
                             </div>
@@ -3682,23 +3087,25 @@
             }
             const commentsRef = ref(db, `comments/${videoId}`);
             const unsubscribe = onValue(commentsRef, (snap) => {
-                const data = snap.val();
-                let comments = [];
-                if (data) {
-                    comments = Object.entries(data).map(([id, c]) => ({ id, ...c }));
-                    comments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                }
-                commentsCache.set(videoId, comments);
-                const toggleBtn = document.querySelector(`.comment-toggle-btn[data-id="${videoId}"]`);
-                if (toggleBtn) {
-                    const countSpan = toggleBtn.querySelector('.comment-count');
-                    if (countSpan) countSpan.textContent = comments.length;
-                }
-                const commentList = document.getElementById(`comment-list-${videoId}`);
-                if (commentList) {
-                    commentList.innerHTML = renderCommentsList(videoId);
-                    attachCommentListEvents(videoId);
-                }
+                try {
+                    const data = snap.val();
+                    let comments = [];
+                    if (data) {
+                        comments = Object.entries(data).map(([id, c]) => ({ id, ...c }));
+                        comments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    }
+                    commentsCache.set(videoId, comments);
+                    const toggleBtn = document.querySelector(`.comment-toggle-btn[data-id="${videoId}"]`);
+                    if (toggleBtn) {
+                        const countSpan = toggleBtn.querySelector('.comment-count');
+                        if (countSpan) countSpan.textContent = comments.length;
+                    }
+                    const commentList = document.getElementById(`comment-list-${videoId}`);
+                    if (commentList) {
+                        commentList.innerHTML = renderCommentsList(videoId);
+                        attachCommentListEvents(videoId);
+                    }
+                } catch (e) { console.warn('Comment listener error:', e); }
             });
             commentListeners.set(videoId, unsubscribe);
         }
@@ -3716,10 +3123,10 @@
                     const actions = container.querySelector('.comment-actions');
                     const originalActions = actions.innerHTML;
                     actions.innerHTML = `
-                        <div style="display:flex;gap:6px;align-items:center;width:100%;">
-                            <input type="text" class="comment-edit-input" value="${escapeHtml(currentText)}" style="flex:1;padding:6px 12px;border-radius:30px;border:1.5px solid #f5b042;font-size:0.7rem;background:#fff;" />
-                            <button class="save-edit-btn" style="background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;padding:4px 14px;border-radius:30px;font-weight:700;color:#fff;font-size:0.65rem;cursor:pointer;">Save</button>
-                            <button class="cancel-edit-btn" style="background:transparent;border:1.5px solid #ccc;padding:4px 14px;border-radius:30px;font-weight:600;color:#6b6f7c;font-size:0.65rem;cursor:pointer;">Cancel</button>
+                        <div style="display:flex;gap:4px;align-items:center;width:100%;">
+                            <input type="text" class="comment-edit-input" value="${escapeHtml(currentText)}" style="flex:1;padding:4px 10px;border-radius:30px;border:1.5px solid #f5b042;font-size:0.65rem;background:#fff;" />
+                            <button class="save-edit-btn" style="background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;padding:4px 12px;border-radius:30px;font-weight:700;color:#fff;font-size:0.6rem;cursor:pointer;">Save</button>
+                            <button class="cancel-edit-btn" style="background:transparent;border:1.5px solid #ccc;padding:4px 12px;border-radius:30px;font-weight:600;color:#6b6f7c;font-size:0.6rem;cursor:pointer;">Cancel</button>
                         </div>
                     `;
                     const saveBtn = actions.querySelector('.save-edit-btn');
@@ -3859,12 +3266,12 @@
             const hasUrl = doc.docUrl && doc.docUrl.trim() !== '';
             return `
             <div class="doc-card">
-                <img src="${UTOM_THUMBNAIL}" alt="document thumbnail" style="width:100%; height:120px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:0.8rem; background:#eaeef3;" />
+                <img src="${UTOM_THUMBNAIL}" alt="document thumbnail" style="width:100%; height:100px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:0.6rem; background:#eaeef3;" />
                 <h3>${escapeHtml(doc.title)}</h3>
                 <div class="doc-instructor">by ${escapeHtml(doc.instructor)}</div>
                 <div class="doc-preview">${escapeHtml(doc.description || 'No description')}</div>
                 <div class="doc-footer">
-                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <button class="like-doc-btn ${isLiked?'liked':''}" data-id="${doc.id}" title="Like"><i class="far fa-heart"></i></button>
                         <button class="read-btn" data-id="${doc.id}">Read</button>
                         ${hasUrl ? `<button class="download-doc-btn" data-id="${doc.id}" data-url="${escapeHtml(doc.docUrl)}" title="Download document"><i class="fas fa-download"></i> Download</button>` : ''}
@@ -3877,10 +3284,9 @@
         function attachVideoEvents() {
             document.querySelectorAll('.video-card').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    if (e.target.closest('.download-wrapper') || e.target.closest(
-                            '.download-video-btn') || e.target.closest(
-                            '.like-video-btn') || e.target.closest('.delete-offline-btn') || e
-                        .target.closest('.comment-toggle-btn') || e.target.closest('.comment-section') ||
+                    if (e.target.closest('.download-wrapper') || e.target.closest('.download-video-btn') ||
+                        e.target.closest('.like-video-btn') || e.target.closest('.delete-offline-btn') ||
+                        e.target.closest('.comment-toggle-btn') || e.target.closest('.comment-section') ||
                         e.target.closest('.comment-form') || e.target.closest('.comment-item')) return;
                     const videoId = card.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
@@ -4194,13 +3600,9 @@
             const url = video.videoUrl;
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let vidId = null;
-                if (url.includes('youtube.com/watch?v=')) {
-                    vidId = url.split('v=')[1]?.split('&')[0];
-                } else if (url.includes('youtu.be/')) {
-                    vidId = url.split('youtu.be/')[1]?.split('?')[0];
-                } else if (url.includes('youtube.com/embed/')) {
-                    vidId = url.split('embed/')[1]?.split('?')[0];
-                }
+                if (url.includes('youtube.com/watch?v=')) vidId = url.split('v=')[1]?.split('&')[0];
+                else if (url.includes('youtu.be/')) vidId = url.split('youtu.be/')[1]?.split('?')[0];
+                else if (url.includes('youtube.com/embed/')) vidId = url.split('embed/')[1]?.split('?')[0];
                 if (vidId) {
                     embed = `<iframe width="100%" height="100%" 
                                     src="https://www.youtube-nocookie.com/embed/${vidId}?controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&autoplay=1" 
@@ -4243,50 +3645,35 @@
             const content = document.getElementById('docFullContent');
 
             let html = `
-                <div style="margin-bottom:20px;">
-                    <h1 style="font-size:24px;font-weight:800;color:#1a1d28;margin-bottom:6px;">${escapeHtml(doc.title)}</h1>
-                    <div style="color:#8b8fa3;font-size:13px;display:flex;gap:18px;flex-wrap:wrap;">
+                <div style="margin-bottom:16px;">
+                    <h1 style="font-size:1.2rem;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
+                    <div style="color:#8b8fa3;font-size:0.8rem;display:flex;gap:12px;flex-wrap:wrap;">
                         <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
                         <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
                         <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
                         <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
                     </div>
-                    ${doc.description ? `<div style="margin-top:12px;padding:14px 20px;background:#fff8ed;border-radius:16px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:13px;">${escapeHtml(doc.description)}</div>` : ''}
+                    ${doc.description ? `<div style="margin-top:10px;padding:10px 16px;background:#fff8ed;border-radius:12px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:0.85rem;">${escapeHtml(doc.description)}</div>` : ''}
                 </div>
             `;
 
             if (doc.docUrl) {
                 const fileExt = doc.docUrl.split('.').pop().split('?')[0].toLowerCase() || '';
-                const isWord = ['doc', 'docx'].includes(fileExt);
-                const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
-                const isPdf = ['pdf'].includes(fileExt);
-                const isPowerpoint = ['ppt', 'pptx'].includes(fileExt);
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt);
-                const isText = ['txt', 'rtf', 'md'].includes(fileExt);
-
                 let fileTypeLabel = fileExt.toUpperCase();
-                if (isWord) fileTypeLabel = '📝 Word';
-                else if (isExcel) fileTypeLabel = '📊 Excel';
-                else if (isPdf) fileTypeLabel = '📄 PDF';
-                else if (isPowerpoint) fileTypeLabel = '📊 PowerPoint';
-                else if (isImage) fileTypeLabel = '🖼️ Image';
-                else if (isText) fileTypeLabel = '📃 Text';
-                else fileTypeLabel = '📎 File';
-
                 const googleViewerUrl =
                     `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
 
                 html += `
                     <div class="doc-viewer-toolbar">
                         <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
-                        <span style="font-size:12px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
+                        <span style="font-size:11px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
                         <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
                         <a href="${doc.docUrl}" download class="btn-download green"><i class="fas fa-download"></i> Download</a>
                     </div>
                 `;
 
                 html += `
-                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:550px;border:none;border-radius:16px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
+                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:400px;border:none;border-radius:12px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
                     <div class="doc-viewer-fallback" style="display:none;">
                         <i class="fas fa-info-circle"></i> 
                         The document could not load directly. <a href="${doc.docUrl}" target="_blank">Click here to open it</a> 
@@ -4295,7 +3682,7 @@
                 `;
 
                 html += `
-                    <div style="margin-top:10px;padding:10px 16px;background:#f0f4ff;border-radius:30px;font-size:11px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
+                    <div style="margin-top:8px;padding:8px 14px;background:#f0f4ff;border-radius:30px;font-size:10px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
                         <i class="fas fa-info-circle"></i> 
                         If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
                         or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
@@ -4303,14 +3690,14 @@
                 `;
             } else if (doc.content) {
                 html += `
-                    <div style="font-size:14px;line-height:1.8;color:#1a1d28;background:#fff;padding:24px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid #f0f0f5;">
+                    <div style="font-size:0.9rem;line-height:1.8;color:#1a1d28;background:#fff;padding:16px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid #f0f0f5;">
                         ${doc.content}
                     </div>
                 `;
             } else {
                 html += `
-                    <div style="text-align:center;padding:56px;color:#8b8fa3;font-size:14px;">
-                        <i class="fas fa-file-alt" style="font-size:52px;display:block;margin-bottom:14px;opacity:0.25;"></i>
+                    <div style="text-align:center;padding:40px;color:#8b8fa3;font-size:0.9rem;">
+                        <i class="fas fa-file-alt" style="font-size:40px;display:block;margin-bottom:12px;opacity:0.25;"></i>
                         No content available for this document.
                     </div>
                 `;
@@ -4347,7 +3734,7 @@
                     received += value.length;
                     if (total && progCircle && dlText) {
                         const pct = Math.round((received / total) * 100);
-                        const circumference = 113.097;
+                        const circumference = 94.248;
                         const offset = circumference - (pct / 100) * circumference;
                         progCircle.style.strokeDashoffset = offset;
                         dlText.textContent = pct + '%';
@@ -4359,8 +3746,7 @@
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
                 store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
-                await new Promise((res, rej) => { tx.oncomplete = res;
-                    tx.onerror = rej; });
+                await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
                 offlineVideos.add(video.id);
 
                 const blobUrl = URL.createObjectURL(blob);
@@ -4377,7 +3763,7 @@
                 addNotification('success', `"${video.title}" saved offline and downloaded to your device.`);
                 renderOfflinePage();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
-                if (progCircle) progCircle.style.strokeDashoffset = 113.097;
+                if (progCircle) progCircle.style.strokeDashoffset = 94.248;
                 if (dlText) dlText.textContent = '0%';
             } catch (e) {
                 addNotification('danger', 'Download failed: ' + e.message);
@@ -4417,21 +3803,23 @@
             const container = document.getElementById('offlineVideosGrid');
             const offlineArray = [];
             if (offlineDB) {
-                const tx = offlineDB.transaction('videos', 'readonly');
-                const store = tx.objectStore('videos');
-                const keys = await new Promise((res) => {
-                    const req = store.getAllKeys();
-                    req.onsuccess = () => res(req.result);
-                });
-                for (let id of keys) {
-                    const req = store.get(id);
-                    await new Promise(res => { req.onsuccess = () => res(); });
-                    const record = req.result;
-                    const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
-                        instructor: 'Saved offline', price: 0, videoUrl: '' };
-                    offlineArray.push({ ...videoMeta, id, offline: true, thumbnail: record.thumbnail ||
-                            getVideoThumbnail(videoMeta) });
-                }
+                try {
+                    const tx = offlineDB.transaction('videos', 'readonly');
+                    const store = tx.objectStore('videos');
+                    const keys = await new Promise((res) => {
+                        const req = store.getAllKeys();
+                        req.onsuccess = () => res(req.result);
+                    });
+                    for (let id of keys) {
+                        const req = store.get(id);
+                        await new Promise(res => { req.onsuccess = () => res(); });
+                        const record = req.result;
+                        const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
+                            instructor: 'Saved offline', price: 0, videoUrl: '' };
+                        offlineArray.push({ ...videoMeta, id, offline: true, thumbnail: record.thumbnail ||
+                                getVideoThumbnail(videoMeta) });
+                    }
+                } catch (e) { console.warn('Offline render error:', e); }
             }
             document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
             container.innerHTML = offlineArray.map(v => `
@@ -4444,7 +3832,7 @@
                     <h4>${escapeHtml(v.title)}</h4>
                     <div class="video-desc">${escapeHtml(v.description || '')}</div>
                     <div class="video-meta">
-                        <span><i class="fas fa-mobile-alt" style="color:#2ecc71;font-size:0.55rem;"></i> Offline</span>
+                        <span><i class="fas fa-mobile-alt" style="color:#2ecc71;font-size:0.5rem;"></i> Offline</span>
                     </div>
                     <div class="video-actions">
                         <button class="delete-offline-btn" data-id="${v.id}" title="Delete offline video"><i class="fas fa-trash-alt"></i></button>
@@ -4455,31 +3843,22 @@
                 card.addEventListener('click', async (e) => {
                     if (e.target.closest('.delete-offline-btn')) return;
                     const videoId = card.dataset.id;
-                    const tx = offlineDB.transaction('videos', 'readonly');
-                    const store = tx.objectStore('videos');
-                    const req = store.get(videoId);
-                    req.onsuccess = () => {
-                        const record = req.result;
-                        if (record && record.blob) {
-                            const blobUrl = URL.createObjectURL(record.blob);
-                            const playerContainer = document.getElementById(
-                                'playerEmbedContainer');
-                            playerContainer.innerHTML =
-                                `<video controls autoplay style="width:100%;height:100%;"><source src="${blobUrl}" type="video/mp4"></video>`;
-                            showPlayer();
-                            const fsBtn = document.getElementById('floatingFullscreenBtn');
-                            fsBtn.onclick = () => {
-                                const pc = document.querySelector('.floating-player');
-                                if (pc) {
-                                    if (pc.requestFullscreen) pc.requestFullscreen();
-                                    else if (pc.webkitRequestFullscreen) pc
-                                        .webkitRequestFullscreen();
-                                    else if (pc.msRequestFullscreen) pc
-                                        .msRequestFullscreen();
-                                }
-                            };
-                        }
-                    };
+                    try {
+                        const tx = offlineDB.transaction('videos', 'readonly');
+                        const store = tx.objectStore('videos');
+                        const req = store.get(videoId);
+                        req.onsuccess = () => {
+                            const record = req.result;
+                            if (record && record.blob) {
+                                const blobUrl = URL.createObjectURL(record.blob);
+                                const playerContainer = document.getElementById(
+                                    'playerEmbedContainer');
+                                playerContainer.innerHTML =
+                                    `<video controls autoplay style="width:100%;height:100%;"><source src="${blobUrl}" type="video/mp4"></video>`;
+                                showPlayer();
+                            }
+                        };
+                    } catch (e) { console.warn('Offline play error:', e); }
                 });
             });
             document.querySelectorAll('.delete-offline-btn').forEach(btn => {
@@ -4508,21 +3887,21 @@
         function setupUI() {
             const darkModeToggle = document.createElement('div');
             darkModeToggle.style.cssText =
-                'position:fixed;bottom:100px;right:20px;z-index:600;background:#fff;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.10);cursor:pointer;border:1px solid rgba(245,176,66,0.2);';
-            darkModeToggle.innerHTML = '<i class="fas fa-moon" style="font-size:1.2rem;color:#1a1d28;"></i>';
+                'position:fixed;bottom:80px;right:16px;z-index:600;background:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.08);cursor:pointer;border:1px solid rgba(245,176,66,0.2);';
+            darkModeToggle.innerHTML = '<i class="fas fa-moon" style="font-size:1rem;color:#1a1d28;"></i>';
             document.body.appendChild(darkModeToggle);
 
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
             if (savedDarkMode) {
                 document.body.classList.add('dark-mode');
-                darkModeToggle.innerHTML = '<i class="fas fa-sun" style="font-size:1.2rem;color:#f5b042;"></i>';
+                darkModeToggle.innerHTML = '<i class="fas fa-sun" style="font-size:1rem;color:#f5b042;"></i>';
             }
             darkModeToggle.addEventListener('click', () => {
                 document.body.classList.toggle('dark-mode');
                 const isDark = document.body.classList.contains('dark-mode');
                 darkModeToggle.innerHTML = isDark ?
-                    '<i class="fas fa-sun" style="font-size:1.2rem;color:#f5b042;"></i>' :
-                    '<i class="fas fa-moon" style="font-size:1.2rem;color:#1a1d28;"></i>';
+                    '<i class="fas fa-sun" style="font-size:1rem;color:#f5b042;"></i>' :
+                    '<i class="fas fa-moon" style="font-size:1rem;color:#1a1d28;"></i>';
                 localStorage.setItem('darkMode', isDark);
             });
 
@@ -4536,19 +3915,10 @@
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const page = btn.dataset.page;
-                    if (page === 'home') {
-                        showPage('home');
-                    } else if (page === 'mylearning') {
-                        showPage('mylearning');
-                    } else if (page === 'offline') {
-                        showPage('offline');
-                    } else if (page === 'profile') {
-                        showPage('profile');
-                    }
+                    showPage(page);
                 });
             });
 
-            // LOGOUT – custom modal
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
@@ -4644,7 +4014,7 @@
                     if (result.event === 'success') {
                         paymentScreenshotUrl = result.info.secure_url;
                         document.getElementById('paymentScreenshotPreview').innerHTML =
-                            `<img src="${paymentScreenshotUrl}" style="max-width:100%;border-radius:14px;margin-top:10px;" alt="Screenshot" />`;
+                            `<img src="${paymentScreenshotUrl}" style="max-width:100%;border-radius:12px;margin-top:8px;" alt="Screenshot" />`;
                         addNotification('upload', 'Payment screenshot uploaded successfully.');
                     }
                 });
@@ -4714,7 +4084,7 @@
                 setupCommentToggle();
                 attachCommentListenersToVisibleVideos();
                 processVideoThumbnails();
-            }, 500);
+            }, 300);
         }
 
         // ===== PROMO CAROUSEL =====
@@ -4731,31 +4101,24 @@
             carouselItems = allPromos;
 
             const entries = carouselItems;
-            const duplicated = [
-                entries[entries.length - 1],
-                ...entries,
-                entries[0]
-            ];
+            const duplicated = [entries[entries.length - 1], ...entries, entries[0]];
 
             track.innerHTML = duplicated.map((p, idx) => {
-                const isClickable = p.clickContent?.enabled === true;
                 const mediaType = p.mediaType || 'image';
                 const mediaHtml = mediaType === 'video' ?
-                    `<video src="${p.imageUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:40px;"></video>
+                    `<video src="${p.imageUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:28px;"></video>
                        <div class="video-play-overlay"><i class="fas fa-play"></i></div>` :
-                    `<img src="${p.imageUrl}" alt="${p.text || 'Promo'}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:40px;" />`;
+                    `<img src="${p.imageUrl}" alt="${p.text || 'Promo'}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:28px;" />`;
                 return `
-                <div class="promo-slide ${isClickable ? 'clickable' : ''}" data-key="${p.id}" data-index="${idx - 1}" data-real-index="${idx - 1 < 0 ? entries.length - 1 : idx - 1 >= entries.length ? 0 : idx - 1}" data-mediatype="${mediaType}">
+                <div class="promo-slide" data-key="${p.id}" data-index="${idx - 1}" data-real-index="${idx - 1 < 0 ? entries.length - 1 : idx - 1 >= entries.length ? 0 : idx - 1}" data-mediatype="${mediaType}">
                     ${mediaHtml}
                     <div class="slide-overlay">
                         <div class="slide-text">
                             ${escapeHtml(p.text || 'Promo')}
                             ${p.subtext ? `<small>${escapeHtml(p.subtext)}</small>` : ''}
                         </div>
-                        ${isClickable ? `<div class="tap-indicator">CLICK ME</div>` : ''}
                     </div>
-                </div>
-                `;
+                </div>`;
             }).join('');
 
             const slides = track.querySelectorAll('.promo-slide');
@@ -4826,7 +4189,6 @@
             });
 
             updateCarouselClasses(1);
-
             setTimeout(() => {
                 const slides2 = track.querySelectorAll('.promo-slide');
                 if (slides2.length > 1) {
@@ -4839,50 +4201,6 @@
             }, 100);
 
             startAutoScroll();
-
-            slides.forEach(slide => {
-                slide.addEventListener('click', function(e) {
-                    const key = this.dataset.key;
-                    const mediaType = this.dataset.mediatype;
-                    const videoEl = this.querySelector('video');
-                    const playOverlay = this.querySelector('.video-play-overlay');
-
-                    if (videoEl && mediaType === 'video') {
-                        if (videoEl.paused) {
-                            isUserInteracting = true;
-                            if (autoScrollTimer) {
-                                clearInterval(autoScrollTimer);
-                                autoScrollTimer = null;
-                            }
-                            videoEl.muted = false;
-                            videoEl.play();
-                            this.classList.add('video-playing');
-                            if (playOverlay) playOverlay.style.opacity = '0';
-                            e.stopPropagation();
-                            return;
-                        } else {
-                            if (key) {
-                                const flyer = allPromos.find(p => p.id === key);
-                                if (flyer && flyer.clickContent?.enabled) {
-                                    addNotification('info', 'Flyer detail not implemented in user version.');
-                                } else {
-                                    addNotification('info', 'This flyer cannot be enlarged.');
-                                }
-                            }
-                            return;
-                        }
-                    }
-
-                    if (key) {
-                        const flyer = allPromos.find(p => p.id === key);
-                        if (flyer && flyer.clickContent?.enabled) {
-                            addNotification('info', 'Flyer detail not implemented in user version.');
-                        } else {
-                            addNotification('info', 'This flyer cannot be enlarged.');
-                        }
-                    }
-                });
-            });
 
             slides.forEach(slide => {
                 const videoEl = slide.querySelector('video');
@@ -5017,43 +4335,25 @@
         function navigateToPage(pageId, params) {
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             const targetPage = document.getElementById(pageId + 'Page');
-            if (targetPage) {
-                targetPage.classList.add('active-page');
-            }
+            if (targetPage) targetPage.classList.add('active-page');
+
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.page === pageId) btn.classList.add('active');
             });
 
             switch (pageId) {
-                case 'home':
-                    renderAllCourses();
-                    break;
-                case 'mylearning':
-                    renderMyLearn();
-                    break;
-                case 'offline':
-                    renderOfflinePage();
-                    break;
-                case 'profile':
-                    updateUserInterface();
-                    break;
+                case 'home': renderAllCourses(); break;
+                case 'mylearning': renderMyLearn(); break;
+                case 'offline': renderOfflinePage(); break;
+                case 'profile': updateUserInterface(); break;
                 case 'courseDetail':
                     if (params.courseId) {
                         const course = allCourses.find(c => c.id === params.courseId);
-                        if (course) {
-                            selectedCourse = course;
-                            renderCourseDetail(course);
-                        } else {
-                            showPage('home');
-                            return;
-                        }
-                    } else if (selectedCourse) {
-                        renderCourseDetail(selectedCourse);
-                    } else {
-                        showPage('home');
-                        return;
-                    }
+                        if (course) { selectedCourse = course;
+                            renderCourseDetail(course); } else showPage('home');
+                    } else if (selectedCourse) renderCourseDetail(selectedCourse);
+                    else showPage('home');
                     break;
                 case 'payment':
                     if (params.courseId) {
@@ -5063,28 +4363,15 @@
                             updatePaymentNumbersDisplay();
                             document.getElementById('depositAmountDisplay').innerText = `ZMW ${course.price}`;
                             document.getElementById('paymentCourseTitle').innerText = course.name;
-                        } else {
-                            showPage('home');
-                            return;
-                        }
-                    } else {
-                        showPage('home');
-                        return;
-                    }
+                        } else showPage('home');
+                    } else showPage('home');
                     break;
                 case 'docFull':
-                    if (params.docId) {
-                        renderDocFullPage(params.docId);
-                    } else {
-                        showPage('home');
-                        return;
-                    }
+                    if (params.docId) renderDocFullPage(params.docId);
+                    else showPage('home');
                     break;
-                case 'transactionHistory':
-                    renderTransactionHistory();
-                    break;
-                default:
-                    break;
+                case 'transactionHistory': renderTransactionHistory(); break;
+                default: break;
             }
 
             if (['home', 'mylearning', 'courseDetail'].includes(pageId)) {
@@ -5113,18 +4400,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        // ===== TOAST =====
-        function showToast(msg, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-bell');
-            toast.innerHTML =
-                `<i class="fas ${icon}" style="background:linear-gradient(135deg,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:18px;"></i> ${msg}`;
-            document.getElementById('toastContainer').appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
-
-        console.log('✅ UTOM User — 15% smaller, popup per-user once across devices.');
+        console.log('✅ UTOM User — Fully responsive, stable, peek view adjusted.');
     </script>
 </body>
 </html>
