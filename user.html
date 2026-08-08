@@ -2,22 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.85, viewport-fit=cover, user-scalable=yes" />
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js">
     </script>
     <style>
-        /* ===== RESET & BASE ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        /* ===== GLOBAL SCALE: everything reduced by 15% ===== */
         :root {
+            --scale-factor: 0.85;
             --gold: #F5B042;
             --gold-dark: #c47f1a;
             --gold-light: #fff8ed;
@@ -41,17 +34,34 @@
             --topbar-height: 150px;
         }
 
+        /* ===== APPLY SCALE TO ALL ELEMENTS (except fixed overlays) ===== */
+        html {
+            font-size: calc(15px * var(--scale-factor));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         html,
         body {
             height: 100%;
             overflow: hidden;
             background: var(--bg);
             color: var(--text);
-            font-size: 15px;
             line-height: 1.5;
             margin: 0;
             padding: 0;
             width: 100%;
+            /* scale everything down by 15% */
+            transform: scale(var(--scale-factor));
+            transform-origin: top left;
+            width: calc(100% / var(--scale-factor));
+            height: calc(100% / var(--scale-factor));
         }
 
         /* ===== LOADER ===== */
@@ -1877,7 +1887,7 @@
             }
         }
 
-        /* ===== ADMIN NOTIFICATION ===== */
+        /* ===== ADMIN NOTIFICATION (In-App Popup) ===== */
         .admin-notif-overlay {
             position: fixed;
             top: 0;
@@ -1986,7 +1996,7 @@
             transform: scale(0.96);
         }
 
-        /* ===== CUSTOM LOGOUT MODAL (White, properly styled) ===== */
+        /* ===== CUSTOM LOGOUT MODAL ===== */
         #logoutModal {
             position: fixed;
             top: 0;
@@ -2782,7 +2792,7 @@
         <img id="screenshotModalImg" src="" alt="Payment Screenshot" />
     </div>
 
-    <!-- ===== ADMIN NOTIFICATION POPUP ===== -->
+    <!-- ===== ADMIN NOTIFICATION POPUP (In-App, per-user once) ===== -->
     <div class="admin-notif-overlay" id="adminNotifOverlay">
         <div class="admin-notif-modal">
             <div class="admin-notif-header">
@@ -2854,6 +2864,9 @@
         let paymentScreenshotUrl = null;
         let currentSearch = '';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
+
+        // Track which admin notifications the user has already seen (persistent across devices)
+        let shownAdminNotifs = new Set();
 
         const commentsCache = new Map();
         const commentListeners = new Map();
@@ -2990,6 +3003,8 @@
             }
 
             await loadUserData(user.uid);
+            // Load which admin notifications this user has already seen (persistent)
+            await loadShownAdminNotifs(user.uid);
 
             let dataLoadCount = 0;
             const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
@@ -3071,17 +3086,99 @@
                 checkReady();
             });
 
+            // Listen for new admin in-app notifications
             onValue(ref(db, 'inAppNotifications'), (snap) => {
                 const data = snap.val();
                 if (data) {
                     window._adminNotifs = data;
-                    checkAdminNotifications();
+                    checkAdminNotifications(currentUser.uid);
                 }
             });
 
             setupUI();
             handleHashChange();
         });
+
+        // ===== LOAD SHOWN ADMIN NOTIFICATIONS (persistent across devices) =====
+        async function loadShownAdminNotifs(uid) {
+            const shownRef = ref(db, `users/${uid}/shownAdminNotifs`);
+            const snap = await get(shownRef);
+            if (snap.val()) {
+                shownAdminNotifs = new Set(Object.keys(snap.val()));
+            } else {
+                shownAdminNotifs = new Set();
+            }
+        }
+
+        // ===== MARK ADMIN NOTIFICATION AS SEEN =====
+        async function markAdminNotifSeen(uid, notifKey) {
+            if (!notifKey) return;
+            shownAdminNotifs.add(notifKey);
+            const shownRef = ref(db, `users/${uid}/shownAdminNotifs/${notifKey}`);
+            await set(shownRef, true);
+        }
+
+        // ===== CHECK AND SHOW ADMIN NOTIFICATIONS (only once per user) =====
+        function checkAdminNotifications(uid) {
+            if (!uid) return;
+            const notifs = window._adminNotifs || {};
+            // Process notifications in order (newest first)
+            const keys = Object.keys(notifs).sort((a, b) => (notifs[b].createdAt || 0) - (notifs[a].createdAt || 0));
+            for (const key of keys) {
+                const notif = notifs[key];
+                // Skip if already seen by this user
+                if (shownAdminNotifs.has(key)) continue;
+
+                // Check recipient: all users or specific user
+                const recipientType = notif.recipientType || 'all';
+                if (recipientType === 'all') {
+                    showAdminNotifPopup(key, notif);
+                    return;
+                } else if (recipientType === 'specific') {
+                    const userIds = notif.userIds || [];
+                    if (Array.isArray(userIds) && userIds.includes(uid)) {
+                        showAdminNotifPopup(key, notif);
+                        return;
+                    }
+                }
+            }
+        }
+
+        function showAdminNotifPopup(key, notif) {
+            const overlay = document.getElementById('adminNotifOverlay');
+            document.getElementById('adminNotifTitle').textContent = notif.title || '📢 Admin Message';
+            document.getElementById('adminNotifMessage').textContent = notif.message || '';
+
+            const mediaContainer = document.getElementById('adminNotifMediaContainer');
+            mediaContainer.innerHTML = '';
+            if (notif.mediaUrl) {
+                const mediaType = notif.mediaType || 'image';
+                if (mediaType === 'video') {
+                    mediaContainer.innerHTML =
+                        `<video src="${notif.mediaUrl}" controls style="width:100%; max-height:200px; border-radius:12px; margin-top:8px;"></video>`;
+                } else {
+                    mediaContainer.innerHTML =
+                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%; max-height:200px; object-fit:contain; border-radius:12px; margin-top:8px;" />`;
+                }
+            }
+            overlay.dataset.notifKey = key;
+            overlay.classList.add('open');
+
+            // When dismissed, mark as seen
+            const dismissBtn = document.getElementById('adminNotifDismiss');
+            const newDismiss = () => {
+                const key2 = overlay.dataset.notifKey;
+                if (key2 && currentUser) {
+                    markAdminNotifSeen(currentUser.uid, key2);
+                }
+                overlay.classList.remove('open');
+                dismissBtn.removeEventListener('click', newDismiss);
+                setTimeout(() => {
+                    if (currentUser) checkAdminNotifications(currentUser.uid);
+                }, 500);
+            };
+            dismissBtn.addEventListener('click', newDismiss);
+        }
 
         // ===== USER DATA =====
         async function loadUserData(uid) {
@@ -4613,17 +4710,6 @@
                 }
             });
 
-            document.getElementById('adminNotifDismiss').addEventListener('click', () => {
-                const overlay = document.getElementById('adminNotifOverlay');
-                overlay.classList.remove('open');
-                const notifKey = overlay.dataset.notifKey;
-                if (notifKey && currentUser) {
-                    const shownRef = ref(db, `users/${currentUser.uid}/shownAdminNotifs/${notifKey}`);
-                    set(shownRef, true).catch(() => {});
-                }
-                setTimeout(() => checkAdminNotifications(), 500);
-            });
-
             setTimeout(() => {
                 setupCommentToggle();
                 attachCommentListenersToVisibleVideos();
@@ -4915,46 +5001,6 @@
             }
         }
 
-        // ===== ADMIN IN-APP NOTIFICATIONS CHECK =====
-        function checkAdminNotifications() {
-            if (!currentUser) return;
-            const notifs = window._adminNotifs || {};
-            const shownRef = ref(db, `users/${currentUser.uid}/shownAdminNotifs`);
-            get(shownRef).then((snapshot) => {
-                const shown = snapshot.val() || {};
-                for (const [key, notif] of Object.entries(notifs)) {
-                    if (notif.recipientType === 'all' || (notif.recipientType === 'specific' && notif.userIds &&
-                            notif.userIds.includes(currentUser.uid))) {
-                        if (!shown[key]) {
-                            showAdminNotifPopup(key, notif);
-                            return;
-                        }
-                    }
-                }
-            }).catch(() => {});
-        }
-
-        function showAdminNotifPopup(key, notif) {
-            const overlay = document.getElementById('adminNotifOverlay');
-            document.getElementById('adminNotifTitle').textContent = notif.title || '📢 Admin Message';
-            document.getElementById('adminNotifMessage').textContent = notif.message || '';
-
-            const mediaContainer = document.getElementById('adminNotifMediaContainer');
-            mediaContainer.innerHTML = '';
-            if (notif.mediaUrl) {
-                const mediaType = notif.mediaType || 'image';
-                if (mediaType === 'video') {
-                    mediaContainer.innerHTML =
-                        `<video src="${notif.mediaUrl}" controls style="width:100%; max-height:200px; border-radius:12px; margin-top:8px;"></video>`;
-                } else {
-                    mediaContainer.innerHTML =
-                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%; max-height:200px; object-fit:contain; border-radius:12px; margin-top:8px;" />`;
-                }
-            }
-            overlay.dataset.notifKey = key;
-            overlay.classList.add('open');
-        }
-
         // ===== PAGE NAVIGATION =====
         function showPage(pageId, params = {}) {
             let hash = '#' + pageId;
@@ -5078,7 +5124,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        console.log('✅ UTOM User — Final complete elegant code.');
+        console.log('✅ UTOM User — 15% smaller, popup per-user once across devices.');
     </script>
 </body>
 </html>
