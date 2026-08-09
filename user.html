@@ -37,7 +37,8 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
-            --topbar-height: 80px;
+            /* Increased header height */
+            --topbar-height: 110px;
             --nav-height: 60px;
             --peek-percent: 4.75%;
         }
@@ -120,12 +121,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: 6px;
+            padding-top: 10px; /* increased for taller header */
             flex: 1;
         }
 
         .header-left {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 900;
             letter-spacing: 0.5px;
             color: #1a1d28;
@@ -145,7 +146,7 @@
         }
 
         .header-center .welcome-label {
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             font-weight: 600;
             color: #8b8fa3;
             letter-spacing: 0.5px;
@@ -154,7 +155,7 @@
         }
 
         .header-center .user-name-display {
-            font-size: 1.1rem;
+            font-size: 1.2rem; /* slightly larger */
             font-weight: 700;
             color: #1a1d28;
             line-height: 1.2;
@@ -206,7 +207,7 @@
 
         /* Search Row (below the header main) */
         .search-row {
-            padding: 6px 0 8px 0;
+            padding: 4px 0 12px 0; /* adjusted for taller header */
         }
 
         .search-bar {
@@ -1763,7 +1764,7 @@
         /* ===== TOAST ===== */
         #toastContainer {
             position: fixed;
-            top: 80px;
+            top: calc(var(--topbar-height) + 8px);
             right: 16px;
             z-index: 4000;
             display: flex;
@@ -2073,7 +2074,8 @@
         /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             :root {
-                --topbar-height: 76px;
+                /* Adjusted for mobile */
+                --topbar-height: 96px;
                 --nav-height: 56px;
             }
             .header-left { font-size: 1.2rem; }
@@ -2622,10 +2624,12 @@
                 await loadShownAdminNotifs(user.uid);
 
                 let dataLoadCount = 0;
+                let loaderHidden = false; // guard to hide loader only once
                 const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
                 const checkReady = () => {
                     dataLoadCount++;
-                    if (dataLoadCount >= dataToLoad.length) {
+                    if (dataLoadCount >= dataToLoad.length && !loaderHidden) {
+                        loaderHidden = true;
                         document.getElementById('appLoader').classList.add('hidden');
                     }
                 };
@@ -2854,7 +2858,6 @@
             document.getElementById('profileName').innerText = name;
             document.getElementById('profileEmail').innerText = currentUser?.email || '';
             document.getElementById('profilePhone').innerText = userData.phone || 'Not set';
-            document.getElementById('userNameGreeting').innerText = name;
             document.getElementById('headerUserName').innerText = name;
         }
 
@@ -4619,7 +4622,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Header now shows actual logged-in user name. Popups appear instantly in real-time.');
+        console.log('✅ UTOM User — Header height increased, user name displayed correctly, loader fades after all data loads.');
     </script>
 </body>
 </html>
