@@ -1191,10 +1191,10 @@
             line-height: 1.5;
         }
 
-        /* ===== USERS (Floating Cards) ===== */
+        /* ===== USERS (2‑COLUMN GRID) ===== */
         .users-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 16px;
             padding: 4px 0 16px 0;
         }
@@ -3974,6 +3974,81 @@
                 font-size: 10px;
             }
         }
+
+        /* ===== PREVIEW SQUARE for video/text before publish ===== */
+        .preview-square {
+            width: 100%;
+            max-width: 200px;
+            aspect-ratio: 1/1;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fafbfc;
+            border: 2px solid #e5e8ed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 8px auto 12px auto;
+            padding: 8px;
+            transition: var(--transition);
+            position: relative;
+        }
+        .preview-square.has-content {
+            border-color: var(--gold);
+            box-shadow: 0 3px 14px rgba(245, 176, 66, 0.12);
+        }
+        .preview-square img,
+        .preview-square video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .preview-square .preview-placeholder {
+            color: #b0b4c0;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            padding: 8px;
+        }
+        .preview-square .preview-placeholder i {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+            opacity: 0.3;
+        }
+        .preview-square .preview-label {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 8px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(2px);
+            pointer-events: none;
+        }
+        .preview-square .preview-text {
+            font-size: 11px;
+            color: var(--text);
+            text-align: center;
+            padding: 4px;
+            line-height: 1.3;
+            max-height: 60%;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+        .preview-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 8px 0 12px 0;
+        }
     </style>
 </head>
 <body>
@@ -4069,6 +4144,18 @@
                     <div id="dynamicPostForm" style="display:none;margin-top:12px;">
                         <div class="form-card">
                             <h4><i class="fas fa-cloud-upload-alt"></i> Upload new video</h4>
+
+                            <!-- Live Preview Square -->
+                            <div class="preview-row">
+                                <div class="preview-square" id="videoPreviewSquare">
+                                    <div class="preview-placeholder">
+                                        <i class="fas fa-video"></i>
+                                        <span>Preview</span>
+                                    </div>
+                                    <span class="preview-label">Draft</span>
+                                </div>
+                            </div>
+
                             <form id="homePostForm">
                                 <div class="form-row">
                                     <input type="text" id="videoTitle" placeholder="Title *" required>
@@ -4092,7 +4179,7 @@
                                 </div>
                                 <div id="linkGroup">
                                     <input type="url" id="videoUrlInput" placeholder="Video URL">
-                                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL" style="margin-top:8px;">
+                                    <input type="url" id="linkThumbnailUrl" placeholder="Thumbnail URL (optional)" style="margin-top:8px;">
                                 </div>
                                 <div id="uploadGroup" style="display:none;">
                                     <button type="button" id="cloudinaryUploadBtn" class="btn-primary" style="padding:8px 16px;font-size:10px;"><i class="fas fa-cloud-upload-alt"></i> Choose Video</button>
@@ -4197,6 +4284,18 @@
                     <div id="docPostFormContainer" style="display:none;margin-top:12px;">
                         <div class="form-card">
                             <h4><i class="fas fa-file-alt"></i> Add Document / Notes</h4>
+
+                            <!-- Live Preview Square -->
+                            <div class="preview-row">
+                                <div class="preview-square" id="docPreviewSquare">
+                                    <div class="preview-placeholder">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span>Preview</span>
+                                    </div>
+                                    <span class="preview-label">Draft</span>
+                                </div>
+                            </div>
+
                             <form id="docPostForm">
                                 <div class="form-row">
                                     <input type="text" id="docTitle" placeholder="Title *" required>
@@ -6549,7 +6648,7 @@
                     const fill = document.getElementById('uploadProgressFill');
                     const percentText = document.getElementById('uploadPercentText');
                     if (progressDiv) {
-                        progressDiv.style.display = 'block';
+                        progressDiv.style.display = 'flex';
                     }
 
                     cloudinary.openUploadWidget(options, (err, res) => {
@@ -6582,6 +6681,7 @@
                                 previewContainer.style.display = 'block';
                                 previewImg.src = thumb;
                             }
+                            updateVideoPreview();
                         }
                         if (res.event === 'close') {
                             if (progressDiv) progressDiv.style.display = 'none';
@@ -6589,6 +6689,389 @@
                     });
                 });
             }
+
+            // =================================================================
+            // FIX CLOUDINARY UPLOAD BUTTON FOR DOCUMENTS
+            // =================================================================
+            const docCloudBtn = document.getElementById('cloudinaryDocUploadBtn');
+            if (docCloudBtn) {
+                docCloudBtn.addEventListener('click', function() {
+                    const options = {
+                        cloudName: CLOUD_NAME,
+                        uploadPreset: UPLOAD_PRESET,
+                        sources: ['local', 'url'],
+                        maxFileSize: 155000000,
+                        resourceType: 'raw',
+                        clientAllowedFormats: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx',
+                            'rtf', 'odt', 'csv'
+                        ],
+                        maxFiles: 1
+                    };
+                    const progressDiv = document.getElementById('docUploadProgress');
+                    const fill = document.getElementById('docProgressFill');
+                    const percentText = document.getElementById('docPercentText');
+                    if (progressDiv) {
+                        progressDiv.style.display = 'flex';
+                    }
+
+                    cloudinary.openUploadWidget(options, (err, res) => {
+                        if (err) {
+                            if (progressDiv) progressDiv.style.display = 'none';
+                            showToast('Upload error: ' + (err.message || err), 'error');
+                            return;
+                        }
+                        if (res.event === 'progress') {
+                            const p = Math.round(res.info.progress);
+                            if (fill) fill.style.width = p + '%';
+                            if (percentText) percentText.innerText = p + '%';
+                        }
+                        if (res.event === 'success') {
+                            const info = res.info;
+                            const docUrl = info.secure_url;
+                            document.getElementById('cloudinaryDocUrl').value = docUrl;
+                            const fileInfo = document.getElementById('docUploadFileInfo');
+                            const fname = document.getElementById('docUploadFileName');
+                            const ftype = document.getElementById('docUploadFileType');
+                            if (fileInfo && fname && ftype) {
+                                fileInfo.style.display = 'flex';
+                                fname.textContent = info.original_filename || 'document';
+                                ftype.textContent = info.format || 'file';
+                            }
+                            showToast('Document uploaded!', 'success');
+                            if (progressDiv) {
+                                progressDiv.style.display = 'none';
+                                if (fill) fill.style.width = '0%';
+                                if (percentText) percentText.innerText = '0%';
+                            }
+                            updateDocPreview();
+                        }
+                        if (res.event === 'close') {
+                            if (progressDiv) progressDiv.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // =================================================================
+            // VIDEO POST FORM SUBMIT HANDLER
+            // =================================================================
+            document.getElementById('homePostForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const title = document.getElementById('videoTitle').value.trim();
+                const instructor = document.getElementById('instructorName').value.trim();
+                const courseId = document.getElementById('courseSelectHome').value;
+                const subfolderId = document.getElementById('subfolderSelectHome').value;
+                const description = document.getElementById('videoDesc').value.trim();
+                const sourceType = document.querySelector('input[name="videoSource"]:checked')?.value || 'link';
+                const price = parseFloat(document.getElementById('videoPriceHidden').value) || 0;
+                let videoUrl = '';
+                let thumbnail = '';
+
+                if (sourceType === 'link') {
+                    videoUrl = document.getElementById('videoUrlInput').value.trim();
+                    thumbnail = document.getElementById('linkThumbnailUrl').value.trim() || getYouTubeThumbnail(videoUrl) ||
+                        '';
+                } else {
+                    videoUrl = document.getElementById('cloudinaryVideoUrl').value.trim();
+                    thumbnail = document.getElementById('generatedThumbnailUrl').value.trim() || '';
+                }
+
+                if (!title || !instructor) {
+                    showToast('Please fill in Title and Instructor.', 'error');
+                    return;
+                }
+                if (!videoUrl) {
+                    showToast('Please provide a video URL or upload a video.', 'error');
+                    return;
+                }
+                if (!courseId) {
+                    showToast('Please select a course.', 'error');
+                    return;
+                }
+
+                const course = courses.find(c => c.id === courseId);
+                const subfolder = subfolders.find(s => s.id === subfolderId);
+
+                try {
+                    const videoRef = push(videosRef);
+                    await set(videoRef, {
+                        title,
+                        instructor,
+                        courseId,
+                        subfolderId: subfolderId || '',
+                        description: description || '',
+                        videoUrl,
+                        thumbnail: thumbnail || '',
+                        price,
+                        courseName: course?.name || '',
+                        subfolderName: subfolder?.name || '',
+                        createdAt: serverTimestamp(),
+                        views: 0,
+                        likes: 0,
+                        commentsEnabled: true,
+                        uniqueViewers: {}
+                    });
+                    showToast('🎬 Video published successfully!', 'success');
+                    document.getElementById('videoTitle').value = '';
+                    document.getElementById('instructorName').value = '';
+                    document.getElementById('videoDesc').value = '';
+                    document.getElementById('videoUrlInput').value = '';
+                    document.getElementById('linkThumbnailUrl').value = '';
+                    document.getElementById('cloudinaryVideoUrl').value = '';
+                    document.getElementById('generatedThumbnailUrl').value = '';
+                    document.getElementById('thumbnailPreviewContainer').style.display = 'none';
+                    document.getElementById('dynamicPostForm').style.display = 'none';
+                    document.getElementById('bigPostBtn').style.display = 'block';
+                    clearVideoPreview();
+                    push(notificationsRef, {
+                        message: `📹 New video "${title}" published`,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (err) {
+                    showToast('Error publishing video: ' + err.message, 'error');
+                }
+            });
+
+            // =================================================================
+            // DOC POST FORM SUBMIT HANDLER
+            // =================================================================
+            document.getElementById('docPostForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const title = document.getElementById('docTitle').value.trim();
+                const instructor = document.getElementById('docInstructor').value.trim();
+                const courseId = document.getElementById('docCourseSelect').value;
+                const subfolderId = document.getElementById('docSubfolderSelect').value;
+                const description = document.getElementById('docDescription').value.trim();
+                const sourceType = document.querySelector('input[name="docSource"]:checked')?.value || 'text';
+                const price = parseFloat(document.getElementById('docPriceHidden').value) || 0;
+                let docUrl = '';
+                let content = '';
+
+                if (sourceType === 'text') {
+                    content = document.getElementById('docContentHidden').value || '';
+                    if (!content) {
+                        showToast('Please write some content or open the editor.', 'error');
+                        return;
+                    }
+                } else if (sourceType === 'upload') {
+                    docUrl = document.getElementById('cloudinaryDocUrl').value.trim();
+                    if (!docUrl) {
+                        showToast('Please upload a document.', 'error');
+                        return;
+                    }
+                } else if (sourceType === 'link') {
+                    docUrl = document.getElementById('docLinkInput').value.trim();
+                    if (!docUrl) {
+                        showToast('Please paste a document link.', 'error');
+                        return;
+                    }
+                }
+
+                if (!title || !instructor) {
+                    showToast('Please fill in Title and Instructor.', 'error');
+                    return;
+                }
+                if (!courseId) {
+                    showToast('Please select a course.', 'error');
+                    return;
+                }
+
+                const course = courses.find(c => c.id === courseId);
+                const subfolder = subfolders.find(s => s.id === subfolderId);
+
+                try {
+                    const docRef = push(docsRef);
+                    await set(docRef, {
+                        title,
+                        instructor,
+                        courseId,
+                        subfolderId: subfolderId || '',
+                        description: description || '',
+                        docUrl: docUrl || '',
+                        content: content || '',
+                        price,
+                        courseName: course?.name || '',
+                        subfolderName: subfolder?.name || '',
+                        createdAt: serverTimestamp(),
+                        reads: 0,
+                        likes: 0
+                    });
+                    showToast('📄 Document published successfully!', 'success');
+                    document.getElementById('docTitle').value = '';
+                    document.getElementById('docInstructor').value = '';
+                    document.getElementById('docDescription').value = '';
+                    document.getElementById('docLinkInput').value = '';
+                    document.getElementById('cloudinaryDocUrl').value = '';
+                    document.getElementById('docContentHidden').value = '';
+                    document.getElementById('docUploadFileInfo').style.display = 'none';
+                    document.getElementById('docPostFormContainer').style.display = 'none';
+                    document.getElementById('bigPostDocBtn').style.display = 'block';
+                    clearDocPreview();
+                    push(notificationsRef, {
+                        message: `📄 New document "${title}" published`,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (err) {
+                    showToast('Error publishing document: ' + err.message, 'error');
+                }
+            });
+
+            // =================================================================
+            // PREVIEW UPDATES
+            // =================================================================
+            document.getElementById('videoTitle').addEventListener('input', updateVideoPreview);
+            document.getElementById('videoUrlInput').addEventListener('input', updateVideoPreview);
+            document.getElementById('linkThumbnailUrl').addEventListener('input', updateVideoPreview);
+            document.getElementById('cloudinaryVideoUrl').addEventListener('change', updateVideoPreview);
+            document.getElementById('generatedThumbnailUrl').addEventListener('change', updateVideoPreview);
+
+            document.getElementById('docTitle').addEventListener('input', updateDocPreview);
+            document.getElementById('docContentHidden').addEventListener('change', updateDocPreview);
+            document.getElementById('cloudinaryDocUrl').addEventListener('change', updateDocPreview);
+            document.getElementById('docLinkInput').addEventListener('input', updateDocPreview);
+
+            // Generate thumbnail
+            document.getElementById('generateThumbnailBtn').addEventListener('click', function() {
+                const videoUrl = document.getElementById('cloudinaryVideoUrl').value.trim();
+                if (!videoUrl) {
+                    showToast('Please upload a video first.', 'error');
+                    return;
+                }
+                const offset = parseFloat(document.getElementById('thumbnailOffset').value) || 3;
+                const thumb = videoUrl.replace('/upload/', `/upload/so_${offset}/`).replace(/\.[^/.]+$/, '.jpg');
+                document.getElementById('generatedThumbnailUrl').value = thumb;
+                const previewContainer = document.getElementById('thumbnailPreviewContainer');
+                const previewImg = document.getElementById('thumbnailPreviewImg');
+                if (previewContainer && previewImg) {
+                    previewContainer.style.display = 'block';
+                    previewImg.src = thumb;
+                }
+                updateVideoPreview();
+                showToast('Thumbnail generated!', 'success');
+            });
+        }
+
+        // =================================================================
+        // VIDEO PREVIEW
+        // =================================================================
+        function updateVideoPreview() {
+            const square = document.getElementById('videoPreviewSquare');
+            const title = document.getElementById('videoTitle').value.trim();
+            const videoUrl = document.getElementById('videoUrlInput').value.trim() ||
+                document.getElementById('cloudinaryVideoUrl').value.trim();
+            const thumbnail = document.getElementById('linkThumbnailUrl').value.trim() ||
+                document.getElementById('generatedThumbnailUrl').value.trim() ||
+                getYouTubeThumbnail(videoUrl) || '';
+
+            square.classList.remove('has-content');
+            square.innerHTML = '';
+
+            if (thumbnail) {
+                square.classList.add('has-content');
+                square.innerHTML = `
+                    <img src="${thumbnail}" alt="Video preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                    <span class="preview-label">${title ? '📹 ' + escapeHtml(title) : 'Draft'}</span>
+                `;
+            } else if (videoUrl) {
+                square.classList.add('has-content');
+                square.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text);">
+                        <i class="fas fa-video" style="font-size:32px;color:var(--gold);"></i>
+                        <span style="font-size:11px;margin-top:4px;">${title ? escapeHtml(title) : 'Video ready'}</span>
+                    </div>
+                    <span class="preview-label">Draft</span>
+                `;
+            } else if (title) {
+                square.classList.add('has-content');
+                square.innerHTML = `
+                    <div class="preview-text">${escapeHtml(title)}</div>
+                    <span class="preview-label">Draft</span>
+                `;
+            } else {
+                square.innerHTML = `
+                    <div class="preview-placeholder">
+                        <i class="fas fa-video"></i>
+                        <span>Preview</span>
+                    </div>
+                    <span class="preview-label">Draft</span>
+                `;
+            }
+        }
+
+        function clearVideoPreview() {
+            const square = document.getElementById('videoPreviewSquare');
+            square.classList.remove('has-content');
+            square.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="fas fa-video"></i>
+                    <span>Preview</span>
+                </div>
+                <span class="preview-label">Draft</span>
+            `;
+        }
+
+        // =================================================================
+        // DOC PREVIEW
+        // =================================================================
+        function updateDocPreview() {
+            const square = document.getElementById('docPreviewSquare');
+            const title = document.getElementById('docTitle').value.trim();
+            const docUrl = document.getElementById('cloudinaryDocUrl').value.trim() ||
+                document.getElementById('docLinkInput').value.trim();
+            const content = document.getElementById('docContentHidden').value || '';
+
+            square.classList.remove('has-content');
+            square.innerHTML = '';
+
+            if (docUrl) {
+                square.classList.add('has-content');
+                square.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text);">
+                        <i class="fas fa-file-alt" style="font-size:32px;color:var(--gold);"></i>
+                        <span style="font-size:11px;margin-top:4px;">${title ? escapeHtml(title) : 'Document ready'}</span>
+                    </div>
+                    <span class="preview-label">Draft</span>
+                `;
+            } else if (content) {
+                square.classList.add('has-content');
+                const snippet = content.replace(/<[^>]*>/g, '').substring(0, 60);
+                square.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text);padding:4px;">
+                        <i class="fas fa-file-alt" style="font-size:24px;color:var(--gold);"></i>
+                        <span style="font-size:10px;margin-top:2px;text-align:center;">${title ? escapeHtml(title) : 'Text content'}</span>
+                        <span style="font-size:8px;color:#8b8fa3;text-align:center;">${escapeHtml(snippet)}${snippet.length >= 60 ? '…' : ''}</span>
+                    </div>
+                    <span class="preview-label">Draft</span>
+                `;
+            } else if (title) {
+                square.classList.add('has-content');
+                square.innerHTML = `
+                    <div class="preview-text">${escapeHtml(title)}</div>
+                    <span class="preview-label">Draft</span>
+                `;
+            } else {
+                square.innerHTML = `
+                    <div class="preview-placeholder">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Preview</span>
+                    </div>
+                    <span class="preview-label">Draft</span>
+                `;
+            }
+        }
+
+        function clearDocPreview() {
+            const square = document.getElementById('docPreviewSquare');
+            square.classList.remove('has-content');
+            square.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Preview</span>
+                </div>
+                <span class="preview-label">Draft</span>
+            `;
         }
 
         function setupMoreOptionsDropdown() {
@@ -7671,7 +8154,7 @@
             }
         });
 
-        console.log('✅ UTOM Admin — Original design restored, Cloudinary upload fixed, Popup preview added.');
+        console.log('✅ UTOM Admin — All fixes applied: video upload, doc upload, publish buttons, popup sending, 2‑column users, preview squares.');
     </script>
 </body>
 </html>
