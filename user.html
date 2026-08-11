@@ -54,7 +54,7 @@
             width: 100%;
         }
 
-        /* ===== LOADER (app) ===== */
+        /* ===== LOADER ===== */
         #appLoader {
             position: fixed;
             top: 0;
@@ -2676,7 +2676,8 @@
                     loadVideos(),
                     loadDocs(),
                     loadPaymentSettings(),
-                    loadPromos()
+                    loadPromos(),
+                    loadInAppNotifications() // Listen for admin notifications
                 ];
                 await Promise.all(dataPromises);
 
@@ -2690,112 +2691,6 @@
                 document.getElementById('appLoader').classList.add('hidden');
             }
         });
-
-        // ===== DATA LOADING FUNCTIONS =====
-        async function loadApprovedCourses(uid) {
-            return new Promise((resolve) => {
-                onValue(ref(db, `approvedPurchases/${uid}`), (snap) => {
-                    approvedCourses.clear();
-                    if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
-                    renderAllCourses();
-                    renderMyLearn();
-                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                        renderTransactionHistory();
-                    }
-                    resolve();
-                });
-            });
-        }
-
-        async function loadPendingPurchases(uid) {
-            return new Promise((resolve) => {
-                onValue(ref(db, `pendingPurchases/${uid}`), (snap) => {
-                    pendingPurchases = {};
-                    allUserTransactions = [];
-                    if (snap.val()) {
-                        Object.entries(snap.val()).forEach(([txId, tx]) => {
-                            allUserTransactions.push({ id: txId, ...tx });
-                            if (tx.status === 'pending' && tx.itemType === 'course') {
-                                pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
-                            }
-                        });
-                    }
-                    allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    renderAllCourses();
-                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                        renderTransactionHistory();
-                    }
-                    resolve();
-                });
-            });
-        }
-
-        async function loadCourses() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'courses'), (snap) => {
-                    allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
-                    renderAllCourses();
-                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                        renderTransactionHistory();
-                    }
-                    resolve();
-                });
-            });
-        }
-
-        async function loadSubfolders() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'subfolders'), (snap) => {
-                    allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
-                    if (selectedCourse) renderCourseDetail(selectedCourse);
-                    resolve();
-                });
-            });
-        }
-
-        async function loadVideos() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'videos'), (snap) => {
-                    allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
-                    if (selectedCourse) renderCourseDetail(selectedCourse);
-                    renderWatchedVideos();
-                    renderOfflinePage();
-                    attachCommentListenersToVisibleVideos();
-                    processVideoThumbnails();
-                    resolve();
-                });
-            });
-        }
-
-        async function loadDocs() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'docs'), (snap) => {
-                    allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                    if (selectedCourse) renderCourseDetail(selectedCourse);
-                    resolve();
-                });
-            });
-        }
-
-        async function loadPaymentSettings() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'system/paymentSettings'), (snap) => {
-                    if (snap.val()) { paymentSettings = snap.val(); }
-                    updatePaymentNumbersDisplay();
-                    resolve();
-                });
-            });
-        }
-
-        async function loadPromos() {
-            return new Promise((resolve) => {
-                onValue(ref(db, 'promos'), (snap) => {
-                    allPromos = snap.val() ? Object.entries(snap.val()).map(([id, p]) => ({ id, ...p })) : [];
-                    renderPromoCarousel();
-                    resolve();
-                });
-            });
-        }
 
         // ===== SHOWN ADMIN NOTIFICATIONS =====
         async function loadShownAdminNotifs(uid) {
@@ -2817,6 +2712,26 @@
                 const shownRef = ref(db, `users/${uid}/shownAdminNotifs/${notifKey}`);
                 await set(shownRef, true);
             } catch (e) { console.warn('Failed to mark notif seen:', e); }
+        }
+
+        // ===== IN-APP NOTIFICATIONS LISTENER =====
+        async function loadInAppNotifications() {
+            return new Promise((resolve) => {
+                const notifRef = ref(db, 'inAppNotifications');
+                onValue(notifRef, (snap) => {
+                    try {
+                        const data = snap.val();
+                        if (data) {
+                            window._adminNotifs = data;
+                            checkAdminNotifications(currentUser.uid);
+                        }
+                        resolve();
+                    } catch (e) {
+                        console.warn('Notifications error:', e);
+                        resolve();
+                    }
+                });
+            });
         }
 
         function checkAdminNotifications(uid) {
@@ -2867,6 +2782,7 @@
                 }
                 overlay.classList.remove('open');
                 dismissBtn.removeEventListener('click', newDismiss);
+                // Check if there's any other unseen notification after dismissing
                 setTimeout(() => {
                     if (currentUser) checkAdminNotifications(currentUser.uid);
                 }, 500);
@@ -2974,6 +2890,112 @@
             const date = new Date(timestamp);
             const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
             return date.toLocaleDateString('en-US', options);
+        }
+
+        // ===== DATA LOADING FUNCTIONS =====
+        async function loadApprovedCourses(uid) {
+            return new Promise((resolve) => {
+                onValue(ref(db, `approvedPurchases/${uid}`), (snap) => {
+                    approvedCourses.clear();
+                    if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
+                    renderAllCourses();
+                    renderMyLearn();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        async function loadPendingPurchases(uid) {
+            return new Promise((resolve) => {
+                onValue(ref(db, `pendingPurchases/${uid}`), (snap) => {
+                    pendingPurchases = {};
+                    allUserTransactions = [];
+                    if (snap.val()) {
+                        Object.entries(snap.val()).forEach(([txId, tx]) => {
+                            allUserTransactions.push({ id: txId, ...tx });
+                            if (tx.status === 'pending' && tx.itemType === 'course') {
+                                pendingPurchases[tx.itemId] = { amount: tx.amount, txId };
+                            }
+                        });
+                    }
+                    allUserTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    renderAllCourses();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        async function loadCourses() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'courses'), (snap) => {
+                    allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
+                    renderAllCourses();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        async function loadSubfolders() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'subfolders'), (snap) => {
+                    allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    resolve();
+                });
+            });
+        }
+
+        async function loadVideos() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'videos'), (snap) => {
+                    allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    renderWatchedVideos();
+                    renderOfflinePage();
+                    attachCommentListenersToVisibleVideos();
+                    processVideoThumbnails();
+                    resolve();
+                });
+            });
+        }
+
+        async function loadDocs() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'docs'), (snap) => {
+                    allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    resolve();
+                });
+            });
+        }
+
+        async function loadPaymentSettings() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'system/paymentSettings'), (snap) => {
+                    if (snap.val()) { paymentSettings = snap.val(); }
+                    updatePaymentNumbersDisplay();
+                    resolve();
+                });
+            });
+        }
+
+        async function loadPromos() {
+            return new Promise((resolve) => {
+                onValue(ref(db, 'promos'), (snap) => {
+                    allPromos = snap.val() ? Object.entries(snap.val()).map(([id, p]) => ({ id, ...p })) : [];
+                    renderPromoCarousel();
+                    resolve();
+                });
+            });
         }
 
         // ===== TRANSACTION HISTORY =====
@@ -4736,7 +4758,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Optimized: all data loaded before app loader hides, course loader waits for thumbnails, search debounced, IntersectionObserver for thumbnails, lazy comment subscriptions, batched DOM updates.');
+        console.log('✅ UTOM User — Admin notifications now work: real-time listener, popup shows immediately, and only once per user.');
     </script>
 </body>
 </html>
