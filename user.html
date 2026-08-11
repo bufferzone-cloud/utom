@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
-        /* ===== RESET & BASE ===== */
+        /* ===== RESET & BASE (same as before) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -2737,7 +2737,7 @@
                         renderWatchedVideos();
                         renderOfflinePage();
                         attachCommentListenersToVisibleVideos();
-                        processVideoThumbnails(); // non‑blocking for other pages
+                        processVideoThumbnails();
                         checkReady();
                     } catch (e) { console.warn('Videos error:', e); }
                 });
@@ -3239,7 +3239,6 @@
             attachVideoEvents();
             attachDocEvents();
             attachCommentListenersToVisibleVideos();
-            // processVideoThumbnails is called via openCourseDetail with async wait
         }
 
         // ===== VIDEO HELPERS =====
@@ -3316,26 +3315,77 @@
         }
 
         // ===== ASYNC THUMBNAIL PROCESSING =====
-        async function processVideoThumbnailsAsync() {
-            const images = document.querySelectorAll('.video-thumb-img');
-            const promises = [];
-            images.forEach(async (img) => {
-                const url = img.dataset.videoUrl;
-                if (!url) return;
-                if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
-                const promise = captureVideoFrame(url).then(dataUrl => {
-                    if (dataUrl !== UTOM_THUMBNAIL) {
-                        img.src = dataUrl;
+        // Use IntersectionObserver to only process visible thumbnails, then batch with requestIdleCallback
+        let thumbnailObserver = null;
+        function setupThumbnailObserver() {
+            if (thumbnailObserver) thumbnailObserver.disconnect();
+            thumbnailObserver = new IntersectionObserver((entries) => {
+                const toProcess = [];
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img.dataset.processed === 'true') return;
+                        img.dataset.processed = 'true';
+                        toProcess.push(img);
                     }
                 });
-                promises.push(promise);
+                if (toProcess.length > 0) {
+                    requestIdleCallback(() => {
+                        toProcess.forEach(img => processSingleThumbnail(img));
+                    }, { timeout: 2000 });
+                }
+            }, { rootMargin: '200px' });
+            // Observe all thumbnails
+            document.querySelectorAll('.video-thumb-img').forEach(img => {
+                if (img.dataset.processed !== 'true') {
+                    thumbnailObserver.observe(img);
+                }
             });
-            await Promise.allSettled(promises);
         }
 
-        // Keep the non‑async version for other uses (it will run in background)
+        async function processSingleThumbnail(img) {
+            const url = img.dataset.videoUrl;
+            if (!url) return;
+            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
+            try {
+                const dataUrl = await captureVideoFrame(url);
+                if (dataUrl !== UTOM_THUMBNAIL) {
+                    img.src = dataUrl;
+                }
+            } catch (e) {
+                // fallback
+            }
+        }
+
+        // Also process all visible immediately when course detail opens
+        async function processVideoThumbnailsAsync() {
+            const images = document.querySelectorAll('.video-thumb-img:not([data-processed="true"])');
+            if (images.length === 0) return;
+            // Use requestIdleCallback to avoid blocking
+            return new Promise((resolve) => {
+                requestIdleCallback(async () => {
+                    const promises = [];
+                    images.forEach(img => {
+                        const url = img.dataset.videoUrl;
+                        if (!url) return;
+                        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
+                        img.dataset.processed = 'true';
+                        const promise = captureVideoFrame(url).then(dataUrl => {
+                            if (dataUrl !== UTOM_THUMBNAIL) {
+                                img.src = dataUrl;
+                            }
+                        });
+                        promises.push(promise);
+                    });
+                    await Promise.allSettled(promises);
+                    resolve();
+                }, { timeout: 3000 });
+            });
+        }
+
+        // Non‑blocking version for initial load
         function processVideoThumbnails() {
-            processVideoThumbnailsAsync().catch(() => {});
+            setupThumbnailObserver();
         }
 
         // ===== COMMENT SYSTEM =====
@@ -3468,16 +3518,11 @@
         }
 
         function attachCommentListenersToVisibleVideos() {
-            document.querySelectorAll('.video-card').forEach(card => {
-                const videoId = card.dataset.id;
-                if (videoId && !commentListeners.has(videoId)) {
-                    subscribeToComments(videoId);
-                }
-            });
-        }
-
-        function setupCommentToggle() {
+            // Only subscribe to comments when the toggle is clicked, not automatically.
+            // We'll set up event listeners for toggle buttons.
             document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+                if (btn.dataset.listenerAttached === 'true') return;
+                btn.dataset.listenerAttached = 'true';
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const videoId = btn.dataset.id;
@@ -3499,14 +3544,22 @@
                             list.innerHTML = renderCommentsList(videoId);
                             attachCommentListEvents(videoId);
                         }
+                        // Subscribe to real‑time updates only when opened
                         if (!commentListeners.has(videoId)) {
                             subscribeToComments(videoId);
                         }
                     }
                 });
             });
+        }
 
+        function setupCommentToggle() {
+            // already handled by attachCommentListenersToVisibleVideos
+            attachCommentListenersToVisibleVideos();
+            // Also setup submit buttons
             document.querySelectorAll('.comment-submit-btn').forEach(btn => {
+                if (btn.dataset.listenerAttached === 'true') return;
+                btn.dataset.listenerAttached = 'true';
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const videoId = btn.dataset.videoId;
@@ -3539,8 +3592,9 @@
                     }
                 });
             });
-
             document.querySelectorAll('.comment-input').forEach(input => {
+                if (input.dataset.listenerAttached === 'true') return;
+                input.dataset.listenerAttached = 'true';
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         const btn = document.querySelector(
@@ -4256,9 +4310,13 @@
 
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
+                let debounceTimer;
                 searchInput.addEventListener('input', (e) => {
-                    currentSearch = e.target.value.toLowerCase();
-                    renderAllCourses();
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        currentSearch = e.target.value.toLowerCase();
+                        renderAllCourses();
+                    }, 300);
                 });
             }
 
@@ -4690,7 +4748,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Course loader added: shows "Loading [course name]" until thumbnails are ready. Admin popups appear immediately via real‑time listener.');
+        console.log('✅ UTOM User — Optimized: search debounce, IntersectionObserver for thumbnails, lazy comment subscriptions, batched DOM updates, and course loader with async thumbnail generation.');
     </script>
 </body>
 </html>
