@@ -37,7 +37,6 @@
             --red: #e63946;
             --yellow: #f39c12;
             --blue: #3b82f6;
-            /* Increased header height */
             --topbar-height: 110px;
             --nav-height: 60px;
             --peek-percent: 4.75%;
@@ -55,7 +54,7 @@
             width: 100%;
         }
 
-        /* ===== LOADER ===== */
+        /* ===== LOADER (app) ===== */
         #appLoader {
             position: fixed;
             top: 0;
@@ -90,6 +89,45 @@
             font-size: 14px;
         }
 
+        /* ===== COURSE LOADER ===== */
+        #courseLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            flex-direction: column;
+            padding: 20px;
+        }
+        #courseLoader .loader-spinner {
+            width: 64px;
+            height: 64px;
+            border-width: 6px;
+            border-color: rgba(255,255,255,0.15);
+            border-top-color: var(--gold);
+        }
+        #courseLoader p {
+            margin-top: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        #courseLoader .sub-text {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: rgba(255,255,255,0.7);
+            margin-top: 4px;
+        }
+
         /* ===== APP ROOT ===== */
         .app-root {
             display: flex;
@@ -101,7 +139,7 @@
             position: relative;
         }
 
-        /* ===== HEADER: UTOM left, centered greeting, notif right ===== */
+        /* ===== HEADER ===== */
         .top-bar {
             position: fixed;
             top: 0;
@@ -121,7 +159,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: 10px; /* increased for taller header */
+            padding-top: 10px;
             flex: 1;
         }
 
@@ -155,7 +193,7 @@
         }
 
         .header-center .user-name-display {
-            font-size: 1.2rem; /* slightly larger */
+            font-size: 1.2rem;
             font-weight: 700;
             color: #1a1d28;
             line-height: 1.2;
@@ -205,9 +243,9 @@
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
 
-        /* Search Row (below the header main) */
+        /* ===== SEARCH ROW ===== */
         .search-row {
-            padding: 4px 0 12px 0; /* adjusted for taller header */
+            padding: 4px 0 12px 0;
         }
 
         .search-bar {
@@ -749,7 +787,7 @@
 
         .course-card-img-wrapper {
             position: relative;
-            height: 132px; /* increased by 20% from 110px (22px increase) */
+            height: 132px;
             background-color: #1b5e20;
             background-size: cover;
             background-position: center;
@@ -2074,7 +2112,6 @@
         /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             :root {
-                /* Adjusted for mobile */
                 --topbar-height: 96px;
                 --nav-height: 56px;
             }
@@ -2086,7 +2123,7 @@
             .nav-item i { font-size: 18px; }
             .nav-item span { font-size: 6px; }
             .courses-scroll-container .course-card-wrapper { flex: 0 0 180px; min-width: 150px; }
-            .course-card-img-wrapper { height: 110px; /* keep proportional on mobile, we keep the increased height */ }
+            .course-card-img-wrapper { height: 110px; }
             .videos-scroll-container .video-card { flex: 0 0 200px; min-width: 170px; }
             .video-thumb-wrapper { height: 100px; }
             .course-card-body h4, .video-info h4 { font-size: 0.8rem; }
@@ -2249,9 +2286,16 @@
         <p>Loading UTOM...</p>
     </div>
 
+    <!-- ===== COURSE LOADER ===== -->
+    <div id="courseLoader">
+        <div class="loader-spinner"></div>
+        <p id="courseLoaderText">Loading course...</p>
+        <div class="sub-text">Preparing videos and content</div>
+    </div>
+
     <div class="app-root">
 
-        <!-- ===== HEADER: UTOM left, centered greeting, notif right ===== -->
+        <!-- ===== HEADER ===== -->
         <div class="top-bar">
             <div class="header-main">
                 <div class="header-left">UTOM</div>
@@ -2302,10 +2346,10 @@
             <!-- HOME -->
             <div id="homePage" class="page-container active-page">
 
-                <!-- PROMO CAROUSEL (directly below search) -->
+                <!-- PROMO CAROUSEL -->
                 <div class="promo-carousel-wrapper" id="promoCarouselWrapper">
                     <div class="promo-carousel-track" id="promoCarouselTrack">
-                        <!-- Carousel slides rendered by JS -->
+                        <!-- Rendered by JS -->
                     </div>
                 </div>
 
@@ -2434,7 +2478,7 @@
         <img id="screenshotModalImg" src="" alt="Payment Screenshot" />
     </div>
 
-    <!-- ===== ADMIN NOTIFICATION POPUP (In-App, real-time, once per user) ===== -->
+    <!-- ===== ADMIN NOTIFICATION POPUP ===== -->
     <div class="admin-notif-overlay" id="adminNotifOverlay">
         <div class="admin-notif-modal">
             <div class="admin-notif-header">
@@ -2624,7 +2668,7 @@
                 await loadShownAdminNotifs(user.uid);
 
                 let dataLoadCount = 0;
-                let loaderHidden = false; // guard to hide loader only once
+                let loaderHidden = false;
                 const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
                 const checkReady = () => {
                     dataLoadCount++;
@@ -2693,7 +2737,7 @@
                         renderWatchedVideos();
                         renderOfflinePage();
                         attachCommentListenersToVisibleVideos();
-                        processVideoThumbnails();
+                        processVideoThumbnails(); // non‑blocking for other pages
                         checkReady();
                     } catch (e) { console.warn('Videos error:', e); }
                 });
@@ -2723,7 +2767,7 @@
                     } catch (e) { console.warn('Promos error:', e); }
                 });
 
-                // In-App Notifications (real-time)
+                // In‑App Notifications (real‑time)
                 onValue(ref(db, 'inAppNotifications'), (snap) => {
                     try {
                         const data = snap.val();
@@ -2812,7 +2856,6 @@
                 }
                 overlay.classList.remove('open');
                 dismissBtn.removeEventListener('click', newDismiss);
-                // Check if there's any other unseen notification after dismissing
                 setTimeout(() => {
                     if (currentUser) checkAdminNotifications(currentUser.uid);
                 }, 500);
@@ -2853,7 +2896,6 @@
         function updateUserInterface() {
             const fullName = `${userData.firstName} ${userData.lastName}`.trim();
             const emailUsername = currentUser?.email ? currentUser.email.split('@')[0] : '';
-            // Use full name if available, otherwise email username, otherwise fallback to "User"
             const name = fullName || emailUsername || 'User';
             document.getElementById('profileName').innerText = name;
             document.getElementById('profileEmail').innerText = currentUser?.email || '';
@@ -3133,10 +3175,25 @@
                 });
         }
 
+        // ===== COURSE LOADER =====
+        function showCourseLoader(courseName) {
+            const loader = document.getElementById('courseLoader');
+            document.getElementById('courseLoaderText').textContent = `Loading ${courseName}...`;
+            loader.style.display = 'flex';
+        }
+
+        function hideCourseLoader() {
+            document.getElementById('courseLoader').style.display = 'none';
+        }
+
         // ===== COURSE DETAIL =====
-        function openCourseDetail(course) {
+        async function openCourseDetail(course) {
             selectedCourse = course;
+            showCourseLoader(course.name);
             renderCourseDetail(course);
+            // Wait for thumbnails to be ready
+            await processVideoThumbnailsAsync();
+            hideCourseLoader();
             showPage('courseDetail', { courseId: course.id });
         }
 
@@ -3182,7 +3239,7 @@
             attachVideoEvents();
             attachDocEvents();
             attachCommentListenersToVisibleVideos();
-            processVideoThumbnails();
+            // processVideoThumbnails is called via openCourseDetail with async wait
         }
 
         // ===== VIDEO HELPERS =====
@@ -3258,16 +3315,27 @@
             </div>`;
         }
 
-        function processVideoThumbnails() {
-            document.querySelectorAll('.video-thumb-img').forEach(async (img) => {
+        // ===== ASYNC THUMBNAIL PROCESSING =====
+        async function processVideoThumbnailsAsync() {
+            const images = document.querySelectorAll('.video-thumb-img');
+            const promises = [];
+            images.forEach(async (img) => {
                 const url = img.dataset.videoUrl;
                 if (!url) return;
                 if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
-                const dataUrl = await captureVideoFrame(url);
-                if (dataUrl !== UTOM_THUMBNAIL) {
-                    img.src = dataUrl;
-                }
+                const promise = captureVideoFrame(url).then(dataUrl => {
+                    if (dataUrl !== UTOM_THUMBNAIL) {
+                        img.src = dataUrl;
+                    }
+                });
+                promises.push(promise);
             });
+            await Promise.allSettled(promises);
+        }
+
+        // Keep the non‑async version for other uses (it will run in background)
+        function processVideoThumbnails() {
+            processVideoThumbnailsAsync().catch(() => {});
         }
 
         // ===== COMMENT SYSTEM =====
@@ -4622,7 +4690,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Header height increased, user name displayed correctly, loader fades after all data loads, course card height increased by 20%, in-app popup now works seamlessly across all pages and shows only once per user per notification.');
+        console.log('✅ UTOM User — Course loader added: shows "Loading [course name]" until thumbnails are ready. Admin popups appear immediately via real‑time listener.');
     </script>
 </body>
 </html>
