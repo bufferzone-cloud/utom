@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
-        /* ===== RESET & BASE (same as before) ===== */
+        /* ===== RESET & BASE ===== */
         * {
             margin: 0;
             padding: 0;
@@ -2667,19 +2667,34 @@
                 await loadUserData(user.uid);
                 await loadShownAdminNotifs(user.uid);
 
-                let dataLoadCount = 0;
-                let loaderHidden = false;
-                const dataToLoad = ['courses', 'subfolders', 'videos', 'docs', 'promos'];
-                const checkReady = () => {
-                    dataLoadCount++;
-                    if (dataLoadCount >= dataToLoad.length && !loaderHidden) {
-                        loaderHidden = true;
-                        document.getElementById('appLoader').classList.add('hidden');
-                    }
-                };
+                // Load all data in parallel
+                const dataPromises = [
+                    loadApprovedCourses(user.uid),
+                    loadPendingPurchases(user.uid),
+                    loadCourses(),
+                    loadSubfolders(),
+                    loadVideos(),
+                    loadDocs(),
+                    loadPaymentSettings(),
+                    loadPromos()
+                ];
+                await Promise.all(dataPromises);
 
-                // Approved Courses
-                onValue(ref(db, `approvedPurchases/${user.uid}`), (snap) => {
+                // Now hide the app loader
+                document.getElementById('appLoader').classList.add('hidden');
+
+                setupUI();
+                handleHashChange();
+            } catch (e) {
+                console.error('Auth init error:', e);
+                document.getElementById('appLoader').classList.add('hidden');
+            }
+        });
+
+        // ===== DATA LOADING FUNCTIONS =====
+        async function loadApprovedCourses(uid) {
+            return new Promise((resolve) => {
+                onValue(ref(db, `approvedPurchases/${uid}`), (snap) => {
                     approvedCourses.clear();
                     if (snap.val()) Object.keys(snap.val()).forEach(id => approvedCourses.add(id));
                     renderAllCourses();
@@ -2687,10 +2702,14 @@
                     if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
                         renderTransactionHistory();
                     }
+                    resolve();
                 });
+            });
+        }
 
-                // Pending Purchases & Transactions
-                onValue(ref(db, `pendingPurchases/${user.uid}`), (snap) => {
+        async function loadPendingPurchases(uid) {
+            return new Promise((resolve) => {
+                onValue(ref(db, `pendingPurchases/${uid}`), (snap) => {
                     pendingPurchases = {};
                     allUserTransactions = [];
                     if (snap.val()) {
@@ -2706,85 +2725,77 @@
                     if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
                         renderTransactionHistory();
                     }
+                    resolve();
                 });
+            });
+        }
 
-                // Courses
+        async function loadCourses() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'courses'), (snap) => {
-                    try {
-                        allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
-                        renderAllCourses();
-                        if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
-                            renderTransactionHistory();
-                        }
-                        checkReady();
-                    } catch (e) { console.warn('Courses error:', e); }
+                    allCourses = snap.val() ? Object.entries(snap.val()).map(([id, c]) => ({ id, ...c })) : [];
+                    renderAllCourses();
+                    if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                        renderTransactionHistory();
+                    }
+                    resolve();
                 });
+            });
+        }
 
-                // Subfolders
+        async function loadSubfolders() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'subfolders'), (snap) => {
-                    try {
-                        allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
-                        if (selectedCourse) renderCourseDetail(selectedCourse);
-                        checkReady();
-                    } catch (e) { console.warn('Subfolders error:', e); }
+                    allSubfolders = snap.val() ? Object.entries(snap.val()).map(([id, s]) => ({ id, ...s })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    resolve();
                 });
+            });
+        }
 
-                // Videos
+        async function loadVideos() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'videos'), (snap) => {
-                    try {
-                        allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
-                        if (selectedCourse) renderCourseDetail(selectedCourse);
-                        renderWatchedVideos();
-                        renderOfflinePage();
-                        attachCommentListenersToVisibleVideos();
-                        processVideoThumbnails();
-                        checkReady();
-                    } catch (e) { console.warn('Videos error:', e); }
+                    allVideos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    renderWatchedVideos();
+                    renderOfflinePage();
+                    attachCommentListenersToVisibleVideos();
+                    processVideoThumbnails();
+                    resolve();
                 });
+            });
+        }
 
-                // Docs
+        async function loadDocs() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'docs'), (snap) => {
-                    try {
-                        allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                        if (selectedCourse) renderCourseDetail(selectedCourse);
-                        checkReady();
-                    } catch (e) { console.warn('Docs error:', e); }
+                    allDocs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                    if (selectedCourse) renderCourseDetail(selectedCourse);
+                    resolve();
                 });
+            });
+        }
 
-                // Payment Settings
+        async function loadPaymentSettings() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'system/paymentSettings'), (snap) => {
                     if (snap.val()) { paymentSettings = snap.val(); }
                     updatePaymentNumbersDisplay();
+                    resolve();
                 });
+            });
+        }
 
-                // Promos
+        async function loadPromos() {
+            return new Promise((resolve) => {
                 onValue(ref(db, 'promos'), (snap) => {
-                    try {
-                        const data = snap.val();
-                        allPromos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
-                        renderPromoCarousel();
-                        checkReady();
-                    } catch (e) { console.warn('Promos error:', e); }
+                    allPromos = snap.val() ? Object.entries(snap.val()).map(([id, p]) => ({ id, ...p })) : [];
+                    renderPromoCarousel();
+                    resolve();
                 });
-
-                // In‑App Notifications (real‑time)
-                onValue(ref(db, 'inAppNotifications'), (snap) => {
-                    try {
-                        const data = snap.val();
-                        if (data) {
-                            window._adminNotifs = data;
-                            checkAdminNotifications(currentUser.uid);
-                        }
-                    } catch (e) { console.warn('Notifications error:', e); }
-                });
-
-                setupUI();
-                handleHashChange();
-            } catch (e) {
-                console.error('Auth init error:', e);
-                document.getElementById('appLoader').classList.add('hidden');
-            }
-        });
+            });
+        }
 
         // ===== SHOWN ADMIN NOTIFICATIONS =====
         async function loadShownAdminNotifs(uid) {
@@ -3315,49 +3326,6 @@
         }
 
         // ===== ASYNC THUMBNAIL PROCESSING =====
-        // Use IntersectionObserver to only process visible thumbnails, then batch with requestIdleCallback
-        let thumbnailObserver = null;
-        function setupThumbnailObserver() {
-            if (thumbnailObserver) thumbnailObserver.disconnect();
-            thumbnailObserver = new IntersectionObserver((entries) => {
-                const toProcess = [];
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        if (img.dataset.processed === 'true') return;
-                        img.dataset.processed = 'true';
-                        toProcess.push(img);
-                    }
-                });
-                if (toProcess.length > 0) {
-                    requestIdleCallback(() => {
-                        toProcess.forEach(img => processSingleThumbnail(img));
-                    }, { timeout: 2000 });
-                }
-            }, { rootMargin: '200px' });
-            // Observe all thumbnails
-            document.querySelectorAll('.video-thumb-img').forEach(img => {
-                if (img.dataset.processed !== 'true') {
-                    thumbnailObserver.observe(img);
-                }
-            });
-        }
-
-        async function processSingleThumbnail(img) {
-            const url = img.dataset.videoUrl;
-            if (!url) return;
-            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
-            try {
-                const dataUrl = await captureVideoFrame(url);
-                if (dataUrl !== UTOM_THUMBNAIL) {
-                    img.src = dataUrl;
-                }
-            } catch (e) {
-                // fallback
-            }
-        }
-
-        // Also process all visible immediately when course detail opens
         async function processVideoThumbnailsAsync() {
             const images = document.querySelectorAll('.video-thumb-img:not([data-processed="true"])');
             if (images.length === 0) return;
@@ -3385,7 +3353,29 @@
 
         // Non‑blocking version for initial load
         function processVideoThumbnails() {
-            setupThumbnailObserver();
+            // Use IntersectionObserver for lazy loading
+            if (!window._thumbnailObserver) {
+                window._thumbnailObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (img.dataset.processed === 'true') return;
+                            img.dataset.processed = 'true';
+                            const url = img.dataset.videoUrl;
+                            if (!url) return;
+                            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return;
+                            captureVideoFrame(url).then(dataUrl => {
+                                if (dataUrl !== UTOM_THUMBNAIL) {
+                                    img.src = dataUrl;
+                                }
+                            });
+                        }
+                    });
+                }, { rootMargin: '200px' });
+            }
+            document.querySelectorAll('.video-thumb-img:not([data-processed="true"])').forEach(img => {
+                window._thumbnailObserver.observe(img);
+            });
         }
 
         // ===== COMMENT SYSTEM =====
@@ -3518,8 +3508,7 @@
         }
 
         function attachCommentListenersToVisibleVideos() {
-            // Only subscribe to comments when the toggle is clicked, not automatically.
-            // We'll set up event listeners for toggle buttons.
+            // Only subscribe to comments when the toggle is clicked
             document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
                 if (btn.dataset.listenerAttached === 'true') return;
                 btn.dataset.listenerAttached = 'true';
@@ -3554,9 +3543,8 @@
         }
 
         function setupCommentToggle() {
-            // already handled by attachCommentListenersToVisibleVideos
             attachCommentListenersToVisibleVideos();
-            // Also setup submit buttons
+            // Setup submit buttons
             document.querySelectorAll('.comment-submit-btn').forEach(btn => {
                 if (btn.dataset.listenerAttached === 'true') return;
                 btn.dataset.listenerAttached = 'true';
@@ -4748,7 +4736,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Optimized: search debounce, IntersectionObserver for thumbnails, lazy comment subscriptions, batched DOM updates, and course loader with async thumbnail generation.');
+        console.log('✅ UTOM User — Optimized: all data loaded before app loader hides, course loader waits for thumbnails, search debounced, IntersectionObserver for thumbnails, lazy comment subscriptions, batched DOM updates.');
     </script>
 </body>
 </html>
