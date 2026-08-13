@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js">
+    </script>
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -314,6 +315,18 @@
         .app-content::-webkit-scrollbar-thumb {
             background: rgba(245, 176, 66, 0.35);
             border-radius: 20px;
+        }
+
+        /* ===== PAGE CONTAINERS — FIX: HIDE ALL, SHOW ONLY ACTIVE ===== */
+        .page-container {
+            display: none !important;
+            width: 100%;
+        }
+        .page-container.active-page {
+            display: block !important;
+        }
+        .full-page-container {
+            padding: 0.6rem 0.8rem;
         }
 
         /* ===== BOTTOM NAV ===== */
@@ -1308,11 +1321,6 @@
         }
         .like-doc-btn.liked {
             color: #e74c3c;
-        }
-
-        /* ===== FULL PAGE CONTAINERS ===== */
-        .full-page-container {
-            padding: 0.6rem 0.8rem;
         }
 
         /* ===== DOC FULL PAGE ===== */
@@ -2682,7 +2690,7 @@
             font-weight: 500;
         }
 
-        /* ===== RESPONSIVE (same as original) ===== */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             :root {
                 --topbar-height: 96px;
@@ -2930,27 +2938,19 @@
 
             <!-- HOME -->
             <div id="homePage" class="page-container active-page">
-
-                <!-- PROMO CAROUSEL -->
                 <div class="promo-carousel-wrapper" id="promoCarouselWrapper">
                     <div class="promo-carousel-track" id="promoCarouselTrack">
                         <!-- Rendered by JS -->
                     </div>
                 </div>
-
-                <!-- ALL COURSES – NAME ONLY -->
                 <div class="courses-section">
                     <div class="grid-title"><h3><i class="fas fa-list-ul" style="color:var(--gold);"></i> All Courses</h3><span class="badge-count" id="totalCourseCount">0</span></div>
                     <div id="allCoursesNameContainer" class="all-courses-name-scroll"></div>
                 </div>
-
-                <!-- FREE COURSES -->
                 <div class="courses-section">
                     <div class="grid-title"><h3><i class="fas fa-gift" style="color:#2ecc71;"></i> Free Courses</h3><span class="badge-count" id="freeCourseCount">0</span></div>
                     <div id="freeCoursesGrid" class="courses-scroll-container"></div>
                 </div>
-
-                <!-- PAID COURSES -->
                 <div class="courses-section">
                     <div class="grid-title"><h3><i class="fas fa-crown" style="color:#F5B042;"></i> Paid Courses</h3><span class="badge-count" id="paidCourseCount">0</span></div>
                     <div id="paidCoursesGrid" class="courses-scroll-container"></div>
@@ -3007,7 +3007,7 @@
                 </div>
             </div>
 
-            <!-- PAYMENT PAGE (Professional Redesign) -->
+            <!-- PAYMENT PAGE -->
             <div id="paymentPage" class="page-container full-page-container">
                 <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.6rem"><i class="fas fa-arrow-left"></i> Back</button>
                 <div class="payment-container">
@@ -3029,7 +3029,6 @@
                                 </div>
                                 <div class="course-amount" id="paymentAmountDisplay">ZMW 0</div>
                             </div>
-
                             <div class="payment-instruction-box">
                                 <div class="inst-title"><i class="fas fa-info-circle"></i> Payment Instructions</div>
                                 <div class="inst-text">
@@ -3037,7 +3036,6 @@
                                     <strong>Use your full name as reference.</strong> After payment, upload the screenshot.
                                 </div>
                             </div>
-
                             <div id="paymentNumbersBox">
                                 <div class="payment-number-row" id="mtnNumberRow">
                                     <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
@@ -3050,14 +3048,12 @@
                                     <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
                                 </div>
                             </div>
-
                             <div class="payment-upload-area" id="paymentUploadBox">
                                 <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                                 <div class="upload-text">Tap to upload payment screenshot</div>
                                 <div class="upload-hint">PNG, JPG, HEIC • Max 5MB</div>
                                 <div id="paymentScreenshotPreview"></div>
                             </div>
-
                             <button id="submitPaymentPageBtn" class="payment-submit-btn">
                                 <i class="fas fa-paper-plane"></i> Submit for Approval
                             </button>
@@ -3171,7 +3167,7 @@
         let allDocs = [];
         let allPromos = [];
         let approvedCourses = new Set();
-        let approvedCoursesData = {}; // stores { expiresAt, durationType, durationValue, amount, title }
+        let approvedCoursesData = {};
         let pendingPurchases = {};
         let allUserTransactions = [];
         let notifications = [];
@@ -3183,7 +3179,6 @@
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
         let shownAdminNotifs = new Set();
 
-        // Timer state
         let expirationCheckInterval = null;
         let countdownUpdateInterval = null;
 
@@ -3326,7 +3321,6 @@
                 setupUI();
                 handleHashChange();
 
-                // Start expiration checker
                 startExpirationChecker();
 
             } catch (e) {
@@ -3340,12 +3334,10 @@
             if (expirationCheckInterval) clearInterval(expirationCheckInterval);
             if (countdownUpdateInterval) clearInterval(countdownUpdateInterval);
 
-            // Check for expired courses every 30 seconds
             expirationCheckInterval = setInterval(() => {
                 checkExpiredCourses();
             }, 30000);
 
-            // Update countdown displays every second
             countdownUpdateInterval = setInterval(() => {
                 updateAllCountdowns();
             }, 1000);
@@ -3363,7 +3355,6 @@
             }
 
             if (expired.length > 0) {
-                // Show expiration modal for the first expired course
                 const first = expired[0];
                 showExpirationModal(first.courseId, first.title || 'Course', first.amount || 0);
             }
@@ -3380,7 +3371,6 @@
         }
 
         function updateAllCountdowns() {
-            // Only update if we're on the mylearning page
             if (!document.getElementById('mylearningPage').classList.contains('active-page')) return;
             renderMyLearn();
         }
@@ -3395,18 +3385,15 @@
 
             if (!courseId) return;
 
-            // Remove from approved courses
             approvedCourses.delete(courseId);
             delete approvedCoursesData[courseId];
 
-            // Remove from Firebase approvedPurchases
             try {
                 await remove(ref(db, `approvedPurchases/${currentUser.uid}/${courseId}`));
             } catch (e) {
                 console.warn('Failed to remove approved purchase:', e);
             }
 
-            // Remove offline videos for this course
             const courseVideos = allVideos.filter(v => v.courseId === courseId);
             for (const video of courseVideos) {
                 if (offlineVideos.has(video.id)) {
@@ -3414,12 +3401,10 @@
                 }
             }
 
-            // Show notification
             addNotification('danger',
                 `Your subscription for "${courseName}" (ZMW ${amount}) has expired. The course has been removed from your library.`
                 );
 
-            // Refresh UI
             renderAllCourses();
             renderMyLearn();
             renderOfflinePage();
@@ -3666,8 +3651,8 @@
             const now = Date.now();
             const diff = expiresAt - now;
             if (diff <= 0) return 'expired';
-            if (diff < 86400000) return 'warning'; // less than 1 day
-            if (diff < 259200000) return 'warning'; // less than 3 days
+            if (diff < 86400000) return 'warning';
+            if (diff < 259200000) return 'warning';
             return 'normal';
         }
 
@@ -3958,7 +3943,6 @@
             const bgColor = imgUrl ? 'transparent' : getRandomColor();
             const initial = (course.name || 'C').charAt(0).toUpperCase();
 
-            // Duration display
             let durationDisplay = 'Lifetime';
             if (course.durationType && course.durationType !== 'lifetime' && course.durationValue > 0) {
                 const labels = {
@@ -4948,7 +4932,6 @@
                     const now = Date.now();
                     const diff = data.expiresAt - now;
                     if (diff <= 0) {
-                        // Expired - should be cleaned up by the checker
                         return '';
                     }
                     const display = formatCountdown(data.expiresAt);
@@ -4959,7 +4942,6 @@
                     countdownHtml =
                         `<span class="countdown-badge ${cls}"><i class="fas ${icon} cd-icon"></i> ${display}</span>`;
                 } else if (data && data.durationType && data.durationType !== 'lifetime') {
-                    // Duration-based but not yet started (shouldn't happen)
                     countdownHtml =
                         `<span class="countdown-badge"><i class="fas fa-clock cd-icon"></i> ${formatDuration(data.durationType, data.durationValue)}</span>`;
                 } else {
@@ -4967,7 +4949,6 @@
                 }
 
                 const cardHtml = buildCourseCard(c);
-                // Inject countdown badge into the card
                 return cardHtml.replace(
                     '</div></div>',
                     `<div class="course-meta" style="margin-top:4px;">
@@ -5016,9 +4997,7 @@
                         const record = req.result;
                         const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
                             instructor: 'Saved offline', price: 0, videoUrl: '' };
-                        // Check if the course is still approved, if not, remove offline
                         if (videoMeta.courseId && !approvedCourses.has(videoMeta.courseId)) {
-                            // This offline video belongs to an expired course, remove it
                             await deleteOfflineVideo(id);
                             continue;
                         }
@@ -5084,7 +5063,6 @@
             document.getElementById('paymentCourseTitle').innerText = course.name;
             document.getElementById('paymentAmountDisplay').innerText = `ZMW ${course.price}`;
 
-            // Show duration info on payment page
             const durationInfo = document.getElementById('paymentDurationInfo');
             if (course.durationType && course.durationType !== 'lifetime' && course.durationValue > 0) {
                 const labels = {
@@ -5188,7 +5166,6 @@
                 showPage('transactionHistory');
             });
 
-            // Expiration OK button
             document.getElementById('expirationOkBtn').addEventListener('click', () => {
                 handleExpirationOk();
             });
@@ -5571,7 +5548,6 @@
             if (targetPage) {
                 targetPage.classList.add('active-page');
             } else {
-                // fallback to home if page not found
                 document.getElementById('homePage').classList.add('active-page');
                 return;
             }
@@ -5666,7 +5642,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — All pages working, professional payment, countdown timers, expiration modal, and offline cleanup.');
+        console.log('✅ UTOM User — Navigation fixed, each page now displays separately.');
     </script>
 </body>
 </html>
