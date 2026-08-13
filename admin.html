@@ -81,7 +81,11 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
         #appLoader p {
             margin-top: 18px;
             font-weight: 700;
@@ -642,6 +646,14 @@
         .course-meta .course-price {
             font-weight: 700;
             color: var(--text-secondary);
+        }
+        .course-meta .course-duration-badge {
+            font-size: 0.6rem;
+            padding: 2px 10px;
+            border-radius: 30px;
+            background: rgba(245, 176, 66, 0.12);
+            color: var(--gold-dark);
+            font-weight: 600;
         }
 
         /* ===== GRID TITLES ===== */
@@ -4300,6 +4312,16 @@
                             <option value="paid">Paid</option>
                         </select>
                         <input type="number" id="newCoursePrice" placeholder="Price ZMW" style="width:100px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;display:none;">
+                        <!-- === NEW: Duration fields === -->
+                        <select id="newCourseDurationType" style="flex:1;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;">
+                            <option value="lifetime">Lifetime</option>
+                            <option value="minutes">Minutes</option>
+                            <option value="hours">Hours</option>
+                            <option value="days">Days</option>
+                            <option value="weeks">Weeks</option>
+                            <option value="months">Months</option>
+                        </select>
+                        <input type="number" id="newCourseDurationValue" placeholder="Duration value" value="0" min="0" style="width:90px;background:#fff;border-radius:40px;border:1.5px solid #e5e8ed;padding:10px 16px;font-size:12px;">
                         <button id="addCourseBtn" class="btn-primary" style="padding:10px 20px;font-size:11px;">+ Add</button>
                     </div>
                     <!-- New Course Image Upload -->
@@ -4718,6 +4740,19 @@
                     <label>Price (ZMW)</label>
                     <input type="number" id="editCoursePrice" placeholder="0" min="0" step="0.01">
                 </div>
+                <!-- === NEW: Duration fields in edit modal === -->
+                <div class="form-row">
+                    <label>Duration Type</label>
+                    <select id="editCourseDurationType" style="flex:1;">
+                        <option value="lifetime">Lifetime</option>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                    </select>
+                    <input type="number" id="editCourseDurationValue" placeholder="Duration value" value="0" min="0" style="width:90px;">
+                </div>
                 <div class="form-row">
                     <label>Description</label>
                     <textarea id="editCourseDescription" rows="3" placeholder="Course description (optional)"></textarea>
@@ -4891,7 +4926,7 @@
         let pendingEditCourseId = null;
         let commentsCache = {};
         let promos = [];
-        let inAppNotifications = []; // 🔁 renamed from popupNotifications
+        let inAppNotifications = [];
         let popupSelectedUsers = new Set();
 
         // Carousel state
@@ -4916,7 +4951,7 @@
         const readNotifRef = ref(db, 'system/readNotifications');
         const commentsRef = ref(db, 'comments');
         const promosRef = ref(db, 'promos');
-        const inAppNotificationsRef = ref(db, 'inAppNotifications'); // 🔁 FIXED PATH
+        const inAppNotificationsRef = ref(db, 'inAppNotifications');
 
         // =================================================================
         // AUTHENTICATION & INIT (with LOADER FADE)
@@ -4927,15 +4962,11 @@
                 signOut(auth); return; }
             currentAdmin = user;
             try {
-                // Load initial data sequentially (or parallel) before hiding loader
                 await loadBannedUsers();
                 await loadPaymentSettings();
                 await loadReadNotifications();
-                // Fetch all core data once to populate UI, then attach live listeners
                 await fetchInitialData();
-                // Setup real-time listeners
                 setupRealtime();
-                // Hide loader after initial data is ready
                 document.getElementById('appLoader').classList.add('hidden');
             } catch (err) {
                 console.error('Error loading initial data:', err);
@@ -4952,7 +4983,7 @@
         });
 
         // =================================================================
-        // INITIAL DATA FETCH (used to load everything before hiding loader)
+        // INITIAL DATA FETCH
         // =================================================================
         async function fetchInitialData() {
             const snapshots = await Promise.all([
@@ -4970,7 +5001,6 @@
                 get(pendingPurchasesRef)
             ]);
 
-            // Populate global arrays from snapshots
             const [usersSn, coursesSn, subSn, vidSn, docSn, promSn, popSn, notifSn, banSn, paySn, txSn, penSn] =
             snapshots;
 
@@ -4985,7 +5015,6 @@
             bannedUsersMap = banSn.val() || {};
             if (paySn.val()) paymentSettings = paySn.val();
 
-            // Transactions
             const txData = txSn.val() || {};
             const pendingData = penSn.val() || {};
             const seen = new Map();
@@ -5004,7 +5033,6 @@
             });
             allTransactions = Array.from(seen.values());
 
-            // Update UI once
             renderAdminHome();
             renderPostedGrid();
             renderUsers();
@@ -5400,7 +5428,9 @@
             const filtered = [...courses].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             container.innerHTML = filtered.map(c => {
                 const subfolderCount = subfolders.filter(sf => sf.courseId === c.id).length;
-                return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount}</span></span>`;
+                const durationLabel = c.durationType && c.durationType !== 'lifetime' ?
+                    ` · ${c.durationValue} ${c.durationType}` : '';
+                return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount}${durationLabel}</span></span>`;
             }).join('') || '<span class="empty-state" style="padding:0.5rem;">No courses found</span>';
 
             document.getElementById('adminTotalCourseCount').innerText = filtered.length;
@@ -5458,6 +5488,8 @@
         function buildAdminCourseCard(course) {
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
             const subfolderCount = subfolders.filter(sf => sf.courseId === course.id).length;
+            const durationLabel = course.durationType && course.durationType !== 'lifetime' ?
+                `${course.durationValue} ${course.durationType}` : 'Lifetime';
 
             const imgUrl = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
             const bgColor = imgUrl ? 'transparent' : getRandomColor();
@@ -5477,6 +5509,7 @@
                     <div class="course-desc">${escapeHtml(course.description || 'Learn new skills and advance your career!')}</div>
                     <div class="course-meta">
                         <span class="course-price">${priceDisplay}</span>
+                        <span class="course-duration-badge"><i class="fas fa-clock"></i> ${durationLabel}</span>
                     </div>
                 </div>
             </div>`;
@@ -5850,6 +5883,8 @@
             document.getElementById('editCoursePriceType').value = (course.price === 0) ? 'free' : 'paid';
             document.getElementById('editCoursePrice').value = course.price || 0;
             document.getElementById('editCoursePrice').style.display = (course.price === 0) ? 'none' : 'inline-block';
+            document.getElementById('editCourseDurationType').value = course.durationType || 'lifetime';
+            document.getElementById('editCourseDurationValue').value = course.durationValue || 0;
             document.getElementById('editCourseDescription').value = course.description || '';
             const imgUrl = course.imageUrl || '';
             document.getElementById('editCourseImageUrl').value = imgUrl;
@@ -5951,10 +5986,12 @@
             const priceType = document.getElementById('editCoursePriceType').value;
             const price = priceType === 'free' ? 0 : (parseFloat(document.getElementById('editCoursePrice')
                 .value) || 0);
+            const durationType = document.getElementById('editCourseDurationType').value;
+            const durationValue = parseInt(document.getElementById('editCourseDurationValue').value) || 0;
             const description = document.getElementById('editCourseDescription').value.trim();
             const imageUrl = document.getElementById('editCourseImageUrl').value;
             if (!name) return alert('Course name is required');
-            const updateData = { name, price, description };
+            const updateData = { name, price, durationType, durationValue, description };
             if (imageUrl) {
                 updateData.imageUrl = imageUrl;
             } else {
@@ -6185,6 +6222,43 @@
                     if (!confirm(`Approve payment of ZMW ${amount} for "${itemTitle}"?`)) return;
                     try {
                         let txData = null;
+                        let courseDurationType = 'lifetime';
+                        let courseDurationValue = 0;
+
+                        // Fetch the course to get duration settings
+                        const courseSnap = await get(ref(db, `courses/${itemId}`));
+                        if (courseSnap.val()) {
+                            const course = courseSnap.val();
+                            courseDurationType = course.durationType || 'lifetime';
+                            courseDurationValue = course.durationValue || 0;
+                        }
+
+                        let expiresAt = null;
+                        if (courseDurationType !== 'lifetime' && courseDurationValue > 0) {
+                            const now = Date.now();
+                            let ms = 0;
+                            switch (courseDurationType) {
+                                case 'minutes':
+                                    ms = courseDurationValue * 60 * 1000;
+                                    break;
+                                case 'hours':
+                                    ms = courseDurationValue * 60 * 60 * 1000;
+                                    break;
+                                case 'days':
+                                    ms = courseDurationValue * 24 * 60 * 60 * 1000;
+                                    break;
+                                case 'weeks':
+                                    ms = courseDurationValue * 7 * 24 * 60 * 60 * 1000;
+                                    break;
+                                case 'months':
+                                    ms = courseDurationValue * 30 * 24 * 60 * 60 * 1000;
+                                    break;
+                                default:
+                                    ms = 0;
+                            }
+                            expiresAt = now + ms;
+                        }
+
                         if (source === 'pendingPurchases') {
                             const txSnap = await get(ref(db, `pendingPurchases/${userId}/${txId}`));
                             txData = txSnap.val();
@@ -6210,9 +6284,21 @@
                             }
                             await update(ref(db, `transactions/${txId}`), { status: 'approved' });
                         }
-                        await set(ref(db, `approvedPurchases/${userId}/${itemId}`), true);
+
+                        const approvalData = {
+                            approvedAt: serverTimestamp(),
+                            itemType: itemType,
+                            amount: amount,
+                            itemTitle: itemTitle,
+                            durationType: courseDurationType,
+                            durationValue: courseDurationValue
+                        };
+                        if (expiresAt) {
+                            approvalData.expiresAt = expiresAt;
+                        }
+                        await set(ref(db, `approvedPurchases/${userId}/${itemId}`), approvalData);
                         push(notificationsRef, {
-                            message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved`,
+                            message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved${expiresAt ? ' (duration: '+courseDurationValue+' '+courseDurationType+')' : ''}`,
                             timestamp: serverTimestamp()
                         });
                         showToast('Approved!', 'success');
@@ -6709,13 +6795,16 @@
                 const priceType = document.getElementById('newCoursePriceType').value;
                 const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('newCoursePrice')
                     .value) || 0;
+                const durationType = document.getElementById('newCourseDurationType').value;
+                const durationValue = parseInt(document.getElementById('newCourseDurationValue').value) || 0;
                 const imageUrl = document.getElementById('newCourseImageUrl').value;
                 if (name) {
                     const r = push(coursesRef);
-                    const data = { name, price };
+                    const data = { name, price, durationType, durationValue };
                     if (imageUrl) data.imageUrl = imageUrl;
                     await set(r, data);
                     document.getElementById('newCourseName').value = '';
+                    document.getElementById('newCourseDurationValue').value = '0';
                     document.getElementById('newCourseImageUrl').value = '';
                     document.getElementById('newCourseRemoveImageBtn').style.display = 'none';
                     showToast('Course added!', 'success');
@@ -6802,7 +6891,6 @@
                                 if (fill) fill.style.width = '0%';
                                 if (percentText) percentText.innerText = '0%';
                             }
-                            // Auto-generate thumbnail
                             const thumb = videoUrl.replace('/upload/', '/upload/so_3/').replace(/\.[^/.]+$/, '.jpg');
                             document.getElementById('generatedThumbnailUrl').value = thumb;
                             const previewContainer = document.getElementById('thumbnailPreviewContainer');
@@ -7824,7 +7912,7 @@
                 submitBtn.disabled = true;
 
                 try {
-                    const newRef = push(inAppNotificationsRef); // 🔁 FIXED
+                    const newRef = push(inAppNotificationsRef);
                     await set(newRef, {
                         title,
                         message,
@@ -7968,7 +8056,7 @@
                 btn.addEventListener('click', async function() {
                     const id = this.dataset.id;
                     if (confirm('Delete this popup notification?')) {
-                        await remove(ref(db, `inAppNotifications/${id}`)); // 🔁 FIXED
+                        await remove(ref(db, `inAppNotifications/${id}`));
                         showToast('Popup deleted.', 'info');
                     }
                 });
@@ -7983,10 +8071,12 @@
             container.innerHTML = courses.map(course => {
                 const courseSubfolders = subfolders.filter(s => s.courseId === course.id);
                 const imgHtml = course.imageUrl ? `<img src="${course.imageUrl}" alt="${escapeHtml(course.name)}" style="width:36px;height:22px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:6px;">` : '';
+                const durationLabel = course.durationType && course.durationType !== 'lifetime' ?
+                    ` ⏱️ ${course.durationValue} ${course.durationType}` : '';
                 return `
                 <div class="course-folder">
                     <div class="course-header" data-course-id="${course.id}">
-                        <span><i class="fas fa-book"></i> ${imgHtml} ${escapeHtml(course.name)} ${course.price > 0 ? '(ZMW '+course.price+')' : '(Free)'}</span>
+                        <span><i class="fas fa-book"></i> ${imgHtml} ${escapeHtml(course.name)} ${course.price > 0 ? '(ZMW '+course.price+')' : '(Free)'}${durationLabel}</span>
                         <div class="course-actions">
                             <button class="btn-edit-course" data-course-id="${course.id}"><i class="fas fa-pen-to-square"></i> Edit</button>
                             <button class="btn-delete-course" data-course-id="${course.id}" data-course-name="${escapeHtml(course.name)}"><i class="fas fa-trash-alt"></i> Delete</button>
@@ -8150,8 +8240,6 @@
         // REALTIME (UPDATED – only live listeners, initial data already loaded)
         // =================================================================
         function setupRealtime() {
-            // We attach onValue for live updates. Initial data is already loaded in fetchInitialData.
-
             onValue(videosRef, snap => {
                 videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 renderAdminHome();
@@ -8246,7 +8334,7 @@
                 renderPromoPics();
             });
 
-            onValue(inAppNotificationsRef, snap => { // 🔁 FIXED
+            onValue(inAppNotificationsRef, snap => {
                 const data = snap.val();
                 inAppNotifications = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
                 renderSentPopups();
@@ -8257,7 +8345,6 @@
         // BOOT
         // =================================================================
         document.addEventListener('DOMContentLoaded', () => {
-            // Ensure left sidebar works on first click
             const hamburger = document.getElementById('hamburgerBtn');
             const overlay = document.getElementById('leftSidebarOverlay');
             const sidebar = document.getElementById('leftSidebar');
@@ -8286,7 +8373,7 @@
             }
         });
 
-        console.log('✅ UTOM Admin — Fixed popup path to inAppNotifications, added load screen.');
+        console.log('✅ UTOM Admin — Added duration-based paid courses (lifetime, minutes, hours, days, weeks, months).');
     </script>
 </body>
 </html>
