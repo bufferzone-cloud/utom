@@ -10689,48 +10689,50 @@
         });
 
         // ---- REGISTERS LIST ----
-        function renderRegistersList() {
-            const container = document.getElementById('registersListContainer');
-            const search = document.getElementById('registersSearch')?.value?.toLowerCase() || '';
-            let filtered = registers;
-            if (search) {
-                filtered = filtered.filter(r =>
-                    r.name.toLowerCase().includes(search) ||
-                    r.lecture.toLowerCase().includes(search) ||
-                    (r.memberDetails || []).some(m => m.name.toLowerCase().includes(search) || m.email.toLowerCase()
-                        .includes(search))
-                );
-            }
-            if (filtered.length === 0) {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No registers found.</div>';
-                return;
-            }
-            container.innerHTML = filtered.map(r => `
-                <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                        <div>
-                            <strong style="font-size:14px;">${escapeHtml(r.name)}</strong>
-                            <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(r.lecture)}</span>
-                        </div>
-                        <div style="font-size:12px;color:#8b8fa3;">${(r.members || []).length} members</div>
-                    </div>
-                    <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">View</button>
-                        <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-regid="${r.id}">Delete</button>
-                    </div>
+function renderRegistersList() {
+    const container = document.getElementById('registersListContainer');
+    const search = document.getElementById('registersSearch')?.value?.toLowerCase() || '';
+    let filtered = registers;
+    if (search) {
+        filtered = filtered.filter(r =>
+            (r.name || '').toLowerCase().includes(search) ||
+            (r.lecture || '').toLowerCase().includes(search) ||
+            (r.memberDetails || []).some(m => 
+                (m.name || '').toLowerCase().includes(search) || 
+                (m.email || '').toLowerCase().includes(search)
+            )
+        );
+    }
+    if (filtered.length === 0) {
+        container.innerHTML =
+            '<div style="text-align:center;padding:24px;color:#8b8fa3;">No registers found.</div>';
+        return;
+    }
+    container.innerHTML = filtered.map(r => `
+        <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                <div>
+                    <strong style="font-size:14px;">${escapeHtml(r.name)}</strong>
+                    <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(r.lecture)}</span>
                 </div>
-            `).join('');
+                <div style="font-size:12px;color:#8b8fa3;">${(r.members || []).length} members</div>
+            </div>
+            <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">View</button>
+                <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-regid="${r.id}">Delete</button>
+            </div>
+        </div>
+    `).join('');
 
-            container.querySelectorAll('.btn-danger[data-regid]').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    if (confirm('Delete this register?')) {
-                        await remove(ref(db, `registers/${this.dataset.regid}`));
-                        showToast('Register deleted.', 'info');
-                    }
-                });
-            });
-        }
+    container.querySelectorAll('.btn-danger[data-regid]').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (confirm('Delete this register?')) {
+                await remove(ref(db, `registers/${this.dataset.regid}`));
+                showToast('Register deleted.', 'info');
+            }
+        });
+    });
+}
 
         document.getElementById('registersSearch')?.addEventListener('input', renderRegistersList);
 
