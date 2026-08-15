@@ -5463,7 +5463,7 @@
                                     <input type="text" id="regMemberSearch" placeholder="Search by name, email, or phone..." style="flex:1;">
                                 </div>
                                 <div class="register-member-selector" id="regMemberSelector">
-                                    <div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">Type to search for users...</div>
+                                    <div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">Loading users...</div>
                                 </div>
                             </div>
                             <div style="margin:8px 0;">
@@ -7461,35 +7461,46 @@
                     if (!confirm(`Approve payment of ZMW ${amount} for "${itemTitle}"?`)) return;
                     try {
                         let txData = null;
-                        let courseDurationType = 'lifetime';
-                        let courseDurationValue = 0;
+                        let durationType = 'lifetime';
+                        let durationValue = 0;
 
-                        const courseSnap = await get(ref(db, `courses/${itemId}`));
-                        if (courseSnap.val()) {
-                            const course = courseSnap.val();
-                            courseDurationType = course.durationType || 'lifetime';
-                            courseDurationValue = course.durationValue || 0;
+                        // === FIX: Handle item types correctly ===
+                        if (itemType === 'course') {
+                            const courseSnap = await get(ref(db, `courses/${itemId}`));
+                            if (courseSnap.val()) {
+                                const course = courseSnap.val();
+                                durationType = course.durationType || 'lifetime';
+                                durationValue = course.durationValue || 0;
+                            }
+                        } else if (['test', 'quiz', 'exam'].includes(itemType)) {
+                            const assSnap = await get(ref(db, `assessments/${itemId}`));
+                            if (assSnap.val()) {
+                                const ass = assSnap.val();
+                                const durParts = ass.duration ? ass.duration.split(':').map(Number) : [0, 0];
+                                durationValue = durParts[0] * 60 + durParts[1]; // total minutes
+                                durationType = 'minutes';
+                            }
                         }
 
                         let expiresAt = null;
-                        if (courseDurationType !== 'lifetime' && courseDurationValue > 0) {
+                        if (durationType !== 'lifetime' && durationValue > 0) {
                             const now = Date.now();
                             let ms = 0;
-                            switch (courseDurationType) {
+                            switch (durationType) {
                                 case 'minutes':
-                                    ms = courseDurationValue * 60 * 1000;
+                                    ms = durationValue * 60 * 1000;
                                     break;
                                 case 'hours':
-                                    ms = courseDurationValue * 60 * 60 * 1000;
+                                    ms = durationValue * 60 * 60 * 1000;
                                     break;
                                 case 'days':
-                                    ms = courseDurationValue * 24 * 60 * 60 * 1000;
+                                    ms = durationValue * 24 * 60 * 60 * 1000;
                                     break;
                                 case 'weeks':
-                                    ms = courseDurationValue * 7 * 24 * 60 * 60 * 1000;
+                                    ms = durationValue * 7 * 24 * 60 * 60 * 1000;
                                     break;
                                 case 'months':
-                                    ms = courseDurationValue * 30 * 24 * 60 * 60 * 1000;
+                                    ms = durationValue * 30 * 24 * 60 * 60 * 1000;
                                     break;
                                 default:
                                     ms = 0;
@@ -7528,15 +7539,15 @@
                             itemType: itemType,
                             amount: amount,
                             itemTitle: itemTitle,
-                            durationType: courseDurationType,
-                            durationValue: courseDurationValue
+                            durationType: durationType,
+                            durationValue: durationValue
                         };
                         if (expiresAt) {
                             approvalData.expiresAt = expiresAt;
                         }
                         await set(ref(db, `approvedPurchases/${userId}/${itemId}`), approvalData);
                         push(notificationsRef, {
-                            message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved${expiresAt ? ' (duration: '+courseDurationValue+' '+courseDurationType+')' : ''}`,
+                            message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved${expiresAt ? ' (duration: '+durationValue+' '+durationType+')' : ''}`,
                             timestamp: serverTimestamp()
                         });
                         showToast('Approved!', 'success');
@@ -9661,29 +9672,47 @@
                 renderSentPopups();
             });
 
-            // ---- NEW Test/Exams realtime ----
+            // ---- NEW Test/Exams realtime with error handling ----
             onValue(registersRef, snap => {
-                const data = snap.val();
-                registers = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                renderTestExamsDashboard();
-                renderRegistersList();
-                updateTestExamsDropdowns();
+                try {
+                    const data = snap.val();
+                    registers = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    renderTestExamsDashboard();
+                    renderRegistersList();
+                    updateTestExamsDropdowns();
+                } catch (err) {
+                    console.error('Error in registers listener:', err);
+                }
+            }, (err) => {
+                console.error('Registers listener error:', err);
             });
 
             onValue(assessmentsRef, snap => {
-                const data = snap.val();
-                assessments = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                renderTestExamsDashboard();
-                renderOngoingList();
-                renderHistoryList();
-                updateTestExamsDropdowns();
+                try {
+                    const data = snap.val();
+                    assessments = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    renderTestExamsDashboard();
+                    renderOngoingList();
+                    renderHistoryList();
+                    updateTestExamsDropdowns();
+                } catch (err) {
+                    console.error('Error in assessments listener:', err);
+                }
+            }, (err) => {
+                console.error('Assessments listener error:', err);
             });
 
             onValue(assessmentResponsesRef, snap => {
-                const data = snap.val();
-                assessmentResponses = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                renderOngoingList();
-                renderHistoryList();
+                try {
+                    const data = snap.val();
+                    assessmentResponses = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    renderOngoingList();
+                    renderHistoryList();
+                } catch (err) {
+                    console.error('Error in assessmentResponses listener:', err);
+                }
+            }, (err) => {
+                console.error('AssessmentResponses listener error:', err);
             });
         }
 
@@ -9729,7 +9758,8 @@
         // ---- CREATE REGISTER ----
         function renderCreateRegisterForm() {
             const selector = document.getElementById('regMemberSelector');
-            selector.innerHTML = '<div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">Type to search for users...</div>';
+            // === FIX: Show all users by default ===
+            renderRegisterMemberSelector('');
             document.getElementById('regMemberList').innerHTML =
                 '<div style="color:#8b8fa3;font-size:12px;padding:8px;text-align:center;">No members added yet.</div>';
             window._regMembers = [];
@@ -9739,24 +9769,22 @@
             document.getElementById('regMemberSearch').addEventListener('input', function() {
                 renderRegisterMemberSelector(this.value);
             });
-            // Initial empty
-            renderRegisterMemberSelector('');
         }
 
         function renderRegisterMemberSelector(searchTerm = '') {
             const container = document.getElementById('regMemberSelector');
             const search = searchTerm.trim().toLowerCase();
-            if (!search) {
-                container.innerHTML =
-                    '<div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">Type to search for users...</div>';
-                return;
+            let filtered = users;
+            if (search) {
+                filtered = filtered.filter(u =>
+                    (u.firstName || '').toLowerCase().includes(search) ||
+                    (u.lastName || '').toLowerCase().includes(search) ||
+                    (u.email || '').toLowerCase().includes(search) ||
+                    (u.phone || '').toLowerCase().includes(search)
+                );
             }
-            let filtered = users.filter(u =>
-                (u.firstName || '').toLowerCase().includes(search) ||
-                (u.lastName || '').toLowerCase().includes(search) ||
-                (u.email || '').toLowerCase().includes(search) ||
-                (u.phone || '').toLowerCase().includes(search)
-            );
+            // If no search term, show ALL users (limit to first 100 to prevent performance issues, but show all)
+            // We'll show all users if search is empty, else filtered.
             if (filtered.length === 0) {
                 container.innerHTML =
                     `<div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">No users found.</div>`;
@@ -11029,6 +11057,7 @@
         // ---- REGISTERS LIST ----
         function renderRegistersList() {
             const container = document.getElementById('registersListContainer');
+            if (!container) return;
             const search = document.getElementById('registersSearch')?.value?.toLowerCase() || '';
             let filtered = registers;
             if (search) {
