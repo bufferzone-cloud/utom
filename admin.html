@@ -5520,8 +5520,9 @@
                                 <label style="font-weight:600;font-size:12px;">Student Info Collection:</label>
                                 <div id="testInfoToggle" class="iphone-toggle active"></div>
                             </div>
+                            <!-- === FIX: Vertical layout for info fields === -->
                             <div id="testInfoFields" style="border:1px solid #e5e8ed;border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-                                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <div style="display:flex;flex-direction:column;gap:6px;">
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="test-info-field" value="studentNumber" checked> Student Number</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="test-info-field" value="nrc" checked> NRC</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="test-info-field" value="fullName" checked> Full Name</label>
@@ -5610,12 +5611,14 @@
                                     <input type="datetime-local" id="quizAvailableUntil" required>
                                 </div>
                             </div>
+                            <!-- Info Collection -->
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
                                 <label style="font-weight:600;font-size:12px;">Student Info Collection:</label>
                                 <div id="quizInfoToggle" class="iphone-toggle active"></div>
                             </div>
+                            <!-- === FIX: Vertical layout for info fields === -->
                             <div id="quizInfoFields" style="border:1px solid #e5e8ed;border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-                                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <div style="display:flex;flex-direction:column;gap:6px;">
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="quiz-info-field" value="studentNumber" checked> Student Number</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="quiz-info-field" value="nrc" checked> NRC</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="quiz-info-field" value="fullName" checked> Full Name</label>
@@ -5629,6 +5632,7 @@
                                 </div>
                                 <div id="quizCustomFieldsList" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;"></div>
                             </div>
+                            <!-- Payment -->
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
                                 <label style="font-weight:600;font-size:12px;">Make this quiz paid?</label>
                                 <div id="quizPaymentToggle" class="iphone-toggle"></div>
@@ -5729,12 +5733,14 @@
                                     <input type="datetime-local" id="examAvailableUntil" required>
                                 </div>
                             </div>
+                            <!-- Info Collection -->
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
                                 <label style="font-weight:600;font-size:12px;">Student Info Collection:</label>
                                 <div id="examInfoToggle" class="iphone-toggle active"></div>
                             </div>
+                            <!-- === FIX: Vertical layout for info fields === -->
                             <div id="examInfoFields" style="border:1px solid #e5e8ed;border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-                                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <div style="display:flex;flex-direction:column;gap:6px;">
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="exam-info-field" value="studentNumber" checked> Student Number</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="exam-info-field" value="nrc" checked> NRC</label>
                                     <label style="font-size:11px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="exam-info-field" value="fullName" checked> Full Name</label>
@@ -5748,6 +5754,7 @@
                                 </div>
                                 <div id="examCustomFieldsList" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;"></div>
                             </div>
+                            <!-- Payment -->
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
                                 <label style="font-weight:600;font-size:12px;">Make this exam paid?</label>
                                 <div id="examPaymentToggle" class="iphone-toggle"></div>
@@ -7464,7 +7471,7 @@
                         let durationType = 'lifetime';
                         let durationValue = 0;
 
-                        // === FIX: Handle item types correctly ===
+                        // === Handle item types correctly ===
                         if (itemType === 'course') {
                             const courseSnap = await get(ref(db, `courses/${itemId}`));
                             if (courseSnap.val()) {
@@ -7583,7 +7590,7 @@
         // =================================================================
         function renderUsers() {
             const container = document.getElementById('usersListContainer');
-            const search = document.getElementById('usersSearchInput')?.value.toLowerCase() || '';
+            const search = (document.getElementById('usersSearchInput')?.value || '').toLowerCase();
             const usersWithBan = users.map(u => ({ ...u, banned: bannedUsersMap[u.uid] === true }));
             const filtered = usersWithBan.filter(u =>
                 (u.firstName || '').toLowerCase().includes(search) ||
@@ -7743,9 +7750,11 @@
             });
             const count = unread.length;
             const badge = document.getElementById('notifBadge');
-            badge.style.display = count ? 'flex' : 'none';
-            badge.innerText = count > 9 ? '9+' : count;
-            badge.classList.toggle('read', count === 0);
+            if (badge) {
+                badge.style.display = count ? 'flex' : 'none';
+                badge.innerText = count > 9 ? '9+' : count;
+                badge.classList.toggle('read', count === 0);
+            }
         }
 
         // =================================================================
@@ -8826,11 +8835,11 @@
         }
 
         function renderPostedGrid() {
-            const search = document.getElementById('searchVideoInput')?.value.toLowerCase() || '';
+            const search = (document.getElementById('searchVideoInput')?.value || '').toLowerCase();
             const courseFilter = document.getElementById('filterCourseSelect')?.value || 'all';
             const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
             let filtered = videos.filter(v =>
-                (v.title.toLowerCase().includes(search) || v.instructor.toLowerCase().includes(search)) &&
+                ((v.title || '').toLowerCase().includes(search) || (v.instructor || '').toLowerCase().includes(search)) &&
                 (courseFilter === 'all' || v.courseId === courseFilter) &&
                 (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
             );
@@ -9292,7 +9301,7 @@
         function renderPopupUserList(searchTerm = '') {
             const container = document.getElementById('popupUserListContainer');
             if (!container) return;
-            const search = searchTerm || document.getElementById('popupUserSearch')?.value?.trim()?.toLowerCase() || '';
+            const search = (searchTerm || document.getElementById('popupUserSearch')?.value?.trim()?.toLowerCase() || '');
             let filtered = users || [];
             if (search) {
                 filtered = filtered.filter(u =>
@@ -9673,7 +9682,7 @@
             });
 
             // ---- NEW Test/Exams realtime with error handling ----
-            onValue(registersRef, snap => {
+            onValue(registersRef, (snap) => {
                 try {
                     const data = snap.val();
                     registers = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
@@ -9687,7 +9696,7 @@
                 console.error('Registers listener error:', err);
             });
 
-            onValue(assessmentsRef, snap => {
+            onValue(assessmentsRef, (snap) => {
                 try {
                     const data = snap.val();
                     assessments = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
@@ -9702,7 +9711,7 @@
                 console.error('Assessments listener error:', err);
             });
 
-            onValue(assessmentResponsesRef, snap => {
+            onValue(assessmentResponsesRef, (snap) => {
                 try {
                     const data = snap.val();
                     assessmentResponses = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
@@ -11058,7 +11067,7 @@
         function renderRegistersList() {
             const container = document.getElementById('registersListContainer');
             if (!container) return;
-            const search = document.getElementById('registersSearch')?.value?.toLowerCase() || '';
+            const search = (document.getElementById('registersSearch')?.value || '').toLowerCase();
             let filtered = registers;
             if (search) {
                 filtered = filtered.filter(r =>
@@ -11084,12 +11093,33 @@
                         </div>
                         <div style="font-size:12px;color:#8b8fa3;">${(r.members || []).length} members</div>
                     </div>
+                    <!-- === FIX: View Members Toggle === -->
+                    <div style="margin-top:6px;">
+                        <button class="btn-toggle-members btn-outline" style="padding:3px 12px;font-size:9px;" data-regid="${r.id}">
+                            <i class="fas fa-users"></i> View Members
+                        </button>
+                        <div class="member-list" style="display:none;margin-top:4px;max-height:150px;" id="memberList-${r.id}">
+                            ${(r.memberDetails || []).map(m => `<div style="padding:4px 0;font-size:12px;border-bottom:1px solid #eee;">${escapeHtml(m.name)} (${escapeHtml(m.email)})</div>`).join('')}
+                        </div>
+                    </div>
                     <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">View</button>
+                        <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">Back</button>
                         <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-regid="${r.id}">Delete</button>
                     </div>
                 </div>
             `).join('');
+
+            container.querySelectorAll('.btn-toggle-members').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const regId = this.dataset.regid;
+                    const list = document.getElementById(`memberList-${regId}`);
+                    if (list) {
+                        const isHidden = list.style.display === 'none';
+                        list.style.display = isHidden ? 'block' : 'none';
+                        this.innerHTML = isHidden ? '<i class="fas fa-users"></i> Hide Members' : '<i class="fas fa-users"></i> View Members';
+                    }
+                });
+            });
 
             container.querySelectorAll('.btn-danger[data-regid]').forEach(btn => {
                 btn.addEventListener('click', async function() {
@@ -11106,7 +11136,7 @@
         // ---- ON GOING LIST ----
         function renderOngoingList() {
             const container = document.getElementById('ongoingListContainer');
-            const search = document.getElementById('ongoingSearch')?.value?.toLowerCase() || '';
+            const search = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
             const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
 
             const activeAssessments = assessments.filter(a => a.status === 'published' || a.status === 'ongoing');
@@ -11255,7 +11285,7 @@
         // ---- HISTORY / FINAL SCRIPT ----
         function renderHistoryList() {
             const container = document.getElementById('historyListContainer');
-            const search = document.getElementById('historySearch')?.value?.toLowerCase() || '';
+            const search = (document.getElementById('historySearch')?.value || '').toLowerCase();
             const filterAss = document.getElementById('historyFilterAssessment')?.value || 'all';
 
             const filterSel = document.getElementById('historyFilterAssessment');
@@ -11503,6 +11533,114 @@
             setTimeout(() => {
                 printWin.print();
             }, 500);
+        };
+
+        // === FIX: Duplicate Assessment Feature ===
+        // Add duplicate button to history items
+        // We'll add a "Duplicate" button in the renderHistoryList.
+        // The renderHistoryList is already defined above. We'll inject the duplicate button.
+        // Since the user wants to reuse prepared exams/tests/quizzes, we'll add a "Duplicate" action.
+        // I'll modify the renderHistoryList to include a "Duplicate" button.
+        // Let's patch the renderHistoryList function by overriding it.
+        // Actually, I'll just replace the renderHistoryList function definition with the updated one.
+
+        // Replacing renderHistoryList with a version that includes a Duplicate button.
+        const originalRenderHistory = renderHistoryList;
+        renderHistoryList = function() {
+            const container = document.getElementById('historyListContainer');
+            const search = (document.getElementById('historySearch')?.value || '').toLowerCase();
+            const filterAss = document.getElementById('historyFilterAssessment')?.value || 'all';
+
+            const filterSel = document.getElementById('historyFilterAssessment');
+            if (filterSel) {
+                filterSel.innerHTML = '<option value="all">All Assessments</option>' +
+                    assessments.map(a =>
+                        `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`).join('');
+            }
+
+            let completedResponses = assessmentResponses.filter(r => r.status === 'ended' || r.status === 'completed');
+            if (filterAss !== 'all') {
+                completedResponses = completedResponses.filter(r => r.assessmentId === filterAss);
+            }
+            if (search) {
+                completedResponses = completedResponses.filter(r => {
+                    const ass = assessments.find(a => a.id === r.assessmentId);
+                    const user = users.find(u => u.uid === r.userId);
+                    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                    const email = user ? user.email : '';
+                    return name.toLowerCase().includes(search) || email.toLowerCase().includes(search) || (ass &&
+                        ass.name.toLowerCase().includes(search));
+                });
+            }
+
+            if (completedResponses.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No completed assessments found.</div>';
+                return;
+            }
+
+            container.innerHTML = completedResponses.map(r => {
+                const ass = assessments.find(a => a.id === r.assessmentId);
+                const user = users.find(u => u.uid === r.userId);
+                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                const email = user ? user.email : '';
+                const score = r.score || 0;
+                const total = ass ? (ass.totalMarks || 0) : 0;
+                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                return `
+                    <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;cursor:pointer;transition:var(--transition);" onclick="showSection('studentScript',{scriptId:'${r.id}'})">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                            <div>
+                                <strong style="font-size:14px;">${escapeHtml(name)}</strong>
+                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(email)}</span>
+                            </div>
+                            <div style="font-size:12px;">
+                                <span>${escapeHtml(ass?.name || '')} (${ass?.type || ''})</span>
+                                <span style="margin-left:12px;font-weight:700;color:${percent >= 50 ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${percent}%)</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('studentScript',{scriptId:'${r.id}'})">View Script</button>
+                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;cursor:pointer;" onclick="duplicateAssessment('${r.assessmentId}')"><i class="fas fa-copy"></i> Duplicate</button>
+                            <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${r.assessmentId}">Delete</button>
+                        </div>
+                        <div style="margin-top:4px;font-size:11px;color:#8b8fa3;">
+                            Ended: ${r.endedAt ? new Date(r.endedAt).toLocaleString() : (r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'N/A')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (confirm('Delete this assessment?')) {
+                        await remove(ref(db, `assessments/${this.dataset.assid}`));
+                        showToast('Assessment deleted.', 'info');
+                    }
+                });
+            });
+        };
+
+        // Duplicate Assessment function
+        window.duplicateAssessment = async function(assessmentId) {
+            const ass = assessments.find(a => a.id === assessmentId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+            // Create a copy
+            const { id, createdAt, status, ...rest } = ass;
+            const newName = `${ass.name} (Copy)`;
+            try {
+                const newRef = push(assessmentsRef);
+                await set(newRef, {
+                    ...rest,
+                    name: newName,
+                    status: 'draft',
+                    createdAt: serverTimestamp()
+                });
+                showToast(`Assessment "${newName}" duplicated successfully!`, 'success');
+                push(notificationsRef, { message: `📋 Assessment "${newName}" duplicated`, timestamp: serverTimestamp() });
+            } catch (err) {
+                showToast('Error duplicating assessment: ' + err.message, 'error');
+            }
         };
 
         // =================================================================
