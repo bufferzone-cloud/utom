@@ -6,8 +6,10 @@
     <title>UTOM · Admin Studio</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js">
+    </script>
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -5121,6 +5123,71 @@
             box-shadow: 0 4px 14px rgba(46, 204, 113, 0.25);
         }
         /* ===== Duplicate Button (already exists) ===== */
+
+        /* ===== ASSESSMENT PREVIEW MODAL ===== */
+        .preview-modal .modal-box {
+            max-width: 800px;
+        }
+        .preview-modal .modal-box .preview-content {
+            max-height: 65vh;
+            overflow-y: auto;
+            padding: 4px 0 16px 0;
+        }
+        .preview-modal .modal-box .preview-content .preview-section {
+            margin-bottom: 20px;
+        }
+        .preview-modal .modal-box .preview-content .preview-section h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .preview-modal .modal-box .preview-content .preview-question {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f5;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-text {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-marks {
+            font-size: 11px;
+            color: #8b8fa3;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-options {
+            padding-left: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-options li {
+            list-style: none;
+            padding: 2px 0;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-options li::before {
+            content: "• ";
+            color: var(--gold);
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-answer {
+            font-size: 11px;
+            color: var(--green);
+            padding: 2px 0;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-type-badge {
+            display: inline-block;
+            background: rgba(245, 176, 66, 0.10);
+            padding: 1px 10px;
+            border-radius: 30px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #d4952a;
+        }
+        .preview-modal .modal-box .preview-content .preview-question .pq-image {
+            max-width: 200px;
+            border-radius: 8px;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -6117,9 +6184,6 @@
                                         <option value="mtn">MTN MoMo</option>
                                     </select>
                                 </div>
-                                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-                                    <label style="font-size:11px;"><input type="checkbox" id="examPartialPayment"> Allow partial payment (deposit)</label>
-                                </div>
                             </div>
                             <!-- Cover Page / Instructions -->
                             <div style="margin:10px 0;border:1px solid #e5e8ed;border-radius:14px;padding:12px 14px;">
@@ -6487,6 +6551,19 @@
         </div>
     </div>
 
+    <!-- ===== ASSESSMENT PREVIEW MODAL ===== -->
+    <div id="assessmentPreviewModal" class="modal-overlay preview-modal">
+        <div class="modal-box">
+            <button class="close-modal" id="closePreviewModal">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3 style="display:flex;align-items:center;gap:8px;"><i class="fas fa-eye" style="background:linear-gradient(135deg,#d4952a,#f5b042);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i> <span id="previewTitle">Assessment Preview</span></h3>
+            <div class="preview-content" id="previewContent"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                <button class="btn-primary" onclick="document.getElementById('assessmentPreviewModal').classList.remove('open');">Close Preview</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== MAIN SCRIPT ===== -->
     <script type="module">
         // =================================================================
@@ -6545,6 +6622,9 @@
         let isUserInteracting = false;
         let carouselDirection = 1;
 
+        // =================================================================
+        // REFS
+        // =================================================================
         const videosRef = ref(db, 'videos');
         const usersRef = ref(db, 'users');
         const coursesRef = ref(db, 'courses');
@@ -6613,14 +6693,14 @@
                 get(paymentSettingsRef),
                 get(transactionsRef),
                 get(pendingPurchasesRef),
-                // NEW
                 get(registersRef),
                 get(assessmentsRef),
                 get(assessmentResponsesRef)
             ]);
 
-            const [usersSn, coursesSn, subSn, vidSn, docSn, promSn, popSn, notifSn, banSn, paySn, txSn, penSn, regSn, assSn, respSn] =
-                snapshots;
+            const [usersSn, coursesSn, subSn, vidSn, docSn, promSn, popSn, notifSn, banSn, paySn, txSn, penSn, regSn, assSn,
+                respSn
+            ] = snapshots;
 
             users = usersSn.val() ? Object.entries(usersSn.val()).map(([uid, d]) => ({ uid, ...d })) : [];
             courses = coursesSn.val() ? Object.entries(coursesSn.val()).map(([id, d]) => ({ id, ...d })) : [];
@@ -6651,7 +6731,6 @@
             });
             allTransactions = Array.from(seen.values());
 
-            // ---- NEW ----
             registers = regSn.val() ? Object.entries(regSn.val()).map(([id, d]) => ({ id, ...d })) : [];
             assessments = assSn.val() ? Object.entries(assSn.val()).map(([id, d]) => ({ id, ...d })) : [];
             assessmentResponses = respSn.val() ? Object.entries(respSn.val()).map(([id, d]) => ({ id, ...d })) : [];
@@ -6670,7 +6749,6 @@
             updateDashboard();
             updateNotifBadge();
 
-            // NEW renders
             renderTestExamsDashboard();
             renderRegistersList();
             renderOngoingList();
@@ -6764,6 +6842,10 @@
                 return '"' + str.replace(/"/g, '""') + '"';
             }
             return str;
+        }
+
+        function getKeyByValue(obj, value) {
+            return Object.keys(obj).find(key => obj[key] === value);
         }
 
         // =================================================================
@@ -7284,7 +7366,6 @@
         }
 
         function attachCommentEvents() {
-            // === FIX: Only target toggles with data-video-id ===
             document.querySelectorAll('.iphone-toggle[data-video-id]').forEach(toggle => {
                 toggle.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -7856,7 +7937,6 @@
                         let durationType = 'lifetime';
                         let durationValue = 0;
 
-                        // === Handle item types correctly ===
                         if (itemType === 'course') {
                             const courseSnap = await get(ref(db, `courses/${itemId}`));
                             if (courseSnap.val()) {
@@ -7869,7 +7949,7 @@
                             if (assSnap.val()) {
                                 const ass = assSnap.val();
                                 const durParts = ass.duration ? ass.duration.split(':').map(Number) : [0, 0];
-                                durationValue = durParts[0] * 60 + durParts[1]; // total minutes
+                                durationValue = durParts[0] * 60 + durParts[1];
                                 durationType = 'minutes';
                             }
                         }
@@ -8334,38 +8414,49 @@
             const hamburger = document.getElementById('hamburgerBtn');
             const sidebarClose = document.getElementById('leftSidebarClose');
 
-            hamburger.addEventListener('click', () => {
-                sidebarOverlay.classList.add('open');
-                sidebar.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            });
+            // Use a single click handler with debounce to prevent double-tap issues
+            let sidebarOpenTimeout = null;
 
-            sidebarClose.addEventListener('click', () => {
-                sidebarOverlay.classList.remove('open');
-                sidebar.classList.remove('open');
-                document.body.style.overflow = '';
-            });
+            function openSidebar() {
+                if (sidebarOpenTimeout) {
+                    clearTimeout(sidebarOpenTimeout);
+                    sidebarOpenTimeout = null;
+                }
+                // Use requestAnimationFrame for smooth opening
+                requestAnimationFrame(() => {
+                    sidebarOverlay.classList.add('open');
+                    sidebar.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
 
-            sidebarOverlay.addEventListener('click', () => {
-                sidebarOverlay.classList.remove('open');
-                sidebar.classList.remove('open');
-                document.body.style.overflow = '';
-            });
+            function closeSidebar() {
+                if (sidebarOpenTimeout) {
+                    clearTimeout(sidebarOpenTimeout);
+                    sidebarOpenTimeout = null;
+                }
+                requestAnimationFrame(() => {
+                    sidebarOverlay.classList.remove('open');
+                    sidebar.classList.remove('open');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            hamburger.addEventListener('click', openSidebar);
+            sidebarClose.addEventListener('click', closeSidebar);
+            sidebarOverlay.addEventListener('click', closeSidebar);
 
             // Sidebar navigation
             document.querySelectorAll('.left-sidebar-body .nav-link').forEach(link => {
                 link.addEventListener('click', function() {
                     const section = this.dataset.section;
                     if (section) {
-                        // For testExams, show popup instead of navigating directly
                         if (section === 'testExams') {
                             document.getElementById('testExamsPopup').classList.toggle('open');
                             return;
                         }
                         showSection(section);
-                        sidebarOverlay.classList.remove('open');
-                        sidebar.classList.remove('open');
-                        document.body.style.overflow = '';
+                        closeSidebar();
                     }
                 });
             });
@@ -8381,9 +8472,7 @@
                 item.addEventListener('click', () => {
                     const action = item.dataset.action;
                     popup.classList.remove('open');
-                    sidebarOverlay.classList.remove('open');
-                    sidebar.classList.remove('open');
-                    document.body.style.overflow = '';
+                    closeSidebar();
                     const sectionMap = {
                         createRegister: 'createRegister',
                         createTest: 'createTest',
@@ -8407,19 +8496,25 @@
 
             notifBell.addEventListener('click', (e) => {
                 e.stopPropagation();
-                notifOverlay.classList.add('open');
-                notifSidebar.classList.add('open');
-                renderNotificationsSidebar();
+                requestAnimationFrame(() => {
+                    notifOverlay.classList.add('open');
+                    notifSidebar.classList.add('open');
+                    renderNotificationsSidebar();
+                });
             });
 
             notifClose.addEventListener('click', () => {
-                notifOverlay.classList.remove('open');
-                notifSidebar.classList.remove('open');
+                requestAnimationFrame(() => {
+                    notifOverlay.classList.remove('open');
+                    notifSidebar.classList.remove('open');
+                });
             });
 
             notifOverlay.addEventListener('click', () => {
-                notifOverlay.classList.remove('open');
-                notifSidebar.classList.remove('open');
+                requestAnimationFrame(() => {
+                    notifOverlay.classList.remove('open');
+                    notifSidebar.classList.remove('open');
+                });
             });
 
             document.getElementById('backFromDocBtn').addEventListener('click', () => {
@@ -8429,7 +8524,6 @@
                 showSection('courses');
             });
 
-            // ---- Test/Exams back buttons (FIX: clear editingAssessmentId) ----
             document.getElementById('backFromCreateRegister').addEventListener('click', () => {
                 window._regMembers = [];
                 showSection('testExams');
@@ -8581,9 +8675,7 @@
                 });
             });
 
-            // =================================================================
-            // FIX CLOUDINARY UPLOAD BUTTON (Home post video)
-            // =================================================================
+            // Cloudinary upload buttons
             const cloudBtn = document.getElementById('cloudinaryUploadBtn');
             if (cloudBtn) {
                 cloudBtn.addEventListener('click', function() {
@@ -8641,9 +8733,6 @@
                 });
             }
 
-            // =================================================================
-            // FIX CLOUDINARY UPLOAD BUTTON FOR DOCUMENTS
-            // =================================================================
             const docCloudBtn = document.getElementById('cloudinaryDocUploadBtn');
             if (docCloudBtn) {
                 docCloudBtn.addEventListener('click', function() {
@@ -8703,9 +8792,7 @@
                 });
             }
 
-            // =================================================================
-            // VIDEO POST FORM SUBMIT HANDLER
-            // =================================================================
+            // Video post form submit
             document.getElementById('homePostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
@@ -8784,9 +8871,7 @@
                 }
             });
 
-            // =================================================================
-            // DOC POST FORM SUBMIT HANDLER
-            // =================================================================
+            // Doc post form submit
             document.getElementById('docPostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
@@ -8869,9 +8954,7 @@
                 }
             });
 
-            // =================================================================
-            // PREVIEW UPDATES
-            // =================================================================
+            // Preview updates
             document.getElementById('videoTitle').addEventListener('input', updateVideoPreview);
             document.getElementById('videoUrlInput').addEventListener('input', updateVideoPreview);
             document.getElementById('linkThumbnailUrl').addEventListener('input', updateVideoPreview);
@@ -9581,7 +9664,6 @@
                 });
             });
 
-            // ========== POPUP PREVIEW ==========
             document.getElementById('popupPreviewBtn').addEventListener('click', function() {
                 const title = document.getElementById('popupTitleInput').value.trim() || 'Notification';
                 const message = document.getElementById('popupMessage').value.trim() || 'No message content.';
@@ -10078,7 +10160,6 @@
                 renderSentPopups();
             });
 
-            // ---- NEW Test/Exams realtime with error handling ----
             onValue(registersRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -10128,9 +10209,8 @@
         // =================================================================
         // =================================================================
 
-        // ---- Dashboard (FIXED) ----
+        // ---- Dashboard ----
         function renderTestExamsDashboard() {
-            // Safely update stats with error handling
             try {
                 const regCount = document.getElementById('teRegistersCount');
                 if (regCount) regCount.textContent = registers.length;
@@ -10151,8 +10231,7 @@
                 console.warn('Stats update error:', err);
             }
 
-            // --- Use addEventListener instead of onclick ---
-            // First, remove any existing listeners to avoid duplicates
+            // --- Use direct click handlers with proper event delegation ---
             const btnTest = document.getElementById('teCreateTestBtn');
             const btnQuiz = document.getElementById('teCreateQuizBtn');
             const btnExam = document.getElementById('teCreateExamBtn');
@@ -10161,15 +10240,12 @@
             const btnRegisters = document.getElementById('teRegistersBtn');
             const btnHistory = document.getElementById('teHistoryBtn');
 
-            // Helper to safely attach listener (removes old one first)
             function safeAttach(el, handler) {
                 if (!el) return;
-                // Remove any existing listener (using a named function)
                 el.removeEventListener('click', handler);
                 el.addEventListener('click', handler);
             }
 
-            // Define the handlers as named functions so we can remove them
             const handlers = {
                 test: () => showSection('createTest'),
                 quiz: () => showSection('createQuiz'),
@@ -10204,14 +10280,12 @@
         // ---- CREATE REGISTER ----
         function renderCreateRegisterForm() {
             const selector = document.getElementById('regMemberSelector');
-            // === FIX: Show all users by default ===
             renderRegisterMemberSelector('');
             document.getElementById('regMemberList').innerHTML =
                 '<div style="color:#8b8fa3;font-size:12px;padding:8px;text-align:center;">No members added yet.</div>';
             window._regMembers = [];
             window._regSearchTerm = '';
             document.getElementById('regMemberSearch').value = '';
-            // Populate selector on search
             document.getElementById('regMemberSearch').addEventListener('input', function() {
                 renderRegisterMemberSelector(this.value);
             });
@@ -10229,8 +10303,6 @@
                     (u.phone || '').toLowerCase().includes(search)
                 );
             }
-            // If no search term, show ALL users (limit to first 100 to prevent performance issues, but show all)
-            // We'll show all users if search is empty, else filtered.
             if (filtered.length === 0) {
                 container.innerHTML =
                     `<div style="color:#8b8fa3;font-size:12px;padding:12px;text-align:center;">No users found.</div>`;
@@ -10277,13 +10349,11 @@
                     const user = users.find(u => u.uid === uid);
                     if (!user) return;
                     if (window._regMembers.find(m => m.uid === uid)) {
-                        // Remove
                         window._regMembers = window._regMembers.filter(m => m.uid !== uid);
                         renderRegMemberList();
                         renderRegisterMemberSelector(document.getElementById('regMemberSearch').value);
                         showToast('Member removed.', 'info');
                     } else {
-                        // Add
                         window._regMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
                                 'User', email: user.email });
                         renderRegMemberList();
@@ -10315,7 +10385,6 @@
             });
         }
 
-        // ---- CREATE REGISTER SUBMIT (delegated) ----
         async function handleRegisterSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('regName').value.trim();
@@ -10401,7 +10470,6 @@
 
         // ---- CREATE TEST ----
         function renderCreateTestForm() {
-            // FIX: Reset editingAssessmentId so a new test is created
             editingAssessmentId = null;
 
             document.getElementById('testSectionsContainer').innerHTML = `
@@ -10426,18 +10494,15 @@
             document.getElementById('testInfoToggle').classList.add('active');
             document.getElementById('testPaymentToggle').classList.remove('active');
             document.getElementById('testPaymentFields').style.display = 'none';
-            // Set cover preview hidden
             document.getElementById('testCoverPreview').style.display = 'none';
             document.getElementById('testPublishImmediately').checked = false;
             document.getElementById('testPassingScore').value = 50;
             document.getElementById('testRandomizeToggle').classList.add('active');
-            // Cover upload
             document.getElementById('testCoverUploadBtn').addEventListener('click', function() { openCoverUpload('test'); });
             document.getElementById('testCoverRemoveBtn').addEventListener('click', function() {
                 document.getElementById('testCoverImageUrl').value = '';
                 document.getElementById('testCoverPreview').style.display = 'none';
             });
-            // If editing, populate
             if (editingAssessmentId) {
                 populateAssessmentForm('test');
             }
@@ -10909,7 +10974,6 @@
                 }
             }
 
-            // Populate sections/questions
             if (type === 'test' || type === 'exam') {
                 const container = document.getElementById(type + 'SectionsContainer');
                 container.innerHTML = '';
@@ -11137,7 +11201,6 @@
             }
             const passingScore = parseInt(document.getElementById('testPassingScore').value) || 50;
             const randomize = document.getElementById('testRandomizeToggle').classList.contains('active');
-            // Collect sections & questions
             const sections = [];
             document.querySelectorAll('#testSectionsContainer .question-builder').forEach(sec => {
                 const secName = sec.querySelector('.section-name').value.trim() || 'Section';
@@ -11239,7 +11302,6 @@
 
         // ---- CREATE QUIZ ----
         function renderCreateQuizForm() {
-            // FIX: Reset editingAssessmentId
             editingAssessmentId = null;
 
             document.getElementById('quizQuestionsContainer').innerHTML = `
@@ -11696,7 +11758,6 @@
             document.getElementById('quizCustomFieldLabel').value = '';
         });
 
-        // ---- CREATE QUIZ SUBMIT (delegated) ----
         async function handleQuizSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('quizName').value.trim();
@@ -11829,7 +11890,6 @@
 
         // ---- CREATE EXAM ----
         function renderCreateExamForm() {
-            // FIX: Reset editingAssessmentId
             editingAssessmentId = null;
 
             document.getElementById('examSectionsContainer').innerHTML = `
@@ -12278,7 +12338,6 @@
             document.getElementById('examCustomFieldLabel').value = '';
         });
 
-        // ---- CREATE EXAM SUBMIT (delegated) ----
         async function handleExamSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('examName').value.trim();
@@ -12435,8 +12494,8 @@
                 filtered = filtered.filter(r =>
                     (r.name || '').toLowerCase().includes(search) ||
                     (r.lecture || '').toLowerCase().includes(search) ||
-                    (r.memberDetails || []).some(m => 
-                        (m.name || '').toLowerCase().includes(search) || 
+                    (r.memberDetails || []).some(m =>
+                        (m.name || '').toLowerCase().includes(search) ||
                         (m.email || '').toLowerCase().includes(search)
                     )
                 );
@@ -12939,10 +12998,8 @@
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             const modal = document.getElementById('assessmentEditModal');
             const content = document.getElementById('assessmentEditContent');
-            const typeMap = { 'test': 'createTest', 'quiz': 'createQuiz', 'exam': 'createExam' };
-            const sectionMap = { 'test': 'test', 'quiz': 'quiz', 'exam': 'exam' };
             const type = ass.type;
-            const sectionName = sectionMap[type];
+            const sectionName = type === 'test' ? 'test' : type === 'quiz' ? 'quiz' : type === 'exam' ? 'exam' : null;
             if (!sectionName) { showToast('Unknown assessment type.', 'error'); return; }
 
             content.innerHTML = `
@@ -12963,9 +13020,8 @@
             const ass = assessments.find(a => a.id === assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             editingAssessmentId = assessmentId;
-            const typeMap = { 'test': 'createTest', 'quiz': 'createQuiz', 'exam': 'createExam' };
-            const sectionMap = { 'test': 'createTest', 'quiz': 'createQuiz', 'exam': 'createExam' };
-            showSection(typeMap[ass.type] || 'testExams');
+            const map = { 'test': 'createTest', 'quiz': 'createQuiz', 'exam': 'createExam' };
+            showSection(map[ass.type] || 'testExams');
         };
 
         // ---- Export Assessment Results ----
@@ -12994,6 +13050,351 @@
         document.getElementById('closeAssessmentEditModal')?.addEventListener('click', function() {
             document.getElementById('assessmentEditModal').classList.remove('open');
         });
+
+        // =================================================================
+        // ASSESSMENT PREVIEW
+        // =================================================================
+        window.previewAssessment = function(assessmentId) {
+            const ass = assessments.find(a => a.id === assessmentId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+            const modal = document.getElementById('assessmentPreviewModal');
+            const titleEl = document.getElementById('previewTitle');
+            const contentEl = document.getElementById('previewContent');
+
+            titleEl.textContent = `Preview: ${escapeHtml(ass.name)} (${ass.type})`;
+
+            let html = `
+                <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
+                    <div style="font-size:13px;font-weight:600;">${escapeHtml(ass.name)}</div>
+                    <div style="font-size:11px;color:#8b8fa3;">Type: ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
+                    ${ass.cover && ass.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                </div>
+            `;
+
+            if (ass.cover && ass.cover.coverImage) {
+                html += `<div style="margin-bottom:12px;"><img src="${ass.cover.coverImage}" alt="Cover" style="max-width:100%;max-height:150px;border-radius:8px;object-fit:contain;" /></div>`;
+            }
+
+            if (ass.type === 'test' || ass.type === 'exam') {
+                if (ass.sections) {
+                    ass.sections.forEach((sec, si) => {
+                        html += `<div class="preview-section">
+                            <h4>${escapeHtml(sec.name || 'Section ' + (si+1))}</h4>
+                            ${sec.instructions ? `<div style="font-size:12px;color:#8b8fa3;margin-bottom:6px;">${escapeHtml(sec.instructions)}</div>` : ''}
+                            ${sec.duration ? `<div style="font-size:11px;color:#8b8fa3;margin-bottom:6px;">⏱️ Section duration: ${sec.duration}</div>` : ''}
+                            <div class="preview-questions">
+                    `;
+                        sec.questions.forEach((q, qi) => {
+                            html += buildPreviewQuestion(q, si, qi);
+                        });
+                        html += `</div></div>`;
+                    });
+                }
+            } else if (ass.type === 'quiz') {
+                if (ass.questions) {
+                    html += `<div class="preview-section"><h4>Questions</h4><div class="preview-questions">`;
+                    ass.questions.forEach((q, qi) => {
+                        html += buildPreviewQuestion(q, 0, qi);
+                    });
+                    html += `</div></div>`;
+                }
+            }
+
+            contentEl.innerHTML = html || '<div style="padding:20px;text-align:center;color:#8b8fa3;">No content to preview.</div>';
+            modal.classList.add('open');
+        };
+
+        function buildPreviewQuestion(q, sectionIdx, qIdx) {
+            let optionsHtml = '';
+            if (q.type === 'mcq' && q.options) {
+                optionsHtml = `<ul class="pq-options">${q.options.map((opt, oi) => `<li>${escapeHtml(opt)} ${q.correct === oi ? '✅' : ''}</li>`).join('')}</ul>`;
+            } else if (q.type === 'tf') {
+                optionsHtml = `<ul class="pq-options"><li>True ${q.correct === 'true' ? '✅' : ''}</li><li>False ${q.correct === 'false' ? '✅' : ''}</li></ul>`;
+            } else if (q.type === 'matching' && q.options) {
+                optionsHtml = `<ul class="pq-options">${q.options.map(p => `<li>${escapeHtml(p.left)} ↔ ${escapeHtml(p.right)}</li>`).join('')}</ul>`;
+            } else if (q.type === 'ordering' && q.options) {
+                optionsHtml = `<ul class="pq-options">${q.options.map((item, oi) => `<li>${oi+1}. ${escapeHtml(item)}</li>`).join('')}</ul>`;
+            } else if (q.type === 'fillblank') {
+                optionsHtml = `<div class="pq-answer">Correct answer: ${escapeHtml(q.correct)}</div>`;
+            } else if (q.type === 'text' || q.type === 'essay' || q.type === 'short') {
+                optionsHtml = `<div style="font-size:11px;color:#8b8fa3;">${q.type === 'essay' ? 'Essay' : q.type === 'short' ? 'Short answer' : 'Text box'} response</div>`;
+            }
+
+            const typeLabels = {
+                mcq: 'Multiple Choice',
+                text: 'Text Box',
+                tf: 'True/False',
+                matching: 'Matching',
+                fillblank: 'Fill in the Blank',
+                ordering: 'Ordering',
+                short: 'Short Answer',
+                essay: 'Essay'
+            };
+
+            return `
+                <div class="preview-question">
+                    <div class="pq-text">Q${sectionIdx+1}.${qIdx+1}: ${escapeHtml(q.text)} <span class="pq-marks">(${q.marks} marks)</span> <span class="pq-type-badge">${typeLabels[q.type] || q.type}</span></div>
+                    ${q.image ? `<img src="${q.image}" class="pq-image" alt="Question image" />` : ''}
+                    ${optionsHtml}
+                </div>
+            `;
+        }
+
+        // ---- Preview button in history list ----
+        // We already have the preview button in the history list, but let's add a dedicated preview button for the create forms
+        // We'll add a preview button to the create test/quiz/exam forms
+
+        // ---- Add preview button to create forms ----
+        function addPreviewButtonToForm(formId, sectionId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+            const btnGroup = submitBtn.closest('div[style*="display:flex;gap:10px;margin-top:16px;"]') || submitBtn.closest('.form-card')?.querySelector('div[style*="display:flex;gap:10px;"]');
+            if (!btnGroup) return;
+
+            // Check if preview button already exists
+            if (btnGroup.querySelector('.preview-assessment-btn')) return;
+
+            const previewBtn = document.createElement('button');
+            previewBtn.type = 'button';
+            previewBtn.className = 'btn-outline';
+            previewBtn.style.padding = '10px 24px;font-size:12px;';
+            previewBtn.innerHTML = '<i class="fas fa-eye"></i> Preview';
+            previewBtn.classList.add('preview-assessment-btn');
+
+            previewBtn.addEventListener('click', function() {
+                // Collect form data and create a temporary assessment object
+                const formData = collectAssessmentFormData(formId);
+                if (!formData) {
+                    showToast('Please fill in the required fields.', 'error');
+                    return;
+                }
+                // Create a temporary assessment object
+                const tempAss = {
+                    id: 'preview',
+                    type: formId === 'createTestForm' ? 'test' : formId === 'createQuizForm' ? 'quiz' : 'exam',
+                    name: formData.name || 'Preview',
+                    duration: formData.duration || '00:00',
+                    totalMarks: formData.totalMarks || 0,
+                    cover: { instructions: formData.instructions || '', coverImage: formData.coverImage || '' },
+                    sections: formData.sections || [],
+                    questions: formData.questions || []
+                };
+                if (formId === 'createQuizForm') {
+                    tempAss.questions = formData.questions || [];
+                } else {
+                    tempAss.sections = formData.sections || [];
+                }
+                // Show preview
+                const modal = document.getElementById('assessmentPreviewModal');
+                const titleEl = document.getElementById('previewTitle');
+                const contentEl = document.getElementById('previewContent');
+
+                titleEl.textContent = `Preview: ${escapeHtml(tempAss.name)} (${tempAss.type})`;
+
+                let html = `
+                    <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
+                        <div style="font-size:13px;font-weight:600;">${escapeHtml(tempAss.name)}</div>
+                        <div style="font-size:11px;color:#8b8fa3;">Type: ${tempAss.type} · Duration: ${tempAss.duration || 'N/A'} · Total Marks: ${tempAss.totalMarks || 0}</div>
+                        ${tempAss.cover && tempAss.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(tempAss.cover.instructions)}</div>` : ''}
+                    </div>
+                `;
+
+                if (tempAss.cover && tempAss.cover.coverImage) {
+                    html += `<div style="margin-bottom:12px;"><img src="${tempAss.cover.coverImage}" alt="Cover" style="max-width:100%;max-height:150px;border-radius:8px;object-fit:contain;" /></div>`;
+                }
+
+                if (tempAss.type === 'test' || tempAss.type === 'exam') {
+                    if (tempAss.sections && tempAss.sections.length > 0) {
+                        tempAss.sections.forEach((sec, si) => {
+                            html += `<div class="preview-section">
+                                <h4>${escapeHtml(sec.name || 'Section ' + (si+1))}</h4>
+                                ${sec.instructions ? `<div style="font-size:12px;color:#8b8fa3;margin-bottom:6px;">${escapeHtml(sec.instructions)}</div>` : ''}
+                                ${sec.duration ? `<div style="font-size:11px;color:#8b8fa3;margin-bottom:6px;">⏱️ Section duration: ${sec.duration}</div>` : ''}
+                                <div class="preview-questions">
+                        `;
+                            sec.questions.forEach((q, qi) => {
+                                html += buildPreviewQuestion(q, si, qi);
+                            });
+                            html += `</div></div>`;
+                        });
+                    }
+                } else if (tempAss.type === 'quiz') {
+                    if (tempAss.questions && tempAss.questions.length > 0) {
+                        html += `<div class="preview-section"><h4>Questions</h4><div class="preview-questions">`;
+                        tempAss.questions.forEach((q, qi) => {
+                            html += buildPreviewQuestion(q, 0, qi);
+                        });
+                        html += `</div></div>`;
+                    }
+                }
+
+                contentEl.innerHTML = html || '<div style="padding:20px;text-align:center;color:#8b8fa3;">No content to preview.</div>';
+                modal.classList.add('open');
+            });
+
+            // Insert before the submit button
+            btnGroup.insertBefore(previewBtn, submitBtn);
+        }
+
+        function collectAssessmentFormData(formId) {
+            const prefix = formId === 'createTestForm' ? 'test' : formId === 'createQuizForm' ? 'quiz' : 'exam';
+            const name = document.getElementById(prefix + 'Name')?.value?.trim();
+            const duration = document.getElementById(prefix + 'Duration')?.value;
+            const instructions = document.getElementById(prefix + 'Instructions')?.value?.trim();
+            const coverImage = document.getElementById(prefix + 'CoverImageUrl')?.value || '';
+
+            if (!name) return null;
+
+            let sections = [];
+            let questions = [];
+            let totalMarks = 0;
+
+            if (formId === 'createTestForm' || formId === 'createExamForm') {
+                const container = document.getElementById(prefix + 'SectionsContainer');
+                if (container) {
+                    container.querySelectorAll('.question-builder').forEach(sec => {
+                        const secName = sec.querySelector('.section-name')?.value?.trim() || 'Section';
+                        const secInstructions = sec.querySelector('.section-instructions')?.value?.trim() || '';
+                        const secDuration = sec.querySelector('.section-duration')?.value || '';
+                        const qs = [];
+                        sec.querySelectorAll('.test-question, .exam-question').forEach(q => {
+                            const text = q.querySelector('.qb-question-text')?.value?.trim();
+                            const marks = parseInt(q.querySelector('.qb-marks')?.value) || 1;
+                            const type = q.querySelector('.qb-type')?.value || 'mcq';
+                            const image = q.querySelector('.qb-image-url')?.value || '';
+                            let options = [];
+                            let correct = null;
+                            if (type === 'mcq') {
+                                q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                                    const optText = opt.querySelector('.qb-option-text')?.value?.trim();
+                                    if (optText) {
+                                        const radio = opt.querySelector('.qb-correct');
+                                        if (radio && radio.checked) correct = idx;
+                                        options.push(optText);
+                                    }
+                                });
+                            } else if (type === 'matching') {
+                                const pairs = [];
+                                q.querySelectorAll('.qb-matching-row').forEach(row => {
+                                    const left = row.querySelector('.matching-left')?.value?.trim();
+                                    const right = row.querySelector('.matching-right')?.value?.trim();
+                                    if (left && right) pairs.push({ left, right });
+                                });
+                                options = pairs;
+                            } else if (type === 'fillblank') {
+                                correct = q.querySelector('.fillblank-answer')?.value?.trim() || '';
+                            } else if (type === 'ordering') {
+                                const items = [];
+                                q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                                    const val = inp.value?.trim();
+                                    if (val) items.push(val);
+                                });
+                                options = items;
+                            } else if (type === 'tf') {
+                                const radios = q.querySelectorAll('.qb-correct');
+                                radios.forEach(r => { if (r.checked) correct = r.value; });
+                                options = ['True', 'False'];
+                            }
+                            if (text) {
+                                qs.push({ text, marks, type, options, correct, image });
+                                totalMarks += marks;
+                            }
+                        });
+                        if (qs.length > 0) {
+                            sections.push({ name: secName, instructions: secInstructions, duration: secDuration,
+                                questions: qs });
+                        }
+                    });
+                }
+            } else if (formId === 'createQuizForm') {
+                const container = document.getElementById('quizQuestionsContainer');
+                if (container) {
+                    container.querySelectorAll('.question-builder').forEach(q => {
+                        const text = q.querySelector('.qb-question-text')?.value?.trim();
+                        const marks = parseInt(q.querySelector('.qb-marks')?.value) || 1;
+                        const type = q.querySelector('.qb-type')?.value || 'mcq';
+                        const image = q.querySelector('.qb-image-url')?.value || '';
+                        let options = [];
+                        let correct = null;
+                        if (type === 'mcq') {
+                            q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                                const optText = opt.querySelector('.qb-option-text')?.value?.trim();
+                                if (optText) {
+                                    const radio = opt.querySelector('.qb-correct');
+                                    if (radio && radio.checked) correct = idx;
+                                    options.push(optText);
+                                }
+                            });
+                        } else if (type === 'matching') {
+                            const pairs = [];
+                            q.querySelectorAll('.qb-matching-row').forEach(row => {
+                                const left = row.querySelector('.matching-left')?.value?.trim();
+                                const right = row.querySelector('.matching-right')?.value?.trim();
+                                if (left && right) pairs.push({ left, right });
+                            });
+                            options = pairs;
+                        } else if (type === 'fillblank') {
+                            correct = q.querySelector('.fillblank-answer')?.value?.trim() || '';
+                        } else if (type === 'ordering') {
+                            const items = [];
+                            q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                                const val = inp.value?.trim();
+                                if (val) items.push(val);
+                            });
+                            options = items;
+                        } else if (type === 'tf') {
+                            const radios = q.querySelectorAll('.qb-correct');
+                            radios.forEach(r => { if (r.checked) correct = r.value; });
+                            options = ['True', 'False'];
+                        }
+                        if (text) {
+                            questions.push({ text, marks, type, options, correct, image });
+                            totalMarks += marks;
+                        }
+                    });
+                }
+            }
+
+            return { name, duration, instructions, coverImage, sections, questions, totalMarks };
+        }
+
+        // ---- Add preview buttons to forms after they are rendered ----
+        function attachPreviewButtons() {
+            setTimeout(() => {
+                addPreviewButtonToForm('createTestForm', 'createTest');
+                addPreviewButtonToForm('createQuizForm', 'createQuiz');
+                addPreviewButtonToForm('createExamForm', 'createExam');
+            }, 500);
+        }
+
+        // ---- Override the render functions to attach preview buttons ----
+        const originalRenderTest = renderCreateTestForm;
+        const originalRenderQuiz = renderCreateQuizForm;
+        const originalRenderExam = renderCreateExamForm;
+
+        renderCreateTestForm = function() {
+            originalRenderTest();
+            setTimeout(attachPreviewButtons, 300);
+        };
+        renderCreateQuizForm = function() {
+            originalRenderQuiz();
+            setTimeout(attachPreviewButtons, 300);
+        };
+        renderCreateExamForm = function() {
+            originalRenderExam();
+            setTimeout(attachPreviewButtons, 300);
+        };
+
+        // ---- Close preview modal ----
+        document.getElementById('closePreviewModal')?.addEventListener('click', function() {
+            document.getElementById('assessmentPreviewModal').classList.remove('open');
+        });
+
+        // ---- Also add preview button to history list items ----
+        // We already have the preview in the history list via the View Script button
 
         // =================================================================
         // BOOT
@@ -13030,9 +13431,6 @@
         // =================================================================
         // DELEGATED SUBMIT HANDLER FOR DYNAMICALLY RENDERED FORMS
         // =================================================================
-        // This catches submissions from any form, even if it is inside a hidden section.
-        // It prevents the need to attach listeners manually and ensures
-        // editingAssessmentId is properly reset.
         document.addEventListener('submit', function(e) {
             const form = e.target;
             if (form.id === 'createTestForm') {
@@ -13050,8 +13448,10 @@
             }
         });
 
-        // The original direct listeners were removed; they are now covered by the delegate above.
-        console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, and more.');
+        // ---- Attach preview buttons after initial load ----
+        setTimeout(attachPreviewButtons, 1000);
+
+        console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, and PREVIEW functionality.');
     </script>
 </body>
 </html>
