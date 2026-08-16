@@ -6483,6 +6483,31 @@
                 </div>
             </div>
 
+            <!-- ===== ALL ASSESSMENTS (PAPERS) SECTION ===== -->
+            <div id="assessmentsSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="backFromAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back to Test/Exams</button>
+                    <div class="form-card">
+                        <h4><i class="fas fa-folder-open"></i> All Assessments (Tests, Quizzes, Exams)</h4>
+                        <div class="form-row">
+                            <input type="text" id="assessmentsSearch" placeholder="Search by name, type, register..." style="flex:1;">
+                            <select id="assessmentsFilterType" style="flex:1;">
+                                <option value="all">All Types</option>
+                                <option value="test">Tests</option>
+                                <option value="quiz">Quizzes</option>
+                                <option value="exam">Exams</option>
+                            </select>
+                            <select id="assessmentsFilterStatus" style="flex:1;">
+                                <option value="all">All Status</option>
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                            </select>
+                        </div>
+                        <div id="assessmentsListContainer"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ===== ON GOING TESTS ===== -->
             <div id="ongoingSection" class="section">
                 <div style="padding:0 0 4px 0;">
@@ -6518,6 +6543,9 @@
                     <button id="backFromHistory" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
                     <div class="form-card">
                         <h4><i class="fas fa-history"></i> History / Final Script</h4>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                            <button id="goToAssessmentsBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;"><i class="fas fa-folder-open"></i> All Assessments</button>
+                        </div>
                         <div class="form-row">
                             <input type="text" id="historySearch" placeholder="Search by assessment name or student..." style="flex:1;">
                             <select id="historyFilterAssessment" style="flex:1;"><option value="all">All Assessments</option></select>
@@ -6561,6 +6589,7 @@
             <button class="nav-link" data-section="courses"><i class="fas fa-book"></i> <span class="nav-label">Courses</span></button>
             <button class="nav-link" data-section="docs"><i class="fas fa-file-alt"></i> <span class="nav-label">Docs</span></button>
             <button class="nav-link" data-section="testExams"><i class="fas fa-graduation-cap"></i> <span class="nav-label">Test/Exams</span></button>
+            <button class="nav-link" data-section="assessments"><i class="fas fa-folder-open"></i> <span class="nav-label">Assessments</span></button>
             <button class="nav-link" data-section="promo"><i class="fas fa-images"></i> <span class="nav-label">Promo</span></button>
             <button class="nav-link" data-section="popup"><i class="fas fa-bell"></i> <span class="nav-label">Popups</span></button>
             <button class="nav-link" data-section="account"><i class="fas fa-wallet"></i> <span class="nav-label">Account</span></button>
@@ -6587,6 +6616,7 @@
             <button class="popup-item" data-action="ongoing"><i class="fas fa-play-circle"></i> On Going</button>
             <button class="popup-item" data-action="registers"><i class="fas fa-address-book"></i> Registers</button>
             <button class="popup-item" data-action="history"><i class="fas fa-history"></i> History / Final Script</button>
+            <button class="popup-item" data-action="assessments"><i class="fas fa-folder-open"></i> All Assessments</button>
         </div>
     </div>
 
@@ -7039,6 +7069,7 @@
             renderRegistersList();
             renderOngoingList();
             renderHistoryList();
+            renderAssessmentsList(); // new
             updateTestExamsDropdowns();
         }
 
@@ -8650,6 +8681,9 @@
                 case 'history':
                     renderHistoryList();
                     break;
+                case 'assessments':
+                    renderAssessmentsList();
+                    break;
                 default:
                     break;
             }
@@ -8772,7 +8806,8 @@
                         createExam: 'createExam',
                         ongoing: 'ongoing',
                         registers: 'registers',
-                        history: 'history'
+                        history: 'history',
+                        assessments: 'assessments'
                     };
                     if (sectionMap[action]) {
                         showSection(sectionMap[action]);
@@ -8845,6 +8880,7 @@
             document.getElementById('backFromRegisters').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromHistory').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromScript').addEventListener('click', () => showSection('history'));
+            document.getElementById('backFromAssessments').addEventListener('click', () => showSection('testExams'));
 
             // Back from cover preview
             document.getElementById('backFromCoverPreview').addEventListener('click', () => {
@@ -9320,6 +9356,8 @@
                     updateDuration();
                 }
             });
+
+            document.getElementById('goToAssessmentsBtn')?.addEventListener('click', () => showSection('assessments'));
         }
 
         // =================================================================
@@ -9999,6 +10037,7 @@
             renderRegistersList();
             renderOngoingList();
             renderHistoryList();
+            renderAssessmentsList();
             updateTestExamsDropdowns();
             videos.forEach(v => {
                 loadCommentsForVideo(v.id, () => {
@@ -10801,6 +10840,7 @@
                     renderTestExamsDashboard();
                     renderOngoingList();
                     renderHistoryList();
+                    renderAssessmentsList();
                     updateTestExamsDropdowns();
                 } catch (err) {
                     console.error('Error in assessments listener:', err);
@@ -13797,6 +13837,143 @@
 
         // ---- Close preview modal (unused for full page) ----
         // We keep the modal for other previews (like in history), but the form preview now uses full page.
+
+        // =================================================================
+        // ALL ASSESSMENTS LIST (PAPERS)
+        // =================================================================
+        function renderAssessmentsList() {
+            const container = document.getElementById('assessmentsListContainer');
+            if (!container) return;
+            const search = (document.getElementById('assessmentsSearch')?.value || '').toLowerCase();
+            const typeFilter = document.getElementById('assessmentsFilterType')?.value || 'all';
+            const statusFilter = document.getElementById('assessmentsFilterStatus')?.value || 'all';
+
+            let filtered = assessments;
+            if (search) {
+                filtered = filtered.filter(a =>
+                    (a.name || '').toLowerCase().includes(search) ||
+                    (a.type || '').toLowerCase().includes(search) ||
+                    (registers.find(r => r.id === a.registerId)?.name || '').toLowerCase().includes(search)
+                );
+            }
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(a => a.type === typeFilter);
+            }
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(a => a.status === statusFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments found.</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(ass => {
+                const registerName = registers.find(r => r.id === ass.registerId)?.name || 'N/A';
+                const statusClass = ass.status === 'published' ? 'active' : (ass.status === 'draft' ? 'pending' : '');
+                const statusLabel = ass.status.charAt(0).toUpperCase() + ass.status.slice(1);
+                return `
+                    <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                            <div>
+                                <strong style="font-size:14px;">${escapeHtml(ass.name)}</strong>
+                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
+                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Register: ${escapeHtml(registerName)}</span>
+                            </div>
+                            <div style="font-size:12px;">
+                                <span class="user-status-badge ${statusClass}">${statusLabel}</span>
+                                <span style="margin-left:12px;">Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</span>
+                            </div>
+                        </div>
+                        ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin:4px 0;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="previewAssessment('${ass.id}')"><i class="fas fa-eye"></i> Preview</button>
+                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;border-radius:30px;color:#fff;" onclick="editAssessment('${ass.id}')"><i class="fas fa-pen-to-square"></i> Edit</button>
+                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;" onclick="duplicateAssessment('${ass.id}')"><i class="fas fa-copy"></i> Duplicate</button>
+                            <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${ass.id}">Delete</button>
+                            ${ass.status === 'draft' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;" onclick="publishAssessment('${ass.id}')"><i class="fas fa-check"></i> Publish</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach delete events
+            container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const assId = this.dataset.assid;
+                    if (confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
+                        await remove(ref(db, `assessments/${assId}`));
+                        // Also remove related responses? Maybe keep them for history, but we'll clean up.
+                        const responsesToDelete = assessmentResponses.filter(r => r.assessmentId === assId);
+                        for (const r of responsesToDelete) {
+                            await remove(ref(db, `assessmentResponses/${r.id}`));
+                        }
+                        showToast('Assessment deleted.', 'info');
+                    }
+                });
+            });
+        }
+
+        // Publish assessment function
+        window.publishAssessment = async function(assessmentId) {
+            if (!confirm('Publish this assessment? Students will be able to access it according to its schedule.')) return;
+            try {
+                await update(ref(db, `assessments/${assessmentId}`), { status: 'published' });
+                showToast('Assessment published!', 'success');
+                renderAssessmentsList();
+            } catch (err) {
+                showToast('Error publishing: ' + err.message, 'error');
+            }
+        };
+
+        // Preview assessment (modal)
+        window.previewAssessment = function(assessmentId) {
+            const ass = assessments.find(a => a.id === assessmentId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+            const modal = document.getElementById('assessmentPreviewModal');
+            const titleEl = document.getElementById('previewTitle');
+            const contentEl = document.getElementById('previewContent');
+            titleEl.textContent = `Preview: ${escapeHtml(ass.name)} (${ass.type})`;
+            let html = `
+                <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
+                    <div style="font-size:13px;font-weight:600;">${escapeHtml(ass.name)}</div>
+                    <div style="font-size:11px;color:#8b8fa3;">Type: ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
+                    ${ass.cover && ass.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                </div>
+            `;
+            if (ass.type === 'test' || ass.type === 'exam') {
+                if (ass.sections) {
+                    ass.sections.forEach((sec, si) => {
+                        html += `<div class="preview-section">
+                            <h4>${escapeHtml(sec.name || 'Section ' + (si+1))}</h4>
+                            ${sec.instructions ? `<div style="font-size:12px;color:#8b8fa3;margin-bottom:6px;">${escapeHtml(sec.instructions)}</div>` : ''}
+                            ${sec.duration ? `<div style="font-size:11px;color:#8b8fa3;margin-bottom:6px;">⏱️ Section duration: ${sec.duration}</div>` : ''}
+                            <div class="preview-questions">
+                    `;
+                        sec.questions.forEach((q, qi) => {
+                            html += buildPreviewQuestion(q, si, qi);
+                        });
+                        html += `</div></div>`;
+                    });
+                }
+            } else if (ass.type === 'quiz') {
+                if (ass.questions) {
+                    html += `<div class="preview-section"><h4>Questions</h4><div class="preview-questions">`;
+                    ass.questions.forEach((q, qi) => {
+                        html += buildPreviewQuestion(q, 0, qi);
+                    });
+                    html += `</div></div>`;
+                }
+            }
+            contentEl.innerHTML = html || '<div style="padding:20px;text-align:center;color:#8b8fa3;">No content to preview.</div>';
+            modal.classList.add('open');
+        };
+
+        // Search / filter listeners for assessments
+        document.getElementById('assessmentsSearch')?.addEventListener('input', renderAssessmentsList);
+        document.getElementById('assessmentsFilterType')?.addEventListener('change', renderAssessmentsList);
+        document.getElementById('assessmentsFilterStatus')?.addEventListener('change', renderAssessmentsList);
 
         // =================================================================
         // BOOT
