@@ -317,7 +317,7 @@
             border-radius: 20px;
         }
 
-        /* ===== PAGE CONTAINERS — FIX: HIDE ALL, SHOW ONLY ACTIVE ===== */
+        /* ===== PAGE CONTAINERS ===== */
         .page-container {
             display: none !important;
             width: 100%;
@@ -2870,7 +2870,39 @@
             font-size: 0.5rem;
         }
 
-        /* ===== DARK MODE ===== */
+        /* ===== DARK MODE TOGGLE (iPhone style) ===== */
+        .iphone-toggle {
+            width: 44px;
+            height: 24px;
+            background: #d5d8e0;
+            border-radius: 30px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        .iphone-toggle.active {
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+        }
+        .iphone-toggle:after {
+            content: "";
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+        }
+        .iphone-toggle.active:after {
+            left: 22px;
+        }
+
+        /* ===== DARK MODE OVERRIDES ===== */
         body.dark-mode {
             background: #0f0f0f;
             color: #e0e0e0;
@@ -3666,6 +3698,10 @@
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Full name</span><span id="profileName" style="font-weight:700;"></span></div>
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Email</span><span id="profileEmail" style="font-weight:700;"></span></div>
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Phone</span><span id="profilePhone" style="font-weight:700;"></span></div>
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-weight:600;color:var(--text-secondary);">Dark Mode</span>
+                        <div id="darkModeToggle" class="iphone-toggle"></div>
+                    </div>
                     <button class="btn-transaction" id="transactionHistoryBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:60px;font-weight:700;color:#fff;font-size:0.9rem;cursor:pointer;margin-top:0.8rem;box-shadow:0 4px 16px rgba(245,176,66,0.3);"><i class="fas fa-receipt"></i> Transaction History</button>
                     <button class="btn-profile" id="changePasswordBtn" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid #e5e8ed;border-radius:60px;font-weight:700;color:var(--text);font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-key"></i> Change Password</button>
                     <button class="btn-profile btn-outline" id="logoutBtn" style="width:100%;padding:12px;background:transparent;border:1.5px solid #e63946;border-radius:60px;font-weight:700;color:#e63946;font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -3826,6 +3862,30 @@
             <p style="font-size:0.8rem;color:#8b8fa3;margin-top:4px;">The course has been removed from your library.</p>
             <div class="expiration-modal-actions">
                 <button class="btn-exp-ok" id="expirationOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== EXAM CONFIRMATION POPUP ===== -->
+    <div id="examConfirmationModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:28px;max-width:480px;width:100%;padding:1.8rem 1.5rem 1.5rem 1.5rem;box-shadow:0 32px 80px rgba(0,0,0,0.25);animation:modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);border:1px solid rgba(245,176,66,0.15);">
+            <div style="text-align:center;margin-bottom:0.8rem;">
+                <div style="width:56px;height:56px;border-radius:50%;background:#fff8ed;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:24px;color:var(--gold-dark);border:2px solid rgba(245,176,66,0.2);">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h2 id="examConfirmTitle" style="font-size:1.2rem;font-weight:700;color:#1a1d28;">Assessment</h2>
+                <p id="examConfirmSubtitle" style="font-size:0.85rem;color:var(--text-secondary);">You are about to start an assessment.</p>
+            </div>
+            <div id="examConfirmDetails" style="background:#f8f9fc;border-radius:12px;padding:0.8rem 1rem;margin:0.6rem 0 1rem 0;font-size:0.85rem;line-height:1.7;">
+                <div><strong>Name:</strong> <span id="examConfirmName"></span></div>
+                <div><strong>Type:</strong> <span id="examConfirmType"></span></div>
+                <div><strong>Duration:</strong> <span id="examConfirmDuration"></span></div>
+                <div><strong>Start Time:</strong> <span id="examConfirmStartTime"></span></div>
+                <div><strong>Instructions:</strong> <span id="examConfirmInstructions" style="display:block;white-space:pre-wrap;font-size:0.8rem;color:var(--text-secondary);margin-top:4px;"></span></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button id="examConfirmCancelBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:#f0f2f5;color:#5f6377;border:none;">Cancel</button>
+                <button id="examConfirmStartBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;box-shadow:0 4px 16px rgba(245,176,66,0.3);border:none;">Start Assessment</button>
             </div>
         </div>
     </div>
@@ -4083,12 +4143,21 @@
         function updateExamBadge() {
             // Count assessments available to the user: assessments whose registerId is in userRegisterIds,
             // and status is 'published' or 'ongoing', and not yet taken (no response with 'completed' or 'ended' status)
+            // Also check if the assessment is paid and if the user has approved purchase for it
             const available = allAssessments.filter(a => {
                 if (!userRegisterIds.has(a.registerId)) return false;
                 if (a.status !== 'published' && a.status !== 'ongoing') return false;
                 // Check if already taken
                 const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
                 if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
+                // If paid, check if user has approved purchase for this assessment
+                if (a.paid) {
+                    // Check if this assessment has an approved purchase record
+                    const approved = approvedCoursesData[a.id];
+                    if (!approved) return false;
+                    // Check if expired
+                    if (approved.expiresAt && approved.expiresAt > 0 && Date.now() > approved.expiresAt) return false;
+                }
                 return true;
             });
             examBadgeCount = available.length;
@@ -5869,24 +5938,17 @@
 
         // ===== UI SETUP =====
         function setupUI() {
-            const darkModeToggle = document.createElement('div');
-            darkModeToggle.style.cssText =
-                'position:fixed;bottom:80px;right:16px;z-index:600;background:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.08);cursor:pointer;border:1px solid rgba(245,176,66,0.2);';
-            darkModeToggle.innerHTML = '<i class="fas fa-moon" style="font-size:1rem;color:#1a1d28;"></i>';
-            document.body.appendChild(darkModeToggle);
-
+            // Dark mode toggle (iPhone style)
+            const darkModeToggle = document.getElementById('darkModeToggle');
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
             if (savedDarkMode) {
                 document.body.classList.add('dark-mode');
-                darkModeToggle.innerHTML = '<i class="fas fa-sun" style="font-size:1rem;color:#f5b042;"></i>';
+                darkModeToggle.classList.add('active');
             }
             darkModeToggle.addEventListener('click', () => {
                 document.body.classList.toggle('dark-mode');
-                const isDark = document.body.classList.contains('dark-mode');
-                darkModeToggle.innerHTML = isDark ?
-                    '<i class="fas fa-sun" style="font-size:1rem;color:#f5b042;"></i>' :
-                    '<i class="fas fa-moon" style="font-size:1rem;color:#1a1d28;"></i>';
-                localStorage.setItem('darkMode', isDark);
+                darkModeToggle.classList.toggle('active');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
             });
 
             loadPlayerState();
@@ -6090,7 +6152,34 @@
                         showPage('assessmentHistory');
                         renderAssessmentHistory();
                     } else {
-                        startAssessment(type);
+                        // Find available assessment of this type
+                        const available = allAssessments.filter(a => {
+                            if (!userRegisterIds.has(a.registerId)) return false;
+                            if (a.status !== 'published' && a.status !== 'ongoing') return false;
+                            if (a.type !== type) return false;
+                            const existing = allAssessmentResponses.find(r => r.assessmentId === a.id &&
+                                r.userId === currentUser?.uid);
+                            if (existing && (existing.status === 'completed' || existing.status ===
+                                    'ended')) return false;
+                            // Check if paid and approved
+                            if (a.paid) {
+                                const approved = approvedCoursesData[a.id];
+                                if (!approved) return false;
+                                if (approved.expiresAt && approved.expiresAt > 0 && Date.now() >
+                                    approved.expiresAt) return false;
+                            }
+                            return true;
+                        });
+
+                        if (available.length === 0) {
+                            addNotification('warning', `No available ${type}s at the moment.`);
+                            return;
+                        }
+
+                        // For simplicity, take the first one
+                        const assessment = available[0];
+                        // Show confirmation popup first
+                        showExamConfirmation(assessment);
                     }
                 });
             });
@@ -6104,6 +6193,24 @@
                 showPage('home');
             });
 
+            // ---- EXAM CONFIRMATION ----
+            document.getElementById('examConfirmCancelBtn').addEventListener('click', () => {
+                document.getElementById('examConfirmationModal').style.display = 'none';
+            });
+
+            document.getElementById('examConfirmStartBtn').addEventListener('click', () => {
+                const modal = document.getElementById('examConfirmationModal');
+                const assessmentId = modal.dataset.assessmentId;
+                modal.style.display = 'none';
+                if (assessmentId) {
+                    const assessment = allAssessments.find(a => a.id === assessmentId);
+                    if (assessment) {
+                        renderAssessmentTake(assessment);
+                        showPage('assessmentTake');
+                    }
+                }
+            });
+
             setTimeout(() => {
                 setupCommentToggle();
                 attachCommentListenersToVisibleVideos();
@@ -6111,29 +6218,27 @@
             }, 300);
         }
 
-        // ===== ASSESSMENT TAKING =====
-        function startAssessment(type) {
-            // Find available assessment of this type
-            const available = allAssessments.filter(a => {
-                if (!userRegisterIds.has(a.registerId)) return false;
-                if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                if (a.type !== type) return false;
-                const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
-                if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
-                return true;
-            });
+        // ===== EXAM CONFIRMATION POPUP =====
+        function showExamConfirmation(assessment) {
+            const modal = document.getElementById('examConfirmationModal');
+            modal.dataset.assessmentId = assessment.id;
 
-            if (available.length === 0) {
-                addNotification('warning', `No available ${type}s at the moment.`);
-                return;
-            }
+            document.getElementById('examConfirmTitle').textContent = '📋 Assessment Confirmation';
+            document.getElementById('examConfirmSubtitle').textContent =
+                'You are about to start an assessment. Please review the details below.';
 
-            // For simplicity, take the first one (or we could let user choose)
-            const assessment = available[0];
-            renderAssessmentTake(assessment);
-            showPage('assessmentTake');
+            document.getElementById('examConfirmName').textContent = assessment.name || 'N/A';
+            document.getElementById('examConfirmType').textContent = (assessment.type || 'N/A').toUpperCase();
+            document.getElementById('examConfirmDuration').textContent = assessment.duration || 'No time limit';
+            document.getElementById('examConfirmStartTime').textContent = new Date().toLocaleString();
+
+            const instructions = assessment.cover?.instructions || 'Read each question carefully and answer to the best of your ability.';
+            document.getElementById('examConfirmInstructions').textContent = instructions;
+
+            modal.style.display = 'flex';
         }
 
+        // ===== ASSESSMENT TAKING =====
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
@@ -6227,8 +6332,9 @@
                         clearInterval(timerInterval);
                         timerElement.textContent = '00:00:00';
                         timerElement.classList.add('warning');
-                        addNotification('warning', 'Time is up! Please submit your assessment.');
-                        // Auto-submit? We'll just warn.
+                        addNotification('warning', '⏰ Time is up! Your assessment will be submitted automatically.');
+                        // Auto-submit
+                        autoSubmitAssessment();
                     } else {
                         timerElement.textContent = formatTime(currentAssessmentTaking.remainingSeconds);
                         if (currentAssessmentTaking.remainingSeconds < 60) {
@@ -6263,27 +6369,77 @@
             document.getElementById('submitAssessmentBtn').addEventListener('click', async () => {
                 if (!confirm('Are you sure you want to submit? You cannot change your answers after submission.'))
                     return;
-                const answers = collectAnswers();
-                const scratchData = collectScratchData();
-                if (currentAssessmentTaking) {
-                    clearInterval(currentAssessmentTaking.timerInterval);
-                    try {
-                        await update(ref(db, `assessmentResponses/${responseId}`), {
-                            answers: answers,
-                            scratchData: scratchData,
-                            status: 'completed',
-                            submittedAt: Date.now()
-                        });
-                        addNotification('success',
-                            `Assessment "${assessment.name}" submitted successfully! You can view your results in History.`
-                            );
-                        currentAssessmentTaking = null;
-                        showPage('home');
-                    } catch (e) {
-                        addNotification('danger', 'Failed to submit: ' + e.message);
-                    }
-                }
+                await submitAssessment();
             });
+        }
+
+        async function autoSubmitAssessment() {
+            if (!currentAssessmentTaking) return;
+            addNotification('info', '⏰ Auto-submitting your assessment...');
+            await submitAssessment();
+        }
+
+        async function submitAssessment() {
+            if (!currentAssessmentTaking) return;
+            const { assessment, responseId } = currentAssessmentTaking;
+            clearInterval(currentAssessmentTaking.timerInterval);
+            const answers = collectAnswers();
+            const scratchData = collectScratchData();
+
+            try {
+                // Calculate auto-graded score
+                let autoScore = 0;
+                let totalAutoMarks = 0;
+                let allQuestions = [];
+                if (assessment.sections) {
+                    assessment.sections.forEach(sec => {
+                        sec.questions.forEach(q => {
+                            allQuestions.push(q);
+                        });
+                    });
+                } else if (assessment.questions) {
+                    allQuestions = assessment.questions;
+                }
+
+                const marks = {};
+                allQuestions.forEach((q, idx) => {
+                    const qKey = `q${idx}`;
+                    const answer = answers[qKey] || '';
+                    let mark = 0;
+                    if (q.type === 'mcq' || q.type === 'tf') {
+                        totalAutoMarks += q.marks;
+                        if (answer === q.correct) {
+                            mark = q.marks;
+                            autoScore += q.marks;
+                        }
+                        marks[qKey] = mark;
+                    } else {
+                        // Manual marking: leave as 0 for now, admin will grade
+                        marks[qKey] = 0;
+                    }
+                });
+
+                await update(ref(db, `assessmentResponses/${responseId}`), {
+                    answers: answers,
+                    scratchData: scratchData,
+                    status: 'completed',
+                    submittedAt: Date.now(),
+                    score: autoScore,
+                    marks: marks,
+                    autoScore: autoScore,
+                    totalAutoMarks: totalAutoMarks
+                });
+
+                addNotification('success',
+                    `✅ Assessment "${assessment.name}" submitted successfully! Auto-graded score: ${autoScore}/${totalAutoMarks} (${totalAutoMarks > 0 ? Math.round((autoScore/totalAutoMarks)*100) : 0}%). Admin will review manual questions.`
+                    );
+
+                currentAssessmentTaking = null;
+                showPage('assessmentHistory');
+                renderAssessmentHistory();
+            } catch (e) {
+                addNotification('danger', 'Failed to submit: ' + e.message);
+            }
         }
 
         function buildQuestionBlock(q, idx, qKey) {
@@ -6603,6 +6759,7 @@
                     <p style="color:var(--text-secondary);font-size:0.85rem;">${ass.type} · ${response.status === 'completed' ? 'Completed' : 'Ended'} · ${formatDate(response.submittedAt || response.startedAt)}</p>
                     <div style="margin:0.8rem 0;padding:0.8rem;background:#f8f9fc;border-radius:12px;">
                         <strong>Score: </strong><span style="font-weight:700;color:${(response.score||0)/(ass.totalMarks||1) >= 0.5 ? '#2ecc71' : '#e74c3c'};">${response.score || 0}/${ass.totalMarks || 0}</span>
+                        <span style="margin-left:8px;font-size:0.75rem;color:var(--text-secondary);">Auto-graded: ${response.autoScore || 0}/${response.totalAutoMarks || 0}</span>
                     </div>
                     <div id="scriptDetailsContainer"></div>
                     <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
@@ -7078,7 +7235,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system integrated: floating exam button, hub, taking exams with timer & scratchpad, history with download.');
+        console.log('✅ UTOM User — Full assessment system integrated: floating exam button, hub, taking exams with timer & scratchpad, history with download, payment for paid assessments, and confirmation popup.');
     </script>
 </body>
 </html>
