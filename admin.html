@@ -10128,25 +10128,65 @@
         // =================================================================
         // =================================================================
 
-        // ---- Dashboard ----
+        // ---- Dashboard (FIXED) ----
         function renderTestExamsDashboard() {
-            document.getElementById('teRegistersCount').textContent = registers.length;
-            const totalAssessments = assessments.length;
-            document.getElementById('teAssessmentsCount').textContent = totalAssessments;
-            const ongoing = assessments.filter(a => a.status === 'ongoing' || a.status === 'published').length;
-            document.getElementById('teOngoingCount').textContent = ongoing;
-            const uniqueStudents = new Set();
-            assessmentResponses.forEach(r => { if (r.userId) uniqueStudents.add(r.userId); });
-            document.getElementById('teStudentsAssessed').textContent = uniqueStudents.size;
+            // Safely update stats with error handling
+            try {
+                const regCount = document.getElementById('teRegistersCount');
+                if (regCount) regCount.textContent = registers.length;
 
-            // Dashboard buttons
-            document.getElementById('teCreateRegisterBtn').onclick = () => showSection('createRegister');
-            document.getElementById('teCreateTestBtn').onclick = () => showSection('createTest');
-            document.getElementById('teCreateQuizBtn').onclick = () => showSection('createQuiz');
-            document.getElementById('teCreateExamBtn').onclick = () => showSection('createExam');
-            document.getElementById('teOngoingBtn').onclick = () => showSection('ongoing');
-            document.getElementById('teRegistersBtn').onclick = () => showSection('registers');
-            document.getElementById('teHistoryBtn').onclick = () => showSection('history');
+                const totalAssessments = assessments.length;
+                const assCount = document.getElementById('teAssessmentsCount');
+                if (assCount) assCount.textContent = totalAssessments;
+
+                const ongoing = assessments.filter(a => a.status === 'ongoing' || a.status === 'published').length;
+                const ongoingEl = document.getElementById('teOngoingCount');
+                if (ongoingEl) ongoingEl.textContent = ongoing;
+
+                const uniqueStudents = new Set();
+                assessmentResponses.forEach(r => { if (r.userId) uniqueStudents.add(r.userId); });
+                const studentsEl = document.getElementById('teStudentsAssessed');
+                if (studentsEl) studentsEl.textContent = uniqueStudents.size;
+            } catch (err) {
+                console.warn('Stats update error:', err);
+            }
+
+            // --- Use addEventListener instead of onclick ---
+            // First, remove any existing listeners to avoid duplicates
+            const btnTest = document.getElementById('teCreateTestBtn');
+            const btnQuiz = document.getElementById('teCreateQuizBtn');
+            const btnExam = document.getElementById('teCreateExamBtn');
+            const btnRegister = document.getElementById('teCreateRegisterBtn');
+            const btnOngoing = document.getElementById('teOngoingBtn');
+            const btnRegisters = document.getElementById('teRegistersBtn');
+            const btnHistory = document.getElementById('teHistoryBtn');
+
+            // Helper to safely attach listener (removes old one first)
+            function safeAttach(el, handler) {
+                if (!el) return;
+                // Remove any existing listener (using a named function)
+                el.removeEventListener('click', handler);
+                el.addEventListener('click', handler);
+            }
+
+            // Define the handlers as named functions so we can remove them
+            const handlers = {
+                test: () => showSection('createTest'),
+                quiz: () => showSection('createQuiz'),
+                exam: () => showSection('createExam'),
+                register: () => showSection('createRegister'),
+                ongoing: () => showSection('ongoing'),
+                registers: () => showSection('registers'),
+                history: () => showSection('history'),
+            };
+
+            safeAttach(btnTest, handlers.test);
+            safeAttach(btnQuiz, handlers.quiz);
+            safeAttach(btnExam, handlers.exam);
+            safeAttach(btnRegister, handlers.register);
+            safeAttach(btnOngoing, handlers.ongoing);
+            safeAttach(btnRegisters, handlers.registers);
+            safeAttach(btnHistory, handlers.history);
         }
 
         // ---- Update dropdowns ----
