@@ -5862,6 +5862,7 @@
                             <div id="testFixedSchedule">
                                 <div class="form-row">
                                     <input type="datetime-local" id="testStartTime">
+                                    <input type="datetime-local" id="testEndTime">
                                 </div>
                             </div>
                             <div id="testSelfSchedule" style="display:none;">
@@ -5985,6 +5986,7 @@
                             <div id="quizFixedSchedule">
                                 <div class="form-row">
                                     <input type="datetime-local" id="quizStartTime">
+                                    <input type="datetime-local" id="quizEndTime">
                                 </div>
                             </div>
                             <div id="quizSelfSchedule" style="display:none;">
@@ -6138,6 +6140,7 @@
                             <div id="examFixedSchedule">
                                 <div class="form-row">
                                     <input type="datetime-local" id="examStartTime">
+                                    <input type="datetime-local" id="examEndTime">
                                 </div>
                             </div>
                             <div id="examSelfSchedule" style="display:none;">
@@ -10515,13 +10518,20 @@
             const scheduleType = document.querySelector('input[name="testSchedule"]:checked').value;
             const publishImmediately = document.getElementById('testPublishImmediately').checked;
             let startTime = null,
+                endTime = null,
                 availableFrom = null,
                 availableUntil = null;
             if (publishImmediately) {
                 startTime = new Date().toISOString().slice(0, 16);
+                // End time: 2 hours from now by default (or you can leave as null)
+                const end = new Date();
+                end.setHours(end.getHours() + 2);
+                endTime = end.toISOString().slice(0, 16);
             } else if (scheduleType === 'fixed') {
                 startTime = document.getElementById('testStartTime').value;
+                endTime = document.getElementById('testEndTime').value;
                 if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+                if (!endTime) { showToast('End time is required for fixed schedule.', 'error'); return; }
             } else {
                 availableFrom = document.getElementById('testAvailableFrom').value;
                 availableUntil = document.getElementById('testAvailableUntil').value;
@@ -10612,6 +10622,7 @@
                     registerId,
                     scheduleType,
                     startTime,
+                    endTime,
                     availableFrom,
                     availableUntil,
                     publishImmediately,
@@ -10658,13 +10669,19 @@
             const scheduleType = document.querySelector('input[name="quizSchedule"]:checked').value;
             const publishImmediately = document.getElementById('quizPublishImmediately').checked;
             let startTime = null,
+                endTime = null,
                 availableFrom = null,
                 availableUntil = null;
             if (publishImmediately) {
                 startTime = new Date().toISOString().slice(0, 16);
+                const end = new Date();
+                end.setHours(end.getHours() + 2);
+                endTime = end.toISOString().slice(0, 16);
             } else if (scheduleType === 'fixed') {
                 startTime = document.getElementById('quizStartTime').value;
+                endTime = document.getElementById('quizEndTime').value;
                 if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+                if (!endTime) { showToast('End time is required for fixed schedule.', 'error'); return; }
             } else {
                 availableFrom = document.getElementById('quizAvailableFrom').value;
                 availableUntil = document.getElementById('quizAvailableUntil').value;
@@ -10744,6 +10761,7 @@
                     registerId,
                     scheduleType,
                     startTime,
+                    endTime,
                     availableFrom,
                     availableUntil,
                     publishImmediately,
@@ -10789,13 +10807,19 @@
             const scheduleType = document.querySelector('input[name="examSchedule"]:checked').value;
             const publishImmediately = document.getElementById('examPublishImmediately').checked;
             let startTime = null,
+                endTime = null,
                 availableFrom = null,
                 availableUntil = null;
             if (publishImmediately) {
                 startTime = new Date().toISOString().slice(0, 16);
+                const end = new Date();
+                end.setHours(end.getHours() + 2);
+                endTime = end.toISOString().slice(0, 16);
             } else if (scheduleType === 'fixed') {
                 startTime = document.getElementById('examStartTime').value;
+                endTime = document.getElementById('examEndTime').value;
                 if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+                if (!endTime) { showToast('End time is required for fixed schedule.', 'error'); return; }
             } else {
                 availableFrom = document.getElementById('examAvailableFrom').value;
                 availableUntil = document.getElementById('examAvailableUntil').value;
@@ -10889,6 +10913,7 @@
                     registerId,
                     scheduleType,
                     startTime,
+                    endTime,
                     availableFrom,
                     availableUntil,
                     publishImmediately,
@@ -11379,6 +11404,7 @@
                 document.getElementById(type + 'FixedSchedule').style.display = 'block';
                 document.getElementById(type + 'SelfSchedule').style.display = 'none';
                 if (ass.startTime) document.getElementById(type + 'StartTime').value = ass.startTime;
+                if (ass.endTime) document.getElementById(type + 'EndTime').value = ass.endTime;
             } else {
                 document.querySelector(`input[name="${type}Schedule"][value="self"]`).checked = true;
                 document.getElementById(type + 'FixedSchedule').style.display = 'none';
@@ -12578,7 +12604,7 @@
                         ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
                         <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
                             Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
-                            ${ass.scheduleType === 'fixed' ? ` · Start: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : 'N/A'}` : ''}
+                            ${ass.scheduleType === 'fixed' ? ` · Start: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : 'N/A'} · End: ${ass.endTime ? new Date(ass.endTime).toLocaleString() : 'N/A'}` : ''}
                             ${ass.scheduleType === 'self' ? ` · Available: ${ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A'} – ${ass.availableUntil ? new Date(ass.availableUntil).toLocaleString() : 'N/A'}` : ''}
                         </div>
                         <div style="border-top:1px solid #f0f0f5;padding-top:8px;">
