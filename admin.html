@@ -6,10 +6,8 @@
     <title>UTOM · Admin Studio</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js">
-    </script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -10468,7 +10466,429 @@
             });
         }
 
-        // ---- CREATE TEST ----
+        // ===== UPDATED: handleTestSubmit, handleQuizSubmit, handleExamSubmit =====
+        async function handleTestSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('testName').value.trim();
+            const duration = document.getElementById('testDuration').value;
+            if (!duration || duration === '00:00') {
+                showToast('Please set a valid duration (e.g., 01:30).', 'error');
+                return;
+            }
+            const registerId = document.getElementById('testRegister').value;
+            if (!name || !registerId) { showToast('Test name and register are required.', 'error'); return; }
+            const scheduleType = document.querySelector('input[name="testSchedule"]:checked').value;
+            const publishImmediately = document.getElementById('testPublishImmediately').checked;
+            let startTime = null,
+                availableFrom = null,
+                availableUntil = null;
+            if (publishImmediately) {
+                startTime = new Date().toISOString().slice(0, 16);
+            } else if (scheduleType === 'fixed') {
+                startTime = document.getElementById('testStartTime').value;
+                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+            } else {
+                availableFrom = document.getElementById('testAvailableFrom').value;
+                availableUntil = document.getElementById('testAvailableUntil').value;
+                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
+                        'error'); return; }
+            }
+            const infoEnabled = document.getElementById('testInfoToggle').classList.contains('active');
+            const infoFields = [];
+            if (infoEnabled) {
+                document.querySelectorAll('.test-info-field:checked').forEach(cb => infoFields.push(cb.value));
+                document.querySelectorAll('#testCustomFieldsList span').forEach(el => infoFields.push(el.dataset
+                    .label));
+            }
+            const paid = document.getElementById('testPaymentToggle').classList.contains('active');
+            let price = 0,
+                gateway = '';
+            if (paid) {
+                price = parseFloat(document.getElementById('testPrice').value) || 0;
+                gateway = document.getElementById('testGateway').value;
+                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
+            }
+            const passingScore = parseInt(document.getElementById('testPassingScore').value) || 50;
+            const randomize = document.getElementById('testRandomizeToggle').classList.contains('active');
+            const sections = [];
+            document.querySelectorAll('#testSectionsContainer .question-builder').forEach(sec => {
+                const secName = sec.querySelector('.section-name').value.trim() || 'Section';
+                const secInstructions = sec.querySelector('.section-instructions')?.value || '';
+                const questions = [];
+                sec.querySelectorAll('.test-question').forEach(q => {
+                    const text = q.querySelector('.qb-question-text').value.trim();
+                    const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
+                    const type = q.querySelector('.qb-type').value;
+                    const image = q.querySelector('.qb-image-url')?.value || '';
+                    let options = [];
+                    let correct = null;
+                    if (type === 'mcq') {
+                        q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                            const optText = opt.querySelector('.qb-option-text').value.trim();
+                            if (optText) {
+                                const radio = opt.querySelector('.qb-correct');
+                                if (radio && radio.checked) correct = idx;
+                                options.push(optText);
+                            }
+                        });
+                    } else if (type === 'matching') {
+                        const pairs = [];
+                        q.querySelectorAll('.qb-matching-row').forEach(row => {
+                            const left = row.querySelector('.matching-left').value.trim();
+                            const right = row.querySelector('.matching-right').value.trim();
+                            if (left && right) pairs.push({ left, right });
+                        });
+                        options = pairs;
+                    } else if (type === 'fillblank') {
+                        correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
+                    } else if (type === 'ordering') {
+                        const items = [];
+                        q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                            const val = inp.value.trim();
+                            if (val) items.push(val);
+                        });
+                        options = items;
+                    } else if (type === 'tf') {
+                        const radios = q.querySelectorAll('.qb-correct');
+                        radios.forEach(r => { if (r.checked) correct = r.value; });
+                        options = ['True', 'False'];
+                    }
+                    if (text) {
+                        questions.push({ text, marks, type, options, correct, image });
+                    }
+                });
+                if (questions.length > 0) {
+                    sections.push({ name: secName, instructions: secInstructions, questions });
+                }
+            });
+            if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
+                showToast('Please add at least one question.', 'error');
+                return;
+            }
+            const instructions = document.getElementById('testInstructions').value.trim();
+            const coverImage = document.getElementById('testCoverImageUrl').value || '';
+            const cover = { instructions, coverImage };
+            try {
+                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
+                const data = {
+                    type: 'test',
+                    name,
+                    duration,
+                    registerId,
+                    scheduleType,
+                    startTime,
+                    availableFrom,
+                    availableUntil,
+                    publishImmediately,
+                    infoEnabled,
+                    infoFields,
+                    paid,
+                    price,
+                    gateway,
+                    sections,
+                    cover,
+                    passingScore,
+                    randomize,
+                    status: publishImmediately ? 'published' : 'draft',
+                    createdAt: serverTimestamp(),
+                    totalMarks: sections.reduce((sum, s) => sum + s.questions.reduce((qsum, q) => qsum + q.marks, 0),
+                        0)
+                };
+                if (editingAssessmentId) {
+                    await update(assRef, data);
+                    showToast(`Test "${name}" updated successfully!`, 'success');
+                    push(notificationsRef, { message: `✏️ Test "${name}" updated`, timestamp: serverTimestamp() });
+                } else {
+                    await set(assRef, data);
+                    showToast(`Test "${name}" created successfully!`, 'success');
+                    push(notificationsRef, { message: `📝 Test "${name}" created`, timestamp: serverTimestamp() });
+                }
+                editingAssessmentId = null;
+                document.getElementById('testName').value = '';
+                // 👇 REDIRECT TO ONGOING
+                showSection('ongoing');
+            } catch (err) { showToast('Error saving test: ' + err.message, 'error'); }
+        }
+
+        async function handleQuizSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('quizName').value.trim();
+            const duration = document.getElementById('quizDuration').value;
+            if (!duration || duration === '00:00') {
+                showToast('Please set a valid duration (e.g., 00:30).', 'error');
+                return;
+            }
+            const registerId = document.getElementById('quizRegister').value;
+            if (!name || !registerId) { showToast('Quiz name and register are required.', 'error'); return; }
+            const scheduleType = document.querySelector('input[name="quizSchedule"]:checked').value;
+            const publishImmediately = document.getElementById('quizPublishImmediately').checked;
+            let startTime = null,
+                availableFrom = null,
+                availableUntil = null;
+            if (publishImmediately) {
+                startTime = new Date().toISOString().slice(0, 16);
+            } else if (scheduleType === 'fixed') {
+                startTime = document.getElementById('quizStartTime').value;
+                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+            } else {
+                availableFrom = document.getElementById('quizAvailableFrom').value;
+                availableUntil = document.getElementById('quizAvailableUntil').value;
+                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
+                        'error'); return; }
+            }
+            const infoEnabled = document.getElementById('quizInfoToggle').classList.contains('active');
+            const infoFields = [];
+            if (infoEnabled) {
+                document.querySelectorAll('.quiz-info-field:checked').forEach(cb => infoFields.push(cb.value));
+                document.querySelectorAll('#quizCustomFieldsList span').forEach(el => infoFields.push(el.dataset
+                    .label));
+            }
+            const paid = document.getElementById('quizPaymentToggle').classList.contains('active');
+            let price = 0,
+                gateway = '';
+            if (paid) {
+                price = parseFloat(document.getElementById('quizPrice').value) || 0;
+                gateway = document.getElementById('quizGateway').value;
+                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
+            }
+            const passingScore = parseInt(document.getElementById('quizPassingScore').value) || 50;
+            const randomize = document.getElementById('quizRandomizeToggle').classList.contains('active');
+            const questions = [];
+            document.querySelectorAll('#quizQuestionsContainer .question-builder').forEach(q => {
+                const text = q.querySelector('.qb-question-text').value.trim();
+                const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
+                const type = q.querySelector('.qb-type').value;
+                const image = q.querySelector('.qb-image-url')?.value || '';
+                let options = [];
+                let correct = null;
+                if (type === 'mcq') {
+                    q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                        const optText = opt.querySelector('.qb-option-text').value.trim();
+                        if (optText) {
+                            const radio = opt.querySelector('.qb-correct');
+                            if (radio && radio.checked) correct = idx;
+                            options.push(optText);
+                        }
+                    });
+                } else if (type === 'tf') {
+                    const radios = q.querySelectorAll('.qb-correct');
+                    radios.forEach(r => { if (r.checked) correct = r.value; });
+                    options = ['True', 'False'];
+                } else if (type === 'matching') {
+                    const pairs = [];
+                    q.querySelectorAll('.qb-matching-row').forEach(row => {
+                        const left = row.querySelector('.matching-left').value.trim();
+                        const right = row.querySelector('.matching-right').value.trim();
+                        if (left && right) pairs.push({ left, right });
+                    });
+                    options = pairs;
+                } else if (type === 'fillblank') {
+                    correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
+                } else if (type === 'ordering') {
+                    const items = [];
+                    q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                        const val = inp.value.trim();
+                        if (val) items.push(val);
+                    });
+                    options = items;
+                }
+                if (text) {
+                    questions.push({ text, marks, type, options, correct, image });
+                }
+            });
+            if (questions.length === 0) { showToast('Please add at least one question.', 'error'); return; }
+            const instructions = document.getElementById('quizInstructions').value.trim();
+            const coverImage = document.getElementById('quizCoverImageUrl').value || '';
+            const cover = { instructions, coverImage };
+            try {
+                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
+                const data = {
+                    type: 'quiz',
+                    name,
+                    duration,
+                    registerId,
+                    scheduleType,
+                    startTime,
+                    availableFrom,
+                    availableUntil,
+                    publishImmediately,
+                    infoEnabled,
+                    infoFields,
+                    paid,
+                    price,
+                    gateway,
+                    questions,
+                    cover,
+                    passingScore,
+                    randomize,
+                    status: publishImmediately ? 'published' : 'draft',
+                    createdAt: serverTimestamp(),
+                    totalMarks: questions.reduce((sum, q) => sum + q.marks, 0)
+                };
+                if (editingAssessmentId) {
+                    await update(assRef, data);
+                    showToast(`Quiz "${name}" updated successfully!`, 'success');
+                    push(notificationsRef, { message: `✏️ Quiz "${name}" updated`, timestamp: serverTimestamp() });
+                } else {
+                    await set(assRef, data);
+                    showToast(`Quiz "${name}" created successfully!`, 'success');
+                    push(notificationsRef, { message: `📝 Quiz "${name}" created`, timestamp: serverTimestamp() });
+                }
+                editingAssessmentId = null;
+                document.getElementById('quizName').value = '';
+                // 👇 REDIRECT TO ONGOING
+                showSection('ongoing');
+            } catch (err) { showToast('Error saving quiz: ' + err.message, 'error'); }
+        }
+
+        async function handleExamSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('examName').value.trim();
+            const duration = document.getElementById('examDuration').value;
+            if (!duration || duration === '00:00') {
+                showToast('Please set a valid duration (e.g., 03:00).', 'error');
+                return;
+            }
+            const registerId = document.getElementById('examRegister').value;
+            if (!name || !registerId) { showToast('Exam name and register are required.', 'error'); return; }
+            const scheduleType = document.querySelector('input[name="examSchedule"]:checked').value;
+            const publishImmediately = document.getElementById('examPublishImmediately').checked;
+            let startTime = null,
+                availableFrom = null,
+                availableUntil = null;
+            if (publishImmediately) {
+                startTime = new Date().toISOString().slice(0, 16);
+            } else if (scheduleType === 'fixed') {
+                startTime = document.getElementById('examStartTime').value;
+                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
+            } else {
+                availableFrom = document.getElementById('examAvailableFrom').value;
+                availableUntil = document.getElementById('examAvailableUntil').value;
+                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
+                        'error'); return; }
+            }
+            const infoEnabled = document.getElementById('examInfoToggle').classList.contains('active');
+            const infoFields = [];
+            if (infoEnabled) {
+                document.querySelectorAll('.exam-info-field:checked').forEach(cb => infoFields.push(cb.value));
+                document.querySelectorAll('#examCustomFieldsList span').forEach(el => infoFields.push(el.dataset
+                    .label));
+            }
+            const paid = document.getElementById('examPaymentToggle').classList.contains('active');
+            let price = 0,
+                gateway = '';
+            if (paid) {
+                price = parseFloat(document.getElementById('examPrice').value) || 0;
+                gateway = document.getElementById('examGateway').value;
+                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
+            }
+            const partialPayment = document.getElementById('examPartialPayment').checked;
+            const passingScore = parseInt(document.getElementById('examPassingScore').value) || 50;
+            const randomize = document.getElementById('examRandomizeToggle').classList.contains('active');
+            const sections = [];
+            document.querySelectorAll('#examSectionsContainer .question-builder').forEach(sec => {
+                const secName = sec.querySelector('.section-name').value.trim() || 'Section';
+                const secInstructions = sec.querySelector('.section-instructions')?.value || '';
+                const secDuration = sec.querySelector('.section-duration')?.value || '';
+                const questions = [];
+                sec.querySelectorAll('.exam-question').forEach(q => {
+                    const text = q.querySelector('.qb-question-text').value.trim();
+                    const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
+                    const type = q.querySelector('.qb-type').value;
+                    const image = q.querySelector('.qb-image-url')?.value || '';
+                    let options = [];
+                    let correct = null;
+                    if (type === 'mcq') {
+                        q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                            const optText = opt.querySelector('.qb-option-text').value.trim();
+                            if (optText) {
+                                const radio = opt.querySelector('.qb-correct');
+                                if (radio && radio.checked) correct = idx;
+                                options.push(optText);
+                            }
+                        });
+                    } else if (type === 'tf') {
+                        const radios = q.querySelectorAll('.qb-correct');
+                        radios.forEach(r => { if (r.checked) correct = r.value; });
+                        options = ['True', 'False'];
+                    } else if (type === 'matching') {
+                        const pairs = [];
+                        q.querySelectorAll('.qb-matching-row').forEach(row => {
+                            const left = row.querySelector('.matching-left').value.trim();
+                            const right = row.querySelector('.matching-right').value.trim();
+                            if (left && right) pairs.push({ left, right });
+                        });
+                        options = pairs;
+                    } else if (type === 'fillblank') {
+                        correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
+                    } else if (type === 'ordering') {
+                        const items = [];
+                        q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                            const val = inp.value.trim();
+                            if (val) items.push(val);
+                        });
+                        options = items;
+                    }
+                    if (text) {
+                        questions.push({ text, marks, type, options, correct, image });
+                    }
+                });
+                if (questions.length > 0) {
+                    sections.push({ name: secName, instructions: secInstructions, duration: secDuration,
+                        questions });
+                }
+            });
+            if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
+                showToast('Please add at least one question.', 'error');
+                return;
+            }
+            const instructions = document.getElementById('examInstructions').value.trim();
+            const coverImage = document.getElementById('examCoverImageUrl').value || '';
+            const cover = { instructions, coverImage };
+            try {
+                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
+                const data = {
+                    type: 'exam',
+                    name,
+                    duration,
+                    registerId,
+                    scheduleType,
+                    startTime,
+                    availableFrom,
+                    availableUntil,
+                    publishImmediately,
+                    infoEnabled,
+                    infoFields,
+                    paid,
+                    price,
+                    gateway,
+                    partialPayment,
+                    sections,
+                    cover,
+                    passingScore,
+                    randomize,
+                    status: publishImmediately ? 'published' : 'draft',
+                    createdAt: serverTimestamp(),
+                    totalMarks: sections.reduce((sum, s) => sum + s.questions.reduce((qsum, q) => qsum + q.marks, 0),
+                        0)
+                };
+                if (editingAssessmentId) {
+                    await update(assRef, data);
+                    showToast(`Exam "${name}" updated successfully!`, 'success');
+                    push(notificationsRef, { message: `✏️ Exam "${name}" updated`, timestamp: serverTimestamp() });
+                } else {
+                    await set(assRef, data);
+                    showToast(`Exam "${name}" created successfully!`, 'success');
+                    push(notificationsRef, { message: `📝 Exam "${name}" created`, timestamp: serverTimestamp() });
+                }
+                editingAssessmentId = null;
+                document.getElementById('examName').value = '';
+                // 👇 REDIRECT TO ONGOING
+                showSection('ongoing');
+            } catch (err) { showToast('Error saving exam: ' + err.message, 'error'); }
+        }
+
+        // ---- CREATE TEST (form render) ----
         function renderCreateTestForm() {
             editingAssessmentId = null;
 
@@ -10506,6 +10926,7 @@
             if (editingAssessmentId) {
                 populateAssessmentForm('test');
             }
+            attachPreviewButtons();
         }
 
         function attachTestQuestionEvents() {
@@ -11157,150 +11578,7 @@
             }
         }
 
-        // ---- CREATE TEST SUBMIT (delegated) ----
-        async function handleTestSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('testName').value.trim();
-            const duration = document.getElementById('testDuration').value;
-            if (!duration || duration === '00:00') {
-                showToast('Please set a valid duration (e.g., 01:30).', 'error');
-                return;
-            }
-            const registerId = document.getElementById('testRegister').value;
-            if (!name || !registerId) { showToast('Test name and register are required.', 'error'); return; }
-            const scheduleType = document.querySelector('input[name="testSchedule"]:checked').value;
-            const publishImmediately = document.getElementById('testPublishImmediately').checked;
-            let startTime = null,
-                availableFrom = null,
-                availableUntil = null;
-            if (publishImmediately) {
-                startTime = new Date().toISOString().slice(0, 16);
-            } else if (scheduleType === 'fixed') {
-                startTime = document.getElementById('testStartTime').value;
-                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
-            } else {
-                availableFrom = document.getElementById('testAvailableFrom').value;
-                availableUntil = document.getElementById('testAvailableUntil').value;
-                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
-                        'error'); return; }
-            }
-            const infoEnabled = document.getElementById('testInfoToggle').classList.contains('active');
-            const infoFields = [];
-            if (infoEnabled) {
-                document.querySelectorAll('.test-info-field:checked').forEach(cb => infoFields.push(cb.value));
-                document.querySelectorAll('#testCustomFieldsList span').forEach(el => infoFields.push(el.dataset
-                    .label));
-            }
-            const paid = document.getElementById('testPaymentToggle').classList.contains('active');
-            let price = 0,
-                gateway = '';
-            if (paid) {
-                price = parseFloat(document.getElementById('testPrice').value) || 0;
-                gateway = document.getElementById('testGateway').value;
-                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
-            }
-            const passingScore = parseInt(document.getElementById('testPassingScore').value) || 50;
-            const randomize = document.getElementById('testRandomizeToggle').classList.contains('active');
-            const sections = [];
-            document.querySelectorAll('#testSectionsContainer .question-builder').forEach(sec => {
-                const secName = sec.querySelector('.section-name').value.trim() || 'Section';
-                const secInstructions = sec.querySelector('.section-instructions')?.value || '';
-                const questions = [];
-                sec.querySelectorAll('.test-question').forEach(q => {
-                    const text = q.querySelector('.qb-question-text').value.trim();
-                    const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
-                    const type = q.querySelector('.qb-type').value;
-                    const image = q.querySelector('.qb-image-url')?.value || '';
-                    let options = [];
-                    let correct = null;
-                    if (type === 'mcq') {
-                        q.querySelectorAll('.qb-option').forEach((opt, idx) => {
-                            const optText = opt.querySelector('.qb-option-text').value.trim();
-                            if (optText) {
-                                const radio = opt.querySelector('.qb-correct');
-                                if (radio && radio.checked) correct = idx;
-                                options.push(optText);
-                            }
-                        });
-                    } else if (type === 'matching') {
-                        const pairs = [];
-                        q.querySelectorAll('.qb-matching-row').forEach(row => {
-                            const left = row.querySelector('.matching-left').value.trim();
-                            const right = row.querySelector('.matching-right').value.trim();
-                            if (left && right) pairs.push({ left, right });
-                        });
-                        options = pairs;
-                    } else if (type === 'fillblank') {
-                        correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
-                    } else if (type === 'ordering') {
-                        const items = [];
-                        q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
-                            const val = inp.value.trim();
-                            if (val) items.push(val);
-                        });
-                        options = items;
-                    } else if (type === 'tf') {
-                        const radios = q.querySelectorAll('.qb-correct');
-                        radios.forEach(r => { if (r.checked) correct = r.value; });
-                        options = ['True', 'False'];
-                    }
-                    if (text) {
-                        questions.push({ text, marks, type, options, correct, image });
-                    }
-                });
-                if (questions.length > 0) {
-                    sections.push({ name: secName, instructions: secInstructions, questions });
-                }
-            });
-            if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
-                showToast('Please add at least one question.', 'error');
-                return;
-            }
-            const instructions = document.getElementById('testInstructions').value.trim();
-            const coverImage = document.getElementById('testCoverImageUrl').value || '';
-            const cover = { instructions, coverImage };
-            try {
-                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
-                const data = {
-                    type: 'test',
-                    name,
-                    duration,
-                    registerId,
-                    scheduleType,
-                    startTime,
-                    availableFrom,
-                    availableUntil,
-                    publishImmediately,
-                    infoEnabled,
-                    infoFields,
-                    paid,
-                    price,
-                    gateway,
-                    sections,
-                    cover,
-                    passingScore,
-                    randomize,
-                    status: publishImmediately ? 'published' : 'draft',
-                    createdAt: serverTimestamp(),
-                    totalMarks: sections.reduce((sum, s) => sum + s.questions.reduce((qsum, q) => qsum + q.marks, 0),
-                        0)
-                };
-                if (editingAssessmentId) {
-                    await update(assRef, data);
-                    showToast(`Test "${name}" updated successfully!`, 'success');
-                    push(notificationsRef, { message: `✏️ Test "${name}" updated`, timestamp: serverTimestamp() });
-                } else {
-                    await set(assRef, data);
-                    showToast(`Test "${name}" created successfully!`, 'success');
-                    push(notificationsRef, { message: `📝 Test "${name}" created`, timestamp: serverTimestamp() });
-                }
-                editingAssessmentId = null;
-                document.getElementById('testName').value = '';
-                showSection('testExams');
-            } catch (err) { showToast('Error saving test: ' + err.message, 'error'); }
-        }
-
-        // ---- CREATE QUIZ ----
+        // ---- CREATE QUIZ (form render) ----
         function renderCreateQuizForm() {
             editingAssessmentId = null;
 
@@ -11382,6 +11660,7 @@
             if (editingAssessmentId) {
                 populateAssessmentForm('quiz');
             }
+            attachPreviewButtons();
         }
 
         function attachQuizQuestionEvents() {
@@ -11758,137 +12037,7 @@
             document.getElementById('quizCustomFieldLabel').value = '';
         });
 
-        async function handleQuizSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('quizName').value.trim();
-            const duration = document.getElementById('quizDuration').value;
-            if (!duration || duration === '00:00') {
-                showToast('Please set a valid duration (e.g., 00:30).', 'error');
-                return;
-            }
-            const registerId = document.getElementById('quizRegister').value;
-            if (!name || !registerId) { showToast('Quiz name and register are required.', 'error'); return; }
-            const scheduleType = document.querySelector('input[name="quizSchedule"]:checked').value;
-            const publishImmediately = document.getElementById('quizPublishImmediately').checked;
-            let startTime = null,
-                availableFrom = null,
-                availableUntil = null;
-            if (publishImmediately) {
-                startTime = new Date().toISOString().slice(0, 16);
-            } else if (scheduleType === 'fixed') {
-                startTime = document.getElementById('quizStartTime').value;
-                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
-            } else {
-                availableFrom = document.getElementById('quizAvailableFrom').value;
-                availableUntil = document.getElementById('quizAvailableUntil').value;
-                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
-                        'error'); return; }
-            }
-            const infoEnabled = document.getElementById('quizInfoToggle').classList.contains('active');
-            const infoFields = [];
-            if (infoEnabled) {
-                document.querySelectorAll('.quiz-info-field:checked').forEach(cb => infoFields.push(cb.value));
-                document.querySelectorAll('#quizCustomFieldsList span').forEach(el => infoFields.push(el.dataset
-                    .label));
-            }
-            const paid = document.getElementById('quizPaymentToggle').classList.contains('active');
-            let price = 0,
-                gateway = '';
-            if (paid) {
-                price = parseFloat(document.getElementById('quizPrice').value) || 0;
-                gateway = document.getElementById('quizGateway').value;
-                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
-            }
-            const passingScore = parseInt(document.getElementById('quizPassingScore').value) || 50;
-            const randomize = document.getElementById('quizRandomizeToggle').classList.contains('active');
-            const questions = [];
-            document.querySelectorAll('#quizQuestionsContainer .question-builder').forEach(q => {
-                const text = q.querySelector('.qb-question-text').value.trim();
-                const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
-                const type = q.querySelector('.qb-type').value;
-                const image = q.querySelector('.qb-image-url')?.value || '';
-                let options = [];
-                let correct = null;
-                if (type === 'mcq') {
-                    q.querySelectorAll('.qb-option').forEach((opt, idx) => {
-                        const optText = opt.querySelector('.qb-option-text').value.trim();
-                        if (optText) {
-                            const radio = opt.querySelector('.qb-correct');
-                            if (radio && radio.checked) correct = idx;
-                            options.push(optText);
-                        }
-                    });
-                } else if (type === 'tf') {
-                    const radios = q.querySelectorAll('.qb-correct');
-                    radios.forEach(r => { if (r.checked) correct = r.value; });
-                    options = ['True', 'False'];
-                } else if (type === 'matching') {
-                    const pairs = [];
-                    q.querySelectorAll('.qb-matching-row').forEach(row => {
-                        const left = row.querySelector('.matching-left').value.trim();
-                        const right = row.querySelector('.matching-right').value.trim();
-                        if (left && right) pairs.push({ left, right });
-                    });
-                    options = pairs;
-                } else if (type === 'fillblank') {
-                    correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
-                } else if (type === 'ordering') {
-                    const items = [];
-                    q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
-                        const val = inp.value.trim();
-                        if (val) items.push(val);
-                    });
-                    options = items;
-                }
-                if (text) {
-                    questions.push({ text, marks, type, options, correct, image });
-                }
-            });
-            if (questions.length === 0) { showToast('Please add at least one question.', 'error'); return; }
-            const instructions = document.getElementById('quizInstructions').value.trim();
-            const coverImage = document.getElementById('quizCoverImageUrl').value || '';
-            const cover = { instructions, coverImage };
-            try {
-                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
-                const data = {
-                    type: 'quiz',
-                    name,
-                    duration,
-                    registerId,
-                    scheduleType,
-                    startTime,
-                    availableFrom,
-                    availableUntil,
-                    publishImmediately,
-                    infoEnabled,
-                    infoFields,
-                    paid,
-                    price,
-                    gateway,
-                    questions,
-                    cover,
-                    passingScore,
-                    randomize,
-                    status: publishImmediately ? 'published' : 'draft',
-                    createdAt: serverTimestamp(),
-                    totalMarks: questions.reduce((sum, q) => sum + q.marks, 0)
-                };
-                if (editingAssessmentId) {
-                    await update(assRef, data);
-                    showToast(`Quiz "${name}" updated successfully!`, 'success');
-                    push(notificationsRef, { message: `✏️ Quiz "${name}" updated`, timestamp: serverTimestamp() });
-                } else {
-                    await set(assRef, data);
-                    showToast(`Quiz "${name}" created successfully!`, 'success');
-                    push(notificationsRef, { message: `📝 Quiz "${name}" created`, timestamp: serverTimestamp() });
-                }
-                editingAssessmentId = null;
-                document.getElementById('quizName').value = '';
-                showSection('testExams');
-            } catch (err) { showToast('Error saving quiz: ' + err.message, 'error'); }
-        }
-
-        // ---- CREATE EXAM ----
+        // ---- CREATE EXAM (form render) ----
         function renderCreateExamForm() {
             editingAssessmentId = null;
 
@@ -11927,6 +12076,7 @@
             if (editingAssessmentId) {
                 populateAssessmentForm('exam');
             }
+            attachPreviewButtons();
         }
 
         function attachExamQuestionEvents() {
@@ -12338,288 +12488,94 @@
             document.getElementById('examCustomFieldLabel').value = '';
         });
 
-        async function handleExamSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('examName').value.trim();
-            const duration = document.getElementById('examDuration').value;
-            if (!duration || duration === '00:00') {
-                showToast('Please set a valid duration (e.g., 03:00).', 'error');
-                return;
-            }
-            const registerId = document.getElementById('examRegister').value;
-            if (!name || !registerId) { showToast('Exam name and register are required.', 'error'); return; }
-            const scheduleType = document.querySelector('input[name="examSchedule"]:checked').value;
-            const publishImmediately = document.getElementById('examPublishImmediately').checked;
-            let startTime = null,
-                availableFrom = null,
-                availableUntil = null;
-            if (publishImmediately) {
-                startTime = new Date().toISOString().slice(0, 16);
-            } else if (scheduleType === 'fixed') {
-                startTime = document.getElementById('examStartTime').value;
-                if (!startTime) { showToast('Start time is required for fixed schedule.', 'error'); return; }
-            } else {
-                availableFrom = document.getElementById('examAvailableFrom').value;
-                availableUntil = document.getElementById('examAvailableUntil').value;
-                if (!availableFrom || !availableUntil) { showToast('Availability window is required for self-paced.',
-                        'error'); return; }
-            }
-            const infoEnabled = document.getElementById('examInfoToggle').classList.contains('active');
-            const infoFields = [];
-            if (infoEnabled) {
-                document.querySelectorAll('.exam-info-field:checked').forEach(cb => infoFields.push(cb.value));
-                document.querySelectorAll('#examCustomFieldsList span').forEach(el => infoFields.push(el.dataset
-                    .label));
-            }
-            const paid = document.getElementById('examPaymentToggle').classList.contains('active');
-            let price = 0,
-                gateway = '';
-            if (paid) {
-                price = parseFloat(document.getElementById('examPrice').value) || 0;
-                gateway = document.getElementById('examGateway').value;
-                if (price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
-            }
-            const partialPayment = document.getElementById('examPartialPayment').checked;
-            const passingScore = parseInt(document.getElementById('examPassingScore').value) || 50;
-            const randomize = document.getElementById('examRandomizeToggle').classList.contains('active');
-            const sections = [];
-            document.querySelectorAll('#examSectionsContainer .question-builder').forEach(sec => {
-                const secName = sec.querySelector('.section-name').value.trim() || 'Section';
-                const secInstructions = sec.querySelector('.section-instructions')?.value || '';
-                const secDuration = sec.querySelector('.section-duration')?.value || '';
-                const questions = [];
-                sec.querySelectorAll('.exam-question').forEach(q => {
-                    const text = q.querySelector('.qb-question-text').value.trim();
-                    const marks = parseInt(q.querySelector('.qb-marks').value) || 1;
-                    const type = q.querySelector('.qb-type').value;
-                    const image = q.querySelector('.qb-image-url')?.value || '';
-                    let options = [];
-                    let correct = null;
-                    if (type === 'mcq') {
-                        q.querySelectorAll('.qb-option').forEach((opt, idx) => {
-                            const optText = opt.querySelector('.qb-option-text').value.trim();
-                            if (optText) {
-                                const radio = opt.querySelector('.qb-correct');
-                                if (radio && radio.checked) correct = idx;
-                                options.push(optText);
-                            }
-                        });
-                    } else if (type === 'tf') {
-                        const radios = q.querySelectorAll('.qb-correct');
-                        radios.forEach(r => { if (r.checked) correct = r.value; });
-                        options = ['True', 'False'];
-                    } else if (type === 'matching') {
-                        const pairs = [];
-                        q.querySelectorAll('.qb-matching-row').forEach(row => {
-                            const left = row.querySelector('.matching-left').value.trim();
-                            const right = row.querySelector('.matching-right').value.trim();
-                            if (left && right) pairs.push({ left, right });
-                        });
-                        options = pairs;
-                    } else if (type === 'fillblank') {
-                        correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
-                    } else if (type === 'ordering') {
-                        const items = [];
-                        q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
-                            const val = inp.value.trim();
-                            if (val) items.push(val);
-                        });
-                        options = items;
-                    }
-                    if (text) {
-                        questions.push({ text, marks, type, options, correct, image });
-                    }
-                });
-                if (questions.length > 0) {
-                    sections.push({ name: secName, instructions: secInstructions, duration: secDuration,
-                        questions });
-                }
-            });
-            if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
-                showToast('Please add at least one question.', 'error');
-                return;
-            }
-            const instructions = document.getElementById('examInstructions').value.trim();
-            const coverImage = document.getElementById('examCoverImageUrl').value || '';
-            const cover = { instructions, coverImage };
-            try {
-                const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
-                const data = {
-                    type: 'exam',
-                    name,
-                    duration,
-                    registerId,
-                    scheduleType,
-                    startTime,
-                    availableFrom,
-                    availableUntil,
-                    publishImmediately,
-                    infoEnabled,
-                    infoFields,
-                    paid,
-                    price,
-                    gateway,
-                    partialPayment,
-                    sections,
-                    cover,
-                    passingScore,
-                    randomize,
-                    status: publishImmediately ? 'published' : 'draft',
-                    createdAt: serverTimestamp(),
-                    totalMarks: sections.reduce((sum, s) => sum + s.questions.reduce((qsum, q) => qsum + q.marks, 0),
-                        0)
-                };
-                if (editingAssessmentId) {
-                    await update(assRef, data);
-                    showToast(`Exam "${name}" updated successfully!`, 'success');
-                    push(notificationsRef, { message: `✏️ Exam "${name}" updated`, timestamp: serverTimestamp() });
-                } else {
-                    await set(assRef, data);
-                    showToast(`Exam "${name}" created successfully!`, 'success');
-                    push(notificationsRef, { message: `📝 Exam "${name}" created`, timestamp: serverTimestamp() });
-                }
-                editingAssessmentId = null;
-                document.getElementById('examName').value = '';
-                showSection('testExams');
-            } catch (err) { showToast('Error saving exam: ' + err.message, 'error'); }
-        }
-
-        // ---- REGISTERS LIST ----
-        function renderRegistersList() {
-            const container = document.getElementById('registersListContainer');
-            if (!container) return;
-            const search = (document.getElementById('registersSearch')?.value || '').toLowerCase();
-            let filtered = registers;
-            if (search) {
-                filtered = filtered.filter(r =>
-                    (r.name || '').toLowerCase().includes(search) ||
-                    (r.lecture || '').toLowerCase().includes(search) ||
-                    (r.memberDetails || []).some(m =>
-                        (m.name || '').toLowerCase().includes(search) ||
-                        (m.email || '').toLowerCase().includes(search)
-                    )
-                );
-            }
-            if (filtered.length === 0) {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No registers found.</div>';
-                return;
-            }
-            container.innerHTML = filtered.map(r => `
-                <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                        <div>
-                            <strong style="font-size:14px;">${escapeHtml(r.name)}</strong>
-                            <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(r.lecture)}</span>
-                        </div>
-                        <div style="font-size:12px;color:#8b8fa3;">${(r.members || []).length} members</div>
-                    </div>
-                    <div style="margin-top:6px;">
-                        <button class="btn-toggle-members btn-outline" style="padding:3px 12px;font-size:9px;" data-regid="${r.id}">
-                            <i class="fas fa-users"></i> View Members
-                        </button>
-                        <div class="member-list" style="display:none;margin-top:4px;max-height:150px;" id="memberList-${r.id}">
-                            ${(r.memberDetails || []).map(m => `<div style="padding:4px 0;font-size:12px;border-bottom:1px solid #eee;">${escapeHtml(m.name)} (${escapeHtml(m.email)})</div>`).join('')}
-                        </div>
-                    </div>
-                    <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">Back</button>
-                        <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-regid="${r.id}">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-
-            container.querySelectorAll('.btn-toggle-members').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const regId = this.dataset.regid;
-                    const list = document.getElementById(`memberList-${regId}`);
-                    if (list) {
-                        const isHidden = list.style.display === 'none';
-                        list.style.display = isHidden ? 'block' : 'none';
-                        this.innerHTML = isHidden ? '<i class="fas fa-users"></i> Hide Members' : '<i class="fas fa-users"></i> View Members';
-                    }
-                });
-            });
-
-            container.querySelectorAll('.btn-danger[data-regid]').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    if (confirm('Delete this register?')) {
-                        await remove(ref(db, `registers/${this.dataset.regid}`));
-                        showToast('Register deleted.', 'info');
-                    }
-                });
-            });
-        }
-
-        document.getElementById('registersSearch')?.addEventListener('input', renderRegistersList);
-
-        // ---- ON GOING LIST ----
+        // ===== UPDATED: renderOngoingList =====
         function renderOngoingList() {
             const container = document.getElementById('ongoingListContainer');
             const search = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
             const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
 
-            const activeAssessments = assessments.filter(a => a.status === 'published' || a.status === 'ongoing');
+            // Get published assessments (status === 'published')
+            const publishedAssessments = assessments.filter(a => a.status === 'published');
 
+            // Update filter dropdown with published assessments
             const filterSel = document.getElementById('ongoingFilterAssessment');
             if (filterSel) {
                 filterSel.innerHTML = '<option value="all">All Assessments</option>' +
-                    activeAssessments.map(a =>
+                    publishedAssessments.map(a =>
                         `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`).join('');
             }
 
-            let responses = assessmentResponses.filter(r => {
-                const ass = assessments.find(a => a.id === r.assessmentId);
-                if (!ass) return false;
-                if (filterAss !== 'all' && r.assessmentId !== filterAss) return false;
-                if (search) {
-                    const user = users.find(u => u.uid === r.userId);
-                    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                    const email = user ? user.email : '';
-                    if (!name.toLowerCase().includes(search) && !email.toLowerCase().includes(search) && !ass.name
-                        .toLowerCase().includes(search)) return false;
-                }
-                return true;
-            });
+            // Filter published assessments by search (if any)
+            let filteredAssessments = publishedAssessments;
+            if (search) {
+                filteredAssessments = filteredAssessments.filter(a =>
+                    a.name.toLowerCase().includes(search) ||
+                    a.type.toLowerCase().includes(search)
+                );
+            }
+            if (filterAss !== 'all') {
+                filteredAssessments = filteredAssessments.filter(a => a.id === filterAss);
+            }
 
-            if (responses.length === 0) {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No ongoing assessments found.</div>';
+            if (filteredAssessments.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No published assessments found.</div>';
                 return;
             }
 
-            container.innerHTML = responses.map(r => {
-                const ass = assessments.find(a => a.id === r.assessmentId);
-                const user = users.find(u => u.uid === r.userId);
-                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                const email = user ? user.email : '';
-                const answered = r.answers ? Object.keys(r.answers).length : 0;
-                const total = ass ? (ass.totalMarks || 0) : 0;
-                const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
-                return `
-                    <div class="ongoing-student-card" data-responseid="${r.id}" data-assessmentid="${r.assessmentId}" data-userid="${r.userId}">
-                        <div class="os-header">
+            // Build HTML for each assessment
+            let html = '';
+            filteredAssessments.forEach(ass => {
+                // Get responses for this assessment where status is 'started' (ongoing)
+                const responses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
+
+                // Build assessment card
+                html += `
+                    <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #f0f0f5;padding-bottom:8px;margin-bottom:8px;">
                             <div>
-                                <span class="os-name">${escapeHtml(name)}</span>
-                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">${escapeHtml(email)}</span>
+                                <strong style="font-size:16px;">${escapeHtml(ass.name)}</strong>
+                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
                             </div>
-                            <div>
-                                <span style="font-size:11px;color:#8b8fa3;">${escapeHtml(ass?.name || '')} (${ass?.type || ''})</span>
-                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">${answered}/${total} answered</span>
-                            </div>
-                            <div class="os-actions">
-                                <button class="btn-view-scratch" data-responseid="${r.id}"><i class="fas fa-pen"></i> View Scratch</button>
-                                <button class="btn-force-end" data-responseid="${r.id}"><i class="fas fa-stop"></i> End</button>
+                            <div style="font-size:12px;color:#8b8fa3;">
+                                Duration: ${ass.duration || 'N/A'} · Passing: ${ass.passingScore || 0}% · Total Marks: ${ass.totalMarks || 0}
                             </div>
                         </div>
-                        <div class="os-details">
-                            <span>Progress: ${progress}%</span>
-                            <span style="margin-left:12px;">Started: ${r.startedAt ? new Date(r.startedAt).toLocaleString() : 'N/A'}</span>
+                        ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                        <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
+                            Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
+                            ${ass.scheduleType === 'fixed' ? ` · Start: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : 'N/A'}` : ''}
+                            ${ass.scheduleType === 'self' ? ` · Available: ${ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A'} – ${ass.availableUntil ? new Date(ass.availableUntil).toLocaleString() : 'N/A'}` : ''}
+                        </div>
+                        <div style="border-top:1px solid #f0f0f5;padding-top:8px;">
+                            <span style="font-size:13px;font-weight:600;color:var(--text);">Students Started (${responses.length})</span>
+                            ${responses.length === 0 ? '<div style="font-size:12px;color:#8b8fa3;padding:4px 0;">No students have started yet.</div>' : ''}
+                            ${responses.map(r => {
+                                const user = users.find(u => u.uid === r.userId);
+                                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                                const email = user ? user.email : '';
+                                const answered = r.answers ? Object.keys(r.answers).length : 0;
+                                const total = ass.totalMarks || 0;
+                                const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+                                return `
+                                    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
+                                        <span>${escapeHtml(name)} (${escapeHtml(email)})</span>
+                                        <span>Progress: ${progress}% (${answered}/${total})</span>
+                                        <span style="font-size:11px;color:#8b8fa3;">Started: ${r.startedAt ? new Date(r.startedAt).toLocaleString() : 'N/A'}</span>
+                                        <div>
+                                            <button class="btn-view-scratch" data-responseid="${r.id}" style="padding:2px 10px;border-radius:20px;background:rgba(245,176,66,0.15);color:#d4952a;border:none;font-size:10px;cursor:pointer;">Scratch</button>
+                                            <button class="btn-force-end" data-responseid="${r.id}" style="padding:2px 10px;border-radius:20px;background:#fde8e8;color:#c62828;border:none;font-size:10px;cursor:pointer;">End</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
-            }).join('');
+            });
 
+            container.innerHTML = html;
+
+            // Attach events for scratch and end buttons
             container.querySelectorAll('.btn-view-scratch').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const responseId = this.dataset.responseid;
@@ -12701,6 +12657,75 @@
                 `;
             }).join('');
         }
+
+        // ---- REGISTERS LIST ----
+        function renderRegistersList() {
+            const container = document.getElementById('registersListContainer');
+            if (!container) return;
+            const search = (document.getElementById('registersSearch')?.value || '').toLowerCase();
+            let filtered = registers;
+            if (search) {
+                filtered = filtered.filter(r =>
+                    (r.name || '').toLowerCase().includes(search) ||
+                    (r.lecture || '').toLowerCase().includes(search) ||
+                    (r.memberDetails || []).some(m =>
+                        (m.name || '').toLowerCase().includes(search) ||
+                        (m.email || '').toLowerCase().includes(search)
+                    )
+                );
+            }
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No registers found.</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(r => `
+                <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                        <div>
+                            <strong style="font-size:14px;">${escapeHtml(r.name)}</strong>
+                            <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(r.lecture)}</span>
+                        </div>
+                        <div style="font-size:12px;color:#8b8fa3;">${(r.members || []).length} members</div>
+                    </div>
+                    <div style="margin-top:6px;">
+                        <button class="btn-toggle-members btn-outline" style="padding:3px 12px;font-size:9px;" data-regid="${r.id}">
+                            <i class="fas fa-users"></i> View Members
+                        </button>
+                        <div class="member-list" style="display:none;margin-top:4px;max-height:150px;" id="memberList-${r.id}">
+                            ${(r.memberDetails || []).map(m => `<div style="padding:4px 0;font-size:12px;border-bottom:1px solid #eee;">${escapeHtml(m.name)} (${escapeHtml(m.email)})</div>`).join('')}
+                        </div>
+                    </div>
+                    <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                        <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('testExams')">Back</button>
+                        <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-regid="${r.id}">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.btn-toggle-members').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const regId = this.dataset.regid;
+                    const list = document.getElementById(`memberList-${regId}`);
+                    if (list) {
+                        const isHidden = list.style.display === 'none';
+                        list.style.display = isHidden ? 'block' : 'none';
+                        this.innerHTML = isHidden ? '<i class="fas fa-users"></i> Hide Members' : '<i class="fas fa-users"></i> View Members';
+                    }
+                });
+            });
+
+            container.querySelectorAll('.btn-danger[data-regid]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (confirm('Delete this register?')) {
+                        await remove(ref(db, `registers/${this.dataset.regid}`));
+                        showToast('Register deleted.', 'info');
+                    }
+                });
+            });
+        }
+
+        document.getElementById('registersSearch')?.addEventListener('input', renderRegistersList);
 
         // ---- HISTORY / FINAL SCRIPT ----
         function renderHistoryList() {
@@ -13392,9 +13417,6 @@
         document.getElementById('closePreviewModal')?.addEventListener('click', function() {
             document.getElementById('assessmentPreviewModal').classList.remove('open');
         });
-
-        // ---- Also add preview button to history list items ----
-        // We already have the preview in the history list via the View Script button
 
         // =================================================================
         // BOOT
