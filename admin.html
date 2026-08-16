@@ -5285,6 +5285,71 @@
             text-align: center;
         }
 
+        /* ===== FULL PREVIEW SECTION (new) ===== */
+        .full-preview-section .exam-cover-page {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .full-preview-section .preview-content {
+            padding: 20px 30px;
+        }
+        .full-preview-section .preview-content .preview-section h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .full-preview-section .preview-content .preview-question {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f5;
+        }
+        .full-preview-section .preview-content .preview-question .pq-text {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .full-preview-section .preview-content .preview-question .pq-marks {
+            font-size: 11px;
+            color: #8b8fa3;
+        }
+        .full-preview-section .preview-content .preview-question .pq-options {
+            padding-left: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .full-preview-section .preview-content .preview-question .pq-options li {
+            list-style: none;
+            padding: 2px 0;
+        }
+        .full-preview-section .preview-content .preview-question .pq-options li::before {
+            content: "• ";
+            color: var(--gold);
+        }
+        .full-preview-section .preview-content .preview-question .pq-answer {
+            font-size: 11px;
+            color: var(--green);
+            padding: 2px 0;
+        }
+        .full-preview-section .preview-content .preview-question .pq-type-badge {
+            display: inline-block;
+            background: rgba(245, 176, 66, 0.10);
+            padding: 1px 10px;
+            border-radius: 30px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #d4952a;
+        }
+        .full-preview-section .preview-content .preview-question .pq-image {
+            max-width: 200px;
+            border-radius: 8px;
+            margin: 4px 0;
+        }
+
         /* ===== RESPONSIVE for cover ===== */
         @media (max-width: 520px) {
             .cover-preview-section .exam-cover-page .cover-body {
@@ -5960,7 +6025,7 @@
                         <form id="createTestForm">
                             <!-- STEP 1: COVER PAGE -->
                             <div id="testCoverStep">
-                                <!-- Name, Duration (hours & minutes) -->
+                                <!-- Name -->
                                 <div class="form-row">
                                     <input type="text" id="testName" placeholder="Test Name *" required>
                                 </div>
@@ -5970,6 +6035,7 @@
                                     <span style="margin:0 4px;">h</span>
                                     <input type="number" id="testDurationMinutes" placeholder="Minutes" min="0" max="59" value="30" style="width:80px;">
                                     <span style="margin:0 4px;">m</span>
+                                    <span id="testDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">1h 30m</span>
                                 </div>
                                 <div class="form-row">
                                     <select id="testRegister" required><option value="">Select Register *</option></select>
@@ -6113,6 +6179,7 @@
                                     <span style="margin:0 4px;">h</span>
                                     <input type="number" id="quizDurationMinutes" placeholder="Minutes" min="0" max="59" value="30" style="width:80px;">
                                     <span style="margin:0 4px;">m</span>
+                                    <span id="quizDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">0h 30m</span>
                                 </div>
                                 <div class="form-row">
                                     <select id="quizRegister" required><option value="">Select Register *</option></select>
@@ -6280,6 +6347,7 @@
                                     <span style="margin:0 4px;">h</span>
                                     <input type="number" id="examDurationMinutes" placeholder="Minutes" min="0" max="59" value="0" style="width:80px;">
                                     <span style="margin:0 4px;">m</span>
+                                    <span id="examDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">3h 0m</span>
                                 </div>
                                 <div class="form-row">
                                     <select id="examRegister" required><option value="">Select Register *</option></select>
@@ -6404,6 +6472,14 @@
                 <div style="padding:0 0 4px 0;">
                     <button id="backFromCoverPreview" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back to Edit</button>
                     <div id="coverPreviewContent" class="exam-cover-page"></div>
+                </div>
+            </div>
+
+            <!-- ===== FULL PREVIEW SECTION (new full-page preview) ===== -->
+            <div id="fullPreviewSection" class="section full-preview-section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="backFromFullPreview" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back to Edit</button>
+                    <div id="fullPreviewContent" class="exam-cover-page"></div>
                 </div>
             </div>
 
@@ -6830,6 +6906,8 @@
 
         // ---- current assessment type for back navigation ----
         let currentAssessmentType = 'test';
+        // ---- global preview data ----
+        window._previewData = null;
 
         // =================================================================
         // REFS
@@ -6869,7 +6947,6 @@
                 await loadPaymentSettings();
                 await loadReadNotifications();
                 await fetchInitialData();
-                setupRealtime();
                 document.getElementById('appLoader').classList.add('hidden');
             } catch (err) {
                 console.error('Error loading initial data:', err);
@@ -8500,6 +8577,11 @@
             } else if (sectionId === 'coverPreview') {
                 document.getElementById('coverPreviewSection').classList.add('active');
                 return;
+            } else if (sectionId === 'fullPreview') {
+                // New full-page preview
+                renderFullPreview();
+                document.getElementById('fullPreviewSection').classList.add('active');
+                return;
             }
 
             const target = document.getElementById(sectionId + 'Section');
@@ -8626,7 +8708,6 @@
             const hamburger = document.getElementById('hamburgerBtn');
             const sidebarClose = document.getElementById('leftSidebarClose');
 
-            // Use a single click handler with debounce to prevent double-tap issues
             let sidebarOpenTimeout = null;
 
             function openSidebar() {
@@ -8634,7 +8715,6 @@
                     clearTimeout(sidebarOpenTimeout);
                     sidebarOpenTimeout = null;
                 }
-                // Use requestAnimationFrame for smooth opening
                 requestAnimationFrame(() => {
                     sidebarOverlay.classList.add('open');
                     sidebar.classList.add('open');
@@ -8700,6 +8780,15 @@
                 });
             });
 
+            // ----- FIXED: Attach test/exams dashboard buttons ONCE -----
+            document.getElementById('teCreateTestBtn').addEventListener('click', () => showSection('createTest'));
+            document.getElementById('teCreateQuizBtn').addEventListener('click', () => showSection('createQuiz'));
+            document.getElementById('teCreateExamBtn').addEventListener('click', () => showSection('createExam'));
+            document.getElementById('teCreateRegisterBtn').addEventListener('click', () => showSection('createRegister'));
+            document.getElementById('teOngoingBtn').addEventListener('click', () => showSection('ongoing'));
+            document.getElementById('teRegistersBtn').addEventListener('click', () => showSection('registers'));
+            document.getElementById('teHistoryBtn').addEventListener('click', () => showSection('history'));
+
             // Notification sidebar
             const notifOverlay = document.getElementById('notifSidebarOverlay');
             const notifSidebar = document.getElementById('notifSidebar');
@@ -8760,6 +8849,12 @@
             // Back from cover preview
             document.getElementById('backFromCoverPreview').addEventListener('click', () => {
                 const type = currentAssessmentType;
+                showSection('create' + type.charAt(0).toUpperCase() + type.slice(1));
+            });
+
+            // Back from full preview
+            document.getElementById('backFromFullPreview').addEventListener('click', () => {
+                const type = currentAssessmentType || 'test';
                 showSection('create' + type.charAt(0).toUpperCase() + type.slice(1));
             });
 
@@ -9207,6 +9302,23 @@
                 }
                 updateVideoPreview();
                 showToast('Thumbnail generated!', 'success');
+            });
+
+            // Duration display updates
+            ['test', 'quiz', 'exam'].forEach(type => {
+                const hoursInp = document.getElementById(type + 'DurationHours');
+                const minutesInp = document.getElementById(type + 'DurationMinutes');
+                const display = document.getElementById(type + 'DurationDisplay');
+                if (hoursInp && minutesInp && display) {
+                    const updateDuration = () => {
+                        const h = parseInt(hoursInp.value) || 0;
+                        const m = parseInt(minutesInp.value) || 0;
+                        display.textContent = `${h}h ${m}m`;
+                    };
+                    hoursInp.addEventListener('input', updateDuration);
+                    minutesInp.addEventListener('input', updateDuration);
+                    updateDuration();
+                }
             });
         }
 
@@ -10738,39 +10850,6 @@
             } catch (err) {
                 console.warn('Stats update error:', err);
             }
-
-            // --- Use direct click handlers with proper event delegation ---
-            const btnTest = document.getElementById('teCreateTestBtn');
-            const btnQuiz = document.getElementById('teCreateQuizBtn');
-            const btnExam = document.getElementById('teCreateExamBtn');
-            const btnRegister = document.getElementById('teCreateRegisterBtn');
-            const btnOngoing = document.getElementById('teOngoingBtn');
-            const btnRegisters = document.getElementById('teRegistersBtn');
-            const btnHistory = document.getElementById('teHistoryBtn');
-
-            function safeAttach(el, handler) {
-                if (!el) return;
-                el.removeEventListener('click', handler);
-                el.addEventListener('click', handler);
-            }
-
-            const handlers = {
-                test: () => showSection('createTest'),
-                quiz: () => showSection('createQuiz'),
-                exam: () => showSection('createExam'),
-                register: () => showSection('createRegister'),
-                ongoing: () => showSection('ongoing'),
-                registers: () => showSection('registers'),
-                history: () => showSection('history'),
-            };
-
-            safeAttach(btnTest, handlers.test);
-            safeAttach(btnQuiz, handlers.quiz);
-            safeAttach(btnExam, handlers.exam);
-            safeAttach(btnRegister, handlers.register);
-            safeAttach(btnOngoing, handlers.ongoing);
-            safeAttach(btnRegisters, handlers.registers);
-            safeAttach(btnHistory, handlers.history);
         }
 
         // ---- Update dropdowns ----
@@ -11382,6 +11461,10 @@
                 populateAssessmentForm('test');
             }
             attachPreviewButtons();
+            // Update duration display after initial values set
+            const h = parseInt(document.getElementById('testDurationHours').value) || 0;
+            const m = parseInt(document.getElementById('testDurationMinutes').value) || 0;
+            document.getElementById('testDurationDisplay').textContent = `${h}h ${m}m`;
         }
 
         function attachTestQuestionEvents() {
@@ -11788,6 +11871,9 @@
                 populateAssessmentForm('quiz');
             }
             attachPreviewButtons();
+            const h = parseInt(document.getElementById('quizDurationHours').value) || 0;
+            const m = parseInt(document.getElementById('quizDurationMinutes').value) || 0;
+            document.getElementById('quizDurationDisplay').textContent = `${h}h ${m}m`;
         }
 
         function attachQuizQuestionEvents() {
@@ -12157,6 +12243,9 @@
                 populateAssessmentForm('exam');
             }
             attachPreviewButtons();
+            const h = parseInt(document.getElementById('examDurationHours').value) || 0;
+            const m = parseInt(document.getElementById('examDurationMinutes').value) || 0;
+            document.getElementById('examDurationDisplay').textContent = `${h}h ${m}m`;
         }
 
         function attachExamQuestionEvents() {
@@ -13529,32 +13618,41 @@
         });
 
         // =================================================================
-        // ASSESSMENT PREVIEW
+        // ASSESSMENT PREVIEW (Full Page)
         // =================================================================
-        window.previewAssessment = function(assessmentId) {
-            const ass = assessments.find(a => a.id === assessmentId);
-            if (!ass) { showToast('Assessment not found.', 'error'); return; }
-
-            const modal = document.getElementById('assessmentPreviewModal');
-            const titleEl = document.getElementById('previewTitle');
-            const contentEl = document.getElementById('previewContent');
-
-            titleEl.textContent = `Preview: ${escapeHtml(ass.name)} (${ass.type})`;
-
-            let html = `
-                <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
-                    <div style="font-size:13px;font-weight:600;">${escapeHtml(ass.name)}</div>
-                    <div style="font-size:11px;color:#8b8fa3;">Type: ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
-                    ${ass.cover && ass.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(ass.cover.instructions)}</div>` : ''}
-                </div>
-            `;
-
-            if (ass.cover && ass.cover.coverImage) {
-                html += `<div style="margin-bottom:12px;"><img src="${ass.cover.coverImage}" alt="Cover" style="max-width:100%;max-height:150px;border-radius:8px;object-fit:contain;" /></div>`;
+        function renderFullPreview() {
+            const data = window._previewData;
+            const container = document.getElementById('fullPreviewContent');
+            if (!data) {
+                container.innerHTML = '<div style="text-align:center;padding:40px;color:#8b8fa3;">No preview data available.</div>';
+                return;
             }
 
-            if (ass.type === 'test' || ass.type === 'exam') {
-                if (ass.sections) {
+            const ass = data;
+            const type = ass.type || 'test';
+            currentAssessmentType = type;
+
+            let html = `
+                <div class="cover-header">
+                    ${ass.cover && ass.cover.logoUrl ? `<img src="${ass.cover.logoUrl}" alt="Logo" class="cover-logo" onerror="this.style.display='none'" />` : ''}
+                    <h1>${escapeHtml(ass.cover?.institutionName || 'Institution')}</h1>
+                </div>
+                <div class="cover-body">
+                    <div class="assessment-type">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+                    <div class="assessment-name">${escapeHtml(ass.name)}</div>
+                    <div class="details-grid">
+                        <div><span class="label">Duration:</span> ${ass.duration ? ass.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
+                        <div><span class="label">Total Marks:</span> ${ass.totalMarks || 0}</div>
+                        ${ass.cover && ass.cover.instructions ? `<div style="grid-column:span 2;"><span class="label">Instructions:</span> ${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                        <div style="grid-column:span 2;"><span class="label">Info Collection:</span> ${ass.infoEnabled ? (ass.infoFields || []).join(', ') : 'None'}</div>
+                        ${ass.paid ? `<div><span class="label">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : ''}
+                    </div>
+                </div>
+                <div class="preview-content">
+            `;
+
+            if (type === 'test' || type === 'exam') {
+                if (ass.sections && ass.sections.length > 0) {
                     ass.sections.forEach((sec, si) => {
                         html += `<div class="preview-section">
                             <h4>${escapeHtml(sec.name || 'Section ' + (si+1))}</h4>
@@ -13568,8 +13666,8 @@
                         html += `</div></div>`;
                     });
                 }
-            } else if (ass.type === 'quiz') {
-                if (ass.questions) {
+            } else if (type === 'quiz') {
+                if (ass.questions && ass.questions.length > 0) {
                     html += `<div class="preview-section"><h4>Questions</h4><div class="preview-questions">`;
                     ass.questions.forEach((q, qi) => {
                         html += buildPreviewQuestion(q, 0, qi);
@@ -13578,9 +13676,9 @@
                 }
             }
 
-            contentEl.innerHTML = html || '<div style="padding:20px;text-align:center;color:#8b8fa3;">No content to preview.</div>';
-            modal.classList.add('open');
-        };
+            html += `</div>`;
+            container.innerHTML = html;
+        }
 
         function buildPreviewQuestion(q, sectionIdx, qIdx) {
             let optionsHtml = '';
@@ -13618,11 +13716,7 @@
             `;
         }
 
-        // ---- Preview button in history list ----
-        // We already have the preview button in the history list, but let's add a dedicated preview button for the create forms
-        // We'll add a preview button to the create test/quiz/exam forms
-
-        // ---- Add preview button to create forms ----
+        // ---- Full preview button handler (new) ----
         function addPreviewButtonToForm(formId, sectionId) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -13631,214 +13725,48 @@
             const btnGroup = submitBtn.closest('div[style*="display:flex;gap:10px;margin-top:16px;"]') || submitBtn.closest('.form-card')?.querySelector('div[style*="display:flex;gap:10px;"]');
             if (!btnGroup) return;
 
-            // Check if preview button already exists
             if (btnGroup.querySelector('.preview-assessment-btn')) return;
 
             const previewBtn = document.createElement('button');
             previewBtn.type = 'button';
             previewBtn.className = 'btn-outline';
             previewBtn.style.padding = '10px 24px;font-size:12px;';
-            previewBtn.innerHTML = '<i class="fas fa-eye"></i> Preview';
+            previewBtn.innerHTML = '<i class="fas fa-eye"></i> Preview Full';
             previewBtn.classList.add('preview-assessment-btn');
 
             previewBtn.addEventListener('click', function() {
-                // Collect form data and create a temporary assessment object
                 const formData = collectAssessmentFormData(formId);
                 if (!formData) {
                     showToast('Please fill in the required fields.', 'error');
                     return;
                 }
-                // Create a temporary assessment object
-                const tempAss = {
-                    id: 'preview',
+                // Store preview data globally
+                window._previewData = {
                     type: formId === 'createTestForm' ? 'test' : formId === 'createQuizForm' ? 'quiz' : 'exam',
-                    name: formData.name || 'Preview',
-                    duration: formData.duration || '00:00',
-                    totalMarks: formData.totalMarks || 0,
-                    cover: { instructions: formData.instructions || '', coverImage: formData.coverImage || '' },
+                    name: formData.name,
+                    duration: formData.duration,
+                    totalMarks: formData.totalMarks,
+                    cover: { instructions: formData.instructions, logoUrl: formData.coverImage },
+                    infoEnabled: formData.infoEnabled,
+                    infoFields: formData.infoFields,
+                    paid: formData.paid,
+                    price: formData.price,
+                    gateway: formData.gateway,
                     sections: formData.sections || [],
                     questions: formData.questions || []
                 };
                 if (formId === 'createQuizForm') {
-                    tempAss.questions = formData.questions || [];
+                    window._previewData.questions = formData.questions || [];
                 } else {
-                    tempAss.sections = formData.sections || [];
+                    window._previewData.sections = formData.sections || [];
                 }
-                // Show preview
-                const modal = document.getElementById('assessmentPreviewModal');
-                const titleEl = document.getElementById('previewTitle');
-                const contentEl = document.getElementById('previewContent');
-
-                titleEl.textContent = `Preview: ${escapeHtml(tempAss.name)} (${tempAss.type})`;
-
-                let html = `
-                    <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
-                        <div style="font-size:13px;font-weight:600;">${escapeHtml(tempAss.name)}</div>
-                        <div style="font-size:11px;color:#8b8fa3;">Type: ${tempAss.type} · Duration: ${tempAss.duration || 'N/A'} · Total Marks: ${tempAss.totalMarks || 0}</div>
-                        ${tempAss.cover && tempAss.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(tempAss.cover.instructions)}</div>` : ''}
-                    </div>
-                `;
-
-                if (tempAss.cover && tempAss.cover.coverImage) {
-                    html += `<div style="margin-bottom:12px;"><img src="${tempAss.cover.coverImage}" alt="Cover" style="max-width:100%;max-height:150px;border-radius:8px;object-fit:contain;" /></div>`;
-                }
-
-                if (tempAss.type === 'test' || tempAss.type === 'exam') {
-                    if (tempAss.sections && tempAss.sections.length > 0) {
-                        tempAss.sections.forEach((sec, si) => {
-                            html += `<div class="preview-section">
-                                <h4>${escapeHtml(sec.name || 'Section ' + (si+1))}</h4>
-                                ${sec.instructions ? `<div style="font-size:12px;color:#8b8fa3;margin-bottom:6px;">${escapeHtml(sec.instructions)}</div>` : ''}
-                                ${sec.duration ? `<div style="font-size:11px;color:#8b8fa3;margin-bottom:6px;">⏱️ Section duration: ${sec.duration}</div>` : ''}
-                                <div class="preview-questions">
-                        `;
-                            sec.questions.forEach((q, qi) => {
-                                html += buildPreviewQuestion(q, si, qi);
-                            });
-                            html += `</div></div>`;
-                        });
-                    }
-                } else if (tempAss.type === 'quiz') {
-                    if (tempAss.questions && tempAss.questions.length > 0) {
-                        html += `<div class="preview-section"><h4>Questions</h4><div class="preview-questions">`;
-                        tempAss.questions.forEach((q, qi) => {
-                            html += buildPreviewQuestion(q, 0, qi);
-                        });
-                        html += `</div></div>`;
-                    }
-                }
-
-                contentEl.innerHTML = html || '<div style="padding:20px;text-align:center;color:#8b8fa3;">No content to preview.</div>';
-                modal.classList.add('open');
+                currentAssessmentType = window._previewData.type;
+                showSection('fullPreview');
             });
 
-            // Insert before the submit button
             btnGroup.insertBefore(previewBtn, submitBtn);
         }
 
-        function collectAssessmentFormData(formId) {
-            const prefix = formId === 'createTestForm' ? 'test' : formId === 'createQuizForm' ? 'quiz' : 'exam';
-            const name = document.getElementById(prefix + 'Name')?.value?.trim();
-            const duration = document.getElementById(prefix + 'Duration')?.value;
-            const instructions = document.getElementById(prefix + 'Instructions')?.value?.trim();
-            const coverImage = document.getElementById(prefix + 'CoverImageUrl')?.value || '';
-
-            if (!name) return null;
-
-            let sections = [];
-            let questions = [];
-            let totalMarks = 0;
-
-            if (formId === 'createTestForm' || formId === 'createExamForm') {
-                const container = document.getElementById(prefix + 'SectionsContainer');
-                if (container) {
-                    container.querySelectorAll('.question-builder').forEach(sec => {
-                        const secName = sec.querySelector('.section-name')?.value?.trim() || 'Section';
-                        const secInstructions = sec.querySelector('.section-instructions')?.value?.trim() || '';
-                        const secDuration = sec.querySelector('.section-duration')?.value || '';
-                        const qs = [];
-                        sec.querySelectorAll('.test-question, .exam-question').forEach(q => {
-                            const text = q.querySelector('.qb-question-text')?.value?.trim();
-                            const marks = parseInt(q.querySelector('.qb-marks')?.value) || 1;
-                            const type = q.querySelector('.qb-type')?.value || 'mcq';
-                            const image = q.querySelector('.qb-image-url')?.value || '';
-                            let options = [];
-                            let correct = null;
-                            if (type === 'mcq') {
-                                q.querySelectorAll('.qb-option').forEach((opt, idx) => {
-                                    const optText = opt.querySelector('.qb-option-text')?.value?.trim();
-                                    if (optText) {
-                                        const radio = opt.querySelector('.qb-correct');
-                                        if (radio && radio.checked) correct = idx;
-                                        options.push(optText);
-                                    }
-                                });
-                            } else if (type === 'matching') {
-                                const pairs = [];
-                                q.querySelectorAll('.qb-matching-row').forEach(row => {
-                                    const left = row.querySelector('.matching-left')?.value?.trim();
-                                    const right = row.querySelector('.matching-right')?.value?.trim();
-                                    if (left && right) pairs.push({ left, right });
-                                });
-                                options = pairs;
-                            } else if (type === 'fillblank') {
-                                correct = q.querySelector('.fillblank-answer')?.value?.trim() || '';
-                            } else if (type === 'ordering') {
-                                const items = [];
-                                q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
-                                    const val = inp.value?.trim();
-                                    if (val) items.push(val);
-                                });
-                                options = items;
-                            } else if (type === 'tf') {
-                                const radios = q.querySelectorAll('.qb-correct');
-                                radios.forEach(r => { if (r.checked) correct = r.value; });
-                                options = ['True', 'False'];
-                            }
-                            if (text) {
-                                qs.push({ text, marks, type, options, correct, image });
-                                totalMarks += marks;
-                            }
-                        });
-                        if (qs.length > 0) {
-                            sections.push({ name: secName, instructions: secInstructions, duration: secDuration,
-                                questions: qs });
-                        }
-                    });
-                }
-            } else if (formId === 'createQuizForm') {
-                const container = document.getElementById('quizQuestionsContainer');
-                if (container) {
-                    container.querySelectorAll('.question-builder').forEach(q => {
-                        const text = q.querySelector('.qb-question-text')?.value?.trim();
-                        const marks = parseInt(q.querySelector('.qb-marks')?.value) || 1;
-                        const type = q.querySelector('.qb-type')?.value || 'mcq';
-                        const image = q.querySelector('.qb-image-url')?.value || '';
-                        let options = [];
-                        let correct = null;
-                        if (type === 'mcq') {
-                            q.querySelectorAll('.qb-option').forEach((opt, idx) => {
-                                const optText = opt.querySelector('.qb-option-text')?.value?.trim();
-                                if (optText) {
-                                    const radio = opt.querySelector('.qb-correct');
-                                    if (radio && radio.checked) correct = idx;
-                                    options.push(optText);
-                                }
-                            });
-                        } else if (type === 'matching') {
-                            const pairs = [];
-                            q.querySelectorAll('.qb-matching-row').forEach(row => {
-                                const left = row.querySelector('.matching-left')?.value?.trim();
-                                const right = row.querySelector('.matching-right')?.value?.trim();
-                                if (left && right) pairs.push({ left, right });
-                            });
-                            options = pairs;
-                        } else if (type === 'fillblank') {
-                            correct = q.querySelector('.fillblank-answer')?.value?.trim() || '';
-                        } else if (type === 'ordering') {
-                            const items = [];
-                            q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
-                                const val = inp.value?.trim();
-                                if (val) items.push(val);
-                            });
-                            options = items;
-                        } else if (type === 'tf') {
-                            const radios = q.querySelectorAll('.qb-correct');
-                            radios.forEach(r => { if (r.checked) correct = r.value; });
-                            options = ['True', 'False'];
-                        }
-                        if (text) {
-                            questions.push({ text, marks, type, options, correct, image });
-                            totalMarks += marks;
-                        }
-                    });
-                }
-            }
-
-            return { name, duration, instructions, coverImage, sections, questions, totalMarks };
-        }
-
-        // ---- Add preview buttons to forms after they are rendered ----
         function attachPreviewButtons() {
             setTimeout(() => {
                 addPreviewButtonToForm('createTestForm', 'createTest');
@@ -13865,10 +13793,8 @@
             setTimeout(attachPreviewButtons, 300);
         };
 
-        // ---- Close preview modal ----
-        document.getElementById('closePreviewModal')?.addEventListener('click', function() {
-            document.getElementById('assessmentPreviewModal').classList.remove('open');
-        });
+        // ---- Close preview modal (unused for full page) ----
+        // We keep the modal for other previews (like in history), but the form preview now uses full page.
 
         // =================================================================
         // BOOT
