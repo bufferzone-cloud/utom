@@ -6,7 +6,7 @@
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
-    <!-- Added html2canvas for PNG generation -->
+    <!-- html2canvas for PNG generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* ===== RESET & BASE ===== */
@@ -294,13 +294,13 @@
             width: 100%;
         }
 
-        /* ===== SCROLLABLE CONTENT ===== */
+        /* ===== SCROLLABLE CONTENT (Fixed bottom nav overlap) ===== */
         .app-content {
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
             min-height: 0;
-            padding: 0 0 calc(var(--nav-height) + 20px) 0;
+            padding: 0 0 calc(var(--nav-height) + 40px) 0;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             width: 100%;
@@ -3597,7 +3597,7 @@
                 font-size: 0.5rem;
             }
             .app-content {
-                padding: 0 0 calc(var(--nav-height) + 16px) 0;
+                padding: 0 0 calc(var(--nav-height) + 40px) 0;
             }
             .bottom-nav {
                 max-width: 360px;
@@ -6984,7 +6984,7 @@
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        // ===== SUBMIT ASSESSMENT =====
+        // ===== SUBMIT ASSESSMENT (UPDATED AUTO-GRADING) =====
         async function autoSubmitAssessment() {
             if (!currentAssessmentTaking) return;
             addNotification('info', '⏰ Auto-submitting your assessment...');
@@ -7018,16 +7018,63 @@
                     const qKey = `q${idx}`;
                     const answer = answers[qKey] || '';
                     let mark = 0;
-                    // Auto-grade MCQ and True/False only
+                    let isAuto = false;
+
+                    // --- AUTO-GRADE LOGIC ---
                     if (q.type === 'mcq' || q.type === 'tf') {
+                        // Exact string match
+                        isAuto = true;
                         totalAutoMarks += q.marks;
                         if (answer === q.correct) {
                             mark = q.marks;
                             autoScore += q.marks;
                         }
-                        marks[qKey] = mark;
-                    } else {
-                        // Manual questions: leave marks as 0 for admin to grade
+                    } else if (q.type === 'fillblank') {
+                        // Case-insensitive trim match
+                        isAuto = true;
+                        totalAutoMarks += q.marks;
+                        if (answer.trim().toLowerCase() === (q.correct || '').trim().toLowerCase()) {
+                            mark = q.marks;
+                            autoScore += q.marks;
+                        }
+                    } else if (q.type === 'matching') {
+                        // Match each left item to the correct right item
+                        isAuto = true;
+                        totalAutoMarks += q.marks;
+                        if (q.options && q.options.length > 0) {
+                            let correctCount = 0;
+                            const adminPairs = q.options;
+                            adminPairs.forEach((pair, pi) => {
+                                const selectedIdx = answer[pi];
+                                if (selectedIdx !== undefined && selectedIdx !== '') {
+                                    const selectedRight = q.options[selectedIdx]?.right;
+                                    if (selectedRight && selectedRight === pair.right) {
+                                        correctCount++;
+                                    }
+                                }
+                            });
+                            // Proportional scoring
+                            mark = Math.round((correctCount / adminPairs.length) * q.marks);
+                            autoScore += mark;
+                        }
+                    } else if (q.type === 'ordering') {
+                        // Check if items are in correct order
+                        isAuto = true;
+                        totalAutoMarks += q.marks;
+                        if (q.options && q.options.length > 0 && Array.isArray(answer) && answer.length === q.options.length) {
+                            const userItems = answer.map(idx => q.options[idx]);
+                            const adminItems = q.options;
+                            // Compare arrays
+                            if (userItems.every((item, idx) => item === adminItems[idx])) {
+                                mark = q.marks;
+                                autoScore += q.marks;
+                            }
+                        }
+                    }
+
+                    // If not auto-graded (text, essay, short), leave marks as 0 for admin to grade
+                    marks[qKey] = mark;
+                    if (!isAuto) {
                         marks[qKey] = 0;
                     }
                 });
@@ -7173,12 +7220,13 @@
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
                     answer === q.correct ? q.marks : 0) : 'Not graded');
-                const isAuto = q.type === 'mcq' || q.type === 'tf';
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
+                const markColor = isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
                     <div style="border-bottom:1px solid #f0f0f5;padding:12px 0;">
                         <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
                         <div style="font-size:0.8rem;color:var(--text-secondary);margin:4px 0;">Answer: ${escapeHtml(answer)}</div>
-                        <div style="font-size:0.8rem;font-weight:600;color:${isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6'};">
+                        <div style="font-size:0.8rem;font-weight:600;color:${markColor};">
                             Marks: ${mark}${isAuto ? '' : ' (manual grading)'}
                         </div>
                         ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#fafbfc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
@@ -7238,7 +7286,7 @@
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
                     answer === q.correct ? q.marks : 0) : 'Not graded');
-                const isAuto = q.type === 'mcq' || q.type === 'tf';
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
                 const markColor = isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
                     <div style="border-bottom:1px solid #e5e8ed;padding:14px 0;">
@@ -7635,7 +7683,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ/TF, manual grading for others, colorful PNG download.');
+        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ, TF, Fillblank, Matching, Ordering; manual grading for others; colorful PNG download.');
     </script>
 </body>
 </html>
