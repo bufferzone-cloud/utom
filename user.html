@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Learn & Grow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js">
-    </script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    <!-- Added html2canvas for PNG generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -7017,6 +7018,7 @@
                     const qKey = `q${idx}`;
                     const answer = answers[qKey] || '';
                     let mark = 0;
+                    // Auto-grade MCQ and True/False only
                     if (q.type === 'mcq' || q.type === 'tf') {
                         totalAutoMarks += q.marks;
                         if (answer === q.correct) {
@@ -7025,7 +7027,7 @@
                         }
                         marks[qKey] = mark;
                     } else {
-                        // Manual marking: leave as 0 for now, admin will grade
+                        // Manual questions: leave marks as 0 for admin to grade
                         marks[qKey] = 0;
                     }
                 });
@@ -7095,7 +7097,7 @@
                         ${ass ? ` · ${ass.duration || 'N/A'}` : ''}
                     </div>
                     <div class="h-actions">
-                        <button class="btn-download" onclick="downloadAssessmentScript('${r.id}')"><i class="fas fa-download"></i> Download Script</button>
+                        <button class="btn-download" onclick="downloadAssessmentScript('${r.id}')"><i class="fas fa-download"></i> Download Script (PNG)</button>
                         <button onclick="viewAssessmentScript('${r.id}')"><i class="fas fa-eye"></i> View Details</button>
                     </div>
                 </div>
@@ -7133,7 +7135,7 @@
                     </div>
                     <div id="scriptDetailsContainer"></div>
                     <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
-                        <button class="btn-primary" onclick="downloadAssessmentScript('${responseId}')"><i class="fas fa-download"></i> Download Script</button>
+                        <button class="btn-primary" onclick="downloadAssessmentScript('${responseId}')"><i class="fas fa-download"></i> Download Script (PNG)</button>
                         <button class="btn-outline" onclick="this.closest('.modal-overlay').remove();">Close</button>
                     </div>
                 </div>
@@ -7187,16 +7189,14 @@
             container.innerHTML = html;
         };
 
-        window.downloadAssessmentScript = function(responseId) {
+        // ===== DOWNLOAD SCRIPT AS COLORFUL PNG =====
+        window.downloadAssessmentScript = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
             const ass = allAssessments.find(a => a.id === response.assessmentId);
             if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
 
-            // Build a printable version
-            const printWin = window.open('', '_blank');
-            if (!printWin) { addNotification('danger', 'Please allow popups to download.'); return; }
-
+            // Build a temporary div with the script content, styled beautifully
             let allQuestions = [];
             if (ass.sections) {
                 ass.sections.forEach(sec => {
@@ -7214,33 +7214,23 @@
             const score = response.score || 0;
             const total = ass.totalMarks || 0;
             const studentInfo = response.studentInfo || {};
+            const passed = total > 0 && score >= (ass.passingScore || 50);
 
+            // Build HTML for PNG
             let html = `
-                <html><head><title>${escapeHtml(ass.name)} - Script</title>
-                <style>
-                    body { font-family: 'Inter', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-                    h1 { font-size: 1.2rem; margin-bottom: 4px; }
-                    .meta { color: #666; font-size: 0.8rem; margin-bottom: 16px; }
-                    .question { border-bottom: 1px solid #eee; padding: 12px 0; }
-                    .question strong { display: block; font-size: 0.9rem; }
-                    .answer { color: #444; font-size: 0.8rem; margin: 4px 0; }
-                    .scratch { border: 1px solid #ddd; border-radius: 8px; padding: 4px; margin: 4px 0; background: #fafbfc; }
-                    .scratch img { max-width: 100%; max-height: 150px; object-fit: contain; }
-                    .remark { margin-top: 4px; font-size: 0.75rem; color: #555; }
-                    .marks { font-weight: 600; }
-                    .marks.good { color: #2ecc71; }
-                    .marks.bad { color: #e74c3c; }
-                </style>
-                </head><body>
-                <h1>${escapeHtml(ass.name)} - Script</h1>
-                <div class="meta">${ass.type} · Score: ${score}/${total}</div>
+                <div id="scriptReport" style="padding:40px;background:#ffffff;font-family:'Inter',sans-serif;max-width:800px;margin:0 auto;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+                    <div style="text-align:center;margin-bottom:20px;border-bottom:4px solid #F5B042;padding-bottom:16px;">
+                        <div style="font-size:28px;font-weight:900;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">UTOM</div>
+                        <h2 style="font-size:22px;font-weight:700;color:#1a1d28;margin:4px 0;">Assessment Script</h2>
+                        <div style="color:#5f6377;font-size:14px;">${escapeHtml(ass.name)} · ${ass.type}</div>
+                        <div style="color:#8b8fa3;font-size:12px;">${formatDate(response.submittedAt || response.startedAt)}</div>
+                    </div>
+                    <div style="margin-bottom:16px;padding:12px 16px;background:#f8f9fc;border-radius:12px;border-left:6px solid #F5B042;">
+                        <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || currentUser?.email || 'N/A')}
+                        <span style="float:right;"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
+                        <br /><span style="font-size:12px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
+                    </div>
             `;
-
-            if (Object.keys(studentInfo).length > 0) {
-                html += `<div style="margin-bottom:1rem;padding:0.5rem;background:#fcf9f4;border-left:4px solid #f5b042;">
-                    <strong>Student Info:</strong> ${Object.entries(studentInfo).map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' | ')}
-                </div>`;
-            }
 
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
@@ -7249,24 +7239,49 @@
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
                     answer === q.correct ? q.marks : 0) : 'Not graded');
                 const isAuto = q.type === 'mcq' || q.type === 'tf';
-                const markClass = isAuto ? (mark === q.marks ? 'good' : 'bad') : '';
+                const markColor = isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
-                    <div class="question">
-                        <strong>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-weight:400;color:#8b8fa3;font-size:0.7rem;">${q.section}</span></strong>
-                        <div class="answer">Answer: ${escapeHtml(answer)}</div>
-                        <div class="marks ${markClass}">Marks: ${mark}</div>
-                        ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
-                        ${response.remarks && response.remarks[qKey] ? `<div class="remark">Remark: ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                    <div style="border-bottom:1px solid #e5e8ed;padding:14px 0;">
+                        <div style="font-weight:700;font-size:15px;color:#1a1d28;">Q${idx+1}: ${escapeHtml(q.text)} <span style="font-weight:400;font-size:12px;color:#8b8fa3;">(${q.marks} marks) · ${q.section}</span></div>
+                        <div style="font-size:13px;color:#4a4e5c;margin:4px 0;"><strong>Answer:</strong> ${escapeHtml(answer)}</div>
+                        <div style="font-size:13px;font-weight:600;color:${markColor};">Marks: ${mark}</div>
+                        ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#fafbfc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
+                        ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:12px;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                     </div>
                 `;
             });
 
-            html += `</body></html>`;
-            printWin.document.write(html);
-            printWin.document.close();
-            setTimeout(() => {
-                printWin.print();
-            }, 500);
+            html += `
+                    <div style="text-align:center;margin-top:20px;color:#8b8fa3;font-size:12px;border-top:1px solid #e5e8ed;padding-top:12px;">
+                        Generated by UTOM
+                    </div>
+                </div>
+            `;
+
+            // Create a temporary container
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            document.body.appendChild(tempDiv);
+            const reportEl = document.getElementById('scriptReport');
+
+            try {
+                addNotification('info', 'Generating PNG... Please wait.');
+                const canvas = await html2canvas(reportEl, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                const link = document.createElement('a');
+                link.download = `Script_${ass.name}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                addNotification('success', 'Script PNG downloaded!');
+            } catch (err) {
+                addNotification('danger', 'Failed to generate PNG: ' + err.message);
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
         };
 
         // ===== PROMO CAROUSEL =====
@@ -7620,7 +7635,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system integrated: floating exam button, hub, full cover page, student info collection, dropdown scratchpads, history with download, and payment support.');
+        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ/TF, manual grading for others, colorful PNG download.');
     </script>
 </body>
 </html>
