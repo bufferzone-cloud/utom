@@ -5490,7 +5490,7 @@
                                 </div>
                                 <div class="form-row">
                                     <select id="subfolderSelectHome"></select>
-                                    <input type="text" id="newSubfolderNameHome" placeholder="+ New subfolder">
+                                    <input type="text" id="newSubfolderNameHome" placeholder="+ New topic">
                                     <button type="button" id="quickAddSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:10px;">Add</button>
                                 </div>
                                 <textarea id="videoDesc" rows="2" placeholder="Description"></textarea>
@@ -5635,7 +5635,7 @@
                                 </div>
                                 <div class="form-row">
                                     <select id="docSubfolderSelect"></select>
-                                    <input type="text" id="newDocSubfolder" placeholder="+ New subfolder">
+                                    <input type="text" id="newDocSubfolder" placeholder="+ New topic">
                                     <button type="button" id="quickAddDocSubfolderBtn" class="btn-primary" style="padding:6px 14px;font-size:10px;">Add</button>
                                 </div>
                                 <textarea id="docDescription" rows="2" placeholder="Short description"></textarea>
@@ -5752,7 +5752,7 @@
             <div id="subfolderViewSection" class="section">
                 <div style="padding:0 0 4px 0;">
                     <button id="backFromSubfolderBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
-                    <h2 id="subfolderViewTitle" style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 10px 0;">Subfolder</h2>
+                    <h2 id="subfolderViewTitle" style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 10px 0;">Topic</h2>
                     <div id="subfolderVideosContainer" class="video-scroll-container"></div>
                     <h3 style="font-size:14px;font-weight:700;color:var(--text);margin:14px 0 8px 0;">Documents</h3>
                     <div id="subfolderDocsContainer" class="docs-scroll-container"></div>
@@ -7458,7 +7458,7 @@
                 const subfolderCount = subfolders.filter(sf => sf.courseId === c.id).length;
                 const durationLabel = c.durationType && c.durationType !== 'lifetime' ?
                     ` · ${c.durationValue} ${c.durationType}` : '';
-                return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount}${durationLabel}</span></span>`;
+                return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount} topics${durationLabel}</span></span>`;
             }).join('') || '<span class="empty-state" style="padding:0.5rem;">No courses found</span>';
 
             document.getElementById('adminTotalCourseCount').innerText = filtered.length;
@@ -7523,7 +7523,7 @@
             const bgColor = imgUrl ? 'transparent' : getRandomColor();
             const initial = (course.name || 'C').charAt(0).toUpperCase();
 
-            return ``
+            return `
             <div class="course-card-wrapper" data-id="${course.id}" data-price="${course.price}">
                 <div class="course-card-img-wrapper" style="background-color:${bgColor}; ${imgUrl ? `background-image:url('${imgUrl}');` : ''}">
                     ${!imgUrl ? `<span style="font-size:2.5rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
@@ -7532,7 +7532,7 @@
                 <div class="course-card-body">
                     <h4>${escapeHtml(course.name)}</h4>
                     <div style="display:flex; align-items:center; gap:6px; font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">
-                        <i class="fas fa-folder-open" style="color:var(--gold);"></i> ${subfolderCount} subfolder${subfolderCount !== 1 ? 's' : ''}
+                        <i class="fas fa-folder-open" style="color:var(--gold);"></i> ${subfolderCount} topic${subfolderCount !== 1 ? 's' : ''}
                     </div>
                     <div class="course-desc">${escapeHtml(course.description || 'Learn new skills and advance your career!')}</div>
                     <div class="course-meta">
@@ -10580,7 +10580,7 @@
                                 </div>
                             </div>`;
                         }).join('')}
-                        <div class="add-subfolder" data-course-id="${course.id}"><i class="fas fa-plus"></i> Add Subfolder</div>
+                        <div class="add-subfolder" data-course-id="${course.id}"><i class="fas fa-plus"></i> Add Topic</div>
                     </div>
                 </div>`;
             }).join('');
@@ -10633,10 +10633,10 @@
                     const sfId = btn.dataset.subfolderId;
                     const sf = subfolders.find(s => s.id === sfId);
                     if (!sf) return;
-                    const newName = prompt('Edit subfolder name:', sf.name);
+                    const newName = prompt('Edit topic name:', sf.name);
                     if (newName && newName.trim() !== sf.name) {
                         await update(ref(db, `subfolders/${sfId}`), { name: newName.trim() });
-                        showToast('Subfolder renamed!', 'success');
+                        showToast('Topic renamed!', 'success');
                     }
                 });
             });
@@ -10647,9 +10647,9 @@
                     const sfId = btn.dataset.subfolderId;
                     const sf = subfolders.find(s => s.id === sfId);
                     if (!sf) return;
-                    if (confirm(`Delete subfolder "${sf.name}"?`)) {
+                    if (confirm(`Delete topic "${sf.name}"?`)) {
                         await remove(ref(db, `subfolders/${sfId}`));
-                        showToast('Subfolder deleted', 'info');
+                        showToast('Topic deleted', 'info');
                     }
                 });
             });
@@ -10658,7 +10658,7 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const courseId = btn.dataset.courseId;
-                    const name = prompt('Enter subfolder name:');
+                    const name = prompt('Enter topic name:');
                     if (name && name.trim()) {
                         const r = push(subfoldersRef);
                         set(r, { name: name.trim(), courseId });
@@ -13393,7 +13393,7 @@
         document.getElementById('historySearch')?.addEventListener('input', renderHistoryList);
         document.getElementById('historyFilterAssessment')?.addEventListener('change', renderHistoryList);
 
-        // ---- STUDENT SCRIPT VIEWER (enhanced with marking and download PDF) ----
+        // ---- STUDENT SCRIPT VIEWER (enhanced with marking and download PDF, cover page, toggle scratch) ----
         function renderStudentScript(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) {
@@ -13414,6 +13414,8 @@
             const score = response.score || 0;
             const total = ass.totalMarks || 0;
             const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+            const register = registers.find(r => r.id === ass.registerId);
+            const registerName = register ? register.name : 'N/A';
 
             let allQuestions = [];
             if (ass.sections) {
@@ -13430,6 +13432,7 @@
             const scratchData = response.scratchData || {};
             const marks = response.marks || {};
 
+            // Build cover page HTML
             let html = `
                 <div class="script-booklet">
                     <div class="script-header">
@@ -13439,6 +13442,7 @@
                                 <span>${escapeHtml(name)} (${escapeHtml(email)})</span>
                                 <span style="margin-left:12px;">${ass.type} · ${ass.duration || 'N/A'}</span>
                                 <span style="margin-left:12px;">Phone: ${escapeHtml(phone || 'N/A')}</span>
+                                <span style="margin-left:12px;">Register: ${escapeHtml(registerName)}</span>
                             </div>
                             <div class="script-meta" style="margin-top:4px;">
                                 <span>Total Marks: ${total}</span>
@@ -13453,6 +13457,9 @@
                     <div id="scriptQuestionsContainer">
             `;
 
+            // If the assessment has a cover page (instructions, logo, etc.) we could show it here.
+            // For now, we just have the student info in the header.
+
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
                 const answer = answers[qKey] || 'Not answered';
@@ -13460,6 +13467,23 @@
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
                     answer === q.correct ? q.marks : 0) : '');
                 const isAuto = q.type === 'mcq' || q.type === 'tf';
+
+                // Build scratch pad toggle
+                const scratchHtml = scratch ?
+                    `
+                        <div style="margin-top:6px;">
+                            <button class="btn-outline scratch-toggle" style="padding:2px 12px;font-size:10px;" data-qkey="${qKey}">
+                                <i class="fas fa-chevron-down"></i> Show Sketch Pad
+                            </button>
+                            <div class="scratch-container" style="display:none;margin-top:4px;">
+                                <div class="scratch-pad-view">
+                                    <img src="${scratch}" alt="Scratch pad" style="max-width:100%;max-height:200px;object-fit:contain;display:block;"/>
+                                </div>
+                            </div>
+                        </div>
+                    ` :
+                    `<div style="margin-top:6px;font-size:11px;color:#8b8fa3;font-style:italic;">No sketch pad used.</div>`;
+
                 html += `
                     <div class="script-question">
                         <div class="q-head">
@@ -13470,17 +13494,7 @@
                             </span>
                         </div>
                         <div class="q-answer">Answer: ${escapeHtml(answer)}</div>
-                        ${scratch ? `
-                            <div class="q-scratch">
-                                <div class="scratch-label">✏️ Student's Scratch Pad</div>
-                                <img src="${scratch}" alt="Scratch pad drawing" />
-                            </div>
-                        ` : `
-                            <div class="q-scratch">
-                                <div class="scratch-label">✏️ Student's Scratch Pad</div>
-                                <div class="no-scratch">Student did not open the scratch pad for this question.</div>
-                            </div>
-                        `}
+                        ${scratchHtml}
                         <div class="q-remark">
                             <textarea class="q-remark-text" data-qkey="${qKey}" placeholder="Admin remarks...">${response.remarks && response.remarks[qKey] || ''}</textarea>
                         </div>
@@ -13498,6 +13512,20 @@
             `;
 
             document.getElementById('studentScriptContainer').innerHTML = html;
+
+            // Attach scratch toggle events
+            document.querySelectorAll('.scratch-toggle').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const container = this.closest('.script-question').querySelector('.scratch-container');
+                    if (container) {
+                        const isHidden = container.style.display === 'none';
+                        container.style.display = isHidden ? 'block' : 'none';
+                        this.innerHTML = isHidden ?
+                            '<i class="fas fa-chevron-up"></i> Hide Sketch Pad' :
+                            '<i class="fas fa-chevron-down"></i> Show Sketch Pad';
+                    }
+                });
+            });
 
             // Save marks and remarks
             document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
@@ -13560,13 +13588,13 @@
             });
         }
 
-        // Enhanced downloadStudentScript as a print-to-PDF
+        // Enhanced downloadStudentScript as a print-to-PDF with cover page and toggleable scratch (not needed for PDF)
         window.downloadStudentScript = function(responseId) {
             const content = document.getElementById('studentScriptContainer');
             if (!content) return;
             const printWin = window.open('', '_blank');
             if (!printWin) { showToast('Please allow popups to download.', 'error'); return; }
-            // Build a clean printable version
+            // Build a clean printable version (scratch shown, no toggle)
             const response = assessmentResponses.find(r => r.id === responseId);
             const ass = assessments.find(a => a.id === response.assessmentId);
             const user = users.find(u => u.uid === response.userId);
@@ -13576,6 +13604,8 @@
             const score = response.score || 0;
             const total = ass ? (ass.totalMarks || 0) : 0;
             const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+            const register = registers.find(r => r.id === ass.registerId);
+            const registerName = register ? register.name : 'N/A';
 
             let allQuestions = [];
             if (ass.sections) {
@@ -13597,7 +13627,8 @@
                 <style>
                     body { font-family: 'Inter', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
                     h1 { font-size: 1.2rem; margin-bottom: 4px; }
-                    .meta { color: #666; font-size: 0.8rem; margin-bottom: 16px; }
+                    .meta { color: #666; font-size: 0.8rem; margin-bottom: 4px; }
+                    .cover { margin-bottom: 20px; border-bottom: 2px solid #f5b042; padding-bottom: 10px; }
                     .question { border-bottom: 1px solid #eee; padding: 12px 0; }
                     .question strong { display: block; font-size: 0.9rem; }
                     .answer { color: #444; font-size: 0.8rem; margin: 4px 0; }
@@ -13607,12 +13638,16 @@
                     .marks { font-weight: 600; }
                     .marks.good { color: #2ecc71; }
                     .marks.bad { color: #e74c3c; }
+                    .no-scratch { color: #999; font-style: italic; }
                 </style>
                 </head><body>
-                <h1>${escapeHtml(ass.name)} - Script</h1>
-                <div class="meta">${ass.type} · Duration: ${ass.duration || 'N/A'}</div>
-                <div class="meta">Student: ${escapeHtml(name)} (${escapeHtml(email)}) · Phone: ${escapeHtml(phone || 'N/A')}</div>
-                <div class="meta">Score: ${score}/${total} (${percent}%)</div>
+                <div class="cover">
+                    <h1>${escapeHtml(ass.name)} - Script</h1>
+                    <div class="meta">${ass.type} · Duration: ${ass.duration || 'N/A'}</div>
+                    <div class="meta">Student: ${escapeHtml(name)} (${escapeHtml(email)}) · Phone: ${escapeHtml(phone || 'N/A')}</div>
+                    <div class="meta">Register: ${escapeHtml(registerName)}</div>
+                    <div class="meta">Score: ${score}/${total} (${percent}%)</div>
+                </div>
             `;
 
             allQuestions.forEach((q, idx) => {
@@ -13628,7 +13663,7 @@
                         <strong>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-weight:400;color:#8b8fa3;font-size:0.7rem;">${q.section}</span></strong>
                         <div class="answer">Answer: ${escapeHtml(answer)}</div>
                         <div class="marks ${markClass}">Marks: ${mark}</div>
-                        ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
+                        ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : '<div class="no-scratch">No sketch pad used.</div>'}
                         ${response.remarks && response.remarks[qKey] ? `<div class="remark">Remark: ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                     </div>
                 `;
