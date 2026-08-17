@@ -5369,10 +5369,49 @@
                 font-size: 20px;
             }
         }
+
+        /* ===== TEST REGISTER VIEW (new section) ===== */
+        .test-register-section .exam-cover-page {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .test-register-section .exam-cover-page .cover-header {
+            background: #f5b042;
+            padding: 20px;
+            text-align: center;
+        }
+        .test-register-section .exam-cover-page .cover-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a1d28;
+        }
+        .test-register-section .exam-cover-page .cover-body {
+            padding: 24px 30px;
+        }
+        .test-register-item {
+            border-bottom: 1px solid #f0f0f5;
+            padding: 12px 0;
+        }
+        .test-register-item:last-child {
+            border-bottom: none;
+        }
+        .test-register-item .tr-student {
+            font-weight: 600;
+        }
+        .test-register-item .tr-score {
+            font-weight: 700;
+            color: #2ecc71;
+        }
+        .test-register-item .tr-score.fail {
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
-
     <!-- ===== LOADER ===== -->
     <div id="appLoader">
         <div class="loader-spinner"></div>
@@ -5381,7 +5420,6 @@
     </div>
 
     <div class="app-root">
-
         <!-- ===== TOAST CONTAINER ===== -->
         <div class="toast-container" id="toastContainer"></div>
 
@@ -5411,10 +5449,8 @@
 
         <!-- ===== SCROLLABLE CONTENT ===== -->
         <div class="app-content">
-
             <!-- ===== HOME SECTION ===== -->
             <div id="homeSection" class="section active">
-
                 <!-- Dashboard Stats -->
                 <div class="dash-grid" id="dashboardCards">
                     <div class="dash-card">
@@ -6560,6 +6596,14 @@
                 <div style="padding:0 0 4px 0;">
                     <button id="backFromScript" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
                     <div id="studentScriptContainer"></div>
+                </div>
+            </div>
+
+            <!-- ===== TEST REGISTER VIEW (new) ===== -->
+            <div id="testRegisterSection" class="section test-register-section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="backFromTestRegister" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back to History</button>
+                    <div id="testRegisterContent" class="exam-cover-page"></div>
                 </div>
             </div>
 
@@ -8609,9 +8653,18 @@
                 document.getElementById('coverPreviewSection').classList.add('active');
                 return;
             } else if (sectionId === 'fullPreview') {
-                // New full-page preview
                 renderFullPreview();
                 document.getElementById('fullPreviewSection').classList.add('active');
+                return;
+            } else if (sectionId === 'testRegister') {
+                const assId = params.assId;
+                if (assId) {
+                    renderTestRegister(assId);
+                    document.getElementById('testRegisterSection').classList.add('active');
+                } else {
+                    showSection('history');
+                    return;
+                }
                 return;
             }
 
@@ -8881,6 +8934,7 @@
             document.getElementById('backFromHistory').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromScript').addEventListener('click', () => showSection('history'));
             document.getElementById('backFromAssessments').addEventListener('click', () => showSection('testExams'));
+            document.getElementById('backFromTestRegister').addEventListener('click', () => showSection('history'));
 
             // Back from cover preview
             document.getElementById('backFromCoverPreview').addEventListener('click', () => {
@@ -13369,6 +13423,7 @@
                             <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;cursor:pointer;" onclick="duplicateAssessment('${r.assessmentId}')"><i class="fas fa-copy"></i> Duplicate</button>
                             <button class="assessment-edit-btn" onclick="openAssessmentEditModal('${r.assessmentId}')"><i class="fas fa-pen-to-square"></i> Edit</button>
                             <button class="export-results-btn" onclick="exportAssessmentResults('${r.assessmentId}')"><i class="fas fa-file-csv"></i> Export</button>
+                            <button class="test-register-btn" onclick="showSection('testRegister',{assId:'${r.assessmentId}'})" style="padding:3px 12px;font-size:9px;background:#d4952a;color:#fff;border:none;border-radius:30px;cursor:pointer;"><i class="fas fa-users"></i> Test Register</button>
                             <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${r.assessmentId}">Delete</button>
                         </div>
                         <div style="margin-top:4px;font-size:11px;color:#8b8fa3;">
@@ -13390,6 +13445,63 @@
 
         document.getElementById('historySearch')?.addEventListener('input', renderHistoryList);
         document.getElementById('historyFilterAssessment')?.addEventListener('change', renderHistoryList);
+
+        // ---- TEST REGISTER (new) ----
+        function renderTestRegister(assessmentId) {
+            const ass = assessments.find(a => a.id === assessmentId);
+            if (!ass) {
+                document.getElementById('testRegisterContent').innerHTML =
+                    '<div style="text-align:center;padding:40px;color:#8b8fa3;">Assessment not found.</div>';
+                return;
+            }
+
+            // Get all completed/ended responses for this assessment
+            const responses = assessmentResponses.filter(r => r.assessmentId === assessmentId && (r.status === 'ended' || r.status === 'completed'));
+
+            let html = `
+                <div class="cover-header">
+                    <h1>Test Register: ${escapeHtml(ass.name)}</h1>
+                </div>
+                <div class="cover-body">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+                        <span style="font-size:14px;color:#8b8fa3;">${ass.type} · ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</span>
+                        <span style="font-weight:600;">Total Students: ${responses.length}</span>
+                    </div>
+                    <div style="border-top:2px solid #f5b042;padding-top:12px;">
+            `;
+            if (responses.length === 0) {
+                html += '<div style="text-align:center;padding:20px;color:#8b8fa3;">No students have submitted this assessment yet.</div>';
+            } else {
+                responses.forEach(r => {
+                    const user = users.find(u => u.uid === r.userId);
+                    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                    const email = user ? user.email : '';
+                    const score = r.score || 0;
+                    const total = ass.totalMarks || 0;
+                    const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                    const passed = percent >= (ass.passingScore || 50);
+                    html += `
+                        <div class="test-register-item">
+                            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                                <div>
+                                    <span class="tr-student">${escapeHtml(name)}</span>
+                                    <span style="font-size:12px;color:#8b8fa3;margin-left:6px;">${escapeHtml(email)}</span>
+                                </div>
+                                <div>
+                                    <span class="tr-score ${passed ? '' : 'fail'}">${score}/${total} (${percent}%)</span>
+                                    <span style="font-size:11px;color:#8b8fa3;margin-left:6px;">${passed ? '✅ Passed' : '❌ Failed'}</span>
+                                </div>
+                            </div>
+                            <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
+                                Submitted: ${r.endedAt ? new Date(r.endedAt).toLocaleString() : (r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'N/A')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += `</div></div>`;
+            document.getElementById('testRegisterContent').innerHTML = html;
+        }
 
         // ---- STUDENT SCRIPT VIEWER ----
         function renderStudentScript(responseId) {
@@ -13427,28 +13539,30 @@
             const scratchData = response.scratchData || {};
             const marks = response.marks || {};
 
+            // Build COVER PAGE
             let html = `
                 <div class="script-booklet">
-                    <div class="script-header">
-                        <div>
-                            <h3>${escapeHtml(ass.name)} — Final Script</h3>
-                            <div class="script-meta">
-                                <span>${escapeHtml(name)} (${escapeHtml(email)})</span>
-                                <span style="margin-left:12px;">${ass.type} · ${ass.duration || 'N/A'}</span>
-                            </div>
-                            <div class="script-meta" style="margin-top:4px;">
-                                <span>Total Marks: ${total}</span>
-                                <span style="margin-left:12px;font-weight:700;color:${percent >= 50 ? '#2ecc71' : '#e74c3c'};">Score: ${score}/${total} (${percent}%)</span>
-                            </div>
+                    <div class="cover-header" style="background:#f5b042;padding:24px 20px;border-radius:20px 20px 0 0;text-align:center;">
+                        <h1 style="font-size:28px;font-weight:900;color:#1a1d28;">${escapeHtml(ass.name)}</h1>
+                        <p style="font-size:14px;color:#1a1d28;margin-top:4px;">${ass.type} · ${ass.duration || 'N/A'}</p>
+                        <div style="margin-top:8px;color:#1a1d28;font-size:13px;">
+                            <strong>Student:</strong> ${escapeHtml(name)} (${escapeHtml(email)})
                         </div>
-                        <div>
-                            <button class="btn-primary" style="padding:6px 16px;font-size:10px;" onclick="downloadStudentScript('${responseId}')"><i class="fas fa-download"></i> Download PDF</button>
-                            <button class="btn-outline" style="padding:6px 16px;font-size:10px;margin-left:6px;" onclick="showSection('history')">Back</button>
+                        <div style="margin-top:4px;color:#1a1d28;font-size:13px;">
+                            <strong>Score:</strong> ${score}/${total} (${percent}%) 
+                            <span style="font-weight:700;color:${percent >= (ass.passingScore || 50) ? '#2ecc71' : '#e74c3c'};">
+                                ${percent >= (ass.passingScore || 50) ? '✅ PASSED' : '❌ FAILED'}
+                            </span>
                         </div>
+                        <div style="margin-top:4px;color:#1a1d28;font-size:12px;">
+                            Submitted: ${response.endedAt ? new Date(response.endedAt).toLocaleString() : (response.submittedAt ? new Date(response.submittedAt).toLocaleString() : 'N/A')}
+                        </div>
+                        ${ass.cover?.institutionName ? `<div style="margin-top:4px;color:#1a1d28;font-size:11px;">${escapeHtml(ass.cover.institutionName)}</div>` : ''}
                     </div>
-                    <div id="scriptQuestionsContainer">
+                    <div style="padding:20px 24px;">
             `;
 
+            // Questions section
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
                 const answer = answers[qKey] || 'Not answered';
@@ -13457,44 +13571,65 @@
                     answer === q.correct ? q.marks : 0) : '');
                 const isAuto = q.type === 'mcq' || q.type === 'tf';
                 html += `
-                    <div class="script-question">
-                        <div class="q-head">
+                    <div class="script-question" style="border-bottom:1px solid #f0f0f5;padding:14px 0;">
+                        <div class="q-head" style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--text);">
                             <span>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:11px;font-weight:400;color:#8b8fa3;">${q.section}</span></span>
                             <span>
                                 ${isAuto ? `<span style="font-weight:700;color:${mark === q.marks ? '#2ecc71' : '#e74c3c'};}">${mark}/${q.marks}</span>` :
-                                `<input type="number" class="q-marks-input" data-qkey="${qKey}" data-max="${q.marks}" value="${mark}" min="0" max="${q.marks}" style="width:60px;">`}
+                                `<span style="font-weight:600;">${mark !== undefined ? mark + '/' + q.marks : 'Not graded'}</span>`}
                             </span>
                         </div>
-                        <div class="q-answer">Answer: ${escapeHtml(answer)}</div>
-                        ${scratch ? `
-                            <div class="q-scratch">
-                                <div class="scratch-label">✏️ Student's Scratch Pad</div>
-                                <img src="${scratch}" alt="Scratch pad drawing" />
+                        <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
+                            <strong>Answer:</strong> ${escapeHtml(answer)}
+                        </div>
+                        <div style="margin-top:6px;">
+                            <button class="scratch-toggle-btn btn-outline" style="padding:3px 12px;font-size:9px;border-radius:30px;" data-target="scratch-${idx}">
+                                <i class="fas fa-chevron-down"></i> View Scratch Pad
+                            </button>
+                            <div id="scratch-${idx}" style="display:none;margin-top:6px;">
+                                ${scratch ? `
+                                    <div class="scratch-pad-view" style="border:1px solid #e5e8ed;border-radius:10px;overflow:hidden;background:#fafbfc;">
+                                        <div class="scratch-label" style="font-size:10px;font-weight:600;color:#8b8fa3;padding:4px 10px;background:#f0f0f5;border-bottom:1px solid #e5e8ed;">✏️ Student's Scratch Pad</div>
+                                        <img src="${scratch}" alt="Scratch pad drawing" style="width:100%;height:auto;display:block;max-height:200px;object-fit:contain;" />
+                                    </div>
+                                ` : `
+                                    <div style="font-size:11px;color:#8b8fa3;font-style:italic;">Student did not open the scratch pad for this question.</div>
+                                `}
                             </div>
-                        ` : `
-                            <div class="q-scratch">
-                                <div class="scratch-label">✏️ Student's Scratch Pad</div>
-                                <div class="no-scratch">Student did not open the scratch pad for this question.</div>
-                            </div>
-                        `}
-                        <div class="q-remark">
-                            <textarea class="q-remark-text" data-qkey="${qKey}" placeholder="Admin remarks...">${response.remarks && response.remarks[qKey] || ''}</textarea>
+                        </div>
+                        <div class="q-remark" style="margin-top:6px;">
+                            <textarea class="q-remark-text" data-qkey="${qKey}" placeholder="Admin remarks..." style="width:100%;border-radius:10px;border:1.5px solid #e5e8ed;padding:6px 12px;font-size:11px;resize:vertical;min-height:40px;font-family:inherit;background:#fafbfc;transition:var(--transition);">${response.remarks && response.remarks[qKey] || ''}</textarea>
                         </div>
                     </div>
                 `;
             });
 
             html += `
-                    </div>
-                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-                        <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks & Remarks</button>
-                        <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+                            <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks & Remarks</button>
+                            <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                            <button class="btn-outline" style="padding:8px 20px;font-size:11px;" onclick="showSection('history')">Back</button>
+                        </div>
                     </div>
                 </div>
             `;
 
             document.getElementById('studentScriptContainer').innerHTML = html;
 
+            // Attach scratch toggle events
+            document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.dataset.target;
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        const isHidden = target.style.display === 'none';
+                        target.style.display = isHidden ? 'block' : 'none';
+                        this.innerHTML = isHidden ? '<i class="fas fa-chevron-up"></i> Hide Scratch Pad' : '<i class="fas fa-chevron-down"></i> View Scratch Pad';
+                    }
+                });
+            });
+
+            // Save script
             document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
                 const newMarks = {};
                 document.querySelectorAll('.q-marks-input').forEach(inp => {
