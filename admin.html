@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -6582,10 +6583,6 @@
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                             <button id="goToAssessmentsBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;"><i class="fas fa-folder-open"></i> All Assessments</button>
                         </div>
-                        <div class="form-row">
-                            <input type="text" id="historySearch" placeholder="Search by assessment name or student..." style="flex:1;">
-                            <select id="historyFilterAssessment" style="flex:1;"><option value="all">All Assessments</option></select>
-                        </div>
                         <div id="historyListContainer"></div>
                     </div>
                 </div>
@@ -6970,6 +6967,7 @@
         let assessments = [];
         let assessmentResponses = [];
         let editingAssessmentId = null;
+        let currentHistoryAssessmentId = null;
 
         // Carousel state
         let carouselItems = [];
@@ -7112,8 +7110,8 @@
             renderTestExamsDashboard();
             renderRegistersList();
             renderOngoingList();
-            renderHistoryList();
-            renderAssessmentsList(); // new
+            renderHistoryList(); // Now shows assessment cards
+            renderAssessmentsList();
             updateTestExamsDropdowns();
         }
 
@@ -8732,7 +8730,7 @@
                     renderRegistersList();
                     break;
                 case 'history':
-                    renderHistoryList();
+                    renderHistoryList(); // Shows assessment cards
                     break;
                 case 'assessments':
                     renderAssessmentsList();
@@ -8931,7 +8929,14 @@
             });
             document.getElementById('backFromOngoing').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromRegisters').addEventListener('click', () => showSection('testExams'));
-            document.getElementById('backFromHistory').addEventListener('click', () => showSection('testExams'));
+            document.getElementById('backFromHistory').addEventListener('click', () => {
+                if (currentHistoryAssessmentId) {
+                    renderHistoryList();
+                    currentHistoryAssessmentId = null;
+                } else {
+                    showSection('testExams');
+                }
+            });
             document.getElementById('backFromScript').addEventListener('click', () => showSection('history'));
             document.getElementById('backFromAssessments').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromTestRegister').addEventListener('click', () => showSection('history'));
@@ -12960,6 +12965,269 @@
             document.getElementById(type + 'StepTitle').textContent = `Create ${type.charAt(0).toUpperCase()+type.slice(1)} — Step 1: Cover Page`;
         }
 
+        // =================================================================
+        // NEW: HISTORY (FIRST ASSESSMENT CARDS, THEN STUDENT CARDS)
+        // =================================================================
+        function renderHistoryList() {
+            // Show assessment list by default
+            renderHistoryAssessments();
+        }
+
+        function renderHistoryAssessments() {
+            const container = document.getElementById('historyListContainer');
+            // Get unique assessments that have completed responses
+            const completedAssIds = [...new Set(assessmentResponses.filter(r => r.status === 'ended' || r.status === 'completed').map(r => r.assessmentId))];
+            const availableAssessments = assessments.filter(a => completedAssIds.includes(a.id));
+
+            if (availableAssessments.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments with completed scripts found.</div>';
+                return;
+            }
+
+            container.innerHTML = availableAssessments.map(ass => `
+                <div class="history-assessment-card" data-assid="${ass.id}" style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:12px;cursor:pointer;transition:var(--transition);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);">${escapeHtml(ass.name)}</h3>
+                            <div style="font-size:12px;color:#8b8fa3;margin-top:4px;">
+                                ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}
+                                <br>Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
+                            </div>
+                        </div>
+                        <div style="font-size:12px;background:rgba(245,176,66,0.10);padding:4px 14px;border-radius:30px;color:#d4952a;font-weight:600;">
+                            ${completedAssIds.filter(id => id === ass.id).length > 0 ? assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'ended' || r.status === 'completed')).length : 0} Students
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Attach click events
+            container.querySelectorAll('.history-assessment-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const assId = this.dataset.assid;
+                    renderHistoryStudents(assId);
+                });
+            });
+        }
+
+        function renderHistoryStudents(assId) {
+            currentHistoryAssessmentId = assId;
+            const ass = assessments.find(a => a.id === assId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+            const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
+
+            const container = document.getElementById('historyListContainer');
+            // Build back button and report button
+            let html = `
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
+                    <div>
+                        <button id="downloadReportBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-image"></i> Download Report PNG</button>
+                    </div>
+                </div>
+                <h2 style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(ass.name)}</h2>
+                <div style="font-size:12px;color:#8b8fa3;margin-bottom:12px;">${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
+            `;
+
+            if (responses.length === 0) {
+                html += '<div style="text-align:center;padding:24px;color:#8b8fa3;">No students have submitted this assessment yet.</div>';
+                container.innerHTML = html;
+                // Attach back button
+                document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
+                document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
+                return;
+            }
+
+            // Sort by score descending or name
+            const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+            html += `<div id="reportContainer" style="display:none;"></div>`;
+            html += `<div style="display:grid;grid-template-columns:1fr;gap:10px;">`;
+            sorted.forEach((r, idx) => {
+                const user = users.find(u => u.uid === r.userId);
+                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                const email = user ? user.email : '';
+                const phone = user ? user.phone : 'N/A';
+                const score = r.score || 0;
+                const total = ass.totalMarks || 0;
+                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                const passed = percent >= (ass.passingScore || 50);
+                html += `
+                    <div class="history-student-card" data-responseid="${r.id}" style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                            <div>
+                                <strong style="font-size:14px;">${escapeHtml(name)}</strong>
+                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(email)}</span>
+                                <span style="font-size:11px;color:#8b8fa3;margin-left:4px;">📞 ${escapeHtml(phone)}</span>
+                            </div>
+                            <div style="font-size:12px;font-weight:700;color:${passed ? '#2ecc71' : '#e74c3c'};">
+                                ${score}/${total} (${percent}%)
+                                <span style="font-size:11px;font-weight:400;color:#8b8fa3;margin-left:6px;">${passed ? '✅ Pass' : '❌ Fail'}</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="btn-outline view-script-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-book"></i> View Script</button>
+                            <button class="btn-outline download-script-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-download"></i> Download Script</button>
+                            <button class="btn-outline export-student-csv-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-file-csv"></i> Export CSV</button>
+                            <button class="btn-danger" style="padding:4px 14px;font-size:10px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-responseid="${r.id}"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+
+            // Attach events
+            document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
+            document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
+
+            container.querySelectorAll('.view-script-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const rid = this.dataset.responseid;
+                    showSection('studentScript', { scriptId: rid });
+                });
+            });
+
+            container.querySelectorAll('.download-script-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const rid = this.dataset.responseid;
+                    downloadStudentScript(rid);
+                });
+            });
+
+            container.querySelectorAll('.export-student-csv-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const rid = this.dataset.responseid;
+                    const r = assessmentResponses.find(res => res.id === rid);
+                    if (!r) return;
+                    exportSingleStudentCSV(r, ass);
+                });
+            });
+
+            container.querySelectorAll('.btn-danger[data-responseid]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (confirm('Delete this student response?')) {
+                        await remove(ref(db, `assessmentResponses/${this.dataset.responseid}`));
+                        showToast('Response deleted.', 'info');
+                        renderHistoryStudents(assId);
+                    }
+                });
+            });
+        }
+
+        // --- Export Single Student CSV ---
+        function exportSingleStudentCSV(response, assessment) {
+            const user = users.find(u => u.uid === response.userId);
+            const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+            const email = user ? user.email : '';
+            const phone = user ? user.phone : 'N/A';
+            const score = response.score || 0;
+            const total = assessment.totalMarks || 0;
+            const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+            const rows = [
+                ['Assessment', 'Student Name', 'Email', 'Phone', 'Score', 'Total', 'Percentage', 'Status'],
+                [escapeCsv(assessment.name), escapeCsv(name), escapeCsv(email), escapeCsv(phone), escapeCsv(score), escapeCsv(total), escapeCsv(percent + '%'), escapeCsv(percent >= (assessment.passingScore || 50) ? 'Passed' : 'Failed')]
+            ];
+            downloadCSV(`student_${assessment.name}_${name}.csv`, rows);
+            showToast('Student CSV downloaded!', 'success');
+        }
+
+        // --- Generate Report Image (PNG) ---
+        async function generateReportImage(assId) {
+            const ass = assessments.find(a => a.id === assId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+            const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
+            if (responses.length === 0) { showToast('No students to generate report.', 'error'); return; }
+
+            // Build a hidden report div
+            let reportHtml = `
+                <div id="reportDiv" style="padding:40px;background:#ffffff;font-family:'Inter',sans-serif;max-width:900px;margin:0 auto;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                    <div style="text-align:center;margin-bottom:24px;border-bottom:3px solid #F5B042;padding-bottom:16px;">
+                        <h1 style="color:#1a1d28;font-size:28px;font-weight:900;margin:0;">UTOM</h1>
+                        <h2 style="color:#1a1d28;font-size:20px;font-weight:700;margin:4px 0;">Assessment Report</h2>
+                        <div style="color:#5f6377;font-size:14px;margin-top:4px;">
+                            ${escapeHtml(ass.name)} · ${ass.type}
+                        </div>
+                        <div style="color:#8b8fa3;font-size:12px;">
+                            ${new Date().toLocaleString()}
+                        </div>
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;color:#1a1d28;">
+                        <thead>
+                            <tr style="background:#F5B042;color:#fff;">
+                                <th style="padding:10px 12px;text-align:left;border-radius:8px 0 0 0;">#</th>
+                                <th style="padding:10px 12px;text-align:left;">Name</th>
+                                <th style="padding:10px 12px;text-align:left;">Email</th>
+                                <th style="padding:10px 12px;text-align:left;">Phone</th>
+                                <th style="padding:10px 12px;text-align:center;">Score</th>
+                                <th style="padding:10px 12px;text-align:center;border-radius:0 8px 0 0;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
+            sorted.forEach((r, idx) => {
+                const user = users.find(u => u.uid === r.userId);
+                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                const email = user ? user.email : '';
+                const phone = user ? user.phone : 'N/A';
+                const score = r.score || 0;
+                const total = ass.totalMarks || 0;
+                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                const passed = percent >= (ass.passingScore || 50);
+                reportHtml += `
+                    <tr style="border-bottom:1px solid #e5e8ed;">
+                        <td style="padding:8px 12px;font-weight:600;">${idx+1}</td>
+                        <td style="padding:8px 12px;font-weight:500;">${escapeHtml(name)}</td>
+                        <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(email)}</td>
+                        <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(phone)}</td>
+                        <td style="padding:8px 12px;text-align:center;font-weight:700;color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${percent}%)</td>
+                        <td style="padding:8px 12px;text-align:center;">
+                            <span style="background:${passed ? '#e8f5e9' : '#fde8e8'};color:${passed ? '#2e7d32' : '#c62828'};padding:2px 12px;border-radius:30px;font-size:12px;font-weight:600;">
+                                ${passed ? 'PASSED' : 'FAILED'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            reportHtml += `
+                        </tbody>
+                    </table>
+                    <div style="text-align:center;margin-top:20px;color:#8b8fa3;font-size:12px;border-top:1px solid #e5e8ed;padding-top:12px;">
+                        Generated by UTOM Admin Studio
+                    </div>
+                </div>
+            `;
+
+            // Insert temporarily
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = reportHtml;
+            document.body.appendChild(tempDiv);
+            const reportEl = document.getElementById('reportDiv');
+
+            try {
+                showToast('Generating image... Please wait.', 'info');
+                const canvas = await html2canvas(reportEl, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                const link = document.createElement('a');
+                link.download = `Report_${ass.name}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('Report image downloaded!', 'success');
+            } catch (err) {
+                showToast('Error generating image: ' + err.message, 'error');
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
+        }
+
         // ---- UPDATED: renderOngoingList =====
         function renderOngoingList() {
             const container = document.getElementById('ongoingListContainer');
@@ -13363,88 +13631,6 @@
         document.getElementById('registerEditModal').addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('open');
         });
-
-        // ---- HISTORY / FINAL SCRIPT ----
-        function renderHistoryList() {
-            const container = document.getElementById('historyListContainer');
-            const search = (document.getElementById('historySearch')?.value || '').toLowerCase();
-            const filterAss = document.getElementById('historyFilterAssessment')?.value || 'all';
-
-            const filterSel = document.getElementById('historyFilterAssessment');
-            if (filterSel) {
-                filterSel.innerHTML = '<option value="all">All Assessments</option>' +
-                    assessments.map(a =>
-                        `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`).join('');
-            }
-
-            let completedResponses = assessmentResponses.filter(r => r.status === 'ended' || r.status === 'completed');
-            if (filterAss !== 'all') {
-                completedResponses = completedResponses.filter(r => r.assessmentId === filterAss);
-            }
-            if (search) {
-                completedResponses = completedResponses.filter(r => {
-                    const ass = assessments.find(a => a.id === r.assessmentId);
-                    const user = users.find(u => u.uid === r.userId);
-                    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                    const email = user ? user.email : '';
-                    return name.toLowerCase().includes(search) || email.toLowerCase().includes(search) || (ass &&
-                        ass.name.toLowerCase().includes(search));
-                });
-            }
-
-            if (completedResponses.length === 0) {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No completed assessments found.</div>';
-                return;
-            }
-
-            container.innerHTML = completedResponses.map(r => {
-                const ass = assessments.find(a => a.id === r.assessmentId);
-                const user = users.find(u => u.uid === r.userId);
-                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                const email = user ? user.email : '';
-                const score = r.score || 0;
-                const total = ass ? (ass.totalMarks || 0) : 0;
-                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
-                return `
-                    <div style="background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;cursor:pointer;transition:var(--transition);" onclick="showSection('studentScript',{scriptId:'${r.id}'})">
-                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                            <div>
-                                <strong style="font-size:14px;">${escapeHtml(name)}</strong>
-                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(email)}</span>
-                            </div>
-                            <div style="font-size:12px;">
-                                <span>${escapeHtml(ass?.name || '')} (${ass?.type || ''})</span>
-                                <span style="margin-left:12px;font-weight:700;color:${percent >= 50 ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${percent}%)</span>
-                            </div>
-                        </div>
-                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-                            <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="showSection('studentScript',{scriptId:'${r.id}'})">View Script</button>
-                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;cursor:pointer;" onclick="duplicateAssessment('${r.assessmentId}')"><i class="fas fa-copy"></i> Duplicate</button>
-                            <button class="assessment-edit-btn" onclick="openAssessmentEditModal('${r.assessmentId}')"><i class="fas fa-pen-to-square"></i> Edit</button>
-                            <button class="export-results-btn" onclick="exportAssessmentResults('${r.assessmentId}')"><i class="fas fa-file-csv"></i> Export</button>
-                            <button class="test-register-btn" onclick="showSection('testRegister',{assId:'${r.assessmentId}'})" style="padding:3px 12px;font-size:9px;background:#d4952a;color:#fff;border:none;border-radius:30px;cursor:pointer;"><i class="fas fa-users"></i> Test Register</button>
-                            <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${r.assessmentId}">Delete</button>
-                        </div>
-                        <div style="margin-top:4px;font-size:11px;color:#8b8fa3;">
-                            Ended: ${r.endedAt ? new Date(r.endedAt).toLocaleString() : (r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'N/A')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    if (confirm('Delete this assessment?')) {
-                        await remove(ref(db, `assessments/${this.dataset.assid}`));
-                        showToast('Assessment deleted.', 'info');
-                    }
-                });
-            });
-        }
-
-        document.getElementById('historySearch')?.addEventListener('input', renderHistoryList);
-        document.getElementById('historyFilterAssessment')?.addEventListener('change', renderHistoryList);
 
         // ---- TEST REGISTER (new) ----
         function renderTestRegister(assessmentId) {
@@ -13970,9 +14156,6 @@
             setTimeout(attachPreviewButtons, 300);
         };
 
-        // ---- Close preview modal (unused for full page) ----
-        // We keep the modal for other previews (like in history), but the form preview now uses full page.
-
         // =================================================================
         // ALL ASSESSMENTS LIST (PAPERS)
         // =================================================================
@@ -14164,6 +14347,22 @@
 
         // ---- Attach preview buttons after initial load ----
         setTimeout(attachPreviewButtons, 1000);
+
+        // =================================================================
+        // EXPOSE FUNCTIONS TO WINDOW (Fixes inline onclick scope issues)
+        // =================================================================
+        window.showSection = showSection;
+        window.renderHistoryAssessments = renderHistoryAssessments;
+        window.renderHistoryStudents = renderHistoryStudents;
+        window.generateReportImage = generateReportImage;
+        window.downloadStudentScript = downloadStudentScript;
+        window.exportSingleStudentCSV = exportSingleStudentCSV;
+        window.duplicateAssessment = duplicateAssessment;
+        window.editAssessment = editAssessment;
+        window.previewAssessment = previewAssessment;
+        window.publishAssessment = publishAssessment;
+        window.exportAssessmentResults = exportAssessmentResults;
+        window.openAssessmentEditModal = openAssessmentEditModal;
 
         console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, PREVIEW, and Register Edit functionality.');
     </script>
