@@ -3785,6 +3785,95 @@
                 min-height: 240px;
             }
         }
+
+        /* ===== WARNING MODAL ===== */
+        #warningModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #warningModal.open {
+            display: flex;
+        }
+        .warning-modal-content {
+            background: #fff;
+            border-radius: 28px;
+            max-width: 480px;
+            width: 100%;
+            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
+        }
+        .warning-modal-content .warning-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fff8ed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            font-size: 24px;
+            color: var(--gold-dark);
+            border: 2px solid rgba(245, 176, 66, 0.2);
+        }
+        .warning-modal-content h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1d28;
+            text-align: center;
+        }
+        .warning-modal-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+        .warning-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .warning-modal-actions button {
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            min-width: 100px;
+        }
+        .warning-modal-actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5f6377;
+        }
+        .warning-modal-actions .btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        .warning-modal-actions .btn-understood {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+        }
+        .warning-modal-actions .btn-understood:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -4126,6 +4215,19 @@
         </div>
     </div>
 
+    <!-- ===== WARNING MODAL ===== -->
+    <div id="warningModal">
+        <div class="warning-modal-content">
+            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h2>Important Warning</h2>
+            <p>Do not leave this screen until submission or your exam will be auto submitted.<br><small>If you minimize, switch tabs, or close the app, your assessment will be automatically submitted.</small></p>
+            <div class="warning-modal-actions">
+                <button class="btn-cancel" id="warningCancelBtn">Cancel</button>
+                <button class="btn-understood" id="warningUnderstoodBtn">Understood</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // ===== FIREBASE SETUP =====
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
@@ -4176,7 +4278,7 @@
         let allAssessmentResponses = [];
         let userRegisterIds = new Set();
         let examBadgeCount = 0;
-        let currentAssessmentTaking = null; // { assessment, responseId, timerInterval, startTime, remainingSeconds }
+        let currentAssessmentTaking = null; // { assessment, responseId, timerInterval, startTime, remainingSeconds, warningAccepted }
         let scratchpads = {}; // { questionKey: { canvas, ctx, isDrawing, lastX, lastY, color, lineWidth, dataUrl } }
 
         let expirationCheckInterval = null;
@@ -6441,10 +6543,71 @@
                 if (assessmentId) {
                     const assessment = allAssessments.find(a => a.id === assessmentId);
                     if (assessment) {
+                        // Show warning modal first
+                        showWarningModal(assessment);
+                    }
+                }
+            });
+
+            // ---- WARNING MODAL ----
+            document.getElementById('warningCancelBtn').addEventListener('click', () => {
+                document.getElementById('warningModal').classList.remove('open');
+            });
+
+            document.getElementById('warningUnderstoodBtn').addEventListener('click', () => {
+                const modal = document.getElementById('warningModal');
+                const assessmentId = modal.dataset.assessmentId;
+                modal.classList.remove('open');
+                if (assessmentId) {
+                    const assessment = allAssessments.find(a => a.id === assessmentId);
+                    if (assessment) {
                         renderAssessmentTake(assessment);
                         showPage('assessmentTake');
                     }
                 }
+            });
+
+            // ---- AUTO-SUBMIT ON PAGE HIDE / CLOSE / LOGOUT ----
+            // Visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
+                    autoSubmitAssessment();
+                }
+            });
+
+            // Page hide (more reliable for closing tab)
+            window.addEventListener('pagehide', (e) => {
+                if (currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
+                    autoSubmitAssessment();
+                }
+            });
+
+            // Before unload (show warning)
+            window.addEventListener('beforeunload', (e) => {
+                if (currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
+                    e.preventDefault();
+                    e.returnValue = 'You have an ongoing assessment. If you leave, it will be auto-submitted.';
+                }
+            });
+
+            // Auth state change (if user logs out while taking)
+            const originalAuthListener = onAuthStateChanged(auth, async (user) => {
+                // We handle the main auth state above; but we can add a separate listener
+                // to detect logout during assessment.
+            });
+            // We'll add a subscription inside the assessment start to watch for sign-out.
+            // But we already have the main onAuthStateChanged which will redirect.
+            // If the user signs out, we can auto-submit before redirect.
+            // We'll handle that in the main auth listener by checking if currentAssessmentTaking exists.
+
+            // ---- Override the main auth listener to auto-submit on logout ----
+            // We'll store the original listener and enhance it.
+            // Actually, we can just add an extra listener.
+            auth.onAuthStateChanged((user) => {
+                if (!user && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
+                    autoSubmitAssessment();
+                }
+                // The main listener will handle redirect.
             });
 
             setTimeout(() => {
@@ -6452,6 +6615,13 @@
                 attachCommentListenersToVisibleVideos();
                 processVideoThumbnails();
             }, 300);
+        }
+
+        // ===== WARNING MODAL =====
+        function showWarningModal(assessment) {
+            const modal = document.getElementById('warningModal');
+            modal.dataset.assessmentId = assessment.id;
+            modal.classList.add('open');
         }
 
         // ===== EXAM CONFIRMATION POPUP =====
@@ -6511,7 +6681,8 @@
                 remainingSeconds: totalSeconds,
                 timerInterval: null,
                 answers: {},
-                scratchData: {}
+                scratchData: {},
+                warningAccepted: true // Set after warning modal
             };
 
             // ===== 1. COVER PAGE =====
@@ -7022,10 +7193,10 @@
 
                     // --- AUTO-GRADE LOGIC ---
                     if (q.type === 'mcq' || q.type === 'tf') {
-                        // Exact string match
+                        // Use loose equality to handle number vs string
                         isAuto = true;
                         totalAutoMarks += q.marks;
-                        if (answer === q.correct) {
+                        if (answer == q.correct) {
                             mark = q.marks;
                             autoScore += q.marks;
                         }
@@ -7144,7 +7315,8 @@
                         ${ass ? ` · ${ass.duration || 'N/A'}` : ''}
                     </div>
                     <div class="h-actions">
-                        <button class="btn-download" onclick="downloadAssessmentScript('${r.id}')"><i class="fas fa-download"></i> Download Script (PNG)</button>
+                        <button class="btn-download" onclick="downloadAssessmentPNG('${r.id}')"><i class="fas fa-download"></i> Download PNG</button>
+                        <button class="btn-outline" onclick="downloadAssessmentHTML('${r.id}')"><i class="fas fa-file-code"></i> Download HTML</button>
                         <button onclick="viewAssessmentScript('${r.id}')"><i class="fas fa-eye"></i> View Details</button>
                     </div>
                 </div>
@@ -7161,13 +7333,13 @@
             });
         }
 
+        // ---- View Script Modal ----
         window.viewAssessmentScript = function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
             const ass = allAssessments.find(a => a.id === response.assessmentId);
             if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
 
-            // Build a modal or page to show details
             const modal = document.createElement('div');
             modal.className = 'modal-overlay open';
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -7182,7 +7354,8 @@
                     </div>
                     <div id="scriptDetailsContainer"></div>
                     <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
-                        <button class="btn-primary" onclick="downloadAssessmentScript('${responseId}')"><i class="fas fa-download"></i> Download Script (PNG)</button>
+                        <button class="btn-primary" onclick="downloadAssessmentPNG('${responseId}')"><i class="fas fa-download"></i> Download PNG</button>
+                        <button class="btn-outline" onclick="downloadAssessmentHTML('${responseId}')"><i class="fas fa-file-code"></i> Download HTML</button>
                         <button class="btn-outline" onclick="this.closest('.modal-overlay').remove();">Close</button>
                     </div>
                 </div>
@@ -7219,9 +7392,9 @@
                 const answer = answers[qKey] || 'Not answered';
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
-                    answer === q.correct ? q.marks : 0) : 'Not graded');
+                    answer == q.correct ? q.marks : 0) : 'Not graded');
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
-                const markColor = isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
                     <div style="border-bottom:1px solid #f0f0f5;padding:12px 0;">
                         <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
@@ -7237,8 +7410,8 @@
             container.innerHTML = html;
         };
 
-        // ===== DOWNLOAD SCRIPT AS COLORFUL PNG =====
-        window.downloadAssessmentScript = async function(responseId) {
+        // ---- Download PNG (using html2canvas) ----
+        window.downloadAssessmentPNG = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
             const ass = allAssessments.find(a => a.id === response.assessmentId);
@@ -7285,9 +7458,9 @@
                 const answer = answers[qKey] || 'Not answered';
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
-                    answer === q.correct ? q.marks : 0) : 'Not graded');
+                    answer == q.correct ? q.marks : 0) : 'Not graded');
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
-                const markColor = isAuto ? (mark === q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
                     <div style="border-bottom:1px solid #e5e8ed;padding:14px 0;">
                         <div style="font-weight:700;font-size:15px;color:#1a1d28;">Q${idx+1}: ${escapeHtml(q.text)} <span style="font-weight:400;font-size:12px;color:#8b8fa3;">(${q.marks} marks) · ${q.section}</span></div>
@@ -7330,6 +7503,117 @@
             } finally {
                 document.body.removeChild(tempDiv);
             }
+        };
+
+        // ---- Download HTML (full well-colored HTML) ----
+        window.downloadAssessmentHTML = async function(responseId) {
+            const response = allAssessmentResponses.find(r => r.id === responseId);
+            if (!response) { addNotification('danger', 'Response not found.'); return; }
+            const ass = allAssessments.find(a => a.id === response.assessmentId);
+            if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
+
+            let allQuestions = [];
+            if (ass.sections) {
+                ass.sections.forEach(sec => {
+                    sec.questions.forEach(q => {
+                        allQuestions.push({ ...q, section: sec.name });
+                    });
+                });
+            } else if (ass.questions) {
+                allQuestions = ass.questions.map(q => ({ ...q, section: 'General' }));
+            }
+
+            const answers = response.answers || {};
+            const scratchData = response.scratchData || {};
+            const marks = response.marks || {};
+            const score = response.score || 0;
+            const total = ass.totalMarks || 0;
+            const studentInfo = response.studentInfo || {};
+            const passed = total > 0 && score >= (ass.passingScore || 50);
+
+            // Build HTML document
+            let htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${escapeHtml(ass.name)} - Script</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+                    body { background: #f4f5f8; padding: 20px; }
+                    .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+                    .header { text-align: center; border-bottom: 4px solid #F5B042; padding-bottom: 16px; margin-bottom: 20px; }
+                    .header h1 { font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#d4952a,#f5b042,#ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+                    .header h2 { font-size: 22px; font-weight: 700; color: #1a1d28; margin: 4px 0; }
+                    .header .sub { color: #5f6377; font-size: 14px; }
+                    .header .date { color: #8b8fa3; font-size: 12px; }
+                    .student-info { margin-bottom: 16px; padding: 12px 16px; background: #f8f9fc; border-radius: 12px; border-left: 6px solid #F5B042; }
+                    .student-info strong { font-weight: 700; }
+                    .student-info .score { float: right; }
+                    .student-info .score span { font-weight: 700; }
+                    .question { border-bottom: 1px solid #e5e8ed; padding: 14px 0; }
+                    .question .q-title { font-weight: 700; font-size: 15px; color: #1a1d28; }
+                    .question .q-title .meta { font-weight: 400; font-size: 12px; color: #8b8fa3; }
+                    .question .answer { font-size: 13px; color: #4a4e5c; margin: 4px 0; }
+                    .question .marks { font-size: 13px; font-weight: 600; }
+                    .question .scratch { margin-top: 4px; border: 1px solid #e5e8ed; border-radius: 8px; padding: 4px; background: #fafbfc; }
+                    .question .scratch img { max-width: 100%; max-height: 150px; object-fit: contain; }
+                    .question .remark { margin-top: 4px; font-size: 12px; color: #5f6377; }
+                    .footer { text-align: center; margin-top: 20px; color: #8b8fa3; font-size: 12px; border-top: 1px solid #e5e8ed; padding-top: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>UTOM</h1>
+                        <h2>Assessment Script</h2>
+                        <div class="sub">${escapeHtml(ass.name)} · ${ass.type}</div>
+                        <div class="date">${formatDate(response.submittedAt || response.startedAt)}</div>
+                    </div>
+                    <div class="student-info">
+                        <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || currentUser?.email || 'N/A')}
+                        <span class="score"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
+                        <br /><span style="font-size:12px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
+                    </div>
+            `;
+
+            allQuestions.forEach((q, idx) => {
+                const qKey = `q${idx}`;
+                const answer = answers[qKey] || 'Not answered';
+                const scratch = scratchData[qKey] || null;
+                const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
+                    answer == q.correct ? q.marks : 0) : 'Not graded');
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
+                const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                htmlContent += `
+                    <div class="question">
+                        <div class="q-title">Q${idx+1}: ${escapeHtml(q.text)} <span class="meta">(${q.marks} marks) · ${q.section}</span></div>
+                        <div class="answer"><strong>Answer:</strong> ${escapeHtml(answer)}</div>
+                        <div class="marks" style="color:${markColor};">Marks: ${mark}</div>
+                        ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
+                        ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            htmlContent += `
+                    <div class="footer">Generated by UTOM</div>
+                </div>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Script_${ass.name}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addNotification('success', 'Script HTML downloaded!');
         };
 
         // ===== PROMO CAROUSEL =====
@@ -7683,7 +7967,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ, TF, Fillblank, Matching, Ordering; manual grading for others; colorful PNG download.');
+        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ, TF, Fillblank, Matching, Ordering; manual grading for others; colorful PNG and HTML download; warning modal and auto-submit on page leave.');
     </script>
 </body>
 </html>
