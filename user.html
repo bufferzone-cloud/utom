@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3786,6 +3787,137 @@
             }
         }
 
+        /* ===== PAYMENT REQUIRED POPUP ===== */
+        .payment-required-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .payment-required-overlay.open {
+            display: flex;
+        }
+
+        .payment-required-modal {
+            background: #ffffff;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 480px;
+            padding: 2rem 1.8rem 1.8rem 1.8rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
+            text-align: center;
+        }
+
+        .payment-required-modal .pay-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fff8ed, #ffe8d0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            font-size: 32px;
+            color: var(--gold-dark);
+            border: 2px solid rgba(245, 176, 66, 0.2);
+        }
+
+        .payment-required-modal h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1a1d28;
+            margin-bottom: 4px;
+        }
+
+        .payment-required-modal .pay-message {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+
+        .payment-required-modal .pay-amount {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--gold-dark);
+            background: rgba(245, 176, 66, 0.1);
+            display: inline-block;
+            padding: 4px 24px;
+            border-radius: 40px;
+            margin: 8px 0 16px 0;
+        }
+
+        .payment-required-modal .pay-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .payment-required-modal .pay-actions button {
+            padding: 12px 32px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.35);
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.45);
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now:active {
+            transform: scale(0.96);
+        }
+
+        .payment-required-modal .pay-actions .btn-cancel-pay {
+            background: #f0f2f5;
+            color: #5f6377;
+        }
+
+        .payment-required-modal .pay-actions .btn-cancel-pay:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .payment-required-modal .pay-assessment-name {
+            font-weight: 700;
+            color: var(--gold-dark);
+            font-size: 1.05rem;
+        }
+
+        .payment-required-modal .pay-type-badge {
+            display: inline-block;
+            background: rgba(245, 176, 66, 0.15);
+            color: var(--gold-dark);
+            padding: 3px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
         /* ===== WARNING MODAL ===== */
         #warningModal {
             position: fixed;
@@ -4211,6 +4343,23 @@
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                 <button id="examConfirmCancelBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:#f0f2f5;color:#5f6377;border:none;">Cancel</button>
                 <button id="examConfirmStartBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;box-shadow:0 4px 16px rgba(245,176,66,0.3);border:none;">Start Assessment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PAYMENT REQUIRED POPUP ===== -->
+    <div id="paymentRequiredOverlay" class="payment-required-overlay">
+        <div class="payment-required-modal">
+            <div class="pay-icon"><i class="fas fa-lock"></i></div>
+            <h2>Payment Required</h2>
+            <div class="pay-type-badge" id="payRequiredType">TEST</div>
+            <div class="pay-message">
+                In order to take <span class="pay-assessment-name" id="payRequiredName">this assessment</span>, please pay
+            </div>
+            <div class="pay-amount" id="payRequiredAmount">ZMW 0</div>
+            <div class="pay-actions">
+                <button class="btn-pay-now" id="payRequiredPayBtn"><i class="fas fa-arrow-right"></i> Pay Now</button>
+                <button class="btn-cancel-pay" id="payRequiredCancelBtn">Cancel</button>
             </div>
         </div>
     </div>
@@ -6274,6 +6423,43 @@
             showPage('payment', { courseId: course.id });
         }
 
+        // ===== PAYMENT REQUIRED POPUP =====
+        function showPaymentRequiredPopup(assessment) {
+            const overlay = document.getElementById('paymentRequiredOverlay');
+            document.getElementById('payRequiredName').textContent = assessment.name;
+            document.getElementById('payRequiredAmount').textContent = `ZMW ${assessment.price || 0}`;
+            document.getElementById('payRequiredType').textContent = (assessment.type || 'TEST').toUpperCase();
+
+            overlay.dataset.assessmentId = assessment.id;
+            overlay.classList.add('open');
+
+            // Set up button events
+            const payBtn = document.getElementById('payRequiredPayBtn');
+            const cancelBtn = document.getElementById('payRequiredCancelBtn');
+
+            // Remove old listeners
+            const newPayBtn = payBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            payBtn.parentNode.replaceChild(newPayBtn, payBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newPayBtn.addEventListener('click', () => {
+                overlay.classList.remove('open');
+                // Navigate to payment page for the assessment (treated as a course purchase)
+                const course = allCourses.find(c => c.id === assessment.id);
+                if (course) {
+                    openPaymentPage(course);
+                } else {
+                    // If no direct course match, show a generic payment flow
+                    addNotification('warning', 'Payment gateway not available for this assessment.');
+                }
+            });
+
+            newCancelBtn.addEventListener('click', () => {
+                overlay.classList.remove('open');
+            });
+        }
+
         // ===== UI SETUP =====
         function setupUI() {
             // Dark mode toggle (iPhone style)
@@ -6516,7 +6702,25 @@
 
                         // For simplicity, take the first one
                         const assessment = available[0];
-                        // Show confirmation popup first
+
+                        // ===== CHECK IF PAID =====
+                        if (assessment.paid) {
+                            // Check if user has already purchased this assessment
+                            const hasPurchase = approvedCoursesData[assessment.id];
+                            if (!hasPurchase) {
+                                // Show payment required popup
+                                showPaymentRequiredPopup(assessment);
+                                return;
+                            } else {
+                                // Check if expired
+                                if (hasPurchase.expiresAt && hasPurchase.expiresAt > 0 && Date.now() > hasPurchase.expiresAt) {
+                                    showPaymentRequiredPopup(assessment);
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Show confirmation popup
                         showExamConfirmation(assessment);
                     }
                 });
