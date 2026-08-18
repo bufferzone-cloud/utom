@@ -1,16 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-    <title>UTOM · Learn & Grow</title>
+    <title>UTOM · Student Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
-    <!-- html2canvas for PNG generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* ===== RESET & BASE ===== */
+        /* ----- RESET & BASE ----- */
         * {
             margin: 0;
             padding: 0;
@@ -58,7 +56,7 @@
             width: 100%;
         }
 
-        /* ===== LOADER ===== */
+        /* ----- LOADER ----- */
         #appLoader {
             position: fixed;
             top: 0;
@@ -97,46 +95,7 @@
             font-size: 14px;
         }
 
-        /* ===== COURSE LOADER ===== */
-        #courseLoader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9998;
-            flex-direction: column;
-            padding: 20px;
-        }
-        #courseLoader .loader-spinner {
-            width: 64px;
-            height: 64px;
-            border-width: 6px;
-            border-color: rgba(255, 255, 255, 0.15);
-            border-top-color: var(--gold);
-        }
-        #courseLoader p {
-            margin-top: 20px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #fff;
-            text-align: center;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        #courseLoader .sub-text {
-            font-size: 0.8rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 4px;
-        }
-
-        /* ===== APP ROOT ===== */
+        /* ----- APP ROOT ----- */
         .app-root {
             display: flex;
             flex-direction: column;
@@ -147,7 +106,7 @@
             position: relative;
         }
 
-        /* ===== HEADER ===== */
+        /* ----- HEADER ----- */
         .top-bar {
             position: fixed;
             top: 0;
@@ -251,7 +210,7 @@
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
         }
 
-        /* ===== SEARCH ROW ===== */
+        /* ----- SEARCH ROW ----- */
         .search-row {
             padding: 4px 0 12px 0;
         }
@@ -288,14 +247,14 @@
             min-width: 0;
         }
 
-        /* ===== TOP BAR SPACER ===== */
+        /* ----- TOP BAR SPACER ----- */
         .topbar-spacer {
             height: var(--topbar-height);
             flex-shrink: 0;
             width: 100%;
         }
 
-        /* ===== SCROLLABLE CONTENT (Fixed bottom nav overlap) ===== */
+        /* ----- SCROLLABLE CONTENT ----- */
         .app-content {
             flex: 1;
             overflow-y: auto;
@@ -319,7 +278,7 @@
             border-radius: 20px;
         }
 
-        /* ===== PAGE CONTAINERS ===== */
+        /* ----- PAGE CONTAINERS ----- */
         .page-container {
             display: none !important;
             width: 100%;
@@ -331,7 +290,7 @@
             padding: 0.6rem 0.8rem;
         }
 
-        /* ===== BOTTOM NAV ===== */
+        /* ----- BOTTOM NAV ----- */
         .bottom-nav {
             position: fixed;
             bottom: 16px;
@@ -418,7 +377,7 @@
             transform: translateX(-50%) scaleX(1);
         }
 
-        /* ===== FLOATING EXAM BUTTON ===== */
+        /* ----- FLOATING EXAM BUTTON ----- */
         .exam-floating-btn {
             position: fixed;
             bottom: calc(var(--nav-height) + 30px);
@@ -468,7 +427,7 @@
             border: 2px solid #fff;
         }
 
-        /* ===== EXAM HUB OVERLAY ===== */
+        /* ----- EXAM HUB OVERLAY ----- */
         .exam-hub-overlay {
             position: fixed;
             top: 0;
@@ -596,7 +555,479 @@
             color: #e74c3c;
         }
 
-        /* ===== EXAM/QUIZ/TEST TAKING PAGE ===== */
+        /* ----- ASSESSMENT SELECTION MODAL (nested) ----- */
+        .assessment-select-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 800;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .assessment-select-overlay.open {
+            display: flex;
+        }
+
+        .assessment-select-modal {
+            background: #fff;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            padding: 1.5rem;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.3s ease;
+            border: 1px solid rgba(245, 176, 66, 0.1);
+        }
+
+        .assessment-select-modal .sel-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            border-left: 4px solid var(--gold);
+            padding-left: 12px;
+        }
+
+        .assessment-select-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #fafbfc;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+        .assessment-select-item:hover {
+            border-color: var(--gold);
+            background: var(--gold-light);
+        }
+        .assessment-select-item .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .assessment-select-item .item-name {
+            font-weight: 600;
+        }
+        .assessment-select-item .item-duration {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .assessment-select-item .item-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 30px;
+        }
+        .assessment-select-item .item-badge.free {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .assessment-select-item .item-badge.paid {
+            background: #fff8ed;
+            color: #d4952a;
+        }
+        .assessment-select-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #8b8fa3;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        .assessment-select-close:hover {
+            background: #f5f5f5;
+            color: #e74c3c;
+        }
+
+        /* ----- PAYMENT REQUIRED POPUP ----- */
+        .payment-required-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .payment-required-overlay.open {
+            display: flex;
+        }
+
+        .payment-required-modal {
+            background: #ffffff;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 480px;
+            padding: 2rem 1.8rem 1.8rem 1.8rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
+            text-align: center;
+        }
+
+        .payment-required-modal .pay-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fff8ed, #ffe8d0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            font-size: 32px;
+            color: var(--gold-dark);
+            border: 2px solid rgba(245, 176, 66, 0.2);
+        }
+
+        .payment-required-modal h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1a1d28;
+            margin-bottom: 4px;
+        }
+
+        .payment-required-modal .pay-message {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+
+        .payment-required-modal .pay-amount {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--gold-dark);
+            background: rgba(245, 176, 66, 0.1);
+            display: inline-block;
+            padding: 4px 24px;
+            border-radius: 40px;
+            margin: 8px 0 16px 0;
+        }
+
+        .payment-required-modal .pay-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .payment-required-modal .pay-actions button {
+            padding: 12px 32px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.35);
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.45);
+        }
+
+        .payment-required-modal .pay-actions .btn-pay-now:active {
+            transform: scale(0.96);
+        }
+
+        .payment-required-modal .pay-actions .btn-cancel-pay {
+            background: #f0f2f5;
+            color: #5f6377;
+        }
+
+        .payment-required-modal .pay-actions .btn-cancel-pay:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .payment-required-modal .pay-assessment-name {
+            font-weight: 700;
+            color: var(--gold-dark);
+            font-size: 1.05rem;
+        }
+
+        .payment-required-modal .pay-type-badge {
+            display: inline-block;
+            background: rgba(245, 176, 66, 0.15);
+            color: var(--gold-dark);
+            padding: 3px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* ----- PAYMENT PAGE (for assessments) ----- */
+        .payment-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .payment-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid rgba(245, 176, 66, 0.12);
+        }
+
+        .payment-card-header {
+            background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
+            padding: 1.2rem 1.5rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .payment-card-header .pay-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .payment-card-header .pay-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .payment-card-header .pay-sub {
+            font-size: 0.75rem;
+            opacity: 0.85;
+        }
+
+        .payment-card-body {
+            padding: 1.5rem;
+        }
+
+        .payment-course-info {
+            background: #fcf9f4;
+            border-radius: var(--radius-md);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-left: 4px solid var(--gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .payment-course-info .course-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+        .payment-course-info .course-amount {
+            font-weight: 900;
+            font-size: 1.3rem;
+            color: var(--gold-dark);
+            background: rgba(245, 176, 66, 0.1);
+            padding: 4px 18px;
+            border-radius: 30px;
+        }
+        .payment-course-info .course-duration-info {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+            width: 100%;
+        }
+
+        .payment-instruction-box {
+            background: #f8f6f2;
+            border-radius: var(--radius-md);
+            padding: 1rem 1.2rem;
+            margin: 1rem 0;
+            border: 1px dashed rgba(245, 176, 66, 0.3);
+        }
+
+        .payment-instruction-box .inst-title {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .payment-instruction-box .inst-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .payment-number-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 40px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border: 1px solid #f0e8d0;
+            transition: var(--transition);
+        }
+
+        .payment-number-row:hover {
+            border-color: var(--gold);
+            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.08);
+        }
+
+        .payment-number-row .number-label {
+            font-weight: 800;
+            color: var(--gold-dark);
+            min-width: 48px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .payment-number-row .number-value {
+            flex: 1;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: #1a1d28;
+        }
+
+        .payment-number-row .copy-num-btn {
+            background: var(--gold);
+            border: none;
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: 700;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .payment-number-row .copy-num-btn:hover {
+            background: var(--gold-dark);
+            transform: scale(1.03);
+        }
+
+        .payment-upload-area {
+            margin: 1rem 0;
+            border: 2px dashed #d0c8b8;
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fefdf7;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .payment-upload-area:hover {
+            border-color: var(--gold);
+            background: #fffdf5;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.06);
+        }
+
+        .payment-upload-area .upload-icon {
+            font-size: 2.2rem;
+            color: var(--gold-dark);
+            opacity: 0.6;
+        }
+
+        .payment-upload-area .upload-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .payment-upload-area .upload-hint {
+            font-size: 0.7rem;
+            color: #b0b4c0;
+            margin-top: 2px;
+        }
+
+        .payment-upload-area img {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 12px;
+            margin-top: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .payment-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            border: none;
+            border-radius: 60px;
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 0.6rem;
+        }
+
+        .payment-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.40);
+        }
+
+        .payment-submit-btn:active {
+            transform: scale(0.97);
+        }
+
+        .payment-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ----- ASSESSMENT TAKING ----- */
         .assessment-take-page {
             padding: 0.6rem 0.8rem;
         }
@@ -636,7 +1067,7 @@
             border-color: rgba(231, 76, 60, 0.2);
         }
 
-        /* ===== ASSESSMENT COVER PAGE (Full design) ===== */
+        /* ----- ASSESSMENT COVER PAGE ----- */
         .exam-cover-page {
             max-width: 800px;
             margin: 0 auto;
@@ -749,7 +1180,7 @@
             text-align: center;
         }
 
-        /* ===== STUDENT INFO FORM (on cover) ===== */
+        /* ----- STUDENT INFO FORM ----- */
         .student-info-section {
             max-width: 800px;
             margin: 0 auto 1.2rem auto;
@@ -834,10 +1265,9 @@
             transform: none !important;
         }
 
-        /* ===== ASSESSMENT QUESTIONS ===== */
+        /* ----- ASSESSMENT QUESTIONS ----- */
         .assessment-questions-wrapper {
             display: none;
-            /* Hidden until start */
             max-width: 800px;
             margin: 0 auto;
         }
@@ -986,7 +1416,7 @@
             font-size: 0.85rem;
         }
 
-        /* ===== SCRATCHPAD DROPDOWN ===== */
+        /* ----- SCRATCHPAD ----- */
         .scratch-toggle-btn {
             background: none;
             border: none;
@@ -1078,7 +1508,7 @@
             border-color: #333;
         }
 
-        /* ===== SUBMIT BUTTONS ===== */
+        /* ----- SUBMIT BUTTONS ----- */
         .assessment-submit-area {
             margin-top: 16px;
             display: flex;
@@ -1133,7 +1563,7 @@
             transform: translateY(-2px);
         }
 
-        /* ===== HISTORY PAGE ===== */
+        /* ----- HISTORY PAGE ----- */
         .history-list {
             display: flex;
             flex-direction: column;
@@ -1214,7 +1644,7 @@
             box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
         }
 
-        /* ===== FLOATING PLAYER ===== */
+        /* ----- FLOATING PLAYER ----- */
         .floating-player {
             position: fixed;
             z-index: 1000;
@@ -1370,7 +1800,7 @@
             transform: scale(1.06);
         }
 
-        /* ===== PROMO CAROUSEL ===== */
+        /* ----- PROMO CAROUSEL ----- */
         .promo-carousel-wrapper {
             margin-top: 8px;
             padding: 0 0 0.6rem 0;
@@ -1523,7 +1953,7 @@
             z-index: 0;
         }
 
-        /* ===== SECTION TITLES ===== */
+        /* ----- SECTION TITLES ----- */
         .grid-title {
             display: flex;
             align-items: center;
@@ -1552,7 +1982,7 @@
             font-weight: 700;
         }
 
-        /* ===== COURSE NAME SCROLL ===== */
+        /* ----- COURSE NAME SCROLL ----- */
         .all-courses-name-scroll {
             display: flex;
             gap: 0.5rem;
@@ -1614,7 +2044,7 @@
             margin-left: 4px;
         }
 
-        /* ===== COURSE CARDS — WIDER ===== */
+        /* ----- COURSE CARDS ----- */
         .courses-scroll-container {
             display: flex;
             gap: 1rem;
@@ -1638,7 +2068,6 @@
             border-radius: 20px;
         }
 
-        /* WIDER CARDS */
         .courses-scroll-container .course-card-wrapper {
             flex: 0 0 280px;
             scroll-snap-align: start;
@@ -1774,7 +2203,7 @@
             color: #004085;
         }
 
-        /* ===== VIDEO CARDS ===== */
+        /* ----- VIDEO CARDS ----- */
         .videos-scroll-container {
             display: flex;
             gap: 1rem;
@@ -2054,7 +2483,7 @@
             font-weight: 700;
         }
 
-        /* ===== DOCS LIST ===== */
+        /* ----- DOCS LIST ----- */
         .docs-list {
             display: flex;
             flex-direction: column;
@@ -2183,7 +2612,7 @@
             color: #e74c3c;
         }
 
-        /* ===== DOC FULL PAGE ===== */
+        /* ----- DOC FULL PAGE ----- */
         .doc-full-content {
             background: #fff;
             padding: 1.2rem;
@@ -2319,295 +2748,7 @@
             color: #d4952a;
         }
 
-        /* ===== PROFESSIONAL PAYMENT PAGE ===== */
-        .payment-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .payment-card {
-            background: #fff;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            border: 1px solid rgba(245, 176, 66, 0.12);
-        }
-
-        .payment-card-header {
-            background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
-            padding: 1.2rem 1.5rem;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .payment-card-header .pay-icon {
-            width: 44px;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .payment-card-header .pay-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        .payment-card-header .pay-sub {
-            font-size: 0.75rem;
-            opacity: 0.85;
-        }
-
-        .payment-card-body {
-            padding: 1.5rem;
-        }
-
-        .payment-course-info {
-            background: #fcf9f4;
-            border-radius: var(--radius-md);
-            padding: 1rem 1.2rem;
-            margin-bottom: 1.2rem;
-            border-left: 4px solid var(--gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .payment-course-info .course-name {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text);
-        }
-        .payment-course-info .course-amount {
-            font-weight: 900;
-            font-size: 1.3rem;
-            color: var(--gold-dark);
-            background: rgba(245, 176, 66, 0.1);
-            padding: 4px 18px;
-            border-radius: 30px;
-        }
-        .payment-course-info .course-duration-info {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 2px;
-            width: 100%;
-        }
-
-        .payment-instruction-box {
-            background: #f8f6f2;
-            border-radius: var(--radius-md);
-            padding: 1rem 1.2rem;
-            margin: 1rem 0;
-            border: 1px dashed rgba(245, 176, 66, 0.3);
-        }
-
-        .payment-instruction-box .inst-title {
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-
-        .payment-instruction-box .inst-text {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .payment-number-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 16px;
-            background: #fff;
-            border-radius: 40px;
-            margin-bottom: 10px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            border: 1px solid #f0e8d0;
-            transition: var(--transition);
-        }
-
-        .payment-number-row:hover {
-            border-color: var(--gold);
-            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.08);
-        }
-
-        .payment-number-row .number-label {
-            font-weight: 800;
-            color: var(--gold-dark);
-            min-width: 48px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .payment-number-row .number-value {
-            flex: 1;
-            font-family: 'SF Mono', 'Courier New', monospace;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            color: #1a1d28;
-        }
-
-        .payment-number-row .copy-num-btn {
-            background: var(--gold);
-            border: none;
-            color: #fff;
-            padding: 4px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.65rem;
-            font-weight: 700;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .payment-number-row .copy-num-btn:hover {
-            background: var(--gold-dark);
-            transform: scale(1.03);
-        }
-
-        .payment-upload-area {
-            margin: 1rem 0;
-            border: 2px dashed #d0c8b8;
-            border-radius: var(--radius-md);
-            padding: 1.2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition);
-            background: #fefdf7;
-            position: relative;
-            min-height: 100px;
-        }
-
-        .payment-upload-area:hover {
-            border-color: var(--gold);
-            background: #fffdf5;
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.06);
-        }
-
-        .payment-upload-area .upload-icon {
-            font-size: 2.2rem;
-            color: var(--gold-dark);
-            opacity: 0.6;
-        }
-
-        .payment-upload-area .upload-text {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .payment-upload-area .upload-hint {
-            font-size: 0.7rem;
-            color: #b0b4c0;
-            margin-top: 2px;
-        }
-
-        .payment-upload-area img {
-            max-width: 100%;
-            max-height: 180px;
-            border-radius: 12px;
-            margin-top: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        }
-
-        .payment-submit-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--gold), var(--orange));
-            border: none;
-            border-radius: 60px;
-            font-weight: 700;
-            color: #fff;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 0.6rem;
-        }
-
-        .payment-submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.40);
-        }
-
-        .payment-submit-btn:active {
-            transform: scale(0.97);
-        }
-
-        .payment-submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* ===== SUBFOLDER ITEMS ===== */
-        .subfolder-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: var(--radius-lg);
-            margin: 0.4rem 0.6rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-            color: var(--text);
-        }
-
-        .subfolder-header:hover {
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
-        }
-
-        .subfolder-header i.fa-folder {
-            color: #1a1d28;
-            margin-right: 10px;
-            font-size: 0.9rem;
-        }
-        .subfolder-header .folder-counts {
-            display: flex;
-            gap: 10px;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
-
-        .subfolder-content {
-            display: none;
-            padding: 0.2rem 0;
-        }
-        .subfolder-content.show {
-            display: block;
-        }
-
-        /* ===== NOTIFICATION SIDEBAR ===== */
+        /* ----- NOTIFICATION SIDEBAR ----- */
         .side-notif {
             position: fixed;
             right: -340px;
@@ -2680,7 +2821,7 @@
             color: #d0d4dc;
         }
 
-        /* ===== TOAST ===== */
+        /* ----- TOAST ----- */
         #toastContainer {
             position: fixed;
             top: calc(var(--topbar-height) + 8px);
@@ -2727,7 +2868,7 @@
             }
         }
 
-        /* ===== ADMIN NOTIFICATION (In-App Popup) ===== */
+        /* ----- ADMIN NOTIFICATION ----- */
         .admin-notif-overlay {
             position: fixed;
             top: 0;
@@ -2757,17 +2898,6 @@
             animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             overflow: hidden;
             position: relative;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.92) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
         }
 
         .admin-notif-header {
@@ -2848,7 +2978,7 @@
             transform: scale(0.96);
         }
 
-        /* ===== CUSTOM LOGOUT MODAL ===== */
+        /* ----- CUSTOM LOGOUT MODAL ----- */
         #logoutModal {
             position: fixed;
             top: 0;
@@ -2944,7 +3074,7 @@
             box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
         }
 
-        /* ===== EXPIRATION MODAL ===== */
+        /* ----- EXPIRATION MODAL ----- */
         #expirationModal {
             position: fixed;
             top: 0;
@@ -3045,80 +3175,198 @@
             box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
         }
 
-        /* ===== COUNTDOWN TIMER BADGE ===== */
-        .countdown-badge {
-            display: inline-flex;
+        /* ----- EXAM CONFIRMATION ----- */
+        #examConfirmationModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
             align-items: center;
-            gap: 4px;
-            padding: 3px 14px;
-            border-radius: 30px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            background: rgba(245, 176, 66, 0.15);
+            justify-content: center;
+            padding: 20px;
+        }
+        #examConfirmationModal.open {
+            display: flex;
+        }
+        .exam-confirm-content {
+            background: #fff;
+            border-radius: 28px;
+            max-width: 480px;
+            width: 100%;
+            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
+            text-align: center;
+        }
+        .exam-confirm-content .confirm-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fff8ed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            font-size: 24px;
             color: var(--gold-dark);
-            border: 1px solid rgba(245, 176, 66, 0.2);
+            border: 2px solid rgba(245, 176, 66, 0.2);
+        }
+        .exam-confirm-content h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1d28;
+            margin-bottom: 4px;
+        }
+        .exam-confirm-content .confirm-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+        }
+        .exam-confirm-content .confirm-details {
+            background: #f8f9fc;
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            margin: 0.6rem 0 1rem 0;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            text-align: left;
+        }
+        .exam-confirm-content .confirm-details div {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #eee;
+            padding: 4px 0;
+        }
+        .exam-confirm-content .confirm-details div:last-child {
+            border-bottom: none;
+        }
+        .exam-confirm-content .confirm-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .exam-confirm-content .confirm-actions button {
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: none;
+        }
+        .exam-confirm-content .confirm-actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5f6377;
+        }
+        .exam-confirm-content .confirm-actions .btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        .exam-confirm-content .confirm-actions .btn-start {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+        }
+        .exam-confirm-content .confirm-actions .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
         }
 
-        .countdown-badge.warning {
-            background: rgba(231, 76, 60, 0.12);
-            color: #c0392b;
-            border-color: rgba(231, 76, 60, 0.2);
+        /* ----- WARNING MODAL ----- */
+        #warningModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-
-        .countdown-badge.danger {
-            background: rgba(231, 76, 60, 0.25);
-            color: #e74c3c;
-            border-color: rgba(231, 76, 60, 0.3);
-            animation: pulse-warning 1.5s infinite;
+        #warningModal.open {
+            display: flex;
         }
-
-        @keyframes pulse-warning {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6;
-            }
+        .warning-modal-content {
+            background: #fff;
+            border-radius: 28px;
+            max-width: 480px;
+            width: 100%;
+            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
         }
-
-        .countdown-badge .cd-icon {
-            font-size: 0.5rem;
+        .warning-modal-content .warning-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fff8ed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            font-size: 24px;
+            color: var(--gold-dark);
+            border: 2px solid rgba(245, 176, 66, 0.2);
         }
-
-        /* ===== DARK MODE TOGGLE (iPhone style) ===== */
-        .iphone-toggle {
-            width: 44px;
-            height: 24px;
-            background: #d5d8e0;
-            border-radius: 30px;
-            display: inline-block;
-            position: relative;
+        .warning-modal-content h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1d28;
+            text-align: center;
+        }
+        .warning-modal-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+        .warning-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .warning-modal-actions button {
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: var(--transition);
-            flex-shrink: 0;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            border: none;
+            min-width: 100px;
         }
-        .iphone-toggle.active {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
+        .warning-modal-actions .btn-cancel {
+            background: #f0f2f5;
+            color: #5f6377;
         }
-        .iphone-toggle:after {
-            content: "";
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: var(--transition);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+        .warning-modal-actions .btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
         }
-        .iphone-toggle.active:after {
-            left: 22px;
+        .warning-modal-actions .btn-understood {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+        }
+        .warning-modal-actions .btn-understood:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
         }
 
-        /* ===== DARK MODE OVERRIDES ===== */
+        /* ----- DARK MODE OVERRIDES ----- */
         body.dark-mode {
             background: #0f0f0f;
             color: #e0e0e0;
@@ -3430,159 +3678,7 @@
             border-top-color: #e74c3c !important;
         }
 
-        /* ===== COMMENT SECTION ===== */
-        .comment-section {
-            margin-top: 6px;
-            padding: 6px 0 0 0;
-            border-top: 1px solid #eee;
-            border-radius: 0;
-        }
-
-        .comment-list {
-            max-height: 160px;
-            overflow-y: auto;
-            margin: 4px 0;
-            padding-right: 4px;
-        }
-
-        .comment-list::-webkit-scrollbar {
-            width: 3px;
-        }
-        .comment-list::-webkit-scrollbar-thumb {
-            background: rgba(245, 176, 66, 0.3);
-            border-radius: 20px;
-        }
-
-        .comment-item {
-            display: flex;
-            flex-direction: column;
-            padding: 4px 0;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.7rem;
-        }
-
-        .comment-item:last-child {
-            border-bottom: none;
-        }
-
-        .comment-item .comment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .comment-item .comment-user {
-            font-weight: 700;
-            color: #1a1d28;
-            font-size: 0.7rem;
-        }
-        .comment-item .comment-time {
-            font-size: 0.55rem;
-            color: #b0b4c0;
-        }
-        .comment-item .comment-text {
-            margin: 2px 0 4px;
-            color: #3a3e4c;
-            font-size: 0.7rem;
-            line-height: 1.5;
-            word-break: break-word;
-        }
-
-        .comment-item .comment-actions {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .comment-item .comment-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 0.55rem;
-            padding: 2px 6px;
-            border-radius: 20px;
-            transition: var(--transition);
-            font-weight: 600;
-        }
-
-        .comment-item .comment-actions .edit-comment-btn {
-            color: #3b82f6;
-        }
-        .comment-item .comment-actions .edit-comment-btn:hover {
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .comment-item .comment-actions .delete-comment-btn {
-            color: #e63946;
-        }
-        .comment-item .comment-actions .delete-comment-btn:hover {
-            background: rgba(230, 57, 70, 0.1);
-        }
-        .comment-item .comment-actions .comment-own-badge {
-            font-size: 0.55rem;
-            color: #b0b4c0;
-            background: #f0f0f0;
-            padding: 1px 8px;
-            border-radius: 30px;
-        }
-
-        .comment-form {
-            display: flex;
-            gap: 4px;
-            margin-top: 4px;
-            align-items: center;
-        }
-
-        .comment-form input {
-            flex: 1;
-            padding: 4px 10px;
-            border-radius: 30px;
-            border: 1.5px solid #e5e8ed;
-            font-size: 0.65rem;
-            background: #fff;
-            transition: var(--transition);
-            min-width: 0;
-        }
-
-        .comment-form input:focus {
-            outline: none;
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.1);
-        }
-
-        .comment-form button {
-            background: linear-gradient(135deg, var(--gold), var(--orange));
-            border: none;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-weight: 700;
-            color: #fff;
-            font-size: 0.6rem;
-            cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-
-        .comment-form button:hover {
-            transform: scale(1.04);
-            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.3);
-        }
-
-        .comment-empty {
-            color: #b0b4c0;
-            font-size: 0.65rem;
-            padding: 4px 0;
-            text-align: center;
-        }
-        .comment-disabled {
-            color: #e74c3c;
-            font-size: 0.65rem;
-            padding: 4px 0;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        /* ===== RESPONSIVE ===== */
+        /* ----- RESPONSIVE ----- */
         @media (max-width: 600px) {
             :root {
                 --topbar-height: 96px;
@@ -3787,224 +3883,43 @@
             }
         }
 
-        /* ===== PAYMENT REQUIRED POPUP ===== */
-        .payment-required-overlay {
+        /* ----- (additional: screenshot modal) ----- */
+        #screenshotModal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 9998;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .payment-required-overlay.open {
-            display: flex;
-        }
-
-        .payment-required-modal {
-            background: #ffffff;
-            border-radius: 32px;
-            width: 100%;
-            max-width: 480px;
-            padding: 2rem 1.8rem 1.8rem 1.8rem;
-            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
-            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid rgba(245, 176, 66, 0.15);
-            text-align: center;
-        }
-
-        .payment-required-modal .pay-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #fff8ed, #ffe8d0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px auto;
-            font-size: 32px;
-            color: var(--gold-dark);
-            border: 2px solid rgba(245, 176, 66, 0.2);
-        }
-
-        .payment-required-modal h2 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #1a1d28;
-            margin-bottom: 4px;
-        }
-
-        .payment-required-modal .pay-message {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            line-height: 1.6;
-        }
-
-        .payment-required-modal .pay-amount {
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: var(--gold-dark);
-            background: rgba(245, 176, 66, 0.1);
-            display: inline-block;
-            padding: 4px 24px;
-            border-radius: 40px;
-            margin: 8px 0 16px 0;
-        }
-
-        .payment-required-modal .pay-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 4px;
-        }
-
-        .payment-required-modal .pay-actions button {
-            padding: 12px 32px;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: var(--transition);
-            border: none;
-        }
-
-        .payment-required-modal .pay-actions .btn-pay-now {
-            background: linear-gradient(135deg, var(--gold), var(--orange));
-            color: #fff;
-            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.35);
-        }
-
-        .payment-required-modal .pay-actions .btn-pay-now:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.45);
-        }
-
-        .payment-required-modal .pay-actions .btn-pay-now:active {
-            transform: scale(0.96);
-        }
-
-        .payment-required-modal .pay-actions .btn-cancel-pay {
-            background: #f0f2f5;
-            color: #5f6377;
-        }
-
-        .payment-required-modal .pay-actions .btn-cancel-pay:hover {
-            background: #e5e7eb;
-            transform: translateY(-2px);
-        }
-
-        .payment-required-modal .pay-assessment-name {
-            font-weight: 700;
-            color: var(--gold-dark);
-            font-size: 1.05rem;
-        }
-
-        .payment-required-modal .pay-type-badge {
-            display: inline-block;
-            background: rgba(245, 176, 66, 0.15);
-            color: var(--gold-dark);
-            padding: 3px 14px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        /* ===== WARNING MODAL ===== */
-        #warningModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             z-index: 9999;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        #warningModal.open {
+        #screenshotModal.open {
             display: flex;
         }
-        .warning-modal-content {
-            background: #fff;
-            border-radius: 28px;
-            max-width: 480px;
-            width: 100%;
-            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
-            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
-            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid rgba(245, 176, 66, 0.15);
+        #screenshotModal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
-        .warning-modal-content .warning-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #fff8ed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 12px auto;
-            font-size: 24px;
-            color: var(--gold-dark);
-            border: 2px solid rgba(245, 176, 66, 0.2);
-        }
-        .warning-modal-content h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #1a1d28;
-            text-align: center;
-        }
-        .warning-modal-content p {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-bottom: 0.8rem;
-            line-height: 1.5;
-        }
-        .warning-modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .warning-modal-actions button {
-            padding: 10px 28px;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: var(--transition);
+        #screenshotModal .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            min-width: 100px;
-        }
-        .warning-modal-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5f6377;
-        }
-        .warning-modal-actions .btn-cancel:hover {
-            background: #e5e7eb;
-            transform: translateY(-2px);
-        }
-        .warning-modal-actions .btn-understood {
-            background: linear-gradient(135deg, var(--gold), var(--orange));
             color: #fff;
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
-        }
-        .warning-modal-actions .btn-understood:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -4014,13 +3929,6 @@
     <div id="appLoader">
         <div class="loader-spinner"></div>
         <p>Loading UTOM...</p>
-    </div>
-
-    <!-- ===== COURSE LOADER ===== -->
-    <div id="courseLoader">
-        <div class="loader-spinner"></div>
-        <p id="courseLoaderText">Loading course...</p>
-        <div class="sub-text">Preparing videos and content</div>
     </div>
 
     <div class="app-root">
@@ -4078,6 +3986,15 @@
                         <span class="badge" id="historyCount">0</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ===== ASSESSMENT SELECTION OVERLAY (nested) ===== -->
+        <div class="assessment-select-overlay" id="assessmentSelectOverlay">
+            <div class="assessment-select-modal">
+                <button class="assessment-select-close" id="assessmentSelectClose"><i class="fas fa-times"></i></button>
+                <div class="sel-title" id="assessmentSelectTitle">Available Assessments</div>
+                <div id="assessmentSelectList"></div>
             </div>
         </div>
 
@@ -4181,7 +4098,7 @@
                 </div>
             </div>
 
-            <!-- PAYMENT PAGE -->
+            <!-- PAYMENT PAGE (for paid assessments) -->
             <div id="paymentPage" class="page-container full-page-container">
                 <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.6rem;padding:8px 20px;border-radius:60px;border:1.5px solid #e5e8ed;background:transparent;font-weight:600;cursor:pointer;"><i class="fas fa-arrow-left"></i> Back</button>
                 <div class="payment-container">
@@ -4196,7 +4113,7 @@
                         <div class="payment-card-body">
                             <div class="payment-course-info">
                                 <div>
-                                    <div class="course-name" id="paymentCourseTitle">Course</div>
+                                    <div class="course-name" id="paymentCourseTitle">Assessment</div>
                                     <div class="course-duration-info" id="paymentDurationInfo">
                                         <i class="fas fa-clock"></i> Lifetime access
                                     </div>
@@ -4272,9 +4189,9 @@
     </div><!-- end app-root -->
 
     <!-- ===== SCREENSHOT MODAL ===== -->
-    <div id="screenshotModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
-        <button class="close-modal" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.2rem;cursor:pointer;backdrop-filter:blur(4px);">✕</button>
-        <img id="screenshotModalImg" src="" alt="Payment Screenshot" style="max-width:90%;max-height:90%;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5);" />
+    <div id="screenshotModal" class="modal-overlay">
+        <button class="close-modal" onclick="document.getElementById('screenshotModal').classList.remove('open')">✕</button>
+        <img id="screenshotModalImg" src="" alt="Payment Screenshot" />
     </div>
 
     <!-- ===== ADMIN NOTIFICATION POPUP ===== -->
@@ -4323,26 +4240,35 @@
         </div>
     </div>
 
-    <!-- ===== EXAM CONFIRMATION POPUP ===== -->
-    <div id="examConfirmationModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:#fff;border-radius:28px;max-width:480px;width:100%;padding:1.8rem 1.5rem 1.5rem 1.5rem;box-shadow:0 32px 80px rgba(0,0,0,0.25);animation:modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);border:1px solid rgba(245,176,66,0.15);">
-            <div style="text-align:center;margin-bottom:0.8rem;">
-                <div style="width:56px;height:56px;border-radius:50%;background:#fff8ed;display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:24px;color:var(--gold-dark);border:2px solid rgba(245,176,66,0.2);">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <h2 id="examConfirmTitle" style="font-size:1.2rem;font-weight:700;color:#1a1d28;">Assessment</h2>
-                <p id="examConfirmSubtitle" style="font-size:0.85rem;color:var(--text-secondary);">You are about to start an assessment.</p>
-            </div>
-            <div id="examConfirmDetails" style="background:#f8f9fc;border-radius:12px;padding:0.8rem 1rem;margin:0.6rem 0 1rem 0;font-size:0.85rem;line-height:1.7;">
+    <!-- ===== EXAM CONFIRMATION ===== -->
+    <div id="examConfirmationModal" class="modal-overlay">
+        <div class="exam-confirm-content">
+            <div class="confirm-icon"><i class="fas fa-graduation-cap"></i></div>
+            <h2 id="examConfirmTitle">Assessment Confirmation</h2>
+            <div class="confirm-subtitle" id="examConfirmSubtitle">You are about to start an assessment. Please review the details below.</div>
+            <div class="confirm-details" id="examConfirmDetails">
                 <div><strong>Name:</strong> <span id="examConfirmName"></span></div>
                 <div><strong>Type:</strong> <span id="examConfirmType"></span></div>
                 <div><strong>Duration:</strong> <span id="examConfirmDuration"></span></div>
                 <div><strong>Start Time:</strong> <span id="examConfirmStartTime"></span></div>
-                <div><strong>Instructions:</strong> <span id="examConfirmInstructions" style="display:block;white-space:pre-wrap;font-size:0.8rem;color:var(--text-secondary);margin-top:4px;"></span></div>
+                <div><strong>Instructions:</strong> <span id="examConfirmInstructions"></span></div>
             </div>
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <button id="examConfirmCancelBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:#f0f2f5;color:#5f6377;border:none;">Cancel</button>
-                <button id="examConfirmStartBtn" style="padding:10px 28px;border-radius:60px;font-weight:700;font-size:0.8rem;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;box-shadow:0 4px 16px rgba(245,176,66,0.3);border:none;">Start Assessment</button>
+            <div class="confirm-actions">
+                <button class="btn-cancel" id="examConfirmCancelBtn">Cancel</button>
+                <button class="btn-start" id="examConfirmStartBtn">Start Assessment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== WARNING MODAL ===== -->
+    <div id="warningModal">
+        <div class="warning-modal-content">
+            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h2>Important Warning</h2>
+            <p>Do not leave this screen until submission or your exam will be auto submitted.<br><small>If you minimize, switch tabs, or close the app, your assessment will be automatically submitted.</small></p>
+            <div class="warning-modal-actions">
+                <button class="btn-cancel" id="warningCancelBtn">Cancel</button>
+                <button class="btn-understood" id="warningUnderstoodBtn">Understood</button>
             </div>
         </div>
     </div>
@@ -4360,19 +4286,6 @@
             <div class="pay-actions">
                 <button class="btn-pay-now" id="payRequiredPayBtn"><i class="fas fa-arrow-right"></i> Pay Now</button>
                 <button class="btn-cancel-pay" id="payRequiredCancelBtn">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== WARNING MODAL ===== -->
-    <div id="warningModal">
-        <div class="warning-modal-content">
-            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h2>Important Warning</h2>
-            <p>Do not leave this screen until submission or your exam will be auto submitted.<br><small>If you minimize, switch tabs, or close the app, your assessment will be automatically submitted.</small></p>
-            <div class="warning-modal-actions">
-                <button class="btn-cancel" id="warningCancelBtn">Cancel</button>
-                <button class="btn-understood" id="warningUnderstoodBtn">Understood</button>
             </div>
         </div>
     </div>
@@ -4427,8 +4340,8 @@
         let allAssessmentResponses = [];
         let userRegisterIds = new Set();
         let examBadgeCount = 0;
-        let currentAssessmentTaking = null; // { assessment, responseId, timerInterval, startTime, remainingSeconds, warningAccepted }
-        let scratchpads = {}; // { questionKey: { canvas, ctx, isDrawing, lastX, lastY, color, lineWidth, dataUrl } }
+        let currentAssessmentTaking = null;
+        let scratchpads = {};
 
         let expirationCheckInterval = null;
         let countdownUpdateInterval = null;
@@ -4547,9 +4460,9 @@
 
             try {
                 const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-                if (bannedSnap.val() === true) { /* Handle banned user */ return; }
+                if (bannedSnap.val() === true) { /* handle banned user */ return; }
                 const maintSnap = await get(ref(db, 'system/maintenance'));
-                if (maintSnap.val() === true) { /* Handle maintenance */ return; }
+                if (maintSnap.val() === true) { /* handle maintenance */ return; }
 
                 await loadUserData(user.uid);
                 await loadShownAdminNotifs(user.uid);
@@ -4584,12 +4497,10 @@
         // ===== REGISTERS & ASSESSMENTS =====
         async function loadRegistersAndAssessments(uid) {
             return new Promise((resolve) => {
-                // Load registers
                 const registersRef = ref(db, 'registers');
                 onValue(registersRef, (snap) => {
                     const data = snap.val();
                     allRegisters = data ? Object.entries(data).map(([id, r]) => ({ id, ...r })) : [];
-                    // Find which registers the user belongs to
                     userRegisterIds.clear();
                     for (const reg of allRegisters) {
                         if (reg.members && reg.members.includes(uid)) {
@@ -4602,7 +4513,6 @@
                     }
                 });
 
-                // Load assessments
                 const assessmentsRef = ref(db, 'assessments');
                 onValue(assessmentsRef, (snap) => {
                     const data = snap.val();
@@ -4613,7 +4523,6 @@
                     }
                 });
 
-                // Load assessment responses
                 const responsesRef = ref(db, 'assessmentResponses');
                 onValue(responsesRef, (snap) => {
                     const data = snap.val();
@@ -4628,21 +4537,14 @@
         }
 
         function updateExamBadge() {
-            // Count assessments available to the user: assessments whose registerId is in userRegisterIds,
-            // and status is 'published' or 'ongoing', and not yet taken (no response with 'completed' or 'ended' status)
-            // Also check if the assessment is paid and if the user has approved purchase for it
             const available = allAssessments.filter(a => {
                 if (!userRegisterIds.has(a.registerId)) return false;
                 if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                // Check if already taken
                 const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
                 if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
-                // If paid, check if user has approved purchase for this assessment
                 if (a.paid) {
-                    // Check if this assessment has an approved purchase record
                     const approved = approvedCoursesData[a.id];
                     if (!approved) return false;
-                    // Check if expired
                     if (approved.expiresAt && approved.expiresAt > 0 && Date.now() > approved.expiresAt) return false;
                 }
                 return true;
@@ -4653,14 +4555,9 @@
                 badge.textContent = examBadgeCount;
                 badge.style.display = examBadgeCount > 0 ? 'flex' : 'none';
             }
-            // Update counts in hub
-            const examCount = available.filter(a => a.type === 'exam').length;
-            const testCount = available.filter(a => a.type === 'test').length;
-            const quizCount = available.filter(a => a.type === 'quiz').length;
-            document.getElementById('examCount').textContent = examCount;
-            document.getElementById('testCount').textContent = testCount;
-            document.getElementById('quizCount').textContent = quizCount;
-            // History count
+            document.getElementById('examCount').textContent = available.filter(a => a.type === 'exam').length;
+            document.getElementById('testCount').textContent = available.filter(a => a.type === 'test').length;
+            document.getElementById('quizCount').textContent = available.filter(a => a.type === 'quiz').length;
             const historyCount = allAssessmentResponses.filter(r => r.userId === currentUser?.uid && (r.status === 'completed' ||
                 r.status === 'ended')).length;
             document.getElementById('historyCount').textContent = historyCount;
@@ -5009,7 +4906,7 @@
                                 durationType: data[id].durationType || 'lifetime',
                                 durationValue: data[id].durationValue || 0,
                                 amount: data[id].amount || 0,
-                                title: data[id].itemTitle || 'Course'
+                                title: data[id].itemTitle || 'Assessment'
                             };
                         });
                     }
@@ -5213,7 +5110,7 @@
                     const modal = document.getElementById('screenshotModal');
                     const img = modal.querySelector('img');
                     img.src = url;
-                    modal.style.display = 'flex';
+                    modal.classList.add('open');
                 });
             });
         }
@@ -6395,14 +6292,15 @@
             });
         }
 
-        // ===== PAYMENT =====
-        function openPaymentPage(course) {
-            selectedCourse = course;
-            document.getElementById('paymentCourseTitle').innerText = course.name;
-            document.getElementById('paymentAmountDisplay').innerText = `ZMW ${course.price}`;
+        // ===== PAYMENT (for assessments) =====
+        function openPaymentPage(item, itemType = 'course') {
+            // item is either a course or an assessment
+            selectedCourse = item; // we reuse the same variable
+            document.getElementById('paymentCourseTitle').innerText = item.name || 'Assessment';
+            document.getElementById('paymentAmountDisplay').innerText = `ZMW ${item.price || 0}`;
 
             const durationInfo = document.getElementById('paymentDurationInfo');
-            if (course.durationType && course.durationType !== 'lifetime' && course.durationValue > 0) {
+            if (item.durationType && item.durationType !== 'lifetime' && item.durationValue > 0) {
                 const labels = {
                     'minutes': 'minute',
                     'hours': 'hour',
@@ -6410,9 +6308,9 @@
                     'weeks': 'week',
                     'months': 'month'
                 };
-                const label = labels[course.durationType] || course.durationType;
+                const label = labels[item.durationType] || item.durationType;
                 durationInfo.innerHTML =
-                    `<i class="fas fa-clock"></i> ${course.durationValue} ${label}${course.durationValue > 1 ? 's' : ''} access`;
+                    `<i class="fas fa-clock"></i> ${item.durationValue} ${label}${item.durationValue > 1 ? 's' : ''} access`;
             } else {
                 durationInfo.innerHTML = `<i class="fas fa-infinity"></i> Lifetime access`;
             }
@@ -6420,7 +6318,7 @@
             document.getElementById('paymentScreenshotPreview').innerHTML = '';
             paymentScreenshotUrl = null;
             updatePaymentNumbersDisplay();
-            showPage('payment', { courseId: course.id });
+            showPage('payment', { itemId: item.id });
         }
 
         // ===== PAYMENT REQUIRED POPUP =====
@@ -6445,14 +6343,7 @@
 
             newPayBtn.addEventListener('click', () => {
                 overlay.classList.remove('open');
-                // Navigate to payment page for the assessment (treated as a course purchase)
-                const course = allCourses.find(c => c.id === assessment.id);
-                if (course) {
-                    openPaymentPage(course);
-                } else {
-                    // If no direct course match, show a generic payment flow
-                    addNotification('warning', 'Payment gateway not available for this assessment.');
-                }
+                openPaymentPage(assessment, 'assessment');
             });
 
             newCancelBtn.addEventListener('click', () => {
@@ -6460,9 +6351,42 @@
             });
         }
 
+        // ===== PAYMENT SUBMIT =====
+        document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
+            if (!selectedCourse || !paymentScreenshotUrl) {
+                alert("Please upload a payment screenshot before submitting.");
+                return;
+            }
+            try {
+                const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
+                await set(pendingRef, {
+                    itemId: selectedCourse.id,
+                    itemTitle: selectedCourse.name,
+                    itemType: 'course', // we treat assessments as courses for payment
+                    amount: selectedCourse.price,
+                    provider: 'MTN/Airtel',
+                    screenshot: paymentScreenshotUrl,
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    userName: `${userData.firstName} ${userData.lastName}`,
+                    userPhone: userData.phone || ''
+                });
+                addNotification('purchase',
+                    `Purchase request submitted for "${selectedCourse.name}". Awaiting admin approval.`);
+                showPage('home');
+                selectedCourse = null;
+                paymentScreenshotUrl = null;
+                document.getElementById('paymentScreenshotPreview').innerHTML = '';
+            } catch (error) {
+                addNotification('danger', 'Failed to submit payment: ' + error.message);
+            }
+        });
+
         // ===== UI SETUP =====
         function setupUI() {
-            // Dark mode toggle (iPhone style)
+            // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
             if (savedDarkMode) {
@@ -6650,11 +6574,11 @@
             });
 
             document.querySelector('#screenshotModal .close-modal').addEventListener('click', () => {
-                document.getElementById('screenshotModal').style.display = 'none';
+                document.getElementById('screenshotModal').classList.remove('open');
             });
             document.getElementById('screenshotModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) {
-                    e.target.style.display = 'none';
+                    e.target.classList.remove('open');
                 }
             });
 
@@ -6676,7 +6600,7 @@
                         showPage('assessmentHistory');
                         renderAssessmentHistory();
                     } else {
-                        // Find available assessment of this type
+                        // Find available assessments of this type
                         const available = allAssessments.filter(a => {
                             if (!userRegisterIds.has(a.registerId)) return false;
                             if (a.status !== 'published' && a.status !== 'ongoing') return false;
@@ -6685,7 +6609,6 @@
                                 r.userId === currentUser?.uid);
                             if (existing && (existing.status === 'completed' || existing.status ===
                                     'ended')) return false;
-                            // Check if paid and approved
                             if (a.paid) {
                                 const approved = approvedCoursesData[a.id];
                                 if (!approved) return false;
@@ -6700,30 +6623,20 @@
                             return;
                         }
 
-                        // For simplicity, take the first one
-                        const assessment = available[0];
-
-                        // ===== CHECK IF PAID =====
-                        if (assessment.paid) {
-                            // Check if user has already purchased this assessment
-                            const hasPurchase = approvedCoursesData[assessment.id];
-                            if (!hasPurchase) {
-                                // Show payment required popup
-                                showPaymentRequiredPopup(assessment);
-                                return;
-                            } else {
-                                // Check if expired
-                                if (hasPurchase.expiresAt && hasPurchase.expiresAt > 0 && Date.now() > hasPurchase.expiresAt) {
-                                    showPaymentRequiredPopup(assessment);
-                                    return;
-                                }
-                            }
-                        }
-
-                        // Show confirmation popup
-                        showExamConfirmation(assessment);
+                        // Show selection modal
+                        showAssessmentSelection(available, type);
                     }
                 });
+            });
+
+            // ---- ASSESSMENT SELECTION MODAL ----
+            document.getElementById('assessmentSelectClose').addEventListener('click', () => {
+                document.getElementById('assessmentSelectOverlay').classList.remove('open');
+            });
+            document.getElementById('assessmentSelectOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    e.target.classList.remove('open');
+                }
             });
 
             // ---- ASSESSMENT TAKE ----
@@ -6737,17 +6650,16 @@
 
             // ---- EXAM CONFIRMATION ----
             document.getElementById('examConfirmCancelBtn').addEventListener('click', () => {
-                document.getElementById('examConfirmationModal').style.display = 'none';
+                document.getElementById('examConfirmationModal').classList.remove('open');
             });
 
             document.getElementById('examConfirmStartBtn').addEventListener('click', () => {
                 const modal = document.getElementById('examConfirmationModal');
                 const assessmentId = modal.dataset.assessmentId;
-                modal.style.display = 'none';
+                modal.classList.remove('open');
                 if (assessmentId) {
                     const assessment = allAssessments.find(a => a.id === assessmentId);
                     if (assessment) {
-                        // Show warning modal first
                         showWarningModal(assessment);
                     }
                 }
@@ -6771,22 +6683,19 @@
                 }
             });
 
-            // ---- AUTO-SUBMIT ON PAGE HIDE / CLOSE / LOGOUT ----
-            // Visibility change
+            // ---- AUTO-SUBMIT ----
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     autoSubmitAssessment();
                 }
             });
 
-            // Page hide (more reliable for closing tab)
             window.addEventListener('pagehide', (e) => {
                 if (currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     autoSubmitAssessment();
                 }
             });
 
-            // Before unload (show warning)
             window.addEventListener('beforeunload', (e) => {
                 if (currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     e.preventDefault();
@@ -6794,24 +6703,11 @@
                 }
             });
 
-            // Auth state change (if user logs out while taking)
-            const originalAuthListener = onAuthStateChanged(auth, async (user) => {
-                // We handle the main auth state above; but we can add a separate listener
-                // to detect logout during assessment.
-            });
-            // We'll add a subscription inside the assessment start to watch for sign-out.
-            // But we already have the main onAuthStateChanged which will redirect.
-            // If the user signs out, we can auto-submit before redirect.
-            // We'll handle that in the main auth listener by checking if currentAssessmentTaking exists.
-
-            // ---- Override the main auth listener to auto-submit on logout ----
-            // We'll store the original listener and enhance it.
-            // Actually, we can just add an extra listener.
+            // Extra auth listener for auto-submit on logout
             auth.onAuthStateChanged((user) => {
                 if (!user && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     autoSubmitAssessment();
                 }
-                // The main listener will handle redirect.
             });
 
             setTimeout(() => {
@@ -6821,6 +6717,51 @@
             }, 300);
         }
 
+        // ===== ASSESSMENT SELECTION MODAL =====
+        function showAssessmentSelection(assessments, type) {
+            const overlay = document.getElementById('assessmentSelectOverlay');
+            const title = document.getElementById('assessmentSelectTitle');
+            title.textContent = `Available ${type.charAt(0).toUpperCase()+type.slice(1)}s`;
+            const list = document.getElementById('assessmentSelectList');
+            list.innerHTML = assessments.map(a => `
+                <div class="assessment-select-item" data-id="${a.id}">
+                    <div class="item-info">
+                        <div class="item-name">${escapeHtml(a.name)}</div>
+                        <div class="item-duration">${a.duration || 'No time limit'} · ${a.totalMarks || 0} marks</div>
+                    </div>
+                    <span class="item-badge ${a.paid ? 'paid' : 'free'}">${a.paid ? 'Paid' : 'Free'}</span>
+                </div>
+            `).join('');
+
+            overlay.classList.add('open');
+
+            list.querySelectorAll('.assessment-select-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    const assessment = assessments.find(a => a.id === id);
+                    if (!assessment) return;
+                    overlay.classList.remove('open');
+
+                    // If paid and not purchased, show payment popup
+                    if (assessment.paid) {
+                        const hasPurchase = approvedCoursesData[assessment.id];
+                        if (!hasPurchase) {
+                            showPaymentRequiredPopup(assessment);
+                            return;
+                        } else {
+                            if (hasPurchase.expiresAt && hasPurchase.expiresAt > 0 && Date.now() > hasPurchase.expiresAt) {
+                                showPaymentRequiredPopup(assessment);
+                                return;
+                            }
+                        }
+                    }
+
+                    // Show confirmation
+                    showExamConfirmation(assessment);
+                });
+            });
+        }
+
         // ===== WARNING MODAL =====
         function showWarningModal(assessment) {
             const modal = document.getElementById('warningModal');
@@ -6828,39 +6769,30 @@
             modal.classList.add('open');
         }
 
-        // ===== EXAM CONFIRMATION POPUP =====
+        // ===== EXAM CONFIRMATION =====
         function showExamConfirmation(assessment) {
             const modal = document.getElementById('examConfirmationModal');
             modal.dataset.assessmentId = assessment.id;
-
-            document.getElementById('examConfirmTitle').textContent = '📋 Assessment Confirmation';
-            document.getElementById('examConfirmSubtitle').textContent =
-                'You are about to start an assessment. Please review the details below.';
-
             document.getElementById('examConfirmName').textContent = assessment.name || 'N/A';
             document.getElementById('examConfirmType').textContent = (assessment.type || 'N/A').toUpperCase();
             document.getElementById('examConfirmDuration').textContent = assessment.duration || 'No time limit';
             document.getElementById('examConfirmStartTime').textContent = new Date().toLocaleString();
-
             const instructions = assessment.cover?.instructions || 'Read each question carefully and answer to the best of your ability.';
             document.getElementById('examConfirmInstructions').textContent = instructions;
-
-            modal.style.display = 'flex';
+            modal.classList.add('open');
         }
 
-        // ===== ASSESSMENT TAKING (REWRITTEN FOR COVER + INFO + DROPDOWN SCRATCHPAD) =====
+        // ===== ASSESSMENT TAKING (Cover + Info + Scratchpad) =====
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
 
-            // Parse duration from HH:MM to seconds
             let totalSeconds = 0;
             if (assessment.duration) {
                 const parts = assessment.duration.split(':').map(Number);
                 totalSeconds = parts[0] * 3600 + parts[1] * 60;
             }
 
-            // Create a response entry
             const responseRef = push(ref(db, 'assessmentResponses'));
             const responseId = responseRef.key;
 
@@ -6886,10 +6818,9 @@
                 timerInterval: null,
                 answers: {},
                 scratchData: {},
-                warningAccepted: true // Set after warning modal
+                warningAccepted: true
             };
 
-            // ===== 1. COVER PAGE =====
             const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
             const instructionsList = coverData.instructions ? coverData.instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
 
@@ -6906,7 +6837,6 @@
                             <div><span class="label">Duration:</span> ${assessment.duration ? assessment.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
                             <div><span class="label">Passing Score:</span> ${assessment.passingScore || 0}%</div>
                             ${assessment.paid ? `<div><span class="label">Price:</span> ZMW ${assessment.price} (${assessment.gateway})</div>` : '<div><span class="label">Price:</span> Free</div>'}
-                            ${assessment.scheduleType ? `<div><span class="label">Schedule:</span> ${assessment.scheduleType}</div>` : ''}
                             <div><span class="label">Total Marks:</span> ${assessment.totalMarks || 0}</div>
                         </div>
                         <div class="rules-section">
@@ -6922,7 +6852,6 @@
                 </div>
             `;
 
-            // ===== 2. STUDENT INFORMATION COLLECTION =====
             let infoHtml = '';
             if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0) {
                 const fieldLabels = {
@@ -6959,8 +6888,6 @@
                 `;
             }
 
-            // ===== 3. QUESTIONS (Hidden initially) =====
-            let questionsHtml = '';
             let allQuestions = [];
             if (assessment.sections) {
                 assessment.sections.forEach(sec => {
@@ -6972,12 +6899,12 @@
                 allQuestions = assessment.questions.map(q => ({ ...q, section: 'General' }));
             }
 
+            let questionsHtml = '';
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
                 questionsHtml += buildQuestionBlock(q, idx, qKey);
             });
 
-            // ===== FINAL LAYOUT =====
             container.innerHTML = `
                 ${coverHtml}
                 ${infoHtml}
@@ -7001,8 +6928,6 @@
                 </div>
             `;
 
-            // ===== EVENTS =====
-            // 1. Start Assessment button
             const startBtn = document.getElementById('startAssessmentBtn');
             startBtn.addEventListener('click', async () => {
                 const infoFields = document.querySelectorAll('#assessmentInfoSection .info-field input');
@@ -7017,37 +6942,31 @@
                         studentInfo[inp.name] = inp.value.trim();
                     }
                 });
-                // If info collection is enabled but fields are missing, abort
                 if (assessment.infoEnabled && !valid) {
                     addNotification('warning', 'Please fill in all required student information fields.');
                     return;
                 }
 
-                // Save student info to Firebase
                 await update(ref(db, `assessmentResponses/${responseId}`), {
                     studentInfo: studentInfo,
                     status: 'ongoing'
                 });
 
-                // Hide cover and info, show questions
                 document.getElementById('assessmentCoverInfo').style.display = 'none';
                 document.getElementById('assessmentInfoSection').style.display = 'none';
                 startBtn.style.display = 'none';
                 document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
 
-                // Initialize scratchpads for visible canvases
                 document.querySelectorAll('.scratchpad-wrapper canvas').forEach(canvas => {
                     initScratchpad(canvas);
                 });
 
-                // Attach scratchpad dropdown toggles
                 document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const wrapper = this.nextElementSibling;
                         if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
                             wrapper.classList.toggle('open');
                             this.classList.toggle('open');
-                            // Re-initialize canvas if it was just opened
                             if (wrapper.classList.contains('open')) {
                                 const canvas = wrapper.querySelector('canvas');
                                 if (canvas && !scratchpads[canvas.id.replace('scratch-', '')]) {
@@ -7058,7 +6977,6 @@
                     });
                 });
 
-                // Start timer
                 if (totalSeconds > 0) {
                     const timerElement = document.getElementById('assessmentTimer');
                     const timerInterval = setInterval(() => {
@@ -7080,7 +6998,6 @@
                 }
             });
 
-            // 2. Save Progress
             document.getElementById('saveProgressBtn').addEventListener('click', async () => {
                 const answers = collectAnswers();
                 const scratchData = collectScratchData();
@@ -7100,7 +7017,6 @@
                 }
             });
 
-            // 3. Submit
             document.getElementById('submitAssessmentBtn').addEventListener('click', async () => {
                 if (!confirm('Are you sure you want to submit? You cannot change your answers after submission.'))
                     return;
@@ -7108,7 +7024,7 @@
             });
         }
 
-        // ===== BUILD QUESTION BLOCK (with dropdown scratchpad) =====
+        // ===== QUESTION BLOCK =====
         function buildQuestionBlock(q, idx, qKey) {
             let optionsHtml = '';
             let inputHtml = '';
@@ -7202,7 +7118,7 @@
             `;
         }
 
-        // ===== SCRATCHPAD INITIALIZATION =====
+        // ===== SCRATCHPAD =====
         function initScratchpad(canvas) {
             const ctx = canvas.getContext('2d');
             let isDrawing = false;
@@ -7211,7 +7127,6 @@
             let color = '#000000';
             let lineWidth = 2;
 
-            // Fix canvas resolution
             const rect = canvas.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0) {
                 const dpr = window.devicePixelRatio || 1;
@@ -7269,7 +7184,6 @@
             canvas.addEventListener('touchmove', draw, { passive: false });
             canvas.addEventListener('touchend', stopDraw, { passive: false });
 
-            // Color pickers
             const tools = canvas.parentElement.querySelector('.scratchpad-tools');
             tools.querySelectorAll('.color-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -7278,44 +7192,37 @@
                     color = btn.dataset.color;
                 });
             });
-            // Set default color
             const defaultColor = tools.querySelector('.color-btn[data-color="#000000"]');
             if (defaultColor) defaultColor.classList.add('active');
 
-            // Clear
             tools.querySelector('.clear-scratch').addEventListener('click', () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             });
 
-            // Store ctx and canvas
             const key = canvas.id.replace('scratch-', '');
             scratchpads[key] = { canvas, ctx, color, lineWidth };
         }
 
-        // ===== COLLECT ANSWERS & SCRATCH DATA =====
+        // ===== COLLECT ANSWERS & SCRATCH =====
         function collectAnswers() {
             const answers = {};
             document.querySelectorAll('.question-block').forEach(block => {
                 const key = block.dataset.key;
-                // Radio
                 const radio = block.querySelector(`input[type="radio"]:checked`);
                 if (radio) {
                     answers[key] = radio.value;
                     return;
                 }
-                // Textarea
                 const textarea = block.querySelector('.q-textarea');
                 if (textarea) {
                     answers[key] = textarea.value.trim();
                     return;
                 }
-                // Fillblank
                 const fillblank = block.querySelector('.q-fillblank');
                 if (fillblank) {
                     answers[key] = fillblank.value.trim();
                     return;
                 }
-                // Matching selects
                 const selects = block.querySelectorAll('.q-matching select');
                 if (selects.length) {
                     const match = {};
@@ -7326,7 +7233,6 @@
                     answers[key] = match;
                     return;
                 }
-                // Ordering (store order of indices)
                 const orderItems = block.querySelectorAll('.q-ordering-item');
                 if (orderItems.length) {
                     const order = [];
@@ -7359,7 +7265,7 @@
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        // ===== SUBMIT ASSESSMENT (UPDATED AUTO-GRADING) =====
+        // ===== SUBMIT (auto‑grading) =====
         async function autoSubmitAssessment() {
             if (!currentAssessmentTaking) return;
             addNotification('info', '⏰ Auto-submitting your assessment...');
@@ -7374,7 +7280,6 @@
             const scratchData = collectScratchData();
 
             try {
-                // Calculate auto-graded score
                 let autoScore = 0;
                 let totalAutoMarks = 0;
                 let allQuestions = [];
@@ -7395,9 +7300,7 @@
                     let mark = 0;
                     let isAuto = false;
 
-                    // --- AUTO-GRADE LOGIC ---
                     if (q.type === 'mcq' || q.type === 'tf') {
-                        // Use loose equality to handle number vs string
                         isAuto = true;
                         totalAutoMarks += q.marks;
                         if (answer == q.correct) {
@@ -7405,7 +7308,6 @@
                             autoScore += q.marks;
                         }
                     } else if (q.type === 'fillblank') {
-                        // Case-insensitive trim match
                         isAuto = true;
                         totalAutoMarks += q.marks;
                         if (answer.trim().toLowerCase() === (q.correct || '').trim().toLowerCase()) {
@@ -7413,7 +7315,6 @@
                             autoScore += q.marks;
                         }
                     } else if (q.type === 'matching') {
-                        // Match each left item to the correct right item
                         isAuto = true;
                         totalAutoMarks += q.marks;
                         if (q.options && q.options.length > 0) {
@@ -7428,18 +7329,15 @@
                                     }
                                 }
                             });
-                            // Proportional scoring
                             mark = Math.round((correctCount / adminPairs.length) * q.marks);
                             autoScore += mark;
                         }
                     } else if (q.type === 'ordering') {
-                        // Check if items are in correct order
                         isAuto = true;
                         totalAutoMarks += q.marks;
                         if (q.options && q.options.length > 0 && Array.isArray(answer) && answer.length === q.options.length) {
                             const userItems = answer.map(idx => q.options[idx]);
                             const adminItems = q.options;
-                            // Compare arrays
                             if (userItems.every((item, idx) => item === adminItems[idx])) {
                                 mark = q.marks;
                                 autoScore += q.marks;
@@ -7447,7 +7345,6 @@
                         }
                     }
 
-                    // If not auto-graded (text, essay, short), leave marks as 0 for admin to grade
                     marks[qKey] = mark;
                     if (!isAuto) {
                         marks[qKey] = 0;
@@ -7519,15 +7416,14 @@
                         ${ass ? ` · ${ass.duration || 'N/A'}` : ''}
                     </div>
                     <div class="h-actions">
-                        <button class="btn-download" onclick="downloadAssessmentPNG('${r.id}')"><i class="fas fa-download"></i> Download PNG</button>
-                        <button class="btn-outline" onclick="downloadAssessmentHTML('${r.id}')"><i class="fas fa-file-code"></i> Download HTML</button>
+                        <button onclick="downloadAssessmentPNG('${r.id}')"><i class="fas fa-download"></i> Download PNG</button>
+                        <button onclick="downloadAssessmentHTML('${r.id}')"><i class="fas fa-file-code"></i> Download HTML</button>
                         <button onclick="viewAssessmentScript('${r.id}')"><i class="fas fa-eye"></i> View Details</button>
                     </div>
                 </div>
                 `;
             }).join('');
 
-            // Attach view details event
             container.querySelectorAll('.history-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('button')) return;
@@ -7537,7 +7433,6 @@
             });
         }
 
-        // ---- View Script Modal ----
         window.viewAssessmentScript = function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -7558,9 +7453,9 @@
                     </div>
                     <div id="scriptDetailsContainer"></div>
                     <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
-                        <button class="btn-primary" onclick="downloadAssessmentPNG('${responseId}')"><i class="fas fa-download"></i> Download PNG</button>
-                        <button class="btn-outline" onclick="downloadAssessmentHTML('${responseId}')"><i class="fas fa-file-code"></i> Download HTML</button>
-                        <button class="btn-outline" onclick="this.closest('.modal-overlay').remove();">Close</button>
+                        <button onclick="downloadAssessmentPNG('${responseId}')"><i class="fas fa-download"></i> Download PNG</button>
+                        <button onclick="downloadAssessmentHTML('${responseId}')"><i class="fas fa-file-code"></i> Download HTML</button>
+                        <button onclick="this.closest('.modal-overlay').remove();">Close</button>
                     </div>
                 </div>
             `;
@@ -7614,14 +7509,12 @@
             container.innerHTML = html;
         };
 
-        // ---- Download PNG (using html2canvas) ----
         window.downloadAssessmentPNG = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
             const ass = allAssessments.find(a => a.id === response.assessmentId);
             if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
 
-            // Build a temporary div with the script content, styled beautifully
             let allQuestions = [];
             if (ass.sections) {
                 ass.sections.forEach(sec => {
@@ -7641,7 +7534,6 @@
             const studentInfo = response.studentInfo || {};
             const passed = total > 0 && score >= (ass.passingScore || 50);
 
-            // Build HTML for PNG
             let html = `
                 <div id="scriptReport" style="padding:40px;background:#ffffff;font-family:'Inter',sans-serif;max-width:800px;margin:0 auto;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
                     <div style="text-align:center;margin-bottom:20px;border-bottom:4px solid #F5B042;padding-bottom:16px;">
@@ -7683,7 +7575,6 @@
                 </div>
             `;
 
-            // Create a temporary container
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = html;
             document.body.appendChild(tempDiv);
@@ -7709,7 +7600,6 @@
             }
         };
 
-        // ---- Download HTML (full well-colored HTML) ----
         window.downloadAssessmentHTML = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -7735,7 +7625,6 @@
             const studentInfo = response.studentInfo || {};
             const passed = total > 0 && score >= (ass.passingScore || 50);
 
-            // Build HTML document
             let htmlContent = `
             <!DOCTYPE html>
             <html>
@@ -7887,14 +7776,14 @@
                     if (closestIdx === 0) {
                         const targetSlide = slides[1];
                         const scrollPos2 = targetSlide.offsetLeft - (containerWidth - targetSlide.offsetWidth) /
-                        2;
+                            2;
                         track.scrollLeft = Math.max(0, scrollPos2);
                         closestIdx = 1;
                     }
                     if (closestIdx === slides.length - 1) {
                         const targetSlide = slides[slides.length - 2];
                         const scrollPos2 = targetSlide.offsetLeft - (containerWidth - targetSlide.offsetWidth) /
-                        2;
+                            2;
                         track.scrollLeft = Math.max(0, scrollPos2);
                         closestIdx = slides.length - 2;
                     }
@@ -8102,31 +7991,7 @@
                     else showPage('home');
                     break;
                 case 'payment':
-                    if (params.courseId) {
-                        const course = allCourses.find(c => c.id === params.courseId);
-                        if (course) {
-                            selectedCourse = course;
-                            updatePaymentNumbersDisplay();
-                            document.getElementById('paymentAmountDisplay').innerText = `ZMW ${course.price}`;
-                            document.getElementById('paymentCourseTitle').innerText = course.name;
-                            const durationInfo = document.getElementById('paymentDurationInfo');
-                            if (course.durationType && course.durationType !== 'lifetime' && course
-                                .durationValue > 0) {
-                                const labels = {
-                                    'minutes': 'minute',
-                                    'hours': 'hour',
-                                    'days': 'day',
-                                    'weeks': 'week',
-                                    'months': 'month'
-                                };
-                                const label = labels[course.durationType] || course.durationType;
-                                durationInfo.innerHTML =
-                                    `<i class="fas fa-clock"></i> ${course.durationValue} ${label}${course.durationValue > 1 ? 's' : ''} access`;
-                            } else {
-                                durationInfo.innerHTML = `<i class="fas fa-infinity"></i> Lifetime access`;
-                            }
-                        } else showPage('home');
-                    } else showPage('home');
+                    // already handled
                     break;
                 case 'docFull':
                     if (params.docId) renderDocFullPage(params.docId);
@@ -8136,7 +8001,7 @@
                     renderTransactionHistory();
                     break;
                 case 'assessmentTake':
-                    // Already rendered
+                    // already rendered
                     break;
                 case 'assessmentHistory':
                     renderAssessmentHistory();
@@ -8171,7 +8036,7 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system integrated: auto-grading for MCQ, TF, Fillblank, Matching, Ordering; manual grading for others; colorful PNG and HTML download; warning modal and auto-submit on page leave.');
+        console.log('✅ UTOM User — Full assessment system with free/paid support, payment popup, and auto‑grading.');
     </script>
 </body>
 </html>
