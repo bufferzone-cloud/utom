@@ -4334,7 +4334,10 @@
         <!-- ===== PAYMENT APPROVED POPUP ===== -->
         <div class="payment-approved-overlay" id="paymentApprovedOverlay">
             <div class="payment-approved-modal">
-                <div class="approve-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="approve-icon">
+                    <img src="logo.png" alt="UTOM Logo" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                    <i class="fas fa-check-circle" style="position:absolute;font-size:20px;color:#2e7d32;bottom:-5px;right:-5px;background:#fff;border-radius:50%;padding:2px;"></i>
+                </div>
                 <h2>Payment Approved ✅</h2>
                 <div class="approve-message" id="paymentApprovedMessage">
                     Dear <strong id="approveUserName">User</strong>, your payment of
@@ -4530,7 +4533,10 @@
     <div class="admin-notif-overlay" id="adminNotifOverlay">
         <div class="admin-notif-modal">
             <div class="admin-notif-header">
-                <div class="admin-notif-icon"><i class="fas fa-bullhorn"></i></div>
+                <div class="admin-notif-icon">
+                    <img src="logo.png" alt="UTOM Logo" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                    <i class="fas fa-bullhorn" style="position:absolute;font-size:14px;color:#1a1d28;"></i>
+                </div>
                 <span id="adminNotifTitle">📢 Admin Message</span>
             </div>
             <div class="admin-notif-body">
@@ -4547,7 +4553,10 @@
     <!-- ===== CUSTOM LOGOUT MODAL ===== -->
     <div id="logoutModal">
         <div class="logout-modal-content">
-            <div class="modal-icon"><i class="fas fa-sign-out-alt"></i></div>
+            <div class="modal-icon">
+                <img src="logo.png" alt="UTOM Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                <i class="fas fa-sign-out-alt" style="position:absolute;font-size:24px;color:var(--gold-dark);"></i>
+            </div>
             <h3>Log out?</h3>
             <p>Are you sure you want to log out? You'll need to sign in again to access your learning progress.</p>
             <div class="logout-modal-actions">
@@ -4560,7 +4569,10 @@
     <!-- ===== EXPIRATION MODAL ===== -->
     <div id="expirationModal">
         <div class="expiration-modal-content">
-            <div class="exp-icon"><i class="fas fa-clock"></i></div>
+            <div class="exp-icon">
+                <img src="logo.png" alt="UTOM Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                <i class="fas fa-clock" style="position:absolute;font-size:24px;color:var(--red);"></i>
+            </div>
             <h3>Subscription Expired</h3>
             <p>Your paid subscription for</p>
             <p class="exp-course-name" id="expCourseName">Course</p>
@@ -4575,7 +4587,10 @@
     <!-- ===== EXAM CONFIRMATION ===== -->
     <div id="examConfirmationModal" class="modal-overlay">
         <div class="exam-confirm-content">
-            <div class="confirm-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="confirm-icon">
+                <img src="logo.png" alt="UTOM Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                <i class="fas fa-graduation-cap" style="position:absolute;font-size:24px;color:var(--gold-dark);"></i>
+            </div>
             <h2 id="examConfirmTitle">Assessment Confirmation</h2>
             <div class="confirm-subtitle" id="examConfirmSubtitle">You are about to start an assessment. Please review the details below.</div>
             <div class="confirm-details" id="examConfirmDetails">
@@ -4595,7 +4610,10 @@
     <!-- ===== WARNING MODAL ===== -->
     <div id="warningModal">
         <div class="warning-modal-content">
-            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="warning-icon">
+                <img src="logo.png" alt="UTOM Logo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                <i class="fas fa-exclamation-triangle" style="position:absolute;font-size:24px;color:var(--gold-dark);"></i>
+            </div>
             <h2>Important Warning</h2>
             <p>Do not leave this screen until submission or your exam will be auto submitted.<br><small>If you minimize, switch tabs, or close the app, your assessment will be automatically submitted.</small></p>
             <div class="warning-modal-actions">
@@ -4608,7 +4626,10 @@
     <!-- ===== PAYMENT REQUIRED POPUP ===== -->
     <div id="paymentRequiredOverlay" class="payment-required-overlay">
         <div class="payment-required-modal">
-            <div class="pay-icon"><i class="fas fa-lock"></i></div>
+            <div class="pay-icon">
+                <img src="logo.png" alt="UTOM Logo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                <i class="fas fa-lock" style="position:absolute;font-size:32px;color:var(--gold-dark);"></i>
+            </div>
             <h2>Payment Required</h2>
             <div class="pay-type-badge" id="payRequiredType">TEST</div>
             <div class="pay-message">
@@ -8356,18 +8377,32 @@
                     updateUserInterface();
                     break;
                 case 'courseDetail':
-                    if (params.courseId) {
+                    // Fixed: properly handle courseDetail params
+                    if (params && params.courseId) {
                         const course = allCourses.find(c => c.id === params.courseId);
-                        if (course) { selectedCourse = course;
-                            renderCourseDetail(course); } else showPage('home');
-                    } else if (selectedCourse) renderCourseDetail(selectedCourse);
-                    else showPage('home');
+                        if (course) {
+                            selectedCourse = course;
+                            renderCourseDetail(course);
+                            document.getElementById('courseDetailTitle').innerText = course.name;
+                        } else {
+                            // Fallback to selectedCourse
+                            if (selectedCourse) {
+                                renderCourseDetail(selectedCourse);
+                            } else {
+                                showPage('home');
+                            }
+                        }
+                    } else if (selectedCourse) {
+                        renderCourseDetail(selectedCourse);
+                    } else {
+                        showPage('home');
+                    }
                     break;
                 case 'payment':
                     // already handled
                     break;
                 case 'docFull':
-                    if (params.docId) renderDocFullPage(params.docId);
+                    if (params && params.docId) renderDocFullPage(params.docId);
                     else showPage('home');
                     break;
                 case 'transactionHistory':
@@ -8404,6 +8439,17 @@
             for (const [key, value] of params.entries()) {
                 paramObj[key] = value;
             }
+            
+            // Special handling for courseDetail to ensure params are passed correctly
+            if (pageId === 'courseDetail' && paramObj.courseId) {
+                const course = allCourses.find(c => c.id === paramObj.courseId);
+                if (course) {
+                    selectedCourse = course;
+                    navigateToPage(pageId, paramObj);
+                    return;
+                }
+            }
+            
             navigateToPage(pageId, paramObj);
         }
 
