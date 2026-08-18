@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Student Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-    </script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* ----- RESET & BASE ----- */
         * {
@@ -94,6 +92,31 @@
             margin-top: 16px;
             font-weight: 600;
             color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* ----- COURSE LOADER (FIXED) ----- */
+        #courseLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #courseLoader .loader-spinner {
+            border-top-color: var(--gold);
+        }
+        #courseLoaderText {
+            color: #fff;
+            margin-top: 16px;
+            font-weight: 600;
             font-size: 14px;
         }
 
@@ -210,6 +233,25 @@
             pointer-events: none;
             line-height: 1.4;
             box-shadow: 0 1px 4px rgba(230, 57, 70, 0.4);
+        }
+
+        /* ----- HEADER DARK MODE TOGGLE (NEW) ----- */
+        #headerDarkModeToggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text);
+            padding: 6px;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #headerDarkModeToggle:hover {
+            background: rgba(245, 176, 66, 0.12);
+            color: var(--gold);
         }
 
         /* ----- SEARCH ROW ----- */
@@ -4247,6 +4289,12 @@
         <p>Loading UTOM...</p>
     </div>
 
+    <!-- ===== COURSE LOADER (FIXED: NOW VISIBLE) ===== -->
+    <div id="courseLoader">
+        <div class="loader-spinner"></div>
+        <p id="courseLoaderText">Loading course...</p>
+    </div>
+
     <div class="app-root">
 
         <!-- ===== HEADER ===== -->
@@ -4258,6 +4306,11 @@
                     <div class="user-name-display" id="headerUserName">Loading...</div>
                 </div>
                 <div class="header-right">
+                    <!-- DARK MODE TOGGLE IN HEADER (NEW) -->
+                    <button id="headerDarkModeToggle" title="Toggle Dark Mode">
+                        <i class="fas fa-moon" id="headerDarkModeIcon"></i>
+                    </button>
+
                     <span class="notif-icon-wrapper">
                         <i class="fas fa-bell" id="notifIcon"></i>
                         <span id="notifBadge" class="notification-badge" style="display:none">0</span>
@@ -4841,7 +4894,7 @@
 
                 startExpirationChecker();
 
-                // Start listening for payment approvals
+                // Start listening for payment approvals (WITH PERSISTENT ONE-TIME TRACKING)
                 listenForPaymentApprovals(user.uid);
 
             } catch (e) {
@@ -4850,11 +4903,13 @@
             }
         });
 
-        // ===== LISTEN FOR PAYMENT APPROVALS =====
+        // ===== LISTEN FOR PAYMENT APPROVALS (ONE-TIME PER CONFIRMATION) =====
         function listenForPaymentApprovals(uid) {
             const approvedRef = ref(db, `approvedPurchases/${uid}`);
-            // We use a set to track which items we've already shown a notification for
-            const shownApprovals = new Set();
+            
+            // Load previously shown approvals from localStorage (persists across refreshes)
+            let shownApprovals = JSON.parse(localStorage.getItem('utom_shown_approvals') || '[]');
+            const shownApprovalSet = new Set(shownApprovals);
 
             onValue(approvedRef, (snap) => {
                 if (!snap.val()) return;
@@ -4862,8 +4917,11 @@
                 Object.keys(data).forEach((itemId) => {
                     const record = data[itemId];
                     // If we haven't shown a notification for this item yet
-                    if (!shownApprovals.has(itemId)) {
-                        shownApprovals.add(itemId);
+                    if (!shownApprovalSet.has(itemId)) {
+                        shownApprovalSet.add(itemId);
+                        // Persist the new set to localStorage
+                        localStorage.setItem('utom_shown_approvals', JSON.stringify([...shownApprovalSet]));
+                        
                         // Show the payment approved popup
                         const userName = `${userData.firstName} ${userData.lastName}`.trim() ||
                             currentUser?.email?.split('@')[0] || 'User';
@@ -5639,7 +5697,7 @@
                 });
         }
 
-        // ===== COURSE LOADER =====
+        // ===== COURSE LOADER (FIXED) =====
         function showCourseLoader(courseName) {
             const loader = document.getElementById('courseLoader');
             document.getElementById('courseLoaderText').textContent = `Loading ${courseName}...`;
@@ -6786,19 +6844,35 @@
 
         // ===== UI SETUP =====
         function setupUI() {
-            // Dark mode toggle
-            const darkModeToggle = document.getElementById('darkModeToggle');
+            // ---- Dark Mode (sync header + profile) ----
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            const headerToggle = document.getElementById('headerDarkModeToggle');
+            const headerIcon = document.getElementById('headerDarkModeIcon');
+            const profileToggle = document.getElementById('darkModeToggle');
+
             if (savedDarkMode) {
                 document.body.classList.add('dark-mode');
-                darkModeToggle.classList.add('active');
+                headerIcon.className = 'fas fa-sun';
+                if (profileToggle) profileToggle.classList.add('active');
+            } else {
+                headerIcon.className = 'fas fa-moon';
+                if (profileToggle) profileToggle.classList.remove('active');
             }
-            darkModeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                darkModeToggle.classList.toggle('active');
-                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            });
 
+            function toggleDarkMode() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                headerIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                if (profileToggle) profileToggle.classList.toggle('active', isDark);
+            }
+
+            headerToggle.addEventListener('click', toggleDarkMode);
+            if (profileToggle) {
+                profileToggle.addEventListener('click', toggleDarkMode);
+            }
+
+            // ---- Load player ----
             loadPlayerState();
             const wasVisible = localStorage.getItem('playerVisible') === 'true';
             if (wasVisible) {
@@ -6806,6 +6880,7 @@
                 playerState.isVisible = true;
             }
 
+            // ---- Bottom nav ----
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const page = btn.dataset.page;
@@ -6813,6 +6888,7 @@
                 });
             });
 
+            // ---- Logout ----
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
@@ -6829,6 +6905,7 @@
                 signOut(auth);
             });
 
+            // ---- Navigation back buttons ----
             document.getElementById('backFromCourseBtn').addEventListener('click', () => {
                 selectedCourse = null;
                 showPage('home');
@@ -6862,6 +6939,7 @@
                 handleExpirationOk();
             });
 
+            // ---- Search ----
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 let debounceTimer;
@@ -6874,6 +6952,7 @@
                 });
             }
 
+            // ---- Payment copy buttons ----
             document.getElementById('copyMtnBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const num = paymentSettings.mtnNumber || '';
@@ -6902,6 +6981,7 @@
                 }
             });
 
+            // ---- Payment upload ----
             const uploadBox = document.getElementById('paymentUploadBox');
             uploadBox.addEventListener('click', () => {
                 cloudinary.openUploadWidget({
@@ -6922,38 +7002,7 @@
                 });
             });
 
-            document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
-                if (!selectedCourse || !paymentScreenshotUrl) {
-                    alert("Please upload a payment screenshot before submitting.");
-                    return;
-                }
-                try {
-                    const pendingRef = push(ref(db, `pendingPurchases/${currentUser.uid}`));
-                    await set(pendingRef, {
-                        itemId: selectedCourse.id,
-                        itemTitle: selectedCourse.name,
-                        itemType: 'course',
-                        amount: selectedCourse.price,
-                        provider: 'MTN/Airtel',
-                        screenshot: paymentScreenshotUrl,
-                        status: 'pending',
-                        timestamp: Date.now(),
-                        userId: currentUser.uid,
-                        userEmail: currentUser.email,
-                        userName: `${userData.firstName} ${userData.lastName}`,
-                        userPhone: userData.phone || ''
-                    });
-                    addNotification('purchase',
-                        `Purchase request submitted for "${selectedCourse.name}". Awaiting admin approval.`);
-                    showPage('home');
-                    selectedCourse = null;
-                    paymentScreenshotUrl = null;
-                    document.getElementById('paymentScreenshotPreview').innerHTML = '';
-                } catch (error) {
-                    addNotification('danger', 'Failed to submit payment: ' + error.message);
-                }
-            });
-
+            // ---- Change password ----
             document.getElementById('changePasswordBtn').addEventListener('click', async () => {
                 if (currentUser) {
                     try {
@@ -6965,6 +7014,7 @@
                 }
             });
 
+            // ---- Notifications ----
             document.getElementById('notifIcon').addEventListener('click', () => {
                 document.getElementById('sideNotif').classList.add('open');
                 markAllNotificationsRead();
@@ -6973,6 +7023,7 @@
                 document.getElementById('sideNotif').classList.remove('open');
             });
 
+            // ---- Screenshot modal ----
             document.querySelector('#screenshotModal .close-modal').addEventListener('click', () => {
                 document.getElementById('screenshotModal').classList.remove('open');
             });
@@ -6982,7 +7033,7 @@
                 }
             });
 
-            // ---- EXAM FLOATING BUTTON ----
+            // ---- Exam floating button ----
             document.getElementById('examFloatingBtn').addEventListener('click', () => {
                 document.getElementById('examHubOverlay').classList.add('open');
                 updateExamBadge();
@@ -7023,7 +7074,7 @@
                 });
             });
 
-            // ---- ASSESSMENT SELECTION MODAL ----
+            // ---- Assessment selection modal ----
             document.getElementById('assessmentSelectClose').addEventListener('click', () => {
                 document.getElementById('assessmentSelectOverlay').classList.remove('open');
             });
@@ -7033,7 +7084,7 @@
                 }
             });
 
-            // ---- ASSESSMENT TAKE ----
+            // ---- Assessment take back ----
             document.getElementById('backFromAssessmentBtn').addEventListener('click', () => {
                 if (currentAssessmentTaking) {
                     clearInterval(currentAssessmentTaking.timerInterval);
@@ -7042,7 +7093,7 @@
                 showPage('home');
             });
 
-            // ---- EXAM CONFIRMATION ----
+            // ---- Exam confirmation ----
             document.getElementById('examConfirmCancelBtn').addEventListener('click', () => {
                 document.getElementById('examConfirmationModal').classList.remove('open');
             });
@@ -7059,7 +7110,7 @@
                 }
             });
 
-            // ---- WARNING MODAL ----
+            // ---- Warning modal ----
             document.getElementById('warningCancelBtn').addEventListener('click', () => {
                 document.getElementById('warningModal').classList.remove('open');
             });
@@ -7077,7 +7128,7 @@
                 }
             });
 
-            // ---- AUTO-SUBMIT ----
+            // ---- Auto-submit on visibility change ----
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     autoSubmitAssessment();
@@ -7097,7 +7148,6 @@
                 }
             });
 
-            // Extra auth listener for auto-submit on logout
             auth.onAuthStateChanged((user) => {
                 if (!user && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
                     autoSubmitAssessment();
@@ -8377,7 +8427,6 @@
                     updateUserInterface();
                     break;
                 case 'courseDetail':
-                    // Fixed: properly handle courseDetail params
                     if (params && params.courseId) {
                         const course = allCourses.find(c => c.id === params.courseId);
                         if (course) {
@@ -8385,7 +8434,6 @@
                             renderCourseDetail(course);
                             document.getElementById('courseDetailTitle').innerText = course.name;
                         } else {
-                            // Fallback to selectedCourse
                             if (selectedCourse) {
                                 renderCourseDetail(selectedCourse);
                             } else {
@@ -8399,7 +8447,6 @@
                     }
                     break;
                 case 'payment':
-                    // already handled
                     break;
                 case 'docFull':
                     if (params && params.docId) renderDocFullPage(params.docId);
@@ -8409,7 +8456,6 @@
                     renderTransactionHistory();
                     break;
                 case 'assessmentTake':
-                    // already rendered
                     break;
                 case 'assessmentHistory':
                     renderAssessmentHistory();
@@ -8456,7 +8502,9 @@
         window.addEventListener('hashchange', handleHashChange);
 
         console.log('✅ UTOM User — Full assessment system with free/paid support, payment popup, and auto‑grading.');
-        console.log('✅ Payment approval notifications are now active!');
+        console.log('✅ Payment approval popups are now truly one-time (persisted in localStorage).');
+        console.log('✅ Dark mode toggle added in header.');
+        console.log('✅ Course loader fixed — course cards open without errors.');
     </script>
 </body>
 </html>
