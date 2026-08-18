@@ -6944,11 +6944,7 @@
         const db = getDatabase(app);
 
         let currentAdmin = null;
-        let videos = [],
-            users = [],
-            courses = [],
-            subfolders = [],
-            docs = [];
+        let videos = [], users = [], courses = [], subfolders = [], docs = [];
         let notifications = [];
         let bannedUsersMap = {};
         let currentTxFilter = 'pending';
@@ -7011,8 +7007,7 @@
         // =================================================================
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'index.html'; return; }
-            if (!user.email?.startsWith('admin@')) { alert('Admin only.');
-                signOut(auth); return; }
+            if (!user.email?.startsWith('admin@')) { alert('Admin only.'); signOut(auth); return; }
             currentAdmin = user;
             try {
                 await loadBannedUsers();
@@ -7113,6 +7108,9 @@
             renderHistoryList(); // Now shows assessment cards
             renderAssessmentsList();
             updateTestExamsDropdowns();
+
+            // Start expiration checker for assessments
+            startExpirationChecker();
         }
 
         // =================================================================
@@ -12998,17 +12996,91 @@
                             ${completedAssIds.filter(id => id === ass.id).length > 0 ? assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'ended' || r.status === 'completed')).length : 0} Students
                         </div>
                     </div>
+                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                        <button class="btn-outline" onclick="viewRegisterDetails('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-address-book"></i> View Register</button>
+                        <button class="btn-outline" onclick="renderHistoryStudents('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-users"></i> View Students</button>
+                    </div>
                 </div>
             `).join('');
 
             // Attach click events
             container.querySelectorAll('.history-assessment-card').forEach(card => {
-                card.addEventListener('click', function() {
+                card.addEventListener('click', function(e) {
+                    // If click is on button, let it bubble
+                    if (e.target.closest('button')) return;
                     const assId = this.dataset.assid;
                     renderHistoryStudents(assId);
                 });
             });
         }
+
+        // ---- View Register Details (popup list) ----
+        window.viewRegisterDetails = function(assId) {
+            const ass = assessments.find(a => a.id === assId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+            const register = registers.find(r => r.id === ass.registerId);
+            if (!register) { showToast('Register not found.', 'error'); return; }
+
+            // Get all members from register
+            const members = register.memberDetails || register.members?.map(uid => {
+                const user = users.find(u => u.uid === uid);
+                return user ? { uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email } : null;
+            }).filter(Boolean) || [];
+
+            // Get students who submitted (completed/ended)
+            const submittedUserIds = assessmentResponses
+                .filter(r => r.assessmentId === assId && (r.status === 'completed' || r.status === 'ended'))
+                .map(r => r.userId);
+
+            // Build modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay open';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            modal.innerHTML = `
+                <div class="modal-box" style="max-width:600px;width:100%;padding:1.5rem;max-height:80vh;overflow-y:auto;">
+                    <button class="close-modal" onclick="this.closest('.modal-overlay').remove();" style="float:right;background:none;border:none;font-size:1.5rem;color:#8b8fa3;cursor:pointer;">&times;</button>
+                    <div class="utom-brand">UTOM</div>
+                    <h3 style="margin-bottom:0.4rem;"><i class="fas fa-address-book"></i> Register: ${escapeHtml(register.name)}</h3>
+                    <p style="font-size:12px;color:#8b8fa3;margin-bottom:0.8rem;">Assessment: ${escapeHtml(ass.name)}</p>
+                    <div style="margin-bottom:0.8rem;">
+                        <strong>Total Members:</strong> ${members.length}<br>
+                        <strong>Submitted:</strong> ${submittedUserIds.length}<br>
+                        <strong>Not Submitted:</strong> ${members.length - submittedUserIds.length}
+                    </div>
+                    <div style="border-top:1px solid #eee;padding-top:0.8rem;">
+                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                            <thead>
+                                <tr style="background:#f5b042;color:#fff;">
+                                    <th style="padding:6px 10px;text-align:left;">#</th>
+                                    <th style="padding:6px 10px;text-align:left;">Name</th>
+                                    <th style="padding:6px 10px;text-align:left;">Email</th>
+                                    <th style="padding:6px 10px;text-align:center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${members.map((m, idx) => {
+                                    const submitted = submittedUserIds.includes(m.uid);
+                                    return `
+                                        <tr style="border-bottom:1px solid #f0f0f5;">
+                                            <td style="padding:4px 8px;">${idx+1}</td>
+                                            <td style="padding:4px 8px;">${escapeHtml(m.name)}</td>
+                                            <td style="padding:4px 8px;">${escapeHtml(m.email)}</td>
+                                            <td style="padding:4px 8px;text-align:center;">
+                                                <span style="background:${submitted ? '#d4edda' : '#f8d7da'};color:${submitted ? '#155724' : '#721c24'};padding:1px 8px;border-radius:30px;font-size:9px;font-weight:700;">${submitted ? 'Submitted' : 'Not Submitted'}</span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
+                        <button class="btn-outline" onclick="this.closest('.modal-overlay').remove();">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
 
         function renderHistoryStudents(assId) {
             currentHistoryAssessmentId = assId;
@@ -13068,7 +13140,8 @@
                         </div>
                         <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                             <button class="btn-outline view-script-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-book"></i> View Script</button>
-                            <button class="btn-outline download-script-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-download"></i> Download Script</button>
+                            <button class="btn-outline mark-manual-btn" style="padding:4px 14px;font-size:10px;background:rgba(245,176,66,0.15);color:#d4952a;" data-responseid="${r.id}"><i class="fas fa-pen"></i> Mark Manually</button>
+                            <button class="btn-outline download-script-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-download"></i> Download HTML</button>
                             <button class="btn-outline export-student-csv-btn" style="padding:4px 14px;font-size:10px;" data-responseid="${r.id}"><i class="fas fa-file-csv"></i> Export CSV</button>
                             <button class="btn-danger" style="padding:4px 14px;font-size:10px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-responseid="${r.id}"><i class="fas fa-trash-alt"></i> Delete</button>
                         </div>
@@ -13089,10 +13162,18 @@
                 });
             });
 
+            container.querySelectorAll('.mark-manual-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const rid = this.dataset.responseid;
+                    // Open script viewer with manual marking mode
+                    showSection('studentScript', { scriptId: rid, manualMark: true });
+                });
+            });
+
             container.querySelectorAll('.download-script-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const rid = this.dataset.responseid;
-                    downloadStudentScript(rid);
+                    downloadAssessmentHTML(rid);
                 });
             });
 
@@ -13689,8 +13770,8 @@
             document.getElementById('testRegisterContent').innerHTML = html;
         }
 
-        // ---- STUDENT SCRIPT VIEWER ---- 
-        function renderStudentScript(responseId) {
+        // ---- STUDENT SCRIPT VIEWER (with manual marking) ----
+        function renderStudentScript(responseId, manualMark = false) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) {
                 document.getElementById('studentScriptContainer').innerHTML =
@@ -13748,21 +13829,25 @@
                     <div style="padding:20px 24px;">
             `;
 
-            // Questions section
+            // Questions section with editable marks if manualMark
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
                 const answer = answers[qKey] || 'Not answered';
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
-                    answer === q.correct ? q.marks : 0) : '');
+                    answer == q.correct ? q.marks : 0) : '');
                 const isAuto = q.type === 'mcq' || q.type === 'tf';
                 html += `
                     <div class="script-question" style="border-bottom:1px solid #f0f0f5;padding:14px 0;">
                         <div class="q-head" style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--text);">
                             <span>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:11px;font-weight:400;color:#8b8fa3;">${q.section}</span></span>
                             <span>
-                                ${isAuto ? `<span style="font-weight:700;color:${mark === q.marks ? '#2ecc71' : '#e74c3c'};}">${mark}/${q.marks}</span>` :
-                                `<span style="font-weight:600;">${mark !== undefined ? mark + '/' + q.marks : 'Not graded'}</span>`}
+                                ${manualMark ? `
+                                    <input type="number" class="q-marks-input" data-qkey="${qKey}" data-max="${q.marks}" value="${mark}" min="0" max="${q.marks}" step="0.5" style="width:60px;padding:4px 8px;border-radius:30px;border:1.5px solid #e5e8ed;font-size:12px;text-align:center;" />
+                                ` : `
+                                    ${isAuto ? `<span style="font-weight:700;color:${mark == q.marks ? '#2ecc71' : '#e74c3c'};">${mark}/${q.marks}</span>` :
+                                    `<span style="font-weight:600;">${mark !== undefined ? mark + '/' + q.marks : 'Not graded'}</span>`}
+                                `}
                             </span>
                         </div>
                         <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
@@ -13792,8 +13877,13 @@
 
             html += `
                         <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-                            <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks & Remarks</button>
-                            <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                            ${manualMark ? `
+                                <button class="btn-primary" id="saveManualMarksBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks</button>
+                                <button class="btn-outline" id="recalcManualBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                            ` : `
+                                <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks & Remarks</button>
+                                <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                            `}
                             <button class="btn-outline" style="padding:8px 20px;font-size:11px;" onclick="showSection('history')">Back</button>
                         </div>
                     </div>
@@ -13815,39 +13905,79 @@
                 });
             });
 
-            // Save script
-            document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
-                const newMarks = {};
-                document.querySelectorAll('.q-marks-input').forEach(inp => {
-                    const key = inp.dataset.qkey;
-                    const val = parseFloat(inp.value) || 0;
-                    newMarks[key] = val;
+            if (manualMark) {
+                // Save manual marks
+                document.getElementById('saveManualMarksBtn')?.addEventListener('click', async function() {
+                    const newMarks = {};
+                    document.querySelectorAll('.q-marks-input').forEach(inp => {
+                        const key = inp.dataset.qkey;
+                        const val = parseFloat(inp.value) || 0;
+                        newMarks[key] = val;
+                    });
+                    const newRemarks = {};
+                    document.querySelectorAll('.q-remark-text').forEach(ta => {
+                        const key = ta.dataset.qkey;
+                        newRemarks[key] = ta.value.trim();
+                    });
+                    // Calculate total score
+                    let totalScore = 0;
+                    const allMarks = Object.values(newMarks).filter(v => !isNaN(v));
+                    totalScore = allMarks.reduce((a, b) => a + b, 0);
+                    await update(ref(db, `assessmentResponses/${responseId}`), {
+                        marks: newMarks,
+                        remarks: newRemarks,
+                        score: totalScore,
+                        gradedAt: serverTimestamp()
+                    });
+                    showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
+                    // Re-render to reflect new score
+                    renderStudentScript(responseId, true);
                 });
-                const newRemarks = {};
-                document.querySelectorAll('.q-remark-text').forEach(ta => {
-                    const key = ta.dataset.qkey;
-                    newRemarks[key] = ta.value.trim();
-                });
-                const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
-                await update(ref(db, `assessmentResponses/${responseId}`), {
-                    marks: newMarks,
-                    remarks: newRemarks,
-                    score: totalScore,
-                    gradedAt: serverTimestamp()
-                });
-                showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                renderStudentScript(responseId);
-            });
 
-            document.getElementById('recalcScriptBtn')?.addEventListener('click', function() {
-                let totalScore = 0;
-                document.querySelectorAll('.q-marks-input').forEach(inp => {
-                    const val = parseFloat(inp.value) || 0;
-                    totalScore += val;
+                document.getElementById('recalcManualBtn')?.addEventListener('click', function() {
+                    let totalScore = 0;
+                    document.querySelectorAll('.q-marks-input').forEach(inp => {
+                        const val = parseFloat(inp.value) || 0;
+                        totalScore += val;
+                    });
+                    showToast(`Recalculated: ${totalScore}/${total}`, 'info');
                 });
-                showToast(`Recalculated: ${totalScore}/${total}`, 'info');
-            });
+            } else {
+                // Save script (non-manual)
+                document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
+                    const newMarks = {};
+                    document.querySelectorAll('.q-marks-input').forEach(inp => {
+                        const key = inp.dataset.qkey;
+                        const val = parseFloat(inp.value) || 0;
+                        newMarks[key] = val;
+                    });
+                    const newRemarks = {};
+                    document.querySelectorAll('.q-remark-text').forEach(ta => {
+                        const key = ta.dataset.qkey;
+                        newRemarks[key] = ta.value.trim();
+                    });
+                    const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
+                    await update(ref(db, `assessmentResponses/${responseId}`), {
+                        marks: newMarks,
+                        remarks: newRemarks,
+                        score: totalScore,
+                        gradedAt: serverTimestamp()
+                    });
+                    showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
+                    renderStudentScript(responseId);
+                });
 
+                document.getElementById('recalcScriptBtn')?.addEventListener('click', function() {
+                    let totalScore = 0;
+                    document.querySelectorAll('.q-marks-input').forEach(inp => {
+                        const val = parseFloat(inp.value) || 0;
+                        totalScore += val;
+                    });
+                    showToast(`Recalculated: ${totalScore}/${total}`, 'info');
+                });
+            }
+
+            // Update marks input changes to update total
             document.querySelectorAll('.q-marks-input').forEach(inp => {
                 inp.addEventListener('change', function() {
                     const max = parseInt(this.dataset.max) || 0;
@@ -13860,45 +13990,129 @@
                     document.querySelectorAll('.q-marks-input').forEach(i => {
                         totalScore += parseFloat(i.value) || 0;
                     });
-                    const totalEl = document.querySelector('.script-header .script-meta:last-child');
-                    if (totalEl) {
-                        totalEl.innerHTML =
-                            `Total Marks: ${total} <span style="margin-left:12px;font-weight:700;color:${totalScore/total >= 0.5 ? '#2ecc71' : '#e74c3c'};">Score: ${totalScore}/${total} (${Math.round((totalScore/total)*100)}%)</span>`;
+                    // Update header score display
+                    const scoreSpan = document.querySelector('.cover-header div strong');
+                    if (scoreSpan) {
+                        const totalEl = document.querySelector('.cover-header .script-meta:last-child');
+                        if (totalEl) {
+                            totalEl.innerHTML =
+                                `Score: ${totalScore}/${total} (${Math.round((totalScore/total)*100)}%)`;
+                        }
                     }
                 });
             });
         }
 
-        window.downloadStudentScript = function(responseId) {
-            const content = document.getElementById('studentScriptContainer');
-            if (!content) return;
-            const printWin = window.open('', '_blank');
-            if (!printWin) { showToast('Please allow popups to download.', 'error'); return; }
-            const html = `
-                <html><head><title>Student Script</title>
+        // ---- Download Assessment as colorful HTML ----
+        function downloadAssessmentHTML(responseId) {
+            const response = assessmentResponses.find(r => r.id === responseId);
+            if (!response) { showToast('Response not found.', 'error'); return; }
+            const ass = assessments.find(a => a.id === response.assessmentId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+            let allQuestions = [];
+            if (ass.sections) {
+                ass.sections.forEach(sec => {
+                    sec.questions.forEach(q => {
+                        allQuestions.push({ ...q, section: sec.name });
+                    });
+                });
+            } else if (ass.questions) {
+                allQuestions = ass.questions.map(q => ({ ...q, section: 'General' }));
+            }
+
+            const answers = response.answers || {};
+            const scratchData = response.scratchData || {};
+            const marks = response.marks || {};
+            const score = response.score || 0;
+            const total = ass.totalMarks || 0;
+            const studentInfo = response.studentInfo || {};
+            const passed = total > 0 && score >= (ass.passingScore || 50);
+
+            // Build HTML document with styling
+            let htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${escapeHtml(ass.name)} - Script</title>
                 <style>
-                    body { font-family: 'Inter', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-                    h1 { font-size: 22px; margin-bottom: 4px; }
-                    .meta { color: #666; font-size: 14px; margin-bottom: 16px; }
-                    .question { border-bottom: 1px solid #eee; padding: 12px 0; }
-                    .question strong { display: block; font-size: 15px; }
-                    .answer { color: #444; font-size: 13px; margin: 4px 0; }
-                    .scratch { border: 1px solid #ddd; border-radius: 8px; padding: 8px; margin: 6px 0; background: #fafbfc; }
-                    .scratch img { max-width: 100%; max-height: 200px; object-fit: contain; }
-                    .no-scratch { color: #999; font-style: italic; font-size: 12px; }
-                    .remark { margin-top: 4px; font-size: 12px; color: #555; border-top: 1px dashed #eee; padding-top: 4px; }
-                    .marks { float: right; font-weight: 700; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+                    body { background: #f4f5f8; padding: 20px; }
+                    .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+                    .header { text-align: center; border-bottom: 4px solid #F5B042; padding-bottom: 16px; margin-bottom: 20px; }
+                    .header h1 { font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#d4952a,#f5b042,#ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+                    .header h2 { font-size: 22px; font-weight: 700; color: #1a1d28; margin: 4px 0; }
+                    .header .sub { color: #5f6377; font-size: 14px; }
+                    .header .date { color: #8b8fa3; font-size: 12px; }
+                    .student-info { margin-bottom: 16px; padding: 12px 16px; background: #f8f9fc; border-radius: 12px; border-left: 6px solid #F5B042; }
+                    .student-info strong { font-weight: 700; }
+                    .student-info .score { float: right; }
+                    .student-info .score span { font-weight: 700; }
+                    .question { border-bottom: 1px solid #e5e8ed; padding: 14px 0; }
+                    .question .q-title { font-weight: 700; font-size: 15px; color: #1a1d28; }
+                    .question .q-title .meta { font-weight: 400; font-size: 12px; color: #8b8fa3; }
+                    .question .answer { font-size: 13px; color: #4a4e5c; margin: 4px 0; }
+                    .question .marks { font-size: 13px; font-weight: 600; }
+                    .question .scratch { margin-top: 4px; border: 1px solid #e5e8ed; border-radius: 8px; padding: 4px; background: #fafbfc; }
+                    .question .scratch img { max-width: 100%; max-height: 150px; object-fit: contain; }
+                    .question .remark { margin-top: 4px; font-size: 12px; color: #5f6377; }
+                    .footer { text-align: center; margin-top: 20px; color: #8b8fa3; font-size: 12px; border-top: 1px solid #e5e8ed; padding-top: 12px; }
                 </style>
-                </head><body>
-                ${content.innerHTML}
-                </body></html>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>UTOM</h1>
+                        <h2>Assessment Script</h2>
+                        <div class="sub">${escapeHtml(ass.name)} · ${ass.type}</div>
+                        <div class="date">${formatDate(response.submittedAt || response.startedAt)}</div>
+                    </div>
+                    <div class="student-info">
+                        <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || user?.email || 'N/A')}
+                        <span class="score"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
+                        <br /><span style="font-size:12px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
+                    </div>
             `;
-            printWin.document.write(html);
-            printWin.document.close();
-            setTimeout(() => {
-                printWin.print();
-            }, 500);
-        };
+
+            allQuestions.forEach((q, idx) => {
+                const qKey = `q${idx}`;
+                const answer = answers[qKey] || 'Not answered';
+                const scratch = scratchData[qKey] || null;
+                const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
+                    answer == q.correct ? q.marks : 0) : 'Not graded');
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
+                const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                htmlContent += `
+                    <div class="question">
+                        <div class="q-title">Q${idx+1}: ${escapeHtml(q.text)} <span class="meta">(${q.marks} marks) · ${q.section}</span></div>
+                        <div class="answer"><strong>Answer:</strong> ${escapeHtml(answer)}</div>
+                        <div class="marks" style="color:${markColor};">Marks: ${mark}</div>
+                        ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
+                        ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            htmlContent += `
+                    <div class="footer">Generated by UTOM</div>
+                </div>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Script_${ass.name}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Script HTML downloaded!', 'success');
+        }
 
         // ---- Duplicate Assessment ---- 
         window.duplicateAssessment = async function(assessmentId) {
@@ -14297,6 +14511,61 @@
         document.getElementById('assessmentsFilterStatus')?.addEventListener('change', renderAssessmentsList);
 
         // =================================================================
+        // EXPIRATION CHECKER (auto-clear ongoing and move to history)
+        // =================================================================
+        function startExpirationChecker() {
+            // Check every 60 seconds
+            setInterval(() => {
+                checkExpiredAssessments();
+            }, 60000);
+        }
+
+        async function checkExpiredAssessments() {
+            const now = Date.now();
+            let updated = false;
+
+            // For fixed-schedule assessments, if endTime has passed, mark as ended
+            const fixedAssessments = assessments.filter(a => a.scheduleType === 'fixed' && a.endTime && a.status === 'published');
+            for (const ass of fixedAssessments) {
+                const endTime = new Date(ass.endTime).getTime();
+                if (endTime < now) {
+                    // Mark assessment as ended
+                    await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
+                    updated = true;
+                    // Also end any ongoing responses for this assessment
+                    const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
+                    for (const resp of ongoingResponses) {
+                        await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
+                    }
+                    showToast(`Assessment "${ass.name}" has ended and moved to history.`, 'info');
+                }
+            }
+
+            // For self-paced assessments, if availableUntil has passed
+            const selfAssessments = assessments.filter(a => a.scheduleType === 'self' && a.availableUntil && a.status === 'published');
+            for (const ass of selfAssessments) {
+                const untilTime = new Date(ass.availableUntil).getTime();
+                if (untilTime < now) {
+                    await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
+                    updated = true;
+                    const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
+                    for (const resp of ongoingResponses) {
+                        await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
+                    }
+                    showToast(`Assessment "${ass.name}" has ended and moved to history.`, 'info');
+                }
+            }
+
+            if (updated) {
+                // Refresh views
+                renderOngoingList();
+                renderHistoryList();
+                renderAssessmentsList();
+                renderTestExamsDashboard();
+            }
+        }
+
+        // =================================================================
         // BOOT 
         // =================================================================
         document.addEventListener('DOMContentLoaded', () => {
@@ -14358,7 +14627,7 @@
         window.renderHistoryAssessments = renderHistoryAssessments;
         window.renderHistoryStudents = renderHistoryStudents;
         window.generateReportImage = generateReportImage;
-        window.downloadStudentScript = downloadStudentScript;
+        window.downloadAssessmentHTML = downloadAssessmentHTML;
         window.exportSingleStudentCSV = exportSingleStudentCSV;
         window.duplicateAssessment = duplicateAssessment;
         window.editAssessment = editAssessment;
@@ -14366,8 +14635,9 @@
         window.publishAssessment = publishAssessment;
         window.exportAssessmentResults = exportAssessmentResults;
         window.openAssessmentEditModal = openAssessmentEditModal;
+        window.viewRegisterDetails = viewRegisterDetails;
 
-        console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, PREVIEW, and Register Edit functionality.');
+        console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, PREVIEW, Register Edit, manual marking, HTML download, and auto-expiration.');
     </script>
 </body>
 </html>
