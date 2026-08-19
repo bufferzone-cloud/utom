@@ -5214,7 +5214,7 @@
             border-radius: 8px;
             padding: 6px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         .cover-preview-section .exam-cover-page .cover-header h1 {
             font-size: 28px;
@@ -6924,7 +6924,7 @@
         // =================================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp } from
+        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp, onChildAdded, onChildChanged, onChildRemoved } from
         "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -6944,7 +6944,11 @@
         const db = getDatabase(app);
 
         let currentAdmin = null;
-        let videos = [], users = [], courses = [], subfolders = [], docs = [];
+        let videos = [],
+            users = [],
+            courses = [],
+            subfolders = [],
+            docs = [];
         let notifications = [];
         let bannedUsersMap = {};
         let currentTxFilter = 'pending';
@@ -6977,6 +6981,31 @@
         // ---- global preview data ----
         window._previewData = null;
 
+        // ---- Loading state tracker ----
+        const loadingState = {
+            'createRegister': false,
+            'createTest': false,
+            'createQuiz': false,
+            'createExam': false,
+            'publishVideo': false,
+            'publishDoc': false,
+            'addCourse': false,
+            'addSubfolder': false,
+            'approveTx': false,
+            'rejectTx': false,
+            'sendPopup': false,
+            'promoUpload': false,
+            'saveSettings': false,
+            'deleteItem': false,
+            'editItem': false,
+            'editCourse': false,
+            'editRegister': false,
+            'saveMarks': false
+        };
+
+        // ---- Button references for loading state ----
+        const buttonMap = {};
+
         // =================================================================
         // REFS
         // =================================================================
@@ -7001,6 +7030,40 @@
         const registersRef = ref(db, 'registers');
         const assessmentsRef = ref(db, 'assessments');
         const assessmentResponsesRef = ref(db, 'assessmentResponses');
+
+        // =================================================================
+        // LOADING STATE HELPERS
+        // =================================================================
+        function setLoading(key, isLoading, btnSelector) {
+            loadingState[key] = isLoading;
+            if (btnSelector) {
+                const btn = document.querySelector(btnSelector);
+                if (btn) {
+                    if (isLoading) {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.7';
+                        btn.style.pointerEvents = 'none';
+                        // Store original text if not already stored
+                        if (!btn.dataset.originalText) {
+                            btn.dataset.originalText = btn.innerHTML;
+                        }
+                        btn.innerHTML = `<span class="loader-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;margin-right:6px;"></span> ${btn.dataset.loadingText || 'Processing...'}`;
+                    } else {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                        if (btn.dataset.originalText) {
+                            btn.innerHTML = btn.dataset.originalText;
+                        }
+                    }
+                }
+            }
+        }
+
+        function setLoadingForAction(key, isLoading, buttonId) {
+            const selector = buttonId ? `#${buttonId}` : null;
+            setLoading(key, isLoading, selector);
+        }
 
         // =================================================================
         // AUTHENTICATION & INIT
@@ -7105,11 +7168,10 @@
             renderTestExamsDashboard();
             renderRegistersList();
             renderOngoingList();
-            renderHistoryList(); // Now shows assessment cards
+            renderHistoryList();
             renderAssessmentsList();
             updateTestExamsDropdowns();
 
-            // Start expiration checker for assessments
             startExpirationChecker();
         }
 
@@ -8289,6 +8351,10 @@
                     const itemTitle = btn.dataset.title;
                     const source = btn.dataset.source;
                     if (!confirm(`Approve payment of ZMW ${amount} for "${itemTitle}"?`)) return;
+
+                    // Set loading state
+                    setLoadingForAction('approveTx', true, 'approve-btn');
+
                     try {
                         let txData = null;
                         let durationType = 'lifetime';
@@ -8380,7 +8446,9 @@
                             timestamp: serverTimestamp()
                         });
                         showToast('Approved!', 'success');
-                    } catch (err) { showToast('Error approving: ' + err.message, 'error'); }
+                    } catch (err) { showToast('Error approving: ' + err.message, 'error'); } finally {
+                        setLoadingForAction('approveTx', false, 'approve-btn');
+                    }
                 });
             });
             document.querySelectorAll('.reject-btn').forEach(btn => {
@@ -8390,6 +8458,8 @@
                     const userId = btn.dataset.userid;
                     const source = btn.dataset.source;
                     if (!confirm('Reject this payment?')) return;
+
+                    setLoadingForAction('rejectTx', true, 'reject-btn');
                     try {
                         if (source === 'pendingPurchases') {
                             await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'rejected',
@@ -8402,7 +8472,9 @@
                             timestamp: serverTimestamp()
                         });
                         showToast('Transaction rejected', 'info');
-                    } catch (err) { showToast('Error rejecting', 'error'); }
+                    } catch (err) { showToast('Error rejecting', 'error'); } finally {
+                        setLoadingForAction('rejectTx', false, 'reject-btn');
+                    }
                 });
             });
         }
@@ -8637,8 +8709,7 @@
                 return;
             } else if (sectionId === 'studentScript') {
                 const scriptId = params.scriptId;
-                // +++ FIX: correctly pass manualMark +++
-                const manualMark = params.manualMark === 'true'; // convert to boolean
+                const manualMark = params.manualMark === 'true';
                 if (scriptId) {
                     renderStudentScript(scriptId, manualMark);
                     document.getElementById('studentScriptSection').classList.add('active');
@@ -8730,7 +8801,7 @@
                     renderRegistersList();
                     break;
                 case 'history':
-                    renderHistoryList(); // Shows assessment cards
+                    renderHistoryList();
                     break;
                 case 'assessments':
                     renderAssessmentsList();
@@ -8866,7 +8937,6 @@
                 });
             });
 
-            // ----- FIXED: Attach test/exams dashboard buttons ONCE -----
             document.getElementById('teCreateTestBtn').addEventListener('click', () => showSection('createTest'));
             document.getElementById('teCreateQuizBtn').addEventListener('click', () => showSection('createQuiz'));
             document.getElementById('teCreateExamBtn').addEventListener('click', () => showSection('createExam'));
@@ -8941,13 +9011,11 @@
             document.getElementById('backFromAssessments').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromTestRegister').addEventListener('click', () => showSection('history'));
 
-            // Back from cover preview
             document.getElementById('backFromCoverPreview').addEventListener('click', () => {
                 const type = currentAssessmentType;
                 showSection('create' + type.charAt(0).toUpperCase() + type.slice(1));
             });
 
-            // Back from full preview
             document.getElementById('backFromFullPreview').addEventListener('click', () => {
                 const type = currentAssessmentType || 'test';
                 showSection('create' + type.charAt(0).toUpperCase() + type.slice(1));
@@ -9026,6 +9094,7 @@
                 }
             });
             document.getElementById('addCourseBtn').addEventListener('click', async () => {
+                setLoadingForAction('addCourse', true, 'addCourseBtn');
                 const name = document.getElementById('newCourseName').value.trim();
                 const priceType = document.getElementById('newCoursePriceType').value;
                 const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('newCoursePrice')
@@ -9044,18 +9113,21 @@
                     document.getElementById('newCourseRemoveImageBtn').style.display = 'none';
                     showToast('Course added!', 'success');
                 }
+                setLoadingForAction('addCourse', false, 'addCourseBtn');
             });
             document.getElementById('newCoursePriceType').addEventListener('change', e => {
                 document.getElementById('newCoursePrice').style.display = e.target.value === 'paid' ?
                     'inline-block' : 'none';
             });
             document.getElementById('savePaymentNumbersBtn').addEventListener('click', async () => {
+                setLoadingForAction('saveSettings', true, 'savePaymentNumbersBtn');
                 const mtn = document.getElementById('mtnNumberInput').value.trim();
                 const airtel = document.getElementById('airtelNumberInput').value.trim();
                 const method = document.getElementById('paymentMethodSelect').value;
                 await set(paymentSettingsRef, { mtnNumber: mtn, airtelNumber: airtel,
                     paymentMethod: method });
                 showToast('Payment numbers saved!', 'success');
+                setLoadingForAction('saveSettings', false, 'savePaymentNumbersBtn');
             });
             document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
             document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
@@ -9077,7 +9149,6 @@
             setupPromoUI();
             setupPopupUI();
 
-            // ----- Two-step assessment creation setup -----
             setupCreateAssessmentSteps('test');
             setupCreateAssessmentSteps('quiz');
             setupCreateAssessmentSteps('exam');
@@ -9209,6 +9280,8 @@
             document.getElementById('homePostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
+                setLoadingForAction('publishVideo', true, 'homePostForm button[type="submit"]');
+
                 const title = document.getElementById('videoTitle').value.trim();
                 const instructor = document.getElementById('instructorName').value.trim();
                 const courseId = document.getElementById('courseSelectHome').value;
@@ -9230,14 +9303,17 @@
 
                 if (!title || !instructor) {
                     showToast('Please fill in Title and Instructor.', 'error');
+                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
                     return;
                 }
                 if (!videoUrl) {
                     showToast('Please provide a video URL or upload a video.', 'error');
+                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
                     return;
                 }
                 if (!courseId) {
                     showToast('Please select a course.', 'error');
+                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
                     return;
                 }
 
@@ -9281,12 +9357,16 @@
                     });
                 } catch (err) {
                     showToast('Error publishing video: ' + err.message, 'error');
+                } finally {
+                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
                 }
             });
 
             // Doc post form submit
             document.getElementById('docPostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
+
+                setLoadingForAction('publishDoc', true, 'docPostForm button[type="submit"]');
 
                 const title = document.getElementById('docTitle').value.trim();
                 const instructor = document.getElementById('docInstructor').value.trim();
@@ -9302,28 +9382,33 @@
                     content = document.getElementById('docContentHidden').value || '';
                     if (!content) {
                         showToast('Please write some content or open the editor.', 'error');
+                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                         return;
                     }
                 } else if (sourceType === 'upload') {
                     docUrl = document.getElementById('cloudinaryDocUrl').value.trim();
                     if (!docUrl) {
                         showToast('Please upload a document.', 'error');
+                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                         return;
                     }
                 } else if (sourceType === 'link') {
                     docUrl = document.getElementById('docLinkInput').value.trim();
                     if (!docUrl) {
                         showToast('Please paste a document link.', 'error');
+                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                         return;
                     }
                 }
 
                 if (!title || !instructor) {
                     showToast('Please fill in Title and Instructor.', 'error');
+                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                     return;
                 }
                 if (!courseId) {
                     showToast('Please select a course.', 'error');
+                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                     return;
                 }
 
@@ -9364,6 +9449,8 @@
                     });
                 } catch (err) {
                     showToast('Error publishing document: ' + err.message, 'error');
+                } finally {
+                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
                 }
             });
 
@@ -9432,9 +9519,7 @@
 
             if (!coverStep || !questionsStep || !nextBtn) return;
 
-            // Next button: validate cover data and show questions
             nextBtn.addEventListener('click', function() {
-                // Validate required cover fields
                 const name = document.getElementById(`${type}Name`).value.trim();
                 const hours = parseInt(document.getElementById(`${type}DurationHours`).value) || 0;
                 const minutes = parseInt(document.getElementById(`${type}DurationMinutes`).value) || 0;
@@ -9442,7 +9527,6 @@
                 if (!name) { showToast('Please enter a name.', 'error'); return; }
                 if (hours === 0 && minutes === 0) { showToast('Please set a valid duration.', 'error'); return; }
                 if (!register) { showToast('Please select a register.', 'error'); return; }
-                // For fixed schedule, check start and end
                 const scheduleType = document.querySelector(`input[name="${type}Schedule"]:checked`)?.value;
                 const publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
                 if (!publishImmediately) {
@@ -9457,13 +9541,11 @@
                         if (!from || !until) { showToast('Availability window is required for self-paced.', 'error'); return; }
                     }
                 }
-                // Payment validation if paid
                 const paymentToggle = document.getElementById(`${type}PaymentToggle`);
                 if (paymentToggle.classList.contains('active')) {
                     const price = parseFloat(document.getElementById(`${type}Price`).value);
                     if (!price || price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
                 }
-                // All good, go to questions step
                 coverStep.style.display = 'none';
                 questionsStep.style.display = 'block';
                 if (stepTitle) {
@@ -9471,7 +9553,6 @@
                 }
             });
 
-            // Back button: go back to cover step
             if (backBtn) {
                 backBtn.addEventListener('click', function() {
                     coverStep.style.display = 'block';
@@ -9482,7 +9563,6 @@
                 });
             }
 
-            // Preview cover button: navigate to cover preview section
             if (previewCoverBtn) {
                 previewCoverBtn.addEventListener('click', function() {
                     const coverData = collectCoverData(type);
@@ -9496,7 +9576,6 @@
                 });
             }
 
-            // Logo upload
             const logoUploadBtn = document.getElementById(`${type}LogoUploadBtn`);
             const logoUrlInput = document.getElementById(`${type}LogoUrl`);
             const logoPreview = document.getElementById(`${type}LogoPreview`);
@@ -9535,7 +9614,6 @@
                 });
             }
 
-            // Schedule toggle
             const scheduleRadios = document.querySelectorAll(`input[name="${type}Schedule"]`);
             const fixedDiv = document.getElementById(`${type}FixedSchedule`);
             const selfDiv = document.getElementById(`${type}SelfSchedule`);
@@ -9569,7 +9647,6 @@
                 }
             });
 
-            // Info toggle
             const infoToggle = document.getElementById(`${type}InfoToggle`);
             const infoFields = document.getElementById(`${type}InfoFields`);
             if (infoToggle && infoFields) {
@@ -9579,7 +9656,6 @@
                 });
             }
 
-            // Payment toggle
             const paymentToggle = document.getElementById(`${type}PaymentToggle`);
             const paymentFields = document.getElementById(`${type}PaymentFields`);
             if (paymentToggle && paymentFields) {
@@ -9589,7 +9665,6 @@
                 });
             }
 
-            // Custom fields
             const addCustomFieldBtn = document.getElementById(`${type}AddCustomField`);
             const customFieldLabel = document.getElementById(`${type}CustomFieldLabel`);
             const customFieldsList = document.getElementById(`${type}CustomFieldsList`);
@@ -9620,7 +9695,10 @@
 
             const scheduleType = document.querySelector(`input[name="${type}Schedule"]:checked`)?.value;
             const publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
-            let startTime = null, endTime = null, availableFrom = null, availableUntil = null;
+            let startTime = null,
+                endTime = null,
+                availableFrom = null,
+                availableUntil = null;
             if (publishImmediately) {
                 startTime = new Date().toISOString().slice(0, 16);
                 const end = new Date();
@@ -9642,7 +9720,8 @@
             }
 
             const paid = document.getElementById(`${type}PaymentToggle`).classList.contains('active');
-            let price = 0, gateway = '';
+            let price = 0,
+                gateway = '';
             if (paid) {
                 price = parseFloat(document.getElementById(`${type}Price`).value) || 0;
                 gateway = document.getElementById(`${type}Gateway`).value;
@@ -9665,7 +9744,7 @@
         function renderCoverPreview(type, data) {
             const content = document.getElementById('coverPreviewContent');
 
-            const logo = data.logoUrl || 'logo.png'; // default if exists
+            const logo = data.logoUrl || 'logo.png';
             const assessmentType = type.charAt(0).toUpperCase() + type.slice(1);
             const scheduleLabel = data.publishImmediately ? 'Published Immediately' :
                 data.scheduleType === 'fixed' ? `Fixed: ${new Date(data.startTime).toLocaleString()} – ${new Date(data.endTime).toLocaleString()}` :
@@ -10158,6 +10237,8 @@
 
             document.getElementById('promoPicUploadForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                setLoadingForAction('promoUpload', true, 'promoPicUploadForm .btn-primary[type="submit"]');
+
                 const imageUrl = document.getElementById('promoPicImageUrl').value;
                 const text = document.getElementById('promoPicText').value.trim();
                 const subtext = document.getElementById('promoPicSubtext').value.trim();
@@ -10165,39 +10246,47 @@
 
                 if (!imageUrl) {
                     showToast('Please upload a media file first.', 'error');
+                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
                     return;
                 }
                 if (!text) {
                     showToast('Please enter overlay text.', 'error');
+                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
                     return;
                 }
 
                 const promoData = { imageUrl, text, subtext, mediaType, createdAt: serverTimestamp() };
 
                 const editId = window._editingPromoId || null;
-                if (editId) {
-                    await update(ref(db, `promos/${editId}`), promoData);
-                    showToast('Promo updated!', 'success');
-                    window._editingPromoId = null;
-                    document.getElementById('promoUploadTitle').textContent = 'Upload Media';
-                    document.getElementById('promoUploadSubmitText').textContent = 'Upload Media';
-                } else {
-                    const newRef = push(promosRef);
-                    await set(newRef, promoData);
-                    showToast('Promo uploaded!', 'success');
-                }
+                try {
+                    if (editId) {
+                        await update(ref(db, `promos/${editId}`), promoData);
+                        showToast('Promo updated!', 'success');
+                        window._editingPromoId = null;
+                        document.getElementById('promoUploadTitle').textContent = 'Upload Media';
+                        document.getElementById('promoUploadSubmitText').textContent = 'Upload Media';
+                    } else {
+                        const newRef = push(promosRef);
+                        await set(newRef, promoData);
+                        showToast('Promo uploaded!', 'success');
+                    }
 
-                document.getElementById('promoPicImageUrl').value = '';
-                document.getElementById('promoPicText').value = '';
-                document.getElementById('promoPicSubtext').value = '';
-                document.getElementById('promoPicMediaType').value = 'image';
-                document.getElementById('promoPicImagePreview').innerHTML = `
-                    <div class="placeholder-icon">
-                        <i class="fas fa-image"></i>
-                        <span>Tap to upload an image or video</span>
-                    </div>
-                `;
-                showSection('promo');
+                    document.getElementById('promoPicImageUrl').value = '';
+                    document.getElementById('promoPicText').value = '';
+                    document.getElementById('promoPicSubtext').value = '';
+                    document.getElementById('promoPicMediaType').value = 'image';
+                    document.getElementById('promoPicImagePreview').innerHTML = `
+                        <div class="placeholder-icon">
+                            <i class="fas fa-image"></i>
+                            <span>Tap to upload an image or video</span>
+                        </div>
+                    `;
+                    showSection('promo');
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'error');
+                } finally {
+                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
+                }
             });
         }
 
@@ -10422,6 +10511,9 @@
 
             document.getElementById('popupNotificationForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+
+                setLoadingForAction('sendPopup', true, 'popupNotificationForm .btn-submit');
+
                 const recipientType = document.getElementById('composeRecipientType').value;
                 let userIds = [];
                 if (recipientType === 'all') {
@@ -10431,6 +10523,7 @@
                     userIds = idsJson ? JSON.parse(idsJson) : [];
                     if (userIds.length === 0) {
                         showToast('No users selected.', 'error');
+                        setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
                         return;
                     }
                 }
@@ -10439,6 +10532,7 @@
                 const message = document.getElementById('popupMessage').value.trim();
                 if (!message) {
                     showToast('Please enter a message.', 'error');
+                    setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
                     return;
                 }
                 const mediaUrl = document.getElementById('popupMediaUrl').value || '';
@@ -10446,8 +10540,6 @@
 
                 const progressEl = document.getElementById('popupProgress');
                 progressEl.style.display = 'block';
-                const submitBtn = document.querySelector('#popupNotificationForm .btn-submit');
-                submitBtn.disabled = true;
 
                 try {
                     const newRef = push(inAppNotificationsRef);
@@ -10480,7 +10572,7 @@
                     showToast('Error sending popup: ' + err.message, 'error');
                 } finally {
                     progressEl.style.display = 'none';
-                    submitBtn.disabled = false;
+                    setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
                 }
             });
         }
@@ -10778,6 +10870,7 @@
         // REALTIME
         // =================================================================
         function setupRealtime() {
+            // Videos - full real-time
             onValue(videosRef, snap => {
                 videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 renderAdminHome();
@@ -10789,6 +10882,8 @@
                     });
                 });
             });
+
+            // Users - full real-time
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
                 renderUsers();
@@ -10800,6 +10895,8 @@
                     renderPopupUserList();
                 }
             });
+
+            // Courses - full real-time
             onValue(coursesRef, snap => {
                 courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 updateCourseSelects();
@@ -10807,27 +10904,37 @@
                 renderCoursesAccordion();
                 updateDashboard();
             });
+
+            // Subfolders - full real-time
             onValue(subfoldersRef, snap => {
                 subfolders = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 renderAdminHome();
                 renderCoursesAccordion();
                 updateSubfolderSelects();
             });
+
+            // Docs - full real-time
             onValue(docsRef, snap => {
                 docs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 renderDocsList();
                 renderCoursesAccordion();
             });
+
+            // Notifications - full real-time
             onValue(notificationsRef, snap => {
                 notifications = snap.val() ? Object.values(snap.val()) : [];
                 updateNotifBadge();
                 renderNotificationsSidebar();
             });
+
+            // Banned Users - full real-time
             onValue(bannedUsersRef, snap => {
                 bannedUsersMap = snap.val() || {};
                 renderUsers();
                 updateBannedList();
             });
+
+            // Payment Settings - full real-time
             onValue(paymentSettingsRef, snap => {
                 if (snap.val()) paymentSettings = snap.val();
                 document.getElementById('mtnNumberInput').value = paymentSettings.mtnNumber || '';
@@ -10836,6 +10943,7 @@
                     'MTN Mobile Money';
             });
 
+            // Transactions - full real-time with listener
             const fetchTransactions = async () => {
                 const txSnap = await get(transactionsRef);
                 const txData = txSnap.val() || {};
@@ -10865,6 +10973,7 @@
             onValue(transactionsRef, fetchTransactions);
             onValue(pendingPurchasesRef, fetchTransactions);
 
+            // Promos - full real-time
             onValue(promosRef, snap => {
                 const data = snap.val();
                 promos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
@@ -10872,12 +10981,14 @@
                 renderPromoPics();
             });
 
+            // InApp Notifications - full real-time
             onValue(inAppNotificationsRef, snap => {
                 const data = snap.val();
                 inAppNotifications = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
                 renderSentPopups();
             });
 
+            // Registers - full real-time
             onValue(registersRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -10892,6 +11003,7 @@
                 console.error('Registers listener error:', err);
             });
 
+            // Assessments - full real-time
             onValue(assessmentsRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -10908,6 +11020,7 @@
                 console.error('Assessments listener error:', err);
             });
 
+            // Assessment Responses - full real-time
             onValue(assessmentResponsesRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -11073,11 +11186,21 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+
+            setLoadingForAction('createRegister', true, 'createRegisterForm button[type="submit"]');
+
             const name = document.getElementById('regName').value.trim();
             const lecture = document.getElementById('regLecture').value.trim();
-            if (!name || !lecture) { showToast('Register name and lecture are required.', 'error'); return; }
-            if (!window._regMembers || window._regMembers.length === 0) { showToast('Please add at least one member.',
-                    'error'); return; }
+            if (!name || !lecture) {
+                showToast('Register name and lecture are required.', 'error');
+                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+                return;
+            }
+            if (!window._regMembers || window._regMembers.length === 0) {
+                showToast('Please add at least one member.', 'error');
+                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+                return;
+            }
             const memberIds = window._regMembers.map(m => m.uid);
             try {
                 const regRef = push(registersRef);
@@ -11096,7 +11219,11 @@
                 renderRegMemberList();
                 push(notificationsRef, { message: `📋 Register "${name}" created`, timestamp: serverTimestamp() });
                 showSection('testExams');
-            } catch (err) { showToast('Error creating register: ' + err.message, 'error'); }
+            } catch (err) {
+                showToast('Error creating register: ' + err.message, 'error');
+            } finally {
+                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+            }
         }
 
         document.getElementById('regClearBtn')?.addEventListener('click', function() {
@@ -11157,9 +11284,14 @@
         // ===== UPDATED: handleTestSubmit, handleQuizSubmit, handleExamSubmit =====
         async function handleTestSubmit(e) {
             e.preventDefault();
-            // Gather cover data
+            setLoadingForAction('createTest', true, 'createTestForm button[type="submit"]');
+
             const coverData = collectCoverData('test');
-            if (!coverData) { showToast('Please fill in the cover page details.', 'error'); return; }
+            if (!coverData) {
+                showToast('Please fill in the cover page details.', 'error');
+                setLoadingForAction('createTest', false, 'createTestForm button[type="submit"]');
+                return;
+            }
 
             const name = coverData.name;
             const duration = coverData.duration;
@@ -11180,10 +11312,8 @@
             const institutionName = coverData.institutionName;
             const logoUrl = coverData.logoUrl;
 
-            // Gather questions from sections
             const sections = [];
             document.querySelectorAll('#testSectionsContainer .question-builder').forEach(sec => {
-                // *** FIX: Use optional chaining to safely access .section-name ***
                 const secName = sec.querySelector('.section-name')?.value?.trim() || 'Section';
                 const secInstructions = sec.querySelector('.section-instructions')?.value || '';
                 const questions = [];
@@ -11235,6 +11365,7 @@
             });
             if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
                 showToast('Please add at least one question.', 'error');
+                setLoadingForAction('createTest', false, 'createTestForm button[type="submit"]');
                 return;
             }
 
@@ -11276,15 +11407,24 @@
                 }
                 editingAssessmentId = null;
                 document.getElementById('testName').value = '';
-                // 👇 REDIRECT TO ONGOING
                 showSection('ongoing');
-            } catch (err) { showToast('Error saving test: ' + err.message, 'error'); }
+            } catch (err) {
+                showToast('Error saving test: ' + err.message, 'error');
+            } finally {
+                setLoadingForAction('createTest', false, 'createTestForm button[type="submit"]');
+            }
         }
 
         async function handleQuizSubmit(e) {
             e.preventDefault();
+            setLoadingForAction('createQuiz', true, 'createQuizForm button[type="submit"]');
+
             const coverData = collectCoverData('quiz');
-            if (!coverData) { showToast('Please fill in the cover page details.', 'error'); return; }
+            if (!coverData) {
+                showToast('Please fill in the cover page details.', 'error');
+                setLoadingForAction('createQuiz', false, 'createQuizForm button[type="submit"]');
+                return;
+            }
 
             const name = coverData.name;
             const duration = coverData.duration;
@@ -11348,7 +11488,11 @@
                     questions.push({ text, marks, type, options, correct, image });
                 }
             });
-            if (questions.length === 0) { showToast('Please add at least one question.', 'error'); return; }
+            if (questions.length === 0) {
+                showToast('Please add at least one question.', 'error');
+                setLoadingForAction('createQuiz', false, 'createQuizForm button[type="submit"]');
+                return;
+            }
 
             const cover = { instructions, coverImage: '', institutionName, logoUrl };
             try {
@@ -11387,15 +11531,24 @@
                 }
                 editingAssessmentId = null;
                 document.getElementById('quizName').value = '';
-                // 👇 REDIRECT TO ONGOING
                 showSection('ongoing');
-            } catch (err) { showToast('Error saving quiz: ' + err.message, 'error'); }
+            } catch (err) {
+                showToast('Error saving quiz: ' + err.message, 'error');
+            } finally {
+                setLoadingForAction('createQuiz', false, 'createQuizForm button[type="submit"]');
+            }
         }
 
         async function handleExamSubmit(e) {
             e.preventDefault();
+            setLoadingForAction('createExam', true, 'createExamForm button[type="submit"]');
+
             const coverData = collectCoverData('exam');
-            if (!coverData) { showToast('Please fill in the cover page details.', 'error'); return; }
+            if (!coverData) {
+                showToast('Please fill in the cover page details.', 'error');
+                setLoadingForAction('createExam', false, 'createExamForm button[type="submit"]');
+                return;
+            }
 
             const name = coverData.name;
             const duration = coverData.duration;
@@ -11418,7 +11571,6 @@
 
             const sections = [];
             document.querySelectorAll('#examSectionsContainer .question-builder').forEach(sec => {
-                // *** FIX: Use optional chaining to safely access .section-name ***
                 const secName = sec.querySelector('.section-name')?.value?.trim() || 'Section';
                 const secInstructions = sec.querySelector('.section-instructions')?.value || '';
                 const secDuration = sec.querySelector('.section-duration')?.value || '';
@@ -11472,6 +11624,7 @@
             });
             if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
                 showToast('Please add at least one question.', 'error');
+                setLoadingForAction('createExam', false, 'createExamForm button[type="submit"]');
                 return;
             }
 
@@ -11494,7 +11647,7 @@
                     paid,
                     price,
                     gateway,
-                    partialPayment: false, // optional
+                    partialPayment: false,
                     sections,
                     cover,
                     passingScore,
@@ -11514,21 +11667,21 @@
                 }
                 editingAssessmentId = null;
                 document.getElementById('examName').value = '';
-                // 👇 REDIRECT TO ONGOING
                 showSection('ongoing');
-            } catch (err) { showToast('Error saving exam: ' + err.message, 'error'); }
+            } catch (err) {
+                showToast('Error saving exam: ' + err.message, 'error');
+            } finally {
+                setLoadingForAction('createExam', false, 'createExamForm button[type="submit"]');
+            }
         }
 
         // ---- CREATE TEST (form render) ---- 
         function renderCreateTestForm() {
             editingAssessmentId = null;
-            // Reset steps
             document.getElementById('testCoverStep').style.display = 'block';
             document.getElementById('testQuestionsStep').style.display = 'none';
             document.getElementById('testStepTitle').textContent = 'Create Test — Step 1: Cover Page';
 
-            // Reset cover fields? Maybe not.
-            // Render sections container
             document.getElementById('testSectionsContainer').innerHTML = `
                 <div class="question-builder" data-section="0">
                     <div class="qb-header">
@@ -11546,7 +11699,6 @@
             attachTestQuestionEvents();
             updateTestExamsDropdowns();
 
-            // Set default schedule
             document.querySelector('input[name="testSchedule"][value="fixed"]').checked = true;
             document.getElementById('testFixedSchedule').style.display = 'block';
             document.getElementById('testSelfSchedule').style.display = 'none';
@@ -11556,20 +11708,17 @@
             document.getElementById('testCoverPreview').style.display = 'none';
             document.getElementById('testPublishImmediately').checked = false;
             document.getElementById('testPassingScore').value = 50;
-            // Logo preview etc. already setup
 
             if (editingAssessmentId) {
                 populateAssessmentForm('test');
             }
             attachPreviewButtons();
-            // Update duration display after initial values set
             const h = parseInt(document.getElementById('testDurationHours').value) || 0;
             const m = parseInt(document.getElementById('testDurationMinutes').value) || 0;
             document.getElementById('testDurationDisplay').textContent = `${h}h ${m}m`;
         }
 
         function attachTestQuestionEvents() {
-            // Same as before but we need to attach to #testSectionsContainer
             document.querySelectorAll('#testSectionsContainer .add-question-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const sectionEl = this.closest('.question-builder');
@@ -11762,7 +11911,7 @@
                                 </div>
                                 <div class="qb-option">
                                     <input type="radio" name="qb-correct-${sectionIdx}-${qNum}" value="3" class="qb-correct">
-                                    <input type="text" class="qb-option-text" placeholder="Option D">
+                                    <input type="text" class="qb-option-text" placeholder="Option D>
                                 </div>
                                 <button type="button" class="qb-add-option">+ Add Option</button>
                             </div>
@@ -12413,7 +12562,7 @@
                                     </div>
                                     <div class="qb-option">
                                         <input type="radio" name="qb-correct-${sectionIdx}-${qCount}" value="3" class="qb-correct">
-                                        <input type="text" class="qb-option-text" placeholder="Option D">
+                                        <input type="text" class="qb-option-text" placeholder="Option D>
                                     </div>
                                     <button type="button" class="qb-add-option">+ Add Option</button>
                                 </div>
@@ -12717,7 +12866,6 @@
         function populateAssessmentForm(type) {
             const ass = assessments.find(a => a.id === editingAssessmentId);
             if (!ass) return;
-            // Cover step fields
             document.getElementById(type + 'Name').value = ass.name || '';
             if (ass.duration) {
                 const parts = ass.duration.split(':');
@@ -12777,7 +12925,6 @@
                 document.getElementById(type + 'PassingScore').value = ass.passingScore;
             }
 
-            // Questions step
             if (type === 'test' || type === 'exam') {
                 const container = document.getElementById(type + 'SectionsContainer');
                 container.innerHTML = '';
@@ -12959,7 +13106,6 @@
                     updateQuizQuestionNumbers();
                 }
             }
-            // Show cover step initially
             document.getElementById(type + 'CoverStep').style.display = 'block';
             document.getElementById(type + 'QuestionsStep').style.display = 'none';
             document.getElementById(type + 'StepTitle').textContent = `Create ${type.charAt(0).toUpperCase()+type.slice(1)} — Step 1: Cover Page`;
@@ -12969,13 +13115,11 @@
         // NEW: HISTORY (FIRST ASSESSMENT CARDS, THEN STUDENT CARDS) 
         // =================================================================
         function renderHistoryList() {
-            // Show assessment list by default
             renderHistoryAssessments();
         }
 
         function renderHistoryAssessments() {
             const container = document.getElementById('historyListContainer');
-            // Get unique assessments that have completed responses
             const completedAssIds = [...new Set(assessmentResponses.filter(r => r.status === 'ended' || r.status === 'completed').map(r => r.assessmentId))];
             const availableAssessments = assessments.filter(a => completedAssIds.includes(a.id));
 
@@ -13005,10 +13149,8 @@
                 </div>
             `).join('');
 
-            // Attach click events
             container.querySelectorAll('.history-assessment-card').forEach(card => {
                 card.addEventListener('click', function(e) {
-                    // If click is on button, let it bubble
                     if (e.target.closest('button')) return;
                     const assId = this.dataset.assid;
                     renderHistoryStudents(assId);
@@ -13016,25 +13158,21 @@
             });
         }
 
-        // ---- View Register Details (popup list) ----
         window.viewRegisterDetails = function(assId) {
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             const register = registers.find(r => r.id === ass.registerId);
             if (!register) { showToast('Register not found.', 'error'); return; }
 
-            // Get all members from register
             const members = register.memberDetails || register.members?.map(uid => {
                 const user = users.find(u => u.uid === uid);
                 return user ? { uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email } : null;
             }).filter(Boolean) || [];
 
-            // Get students who submitted (completed/ended)
             const submittedUserIds = assessmentResponses
                 .filter(r => r.assessmentId === assId && (r.status === 'completed' || r.status === 'ended'))
                 .map(r => r.userId);
 
-            // Build modal
             const modal = document.createElement('div');
             modal.className = 'modal-overlay open';
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -13092,7 +13230,6 @@
             const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
 
             const container = document.getElementById('historyListContainer');
-            // Build back button and report button
             let html = `
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
@@ -13107,13 +13244,11 @@
             if (responses.length === 0) {
                 html += '<div style="text-align:center;padding:24px;color:#8b8fa3;">No students have submitted this assessment yet.</div>';
                 container.innerHTML = html;
-                // Attach back button
                 document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
                 document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
                 return;
             }
 
-            // Sort by score descending or name
             const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
 
             html += `<div id="reportContainer" style="display:none;"></div>`;
@@ -13153,7 +13288,6 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Attach events
             document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
             document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
 
@@ -13167,7 +13301,6 @@
             container.querySelectorAll('.mark-manual-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const rid = this.dataset.responseid;
-                    // Open script viewer with manual marking mode
                     showSection('studentScript', { scriptId: rid, manualMark: true });
                 });
             });
@@ -13199,7 +13332,6 @@
             });
         }
 
-        // --- Export Single Student CSV --- 
         function exportSingleStudentCSV(response, assessment) {
             const user = users.find(u => u.uid === response.userId);
             const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
@@ -13216,14 +13348,12 @@
             showToast('Student CSV downloaded!', 'success');
         }
 
-        // --- Generate Report Image (PNG) --- 
         async function generateReportImage(assId) {
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
             if (responses.length === 0) { showToast('No students to generate report.', 'error'); return; }
 
-            // Build a hidden report div
             let reportHtml = `
                 <div id="reportDiv" style="padding:40px;background:#ffffff;font-family:'Inter',sans-serif;max-width:900px;margin:0 auto;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
                     <div style="text-align:center;margin-bottom:24px;border-bottom:3px solid #F5B042;padding-bottom:16px;">
@@ -13285,7 +13415,6 @@
                 </div>
             `;
 
-            // Insert temporarily
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = reportHtml;
             document.body.appendChild(tempDiv);
@@ -13317,10 +13446,8 @@
             const search = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
             const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
 
-            // Get published assessments (status === 'published')
             const publishedAssessments = assessments.filter(a => a.status === 'published');
 
-            // Update filter dropdown with published assessments
             const filterSel = document.getElementById('ongoingFilterAssessment');
             if (filterSel) {
                 filterSel.innerHTML = '<option value="all">All Assessments</option>' +
@@ -13328,7 +13455,6 @@
                         `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`).join('');
             }
 
-            // Filter published assessments by search (if any)
             let filteredAssessments = publishedAssessments;
             if (search) {
                 filteredAssessments = filteredAssessments.filter(a =>
@@ -13345,13 +13471,10 @@
                 return;
             }
 
-            // Build HTML for each assessment
             let html = '';
             filteredAssessments.forEach(ass => {
-                // Get responses for this assessment where status is 'started' (ongoing)
                 const responses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
 
-                // Build assessment card
                 html += `
                     <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.8);margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #f0f0f5;padding-bottom:8px;margin-bottom:8px;">
@@ -13398,7 +13521,6 @@
 
             container.innerHTML = html;
 
-            // Attach events for scratch and end buttons
             container.querySelectorAll('.btn-view-scratch').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const responseId = this.dataset.responseid;
@@ -13421,7 +13543,6 @@
         document.getElementById('ongoingSearch')?.addEventListener('input', renderOngoingList);
         document.getElementById('ongoingFilterAssessment')?.addEventListener('change', renderOngoingList);
 
-        // ---- Show Student Scratch View ---- 
         function showStudentScratchView(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) { showToast('Response not found.', 'error'); return; }
@@ -13567,7 +13688,6 @@
             document.getElementById('editRegName').value = register.name || '';
             document.getElementById('editRegLecture').value = register.lecture || '';
 
-            // Load current members
             const currentMembers = register.memberDetails || register.members?.map(uid => {
                 const user = users.find(u => u.uid === uid);
                 return user ? { uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email } : null;
@@ -13678,15 +13798,24 @@
             });
         }
 
-        // ---- Save edited register ---- 
         document.getElementById('editRegisterForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            setLoadingForAction('editRegister', true, 'editRegisterForm button[type="submit"]');
+
             const regId = document.getElementById('editRegisterId').value;
             const name = document.getElementById('editRegName').value.trim();
             const lecture = document.getElementById('editRegLecture').value.trim();
-            if (!name || !lecture) { showToast('Register name and lecture are required.', 'error'); return; }
+            if (!name || !lecture) {
+                showToast('Register name and lecture are required.', 'error');
+                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
+                return;
+            }
             const members = (window._editRegMembers || []).map(m => m.uid);
-            if (members.length === 0) { showToast('Please add at least one member.', 'error'); return; }
+            if (members.length === 0) {
+                showToast('Please add at least one member.', 'error');
+                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
+                return;
+            }
             try {
                 await update(ref(db, `registers/${regId}`), {
                     name,
@@ -13701,6 +13830,8 @@
                 push(notificationsRef, { message: `✏️ Register "${name}" updated`, timestamp: serverTimestamp() });
             } catch (err) {
                 showToast('Error updating register: ' + err.message, 'error');
+            } finally {
+                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
             }
         });
 
@@ -13710,7 +13841,6 @@
         document.getElementById('closeRegisterEditModal').addEventListener('click', function() {
             document.getElementById('registerEditModal').classList.remove('open');
         });
-        // Also close on overlay click
         document.getElementById('registerEditModal').addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('open');
         });
@@ -13724,7 +13854,6 @@
                 return;
             }
 
-            // Get all completed/ended responses for this assessment
             const responses = assessmentResponses.filter(r => r.assessmentId === assessmentId && (r.status === 'ended' || r.status === 'completed'));
 
             let html = `
@@ -13808,7 +13937,6 @@
             const scratchData = response.scratchData || {};
             const marks = response.marks || {};
 
-            // Build COVER PAGE
             let html = `
                 <div class="script-booklet">
                     <div class="cover-header" style="background:#f5b042;padding:24px 20px;border-radius:20px 20px 0 0;text-align:center;">
@@ -13831,7 +13959,6 @@
                     <div style="padding:20px 24px;">
             `;
 
-            // Questions section with editable marks if manualMark
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
                 const answer = answers[qKey] || 'Not answered';
@@ -13894,7 +14021,6 @@
 
             document.getElementById('studentScriptContainer').innerHTML = html;
 
-            // Attach scratch toggle events
             document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const targetId = this.dataset.target;
@@ -13908,8 +14034,8 @@
             });
 
             if (manualMark) {
-                // Save manual marks
                 document.getElementById('saveManualMarksBtn')?.addEventListener('click', async function() {
+                    setLoadingForAction('saveMarks', true, 'saveManualMarksBtn');
                     const newMarks = {};
                     document.querySelectorAll('.q-marks-input').forEach(inp => {
                         const key = inp.dataset.qkey;
@@ -13921,7 +14047,6 @@
                         const key = ta.dataset.qkey;
                         newRemarks[key] = ta.value.trim();
                     });
-                    // Calculate total score
                     let totalScore = 0;
                     const allMarks = Object.values(newMarks).filter(v => !isNaN(v));
                     totalScore = allMarks.reduce((a, b) => a + b, 0);
@@ -13932,7 +14057,7 @@
                         gradedAt: serverTimestamp()
                     });
                     showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                    // Re-render to reflect new score
+                    setLoadingForAction('saveMarks', false, 'saveManualMarksBtn');
                     renderStudentScript(responseId, true);
                 });
 
@@ -13945,8 +14070,8 @@
                     showToast(`Recalculated: ${totalScore}/${total}`, 'info');
                 });
             } else {
-                // Save script (non-manual)
                 document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
+                    setLoadingForAction('saveMarks', true, 'saveScriptBtn');
                     const newMarks = {};
                     document.querySelectorAll('.q-marks-input').forEach(inp => {
                         const key = inp.dataset.qkey;
@@ -13966,6 +14091,7 @@
                         gradedAt: serverTimestamp()
                     });
                     showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
+                    setLoadingForAction('saveMarks', false, 'saveScriptBtn');
                     renderStudentScript(responseId);
                 });
 
@@ -13979,7 +14105,6 @@
                 });
             }
 
-            // Update marks input changes to update total
             document.querySelectorAll('.q-marks-input').forEach(inp => {
                 inp.addEventListener('change', function() {
                     const max = parseInt(this.dataset.max) || 0;
@@ -13992,7 +14117,6 @@
                     document.querySelectorAll('.q-marks-input').forEach(i => {
                         totalScore += parseFloat(i.value) || 0;
                     });
-                    // Update header score display
                     const scoreSpan = document.querySelector('.cover-header div strong');
                     if (scoreSpan) {
                         const totalEl = document.querySelector('.cover-header .script-meta:last-child');
@@ -14031,7 +14155,6 @@
             const studentInfo = response.studentInfo || {};
             const passed = total > 0 && score >= (ass.passingScore || 50);
 
-            // Build HTML document with styling
             let htmlContent = `
             <!DOCTYPE html>
             <html>
@@ -14191,7 +14314,6 @@
             showToast('Results exported!', 'success');
         };
 
-        // ---- Close Assessment Edit Modal ---- 
         document.getElementById('closeAssessmentEditModal')?.addEventListener('click', function() {
             document.getElementById('assessmentEditModal').classList.remove('open');
         });
@@ -14295,7 +14417,6 @@
             `;
         }
 
-        // ---- Full preview button handler (new) ---- 
         function addPreviewButtonToForm(formId, sectionId) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -14319,7 +14440,6 @@
                     showToast('Please fill in the required fields.', 'error');
                     return;
                 }
-                // Store preview data globally
                 window._previewData = {
                     type: formId === 'createTestForm' ? 'test' : formId === 'createQuizForm' ? 'quiz' : 'exam',
                     name: formData.name,
@@ -14354,7 +14474,6 @@
             }, 500);
         }
 
-        // ---- Override the render functions to attach preview buttons ---- 
         const originalRenderTest = renderCreateTestForm;
         const originalRenderQuiz = renderCreateQuizForm;
         const originalRenderExam = renderCreateExamForm;
@@ -14371,9 +14490,6 @@
             originalRenderExam();
             setTimeout(attachPreviewButtons, 300);
         };
-
-        // ---- Close preview modal (unused for full page) ---- 
-        // We keep the modal for other previews (like in history), but the form preview now uses full page.
 
         // =================================================================
         // ALL ASSESSMENTS LIST (PAPERS) 
@@ -14435,13 +14551,11 @@
                 `;
             }).join('');
 
-            // Attach delete events
             container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const assId = this.dataset.assid;
                     if (confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
                         await remove(ref(db, `assessments/${assId}`));
-                        // Also remove related responses? Maybe keep them for history, but we'll clean up.
                         const responsesToDelete = assessmentResponses.filter(r => r.assessmentId === assId);
                         for (const r of responsesToDelete) {
                             await remove(ref(db, `assessmentResponses/${r.id}`));
@@ -14452,7 +14566,6 @@
             });
         }
 
-        // Publish assessment function
         window.publishAssessment = async function(assessmentId) {
             if (!confirm('Publish this assessment? Students will be able to access it according to its schedule.')) return;
             try {
@@ -14464,7 +14577,6 @@
             }
         };
 
-        // Preview assessment (modal)
         window.previewAssessment = function(assessmentId) {
             const ass = assessments.find(a => a.id === assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
@@ -14507,7 +14619,6 @@
             modal.classList.add('open');
         };
 
-        // Search / filter listeners for assessments
         document.getElementById('assessmentsSearch')?.addEventListener('input', renderAssessmentsList);
         document.getElementById('assessmentsFilterType')?.addEventListener('change', renderAssessmentsList);
         document.getElementById('assessmentsFilterStatus')?.addEventListener('change', renderAssessmentsList);
@@ -14516,7 +14627,6 @@
         // EXPIRATION CHECKER (auto-clear ongoing and move to history)
         // =================================================================
         function startExpirationChecker() {
-            // Check every 60 seconds
             setInterval(() => {
                 checkExpiredAssessments();
             }, 60000);
@@ -14526,15 +14636,12 @@
             const now = Date.now();
             let updated = false;
 
-            // For fixed-schedule assessments, if endTime has passed, mark as ended
             const fixedAssessments = assessments.filter(a => a.scheduleType === 'fixed' && a.endTime && a.status === 'published');
             for (const ass of fixedAssessments) {
                 const endTime = new Date(ass.endTime).getTime();
                 if (endTime < now) {
-                    // Mark assessment as ended
                     await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
                     updated = true;
-                    // Also end any ongoing responses for this assessment
                     const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
                     for (const resp of ongoingResponses) {
                         await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
@@ -14543,7 +14650,6 @@
                 }
             }
 
-            // For self-paced assessments, if availableUntil has passed
             const selfAssessments = assessments.filter(a => a.scheduleType === 'self' && a.availableUntil && a.status === 'published');
             for (const ass of selfAssessments) {
                 const untilTime = new Date(ass.availableUntil).getTime();
@@ -14559,7 +14665,6 @@
             }
 
             if (updated) {
-                // Refresh views
                 renderOngoingList();
                 renderHistoryList();
                 renderAssessmentsList();
@@ -14599,9 +14704,6 @@
             }
         });
 
-        // =================================================================
-        // DELEGATED SUBMIT HANDLER FOR DYNAMICALLY RENDERED FORMS 
-        // =================================================================
         document.addEventListener('submit', function(e) {
             const form = e.target;
             if (form.id === 'createTestForm') {
@@ -14619,11 +14721,10 @@
             }
         });
 
-        // ---- Attach preview buttons after initial load ---- 
         setTimeout(attachPreviewButtons, 1000);
 
         // =================================================================
-        // EXPOSE FUNCTIONS TO WINDOW (Fixes inline onclick scope issues) 
+        // EXPOSE FUNCTIONS TO WINDOW
         // =================================================================
         window.showSection = showSection;
         window.renderHistoryAssessments = renderHistoryAssessments;
@@ -14639,7 +14740,9 @@
         window.openAssessmentEditModal = openAssessmentEditModal;
         window.viewRegisterDetails = viewRegisterDetails;
 
-        console.log('✅ UTOM Admin — Full Test/Exams module integrated with digital scratch pad support, question images, advanced question types, edit, duplicate, delete, export, PREVIEW, Register Edit, manual marking, HTML download, and auto-expiration.');
+        setupRealtime();
+
+        console.log('✅ UTOM Admin — Full real-time with loading states, ready to deploy.');
     </script>
 </body>
 </html>
