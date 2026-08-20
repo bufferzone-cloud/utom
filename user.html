@@ -541,8 +541,8 @@
 
         .exam-hub-buttons {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
         }
 
         .exam-hub-btn {
@@ -550,7 +550,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1.2rem 0.5rem;
+            padding: 1rem 0.3rem;
             border-radius: 20px;
             border: 2px solid #e5e8ed;
             background: #fff;
@@ -558,8 +558,8 @@
             transition: var(--transition);
             font-weight: 600;
             color: var(--text);
-            font-size: 0.9rem;
-            gap: 6px;
+            font-size: 0.8rem;
+            gap: 4px;
         }
         .exam-hub-btn:hover {
             border-color: var(--gold);
@@ -567,7 +567,7 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
         }
         .exam-hub-btn i {
-            font-size: 2rem;
+            font-size: 1.6rem;
             background: linear-gradient(135deg, #d4952a, #f5b042);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -576,10 +576,11 @@
         .exam-hub-btn .badge {
             background: rgba(245, 176, 66, 0.15);
             color: var(--gold-dark);
-            padding: 2px 12px;
+            padding: 2px 10px;
             border-radius: 30px;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             font-weight: 700;
+            margin-top: 2px;
         }
         .exam-hub-close {
             position: absolute;
@@ -4109,7 +4110,6 @@
                 font-size: 0.5rem;
                 padding: 1px 8px;
             }
-            /* cover page mobile */
             .exam-cover-page .cover-body {
                 padding: 20px;
             }
@@ -4129,6 +4129,17 @@
             .student-info-grid {
                 grid-template-columns: 1fr;
                 gap: 0.6rem;
+            }
+            .exam-hub-buttons {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+            }
+            .exam-hub-btn {
+                font-size: 0.7rem;
+                padding: 0.8rem 0.2rem;
+            }
+            .exam-hub-btn i {
+                font-size: 1.3rem;
             }
         }
 
@@ -4349,6 +4360,14 @@
                     <button class="exam-hub-btn" data-type="quiz">
                         <i class="fas fa-lightbulb"></i> Quizzes
                         <span class="badge" id="quizCount">0</span>
+                    </button>
+                    <button class="exam-hub-btn" data-type="assignment">
+                        <i class="fas fa-pencil-alt"></i> Assignments
+                        <span class="badge" id="assignmentCount">0</span>
+                    </button>
+                    <button class="exam-hub-btn" data-type="submittedAssignment">
+                        <i class="fas fa-check-double"></i> Submitted
+                        <span class="badge" id="submittedAssignmentCount">0</span>
                     </button>
                     <button class="exam-hub-btn" data-type="history">
                         <i class="fas fa-history"></i> History
@@ -5009,15 +5028,31 @@
                 if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
                 return true;
             });
+
+            // Counts for specific types
+            const exams = available.filter(a => a.type === 'exam');
+            const tests = available.filter(a => a.type === 'test');
+            const quizzes = available.filter(a => a.type === 'quiz');
+            const assignments = available.filter(a => a.type === 'assignment');
+
+            // Submitted assignments (completed/ended) for the user
+            const submittedAssignments = allAssessmentResponses.filter(r => 
+                r.userId === currentUser?.uid && 
+                (r.status === 'completed' || r.status === 'ended') &&
+                allAssessments.some(a => a.id === r.assessmentId && a.type === 'assignment')
+            );
+
             examBadgeCount = available.length;
             const badge = document.getElementById('examBadge');
             if (badge) {
                 badge.textContent = examBadgeCount;
                 badge.style.display = examBadgeCount > 0 ? 'flex' : 'none';
             }
-            document.getElementById('examCount').textContent = available.filter(a => a.type === 'exam').length;
-            document.getElementById('testCount').textContent = available.filter(a => a.type === 'test').length;
-            document.getElementById('quizCount').textContent = available.filter(a => a.type === 'quiz').length;
+            document.getElementById('examCount').textContent = exams.length;
+            document.getElementById('testCount').textContent = tests.length;
+            document.getElementById('quizCount').textContent = quizzes.length;
+            document.getElementById('assignmentCount').textContent = assignments.length;
+            document.getElementById('submittedAssignmentCount').textContent = submittedAssignments.length;
             const historyCount = allAssessmentResponses.filter(r => r.userId === currentUser?.uid && (r.status === 'completed' ||
                 r.status === 'ended')).length;
             document.getElementById('historyCount').textContent = historyCount;
@@ -7050,6 +7085,24 @@
                     if (type === 'history') {
                         showPage('assessmentHistory');
                         renderAssessmentHistory();
+                    } else if (type === 'submittedAssignment') {
+                        // Show only submitted assignments
+                        const submitted = allAssessmentResponses.filter(r => 
+                            r.userId === currentUser?.uid && 
+                            (r.status === 'completed' || r.status === 'ended') &&
+                            allAssessments.some(a => a.id === r.assessmentId && a.type === 'assignment')
+                        );
+                        if (submitted.length === 0) {
+                            addNotification('warning', 'No submitted assignments yet.');
+                            return;
+                        }
+                        // Map to assessment objects
+                        const assessments = submitted.map(r => {
+                            const a = allAssessments.find(a => a.id === r.assessmentId);
+                            return a ? { ...a, response: r } : null;
+                        }).filter(Boolean);
+                        // Show selection modal with submitted assignments
+                        showAssessmentSelection(assessments, 'Submitted Assignments', true);
                     } else {
                         // Find available assessments of this type
                         const available = allAssessments.filter(a => {
@@ -7161,30 +7214,49 @@
             }, 300);
         }
 
-        // ===== ASSESSMENT SELECTION MODAL =====
-        function showAssessmentSelection(assessments, type) {
+        // ===== ASSESSMENT SELECTION MODAL (updated to handle submitted assignments) =====
+        function showAssessmentSelection(assessments, type, isSubmitted = false) {
             const overlay = document.getElementById('assessmentSelectOverlay');
             const title = document.getElementById('assessmentSelectTitle');
-            title.textContent = `Available ${type.charAt(0).toUpperCase()+type.slice(1)}s`;
+            title.textContent = isSubmitted ? `Submitted ${type}` : `Available ${type.charAt(0).toUpperCase()+type.slice(1)}s`;
             const list = document.getElementById('assessmentSelectList');
-            list.innerHTML = assessments.map(a => `
-                <div class="assessment-select-item" data-id="${a.id}">
+            list.innerHTML = assessments.map(a => {
+                const item = a.response ? a : a;
+                const name = a.response ? `${a.name} (Submitted)` : a.name;
+                const duration = a.duration || 'No time limit';
+                const marks = a.totalMarks || 0;
+                const score = a.response ? a.response.score : 0;
+                const total = marks;
+                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                return `
+                <div class="assessment-select-item" data-id="${a.id}" data-responseid="${a.response?.id || ''}" data-submitted="${isSubmitted}">
                     <div class="item-info">
-                        <div class="item-name">${escapeHtml(a.name)}</div>
-                        <div class="item-duration">${a.duration || 'No time limit'} · ${a.totalMarks || 0} marks</div>
+                        <div class="item-name">${escapeHtml(name)}</div>
+                        <div class="item-duration">${duration} · ${marks} marks ${isSubmitted ? `· Score: ${score}/${total} (${percent}%)` : ''}</div>
                     </div>
                     <span class="item-badge ${a.paid ? 'paid' : 'free'}">${a.paid ? 'Paid' : 'Free'}</span>
                 </div>
-            `).join('');
+            `}).join('');
 
             overlay.classList.add('open');
 
             list.querySelectorAll('.assessment-select-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const id = item.dataset.id;
+                    const responseId = item.dataset.responseid;
                     const assessment = assessments.find(a => a.id === id);
                     if (!assessment) return;
                     overlay.classList.remove('open');
+
+                    if (item.dataset.submitted === 'true') {
+                        // Show the submitted script
+                        if (responseId) {
+                            viewAssessmentScript(responseId);
+                        } else {
+                            addNotification('warning', 'No response found for this submitted assignment.');
+                        }
+                        return;
+                    }
 
                     // If paid and not purchased, show payment popup
                     if (assessment.paid) {
@@ -7813,6 +7885,7 @@
                 currentAssessmentTaking = null;
                 showPage('assessmentHistory');
                 renderAssessmentHistory();
+                updateExamBadge();
             } catch (e) {
                 addNotification('danger', 'Failed to submit: ' + e.message);
             }
@@ -8505,6 +8578,7 @@
         console.log('✅ Payment approval popups are now truly one-time (persisted in localStorage).');
         console.log('✅ Dark mode toggle added in header.');
         console.log('✅ Course loader fixed — course cards open without errors.');
+        console.log('✅ Added Assignments and Submitted Assignments buttons to Exam Hub.');
     </script>
 </body>
 </html>
