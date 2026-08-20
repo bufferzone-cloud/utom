@@ -16748,11 +16748,14 @@
             const members = liveClassData.memberDetails || [];
             const registerName = liveClassData.registerName || 'Unknown Register';
             const className = liveClassData.name || 'Class';
+            const durationMs = liveClassData.endedAt ? new Date(liveClassData.endedAt) - new Date(liveClassData.startTime) : 0;
+            const durationStr = durationMs > 0 ? Math.floor(durationMs / 60000) + 'm' : '—';
 
             let tableHtml = `
                 <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(className)}</h3>
                 <p style="color:var(--text-secondary);margin-bottom:12px;">Register: ${escapeHtml(registerName)} · ${escapeHtml(liveClassData.lecture || '')}</p>
-                <p style="color:var(--text-secondary);margin-bottom:12px;">Date: ${new Date().toLocaleString()} · Total: ${Object.keys(attendees).length} attendees</p>
+                <p style="color:var(--text-secondary);margin-bottom:12px;">Started: ${new Date(liveClassData.startTime).toLocaleString()} · Duration: ${durationStr} · Total attendees: ${Object.keys(attendees).length}</p>
+                <p style="color:var(--text-secondary);margin-bottom:12px;">Hands raised: ${Object.keys(liveClassData.hands || {}).length} · Questions asked: ${Object.keys(liveClassData.questions || {}).length}</p>
                 <table>
                     <thead>
                         <tr>
@@ -16926,6 +16929,11 @@
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width || 800;
             canvas.height = rect.height || 450;
+
+            if (liveDrawCanvas === canvas) {
+                // Already initialized, just resize and return (no duplicate listeners)
+                return;
+            }
 
             liveDrawCanvas = canvas;
             liveDrawCtx = canvas.getContext('2d');
