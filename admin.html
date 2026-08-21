@@ -5974,6 +5974,62 @@
         .live-toggle-group .toggle-btn:hover {
             transform: translateY(-1px);
         }
+
+        /* ─── Live Class History Cards ─── */
+        .live-class-history-section {
+            margin-top: 20px;
+        }
+        .live-class-history-section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .live-class-history-section h3 i {
+            color: var(--gold);
+        }
+        .history-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(245, 176, 66, 0.08);
+            transition: var(--transition);
+        }
+        .history-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .history-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .history-card .meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .history-card .stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .history-card .stats i {
+            color: var(--gold);
+            margin-right: 4px;
+        }
+        .history-card .actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+        }
     </style>
 </head>
 <body>
@@ -7461,6 +7517,12 @@
                             </div>
                         </div>
 
+                        <!-- ─── LIVE CLASS HISTORY ─── -->
+                        <div id="liveClassHistory" class="live-class-history-section" style="display:none;">
+                            <h3><i class="fas fa-history"></i> Past Classes</h3>
+                            <div id="historyCards"></div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -7834,6 +7896,7 @@
         let liveClassId = null;
         let liveClassRef = null;
         let liveClassListeners = [];
+        let liveClassListenersAttached = false;
         let liveDrawCanvas = null;
         let liveDrawCtx = null;
         let liveDrawIsDrawing = false;
@@ -7841,15 +7904,18 @@
         let liveDrawWidth = 3;
         let liveDrawLastX = 0;
         let liveDrawLastY = 0;
+        let liveDrawInitialized = false;
         let liveStreamActive = false;
         let liveCameraStream = null;
         let liveCameraActive = false;
         let liveDrawActive = false;
         let liveDocActive = false;
         let liveDocContent = '';
+        let liveDocInputListenerAttached = false;
         let liveAttendees = {};
         let liveHands = {};
         let liveQuestions = {};
+        let liveClassHistory = [];
 
         // Carousel state
         let carouselItems = [];
@@ -11991,6 +12057,12 @@
                             break;
                         }
                     }
+                    // Also collect ended classes for history
+                    liveClassHistory = entries.filter(([id, cls]) => cls.status === 'ended').map(([id, cls]) => ({ id, ...cls }));
+                } else {
+                    liveClassData = null;
+                    liveClassId = null;
+                    liveClassHistory = [];
                 }
                 // Update UI based on live class state
                 renderLiveClassPage();
@@ -13095,7 +13167,7 @@
                             </div>
                             <div class="qb-option">
                                 <input type="radio" name="qb-correct-${sectionIdx}-${qNum}" value="3" class="qb-correct">
-                                <input type="text" class="qb-option-text" placeholder="Option D>
+                                <input type="text" class="qb-option-text" placeholder="Option D">
                             </div>
                             <button type="button" class="qb-add-option">+ Add Option</button>
                         </div>
@@ -16400,6 +16472,12 @@
                             break;
                         }
                     }
+                    // Collect ended classes for history
+                    liveClassHistory = entries.filter(([id, cls]) => cls.status === 'ended').map(([id, cls]) => ({ id, ...cls }));
+                } else {
+                    liveClassData = null;
+                    liveClassId = null;
+                    liveClassHistory = [];
                 }
                 renderLiveClassPage();
             });
@@ -16409,11 +16487,13 @@
             const setupView = document.getElementById('liveClassSetupView');
             const roomView = document.getElementById('liveClassRoomView');
             const attendanceView = document.getElementById('liveClassAttendanceView');
+            const historySection = document.getElementById('liveClassHistory');
 
             if (liveClassData && liveClassData.status === 'active') {
                 setupView.style.display = 'none';
                 roomView.style.display = 'block';
                 attendanceView.style.display = 'none';
+                historySection.style.display = 'none';
 
                 document.getElementById('liveClassRoomTitle').textContent = liveClassData.name || 'Live Class';
                 document.getElementById('liveClassRoomTitleBar').textContent = liveClassData.name || 'Live Class';
@@ -16445,64 +16525,33 @@
                 }
 
                 updateLiveToggleButtons();
-                listenToLiveClassUpdates();
+                // Only attach listeners once
+                if (!liveClassListenersAttached) {
+                    attachLiveClassListeners();
+                }
 
             } else if (liveClassData && liveClassData.status === 'ended') {
                 setupView.style.display = 'none';
                 roomView.style.display = 'none';
                 attendanceView.style.display = 'block';
+                historySection.style.display = 'block'; // show past classes
                 renderAttendanceReport();
+                renderLiveClassHistory();
+                // Cleanup listeners if any
+                if (liveClassListenersAttached) {
+                    cleanupLiveClass();
+                }
             } else {
                 setupView.style.display = 'block';
                 roomView.style.display = 'none';
                 attendanceView.style.display = 'none';
+                historySection.style.display = 'block'; // show history even if no active class
+                renderLiveClassHistory();
             }
         }
 
-        function updateLiveToggleButtons() {
-            if (!liveClassData) return;
-            const drawBtn = document.getElementById('toggleDrawBtn');
-            const cameraBtn = document.getElementById('toggleCameraBtn');
-            const docBtn = document.getElementById('toggleDocBtn');
-
-            drawBtn.className = liveClassData.drawActive ? 'active' : 'inactive';
-            drawBtn.innerHTML = `<i class="fas fa-paint-brush"></i> ${liveClassData.drawActive ? 'Draw ON' : 'Draw'}`;
-
-            cameraBtn.className = liveClassData.cameraActive ? 'active' : 'inactive';
-            cameraBtn.innerHTML = `<i class="fas fa-camera"></i> ${liveClassData.cameraActive ? 'Camera ON' : 'Camera'}`;
-
-            docBtn.className = liveClassData.docActive ? 'active' : 'inactive';
-            docBtn.innerHTML = `<i class="fas fa-file-alt"></i> ${liveClassData.docActive ? 'Doc ON' : 'Doc'}`;
-
-            const tools = document.getElementById('liveDrawTools');
-            if (liveClassData.drawActive) {
-                tools.classList.add('open');
-                document.getElementById('liveDrawCanvas').style.display = 'block';
-            } else {
-                tools.classList.remove('open');
-                document.getElementById('liveDrawCanvas').style.display = 'none';
-            }
-            document.getElementById('liveCameraVideo').style.display = liveClassData.cameraActive ? 'block' : 'none';
-            document.getElementById('liveDocViewer').style.display = liveClassData.docActive ? 'block' : 'none';
-
-            if (liveClassData.drawActive) {
-                initLiveDrawCanvas();
-            }
-            if (liveClassData.cameraActive) {
-                startLiveCamera();
-            } else {
-                stopLiveCamera();
-            }
-            if (liveClassData.docActive) {
-                showLiveDoc();
-            } else {
-                hideLiveDoc();
-            }
-        }
-
-        function listenToLiveClassUpdates() {
-            if (!liveClassId) return;
-            liveClassListeners.forEach(unsub => unsub());
+        function attachLiveClassListeners() {
+            if (liveClassListenersAttached || !liveClassId) return;
             liveClassListeners = [];
 
             const classRef = ref(db, `liveClasses/${liveClassId}`);
@@ -16566,6 +16615,22 @@
                 }
             });
             liveClassListeners.push(unsubDraw);
+
+            liveClassListenersAttached = true;
+        }
+
+        function cleanupLiveClass() {
+            liveClassListeners.forEach(unsub => unsub());
+            liveClassListeners = [];
+            liveClassListenersAttached = false;
+            liveDrawInitialized = false;
+            liveDocInputListenerAttached = false;
+            stopLiveCamera();
+            if (liveDrawCanvas) {
+                liveDrawCtx?.clearRect(0, 0, liveDrawCanvas.width, liveDrawCanvas.height);
+                liveDrawCanvas = null;
+                liveDrawCtx = null;
+            }
         }
 
         function renderLiveAttendees() {
@@ -16602,14 +16667,15 @@
                 const user = users.find(u => u.uid === uid);
                 const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User' : uid;
                 const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'Just now';
+                const answered = data.status === 'answered';
                 return `
                     <div class="hand-item">
                         <span class="hand-name">🙋 ${escapeHtml(name)}</span>
                         <div class="hand-actions">
-                            <button class="answer-btn" onclick="answerHand('${uid}')"><i class="fas fa-check"></i> Answer</button>
+                            ${!answered ? `<button class="answer-btn" onclick="answerHand('${uid}')"><i class="fas fa-check"></i> Answer</button>` : ''}
                             <button class="remove-hand-btn" onclick="removeHand('${uid}')"><i class="fas fa-times"></i></button>
                         </div>
-                        <span style="font-size:10px;color:var(--text-secondary);">${time}</span>
+                        <span style="font-size:10px;color:${answered ? '#2ecc71' : 'var(--text-secondary)'};">${answered ? '✅ Answered' : time}</span>
                     </div>
                 `;
             }).join('');
@@ -16627,6 +16693,7 @@
                 const user = users.find(u => u.uid === data.userId);
                 const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User' : data.userId || 'Anonymous';
                 const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'Just now';
+                const answered = data.status === 'answered';
                 return `
                     <div class="question-item">
                         <div class="q-header">
@@ -16635,12 +16702,57 @@
                         </div>
                         <div class="q-text">${escapeHtml(data.text)}</div>
                         <div class="q-actions">
-                            <button class="answer-q-btn" onclick="answerQuestion('${qid}')"><i class="fas fa-check"></i> Answer</button>
+                            ${!answered ? `<button class="answer-q-btn" onclick="answerQuestion('${qid}')"><i class="fas fa-check"></i> Answer</button>` : ''}
                             <button class="remove-q-btn" onclick="removeQuestion('${qid}')"><i class="fas fa-times"></i></button>
+                        </div>
+                        <span style="font-size:10px;color:${answered ? '#2ecc71' : 'var(--text-secondary)'};">${answered ? '✅ Answered' : time}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLiveClassHistory() {
+            const container = document.getElementById('historyCards');
+            if (liveClassHistory.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding:12px;">No past classes.</div>';
+                return;
+            }
+            container.innerHTML = liveClassHistory.map(cls => {
+                const attendeeCount = cls.attendees ? Object.keys(cls.attendees).length : 0;
+                const handCount = cls.hands ? Object.keys(cls.hands).length : 0;
+                const questionCount = cls.questions ? Object.keys(cls.questions).length : 0;
+                const duration = cls.endedAt && cls.startTime ?
+                    Math.floor((new Date(cls.endedAt) - new Date(cls.startTime)) / 60000) + 'm' :
+                    '—';
+                return `
+                    <div class="history-card">
+                        <h4>${escapeHtml(cls.name)}</h4>
+                        <div class="meta">
+                            Register: ${escapeHtml(cls.registerName)} · Duration: ${duration}
+                        </div>
+                        <div class="stats">
+                            <span><i class="fas fa-users"></i> ${attendeeCount} attendees</span>
+                            <span><i class="fas fa-hand-paper"></i> ${handCount} hands</span>
+                            <span><i class="fas fa-question-circle"></i> ${questionCount} questions</span>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-outline" onclick="viewAttendance('${cls.id}')">View Details</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function viewAttendance(classId) {
+            const cls = liveClassHistory.find(c => c.id === classId);
+            if (!cls) { showToast('Class not found.', 'error'); return; }
+            // Temporarily set as active data to reuse attendance render
+            liveClassData = cls;
+            renderAttendanceReport();
+            document.getElementById('liveClassAttendanceView').style.display = 'block';
+            document.getElementById('liveClassRoomView').style.display = 'none';
+            document.getElementById('liveClassSetupView').style.display = 'none';
+            document.getElementById('liveClassHistory').style.display = 'none';
         }
 
         async function startLiveClass() {
@@ -16697,7 +16809,7 @@
                     timestamp: serverTimestamp()
                 });
                 renderLiveClassPage();
-                listenToLiveClassUpdates();
+                // Listeners will be attached in renderLiveClassPage if not yet attached
             } catch (err) {
                 showToast('Error starting class: ' + err.message, 'error');
             }
@@ -16719,6 +16831,7 @@
                 });
 
                 stopLiveCamera();
+                cleanupLiveClass();
 
                 showToast('Class ended. Attendance report generated.', 'success');
                 push(notificationsRef, {
@@ -16728,9 +16841,6 @@
 
                 liveClassData.status = 'ended';
                 renderLiveClassPage();
-
-                liveClassListeners.forEach(unsub => unsub());
-                liveClassListeners = [];
 
             } catch (err) {
                 showToast('Error ending class: ' + err.message, 'error');
@@ -16926,29 +17036,29 @@
             const canvas = document.getElementById('liveDrawCanvas');
             if (!canvas) return;
 
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width || 800;
-            canvas.height = rect.height || 450;
+            // Only attach listeners once
+            if (!liveDrawInitialized) {
+                canvas.addEventListener('mousedown', startLiveDraw);
+                canvas.addEventListener('mousemove', drawLiveDraw);
+                canvas.addEventListener('mouseup', stopLiveDraw);
+                canvas.addEventListener('mouseleave', stopLiveDraw);
+                canvas.addEventListener('touchstart', handleLiveDrawTouchStart, { passive: false });
+                canvas.addEventListener('touchmove', handleLiveDrawTouchMove, { passive: false });
+                canvas.addEventListener('touchend', stopLiveDraw, { passive: false });
 
-            if (liveDrawCanvas === canvas) {
-                // Already initialized, just resize and return (no duplicate listeners)
-                return;
+                liveDrawCanvas = canvas;
+                liveDrawCtx = canvas.getContext('2d');
+                liveDrawInitialized = true;
             }
 
-            liveDrawCanvas = canvas;
-            liveDrawCtx = canvas.getContext('2d');
-
-            canvas.addEventListener('mousedown', startLiveDraw);
-            canvas.addEventListener('mousemove', drawLiveDraw);
-            canvas.addEventListener('mouseup', stopLiveDraw);
-            canvas.addEventListener('mouseleave', stopLiveDraw);
-
-            canvas.addEventListener('touchstart', handleLiveDrawTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', handleLiveDrawTouchMove, { passive: false });
-            canvas.addEventListener('touchend', stopLiveDraw, { passive: false });
-
-            if (liveClassData.drawData) {
-                loadLiveDrawData(liveClassData.drawData);
+            // Resize only when dimensions change
+            const rect = canvas.parentElement.getBoundingClientRect();
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width || 800;
+                canvas.height = rect.height || 450;
+                if (liveClassData?.drawData) {
+                    loadLiveDrawData(liveClassData.drawData);
+                }
             }
 
             document.getElementById('liveDrawWidth')?.addEventListener('input', function() {
@@ -17055,6 +17165,10 @@
                 showToast('Camera not supported', 'error');
                 return;
             }
+            if (liveCameraStream) {
+                // Already running – do nothing
+                return;
+            }
 
             navigator.mediaDevices.getUserMedia({ video: true, audio: false })
                 .then(stream => {
@@ -17088,11 +17202,15 @@
             viewer.style.display = 'block';
             viewer.innerHTML = liveClassData.docContent || '<div class="empty-state" style="padding:40px;">No document content. Click to edit.</div>';
             viewer.contentEditable = true;
-            viewer.addEventListener('input', function() {
-                if (liveClassId) {
-                    update(ref(db, `liveClasses/${liveClassId}/docContent`), this.innerHTML);
-                }
-            });
+
+            if (!liveDocInputListenerAttached) {
+                viewer.addEventListener('input', function() {
+                    if (liveClassId) {
+                        update(ref(db, `liveClasses/${liveClassId}/docContent`), this.innerHTML);
+                    }
+                });
+                liveDocInputListenerAttached = true;
+            }
         }
 
         function hideLiveDoc() {
@@ -17209,6 +17327,7 @@
         window.exportAssessmentResults = exportAssessmentResults;
         window.openAssessmentEditModal = openAssessmentEditModal;
         window.viewRegisterDetails = viewRegisterDetails;
+        window.viewAttendance = viewAttendance;
 
         // Live Class functions
         window.toggleLiveStream = toggleLiveStream;
