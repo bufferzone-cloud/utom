@@ -1470,6 +1470,21 @@
             line-height: 1.6;
         }
 
+        /* NEW: Payment processing note */
+        .payment-processing-note {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #e8f4ff;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            font-size: 0.8rem;
+            color: #1a3a5c;
+            line-height: 1.6;
+        }
+        .payment-processing-note i {
+            color: #3b82f6;
+        }
+
         .payment-number-row {
             display: flex;
             align-items: center;
@@ -4967,6 +4982,26 @@
             </div>
         </div>
 
+        <!-- ===== PENDING PAYMENT POPUP (NEW) ===== -->
+        <div class="payment-required-overlay" id="pendingPaymentOverlay">
+            <div class="payment-required-modal">
+                <div class="pay-icon">
+                    <img src="logo.png" alt="UTOM Logo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'" />
+                    <i class="fas fa-hourglass-half" style="position:absolute;font-size:32px;color:var(--gold-dark);"></i>
+                </div>
+                <h2>Payment Pending</h2>
+                <div class="pay-message" id="pendingPaymentMessage">
+                    Hello <strong id="pendingUserName">User</strong>,<br />your payment of
+                    <strong id="pendingAmount">ZMW 0</strong> for
+                    <strong id="pendingCourseName">this course</strong> has not yet been approved.<br />
+                    Please check back later.
+                </div>
+                <div class="pay-actions">
+                    <button class="btn-cancel-pay" id="pendingPaymentOkBtn">OK</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== SCROLLABLE CONTENT ===== -->
         <div class="app-content">
 
@@ -5077,6 +5112,10 @@
                                 <div class="inst-text">
                                     Please deposit the exact amount shown above to one of the numbers below.
                                     <strong>Use your full name as reference.</strong> After payment, upload the screenshot.
+                                </div>
+                                <!-- NEW: Payment processing note -->
+                                <div class="payment-processing-note" style="margin-top:12px;">
+                                    <i class="fas fa-hourglass-half"></i> Please note that your payment will be processed within <strong>3 hours</strong>. A notification will be sent after approval.
                                 </div>
                             </div>
                             <div id="paymentNumbersBox">
@@ -5609,6 +5648,29 @@
             });
 
             // Also close on overlay click (but not on modal click)
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('open');
+                }
+            });
+        }
+
+        // ===== PENDING PAYMENT POPUP (NEW) =====
+        function showPendingPaymentModal(course) {
+            const overlay = document.getElementById('pendingPaymentOverlay');
+            const userName = `${userData.firstName} ${userData.lastName}`.trim() ||
+                currentUser?.email?.split('@')[0] || 'User';
+            const amount = course.price || 0;
+            const courseName = course.name || 'Course';
+            document.getElementById('pendingUserName').textContent = userName;
+            document.getElementById('pendingAmount').textContent = `ZMW ${amount}`;
+            document.getElementById('pendingCourseName').textContent = courseName;
+            overlay.classList.add('open');
+
+            const okBtn = document.getElementById('pendingPaymentOkBtn');
+            okBtn.addEventListener('click', () => {
+                overlay.classList.remove('open');
+            });
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     overlay.classList.remove('open');
@@ -6659,7 +6721,7 @@
                         if (course.price === 0 || isApproved) {
                             openCourseDetail(course);
                         } else if (isPending) {
-                            addNotification('warning', `Payment for "${course.name}" is pending admin approval.`);
+                            showPendingPaymentModal(course);
                         } else {
                             openPaymentPage(course);
                         }
@@ -6747,7 +6809,7 @@
                         if (course.price === 0 || isApproved) {
                             openCourseDetail(course);
                         } else if (isPending) {
-                            addNotification('warning', `Payment for "${course.name}" is pending admin approval.`);
+                            showPendingPaymentModal(course);
                         } else {
                             openPaymentPage(course);
                         }
@@ -9613,6 +9675,7 @@
         console.log('✅ Added Assignments and Submitted Assignments buttons to Exam Hub.');
         console.log('✅ Live class pulsing button appears only when enrolled in active class.');
         console.log('✅ Live class viewer with raise hand, ask question, and private notes textbox.');
+        console.log('✅ Added processing note and pending payment popup.');
     </script>
 </body>
 </html>
