@@ -419,11 +419,11 @@
             transform: translateX(-50%) scaleX(1);
         }
 
-        /* ----- FLOATING EXAM BUTTON ----- */
+        /* ----- FLOATING EXAM BUTTON (modified for draggable) ----- */
         .exam-floating-btn {
             position: fixed;
-            bottom: calc(var(--nav-height) + 30px);
-            right: 20px;
+            /* bottom: calc(var(--nav-height) + 30px);
+            right: 20px; */
             z-index: 600;
             width: 56px;
             height: 56px;
@@ -434,16 +434,15 @@
             color: #fff;
             font-size: 1.4rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
+            touch-action: none;
             border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .exam-floating-btn:hover {
-            transform: scale(1.05);
             box-shadow: 0 12px 32px rgba(245, 176, 66, 0.5);
         }
         .exam-floating-btn:active {
@@ -4942,7 +4941,7 @@
             <div class="live-sub">Tap to join</div>
         </button>
 
-        <!-- ===== FLOATING EXAM BUTTON ===== -->
+        <!-- ===== FLOATING EXAM BUTTON (draggable) ===== -->
         <button class="exam-floating-btn" id="examFloatingBtn">
             <i class="fas fa-graduation-cap"></i>
             <span class="exam-badge" id="examBadge">0</span>
@@ -5104,7 +5103,10 @@
                 <div class="profile-card" style="background:var(--card-bg);border-radius:var(--radius-lg);padding:1.2rem;box-shadow:var(--shadow-md);margin:0.6rem;">
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Full name</span><span id="profileName" style="font-weight:700;"></span></div>
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Email</span><span id="profileEmail" style="font-weight:700;"></span></div>
-                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Phone</span><span id="profilePhone" style="font-weight:700;"></span></div>
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-weight:600;color:var(--text-secondary);">Phone</span>
+                        <span id="profilePhone" style="font-weight:700;cursor:pointer;color:var(--gold);" title="Click to edit"></span>
+                    </div>
                     <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;">
                         <span style="font-weight:600;color:var(--text-secondary);">Dark Mode</span>
                         <div id="darkModeToggle" class="iphone-toggle"></div>
@@ -8199,63 +8201,96 @@
                 }
             });
 
-            // ---- Exam floating button ----
-            document.getElementById('examFloatingBtn').addEventListener('click', () => {
-                document.getElementById('examHubOverlay').classList.add('open');
-                updateExamBadge();
-            });
+            // ---- Exam floating button (draggable) ----
+            const examBtn = document.getElementById('examFloatingBtn');
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+            let moved = false;
 
-            document.getElementById('examHubClose').addEventListener('click', () => {
-                document.getElementById('examHubOverlay').classList.remove('open');
-            });
+            function onDragStart(e) {
+                isDragging = true;
+                moved = false;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                startX = clientX;
+                startY = clientY;
+                const rect = examBtn.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+                examBtn.style.transition = 'none';
+                e.preventDefault();
+            }
 
-            document.querySelectorAll('.exam-hub-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const type = btn.dataset.type;
-                    document.getElementById('examHubOverlay').classList.remove('open');
-                    if (type === 'history') {
-                        showPage('assessmentHistory');
-                        renderAssessmentHistory();
-                    } else if (type === 'submittedAssignment') {
-                        // Show only submitted assignments
-                        const submitted = allAssessmentResponses.filter(r => 
-                            r.userId === currentUser?.uid && 
-                            (r.status === 'completed' || r.status === 'ended') &&
-                            allAssessments.some(a => a.id === r.assessmentId && a.type === 'assignment')
-                        );
-                        if (submitted.length === 0) {
-                            addNotification('warning', 'No submitted assignments yet.');
-                            return;
-                        }
-                        // Map to assessment objects
-                        const assessments = submitted.map(r => {
-                            const a = allAssessments.find(a => a.id === r.assessmentId);
-                            return a ? { ...a, response: r } : null;
-                        }).filter(Boolean);
-                        // Show selection modal with submitted assignments
-                        showAssessmentSelection(assessments, 'Submitted Assignments', true);
+            function onDragMove(e) {
+                if (!isDragging) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+                // keep within viewport
+                const maxX = window.innerWidth - examBtn.offsetWidth - 10;
+                const maxY = window.innerHeight - examBtn.offsetHeight - 10;
+                examBtn.style.left = Math.max(10, Math.min(maxX, newLeft)) + 'px';
+                examBtn.style.top = Math.max(10, Math.min(maxY, newTop)) + 'px';
+                examBtn.style.right = 'auto';
+                e.preventDefault();
+            }
+
+            function onDragEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                examBtn.style.transition = 'box-shadow 0.3s ease';
+                // If not moved, treat as click (open exam hub)
+                if (!moved) {
+                    document.getElementById('examHubOverlay').classList.add('open');
+                    updateExamBadge();
+                }
+                // Save position
+                const rect = examBtn.getBoundingClientRect();
+                localStorage.setItem('examBtnPosX', rect.left + 'px');
+                localStorage.setItem('examBtnPosY', rect.top + 'px');
+            }
+
+            // Load saved position
+            const savedExamX = localStorage.getItem('examBtnPosX');
+            const savedExamY = localStorage.getItem('examBtnPosY');
+            if (savedExamX && savedExamY) {
+                examBtn.style.left = savedExamX;
+                examBtn.style.top = savedExamY;
+                examBtn.style.right = 'auto';
+            } else {
+                examBtn.style.left = 'auto';
+                examBtn.style.right = '20px';
+                examBtn.style.top = 'auto';
+                examBtn.style.bottom = 'calc(var(--nav-height) + 30px)';
+            }
+
+            examBtn.addEventListener('mousedown', onDragStart);
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+
+            examBtn.addEventListener('touchstart', onDragStart, { passive: false });
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend', onDragEnd);
+
+            // --- Edit phone number in profile ---
+            const profilePhone = document.getElementById('profilePhone');
+            profilePhone.addEventListener('click', async () => {
+                const currentPhone = userData.phone || '';
+                const newPhone = prompt('Enter your phone number (e.g., +260 977 123456):', currentPhone);
+                if (newPhone !== null) {
+                    const trimmed = newPhone.trim();
+                    if (trimmed) {
+                        userData.phone = trimmed;
+                        await saveUserData();
+                        addNotification('success', 'Phone number updated.');
                     } else {
-                        // Find available assessments of this type
-                        const available = allAssessments.filter(a => {
-                            if (!userRegisterIds.has(a.registerId)) return false;
-                            if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                            if (a.type !== type) return false;
-                            const existing = allAssessmentResponses.find(r => r.assessmentId === a.id &&
-                                r.userId === currentUser?.uid);
-                            if (existing && (existing.status === 'completed' || existing.status ===
-                                    'ended')) return false;
-                            return true;
-                        });
-
-                        if (available.length === 0) {
-                            addNotification('warning', `No available ${type}s at the moment.`);
-                            return;
-                        }
-
-                        // Show selection modal
-                        showAssessmentSelection(available, type);
+                        addNotification('warning', 'Phone number cannot be empty.');
                     }
-                });
+                }
             });
 
             // ---- Assessment selection modal ----
@@ -9940,6 +9975,9 @@
         console.log('✅ Script download: cover page + cover details + questions.');
         console.log('✅ Tests/Quizzes/Exams: auto-submit on timer expiration.');
         console.log('✅ A4 page layout for assessment cover and questions; print/download now produces A4 pages.');
+        console.log('✅ Floating exam button is now draggable (like the player).');
+        console.log('✅ User can now edit phone number in profile (click on phone).');
+        console.log('✅ Cover page image fills the whole A4 paper when downloaded.');
     </script>
 </body>
 </html>
