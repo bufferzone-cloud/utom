@@ -848,6 +848,11 @@
             color: #d32f2f;
             border-color: rgba(211, 47, 47, 0.12);
         }
+        .btn-sm.copy:hover {
+            background: #fef3f1;
+            color: #d4952a;
+            border-color: rgba(245, 176, 66, 0.12);
+        }
         /* ===== COMMENT SYSTEM ===== */
         .comment-toggle-row {
             display: flex;
@@ -1298,6 +1303,87 @@
             width: 100%;
             padding: 12px 16px;
             line-height: 1.5;
+        }
+        /* ===== COVER PAGE UPLOAD AREA ===== */
+        .cover-upload-area {
+            border: 2px dashed #c0c4d0;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            background: #fafbfc;
+            margin-bottom: 12px;
+            transition: var(--transition);
+            position: relative;
+        }
+        .cover-upload-area:hover {
+            border-color: #f5b042;
+            background: #fefaf0;
+        }
+        .cover-upload-area .placeholder-icon i {
+            font-size: 40px;
+            color: #b0b4c0;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .cover-upload-area .placeholder-icon span {
+            font-size: 13px;
+            color: #6b6f7c;
+            font-weight: 500;
+        }
+        .cover-upload-area .file-preview {
+            margin-top: 12px;
+        }
+        .cover-upload-area .file-preview img,
+        .cover-upload-area .file-preview iframe {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 6px;
+            border: 1px solid #e0e2e8;
+        }
+        .cover-upload-area .file-preview .file-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .cover-upload-area .cover-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .cover-upload-area .cover-actions .btn-upload-cover {
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            color: #fff;
+            font-size: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .cover-upload-area .cover-actions .btn-upload-cover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.2);
+        }
+        .cover-upload-area .cover-actions .btn-remove-cover {
+            background: transparent;
+            border: 2px solid #e74c3c;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            color: #e74c3c;
+            font-size: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: none;
+        }
+        .cover-upload-area .cover-actions .btn-remove-cover:hover {
+            background: #fde8e8;
         }
         /* ===== USERS GRID ===== */
         .users-grid {
@@ -1939,6 +2025,27 @@
             box-shadow: 0 3px 10px rgba(231, 76, 60, 0.20);
         }
         .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(231, 76, 60, 0.25);
+        }
+        .btn-delete-tx {
+            background: #fde8e8;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            color: #c62828;
+            font-size: 11px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #f8d7da;
+        }
+        .btn-delete-tx:hover {
+            background: #e74c3c;
+            color: #fff;
             transform: translateY(-2px);
             box-shadow: 0 6px 18px rgba(231, 76, 60, 0.25);
         }
@@ -5385,6 +5492,33 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.08);
             background: #fff;
         }
+        /* ===== ADD: Copy Video Modal ===== */
+        .copy-video-modal .modal-box {
+            max-width: 420px;
+        }
+        .copy-video-modal .form-row {
+            margin-bottom: 14px;
+        }
+        .copy-video-modal .form-row label {
+            font-weight: 600;
+            font-size: 11px;
+            min-width: 70px;
+        }
+        .copy-video-modal .form-row select {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 40px;
+            border: 1.5px solid #e5e8ed;
+            font-size: 12px;
+            background: #fafbfc;
+            color: var(--text);
+        }
+        .copy-video-modal .btn-group {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -6041,6 +6175,22 @@
                         <form id="createTestForm">
                             <!-- STEP 1: COVER PAGE -->
                             <div id="testCoverStep">
+                                <!-- Cover Page Upload -->
+                                <div class="cover-upload-area" id="testCoverUploadArea">
+                                    <div class="placeholder-icon" id="testCoverPlaceholder">
+                                        <i class="fas fa-file-upload"></i>
+                                        <span>Upload Cover Page (Image, PDF, or Word)</span>
+                                    </div>
+                                    <div class="file-preview" id="testCoverPreview" style="display:none;">
+                                        <img id="testCoverImagePreview" src="" alt="Cover Preview" style="max-width:100%; max-height:200px;" />
+                                        <div class="file-info" id="testCoverFileInfo"></div>
+                                    </div>
+                                    <div class="cover-actions">
+                                        <button type="button" class="btn-upload-cover" id="testCoverUploadBtn"><i class="fas fa-cloud-upload-alt"></i> Upload Cover</button>
+                                        <button type="button" class="btn-remove-cover" id="testCoverRemoveBtn"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                    <input type="hidden" id="testCoverUrl" />
+                                </div>
                                 <!-- Name -->
                                 <div class="form-row">
                                     <input type="text" id="testName" placeholder="Test Name *" required>
@@ -6186,6 +6336,22 @@
                         <form id="createQuizForm">
                             <!-- STEP 1: COVER PAGE -->
                             <div id="quizCoverStep">
+                                <!-- Cover Page Upload -->
+                                <div class="cover-upload-area" id="quizCoverUploadArea">
+                                    <div class="placeholder-icon" id="quizCoverPlaceholder">
+                                        <i class="fas fa-file-upload"></i>
+                                        <span>Upload Cover Page (Image, PDF, or Word)</span>
+                                    </div>
+                                    <div class="file-preview" id="quizCoverPreview" style="display:none;">
+                                        <img id="quizCoverImagePreview" src="" alt="Cover Preview" style="max-width:100%; max-height:200px;" />
+                                        <div class="file-info" id="quizCoverFileInfo"></div>
+                                    </div>
+                                    <div class="cover-actions">
+                                        <button type="button" class="btn-upload-cover" id="quizCoverUploadBtn"><i class="fas fa-cloud-upload-alt"></i> Upload Cover</button>
+                                        <button type="button" class="btn-remove-cover" id="quizCoverRemoveBtn"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                    <input type="hidden" id="quizCoverUrl" />
+                                </div>
                                 <div class="form-row">
                                     <input type="text" id="quizName" placeholder="Quiz Name *" required>
                                 </div>
@@ -6354,6 +6520,22 @@
                         <form id="createExamForm">
                             <!-- STEP 1: COVER PAGE -->
                             <div id="examCoverStep">
+                                <!-- Cover Page Upload -->
+                                <div class="cover-upload-area" id="examCoverUploadArea">
+                                    <div class="placeholder-icon" id="examCoverPlaceholder">
+                                        <i class="fas fa-file-upload"></i>
+                                        <span>Upload Cover Page (Image, PDF, or Word)</span>
+                                    </div>
+                                    <div class="file-preview" id="examCoverPreview" style="display:none;">
+                                        <img id="examCoverImagePreview" src="" alt="Cover Preview" style="max-width:100%; max-height:200px;" />
+                                        <div class="file-info" id="examCoverFileInfo"></div>
+                                    </div>
+                                    <div class="cover-actions">
+                                        <button type="button" class="btn-upload-cover" id="examCoverUploadBtn"><i class="fas fa-cloud-upload-alt"></i> Upload Cover</button>
+                                        <button type="button" class="btn-remove-cover" id="examCoverRemoveBtn"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                    <input type="hidden" id="examCoverUrl" />
+                                </div>
                                 <div class="form-row">
                                     <input type="text" id="examName" placeholder="Exam Name *" required>
                                 </div>
@@ -6492,17 +6674,26 @@
                         <form id="createAssignmentForm">
                             <!-- STEP 1: COVER PAGE -->
                             <div id="assignmentCoverStep">
+                                <!-- Cover Page Upload -->
+                                <div class="cover-upload-area" id="assignmentCoverUploadArea">
+                                    <div class="placeholder-icon" id="assignmentCoverPlaceholder">
+                                        <i class="fas fa-file-upload"></i>
+                                        <span>Upload Cover Page (Image, PDF, or Word)</span>
+                                    </div>
+                                    <div class="file-preview" id="assignmentCoverPreview" style="display:none;">
+                                        <img id="assignmentCoverImagePreview" src="" alt="Cover Preview" style="max-width:100%; max-height:200px;" />
+                                        <div class="file-info" id="assignmentCoverFileInfo"></div>
+                                    </div>
+                                    <div class="cover-actions">
+                                        <button type="button" class="btn-upload-cover" id="assignmentCoverUploadBtn"><i class="fas fa-cloud-upload-alt"></i> Upload Cover</button>
+                                        <button type="button" class="btn-remove-cover" id="assignmentCoverRemoveBtn"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                    <input type="hidden" id="assignmentCoverUrl" />
+                                </div>
                                 <div class="form-row">
                                     <input type="text" id="assignmentName" placeholder="Assignment Name *" required>
                                 </div>
-                                <div class="form-row">
-                                    <label style="font-weight:600;font-size:12px;margin-right:6px;">Duration:</label>
-                                    <input type="number" id="assignmentDurationHours" placeholder="Hours" min="0" value="0" style="width:80px;">
-                                    <span style="margin:0 4px;">h</span>
-                                    <input type="number" id="assignmentDurationMinutes" placeholder="Minutes" min="0" max="59" value="45" style="width:80px;">
-                                    <span style="margin:0 4px;">m</span>
-                                    <span id="assignmentDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">0h 45m</span>
-                                </div>
+                                <!-- NO DURATION FIELDS - only deadline -->
                                 <div class="form-row">
                                     <select id="assignmentRegister" required><option value="">Select Register *</option></select>
                                 </div>
@@ -7037,6 +7228,29 @@
                     <button type="button" id="editRegCancelBtn" class="btn-outline" style="padding:10px 24px;font-size:12px;">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ===== COPY VIDEO MODAL ===== -->
+    <div id="copyVideoModal" class="modal-overlay copy-video-modal">
+        <div class="modal-box">
+            <button class="close-modal" id="closeCopyVideoModal">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-copy"></i> Copy Video to Another Course</h3>
+            <p style="font-size:12px;color:#8b8fa3;margin-bottom:12px;">Select the destination course (and optionally subfolder) where you want to copy this video.</p>
+            <input type="hidden" id="copyVideoSourceId">
+            <div class="form-row">
+                <label>Course</label>
+                <select id="copyDestCourse"></select>
+            </div>
+            <div class="form-row">
+                <label>Subfolder</label>
+                <select id="copyDestSubfolder"></select>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" id="cancelCopyVideoBtn">Cancel</button>
+                <button class="btn-confirm" id="confirmCopyVideoBtn"><i class="fas fa-copy"></i> Copy</button>
+            </div>
         </div>
     </div>
 
@@ -7808,6 +8022,7 @@
                     <div class="actions">
                         <button class="btn-sm edit edit-item-btn" data-id="${v.id}" data-type="video" title="Edit"><i class="fas fa-pen-to-square"></i></button>
                         <button class="btn-sm delete delete-item-btn" data-id="${v.id}" data-type="video" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        <button class="btn-sm copy copy-video-btn" data-id="${v.id}" title="Copy to another course"><i class="fas fa-copy"></i></button>
                     </div>` : ''}
                     <div class="comment-controls">
                         <div class="comment-toggle-row">
@@ -7905,6 +8120,16 @@
                     const id = btn.dataset.id;
                     const type = btn.dataset.type;
                     openEditModal(id, type);
+                });
+            });
+        }
+
+        function attachCopyEvents() {
+            document.querySelectorAll('.copy-video-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    openCopyVideoModal(id);
                 });
             });
         }
@@ -8126,6 +8351,83 @@
             const subs = subfolders.filter(s => s.courseId === courseId);
             sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
         }
+
+        // =================================================================
+        // COPY VIDEO MODAL
+        // =================================================================
+        function openCopyVideoModal(videoId) {
+            const video = videos.find(v => v.id === videoId);
+            if (!video) { showToast('Video not found.', 'error'); return; }
+            document.getElementById('copyVideoSourceId').value = videoId;
+            // populate courses
+            const courseSelect = document.getElementById('copyDestCourse');
+            courseSelect.innerHTML = courses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            // populate subfolders for selected course
+            updateCopyDestSubfolders(courseSelect.value);
+            document.getElementById('copyVideoModal').classList.add('open');
+        }
+
+        function updateCopyDestSubfolders(courseId) {
+            const subSelect = document.getElementById('copyDestSubfolder');
+            const subs = subfolders.filter(s => s.courseId === courseId);
+            subSelect.innerHTML = '<option value="">No subfolder</option>' + subs.map(s =>
+                `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        }
+
+        document.getElementById('copyDestCourse').addEventListener('change', function() {
+            updateCopyDestSubfolders(this.value);
+        });
+
+        document.getElementById('cancelCopyVideoBtn').addEventListener('click', () => {
+            document.getElementById('copyVideoModal').classList.remove('open');
+        });
+        document.getElementById('closeCopyVideoModal').addEventListener('click', () => {
+            document.getElementById('copyVideoModal').classList.remove('open');
+        });
+        document.getElementById('copyVideoModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('copyVideoModal').classList.remove('open');
+            }
+        });
+
+        document.getElementById('confirmCopyVideoBtn').addEventListener('click', async function() {
+            const sourceId = document.getElementById('copyVideoSourceId').value;
+            const destCourseId = document.getElementById('copyDestCourse').value;
+            const destSubfolderId = document.getElementById('copyDestSubfolder').value;
+            const sourceVideo = videos.find(v => v.id === sourceId);
+            if (!sourceVideo) { showToast('Video not found.', 'error'); return; }
+            if (!destCourseId) { showToast('Please select a destination course.', 'error'); return; }
+
+            // Create a new video record referencing the same video data
+            try {
+                const newRef = push(videosRef);
+                const newVideo = {
+                    title: sourceVideo.title,
+                    instructor: sourceVideo.instructor,
+                    courseId: destCourseId,
+                    subfolderId: destSubfolderId || '',
+                    description: sourceVideo.description || '',
+                    videoUrl: sourceVideo.videoUrl,
+                    thumbnail: sourceVideo.thumbnail || '',
+                    price: sourceVideo.price,
+                    courseName: courses.find(c => c.id === destCourseId)?.name || '',
+                    subfolderName: subfolders.find(s => s.id === destSubfolderId)?.name || '',
+                    createdAt: serverTimestamp(),
+                    views: 0,
+                    likes: 0,
+                    commentsEnabled: sourceVideo.commentsEnabled !== false,
+                    uniqueViewers: {},
+                    isCopy: true,
+                    sourceVideoId: sourceId
+                };
+                await set(newRef, newVideo);
+                showToast('Video copied to course successfully!', 'success');
+                push(notificationsRef, { message: `📹 Video copied to ${courses.find(c => c.id === destCourseId)?.name || 'course'}`, timestamp: serverTimestamp() });
+                document.getElementById('copyVideoModal').classList.remove('open');
+            } catch (err) {
+                showToast('Error copying video: ' + err.message, 'error');
+            }
+        });
 
         // =================================================================
         // COURSE EDIT MODAL
@@ -8431,6 +8733,9 @@
                                     <button class="btn-reject reject-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-source="${tx.source}"><i class="fas fa-times"></i> Reject</button>
                                 </div>
                             </div>` : ''}
+                            <div class="detail-item" style="flex-basis:100%;">
+                                <button class="btn-delete-tx delete-tx-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-source="${tx.source}"><i class="fas fa-trash-alt"></i> Delete Transaction</button>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -8595,6 +8900,50 @@
                         showToast('Transaction rejected', 'info');
                     } catch (err) { showToast('Error rejecting', 'error'); } finally {
                         setLoadingForAction('rejectTx', false, 'reject-btn');
+                    }
+                });
+            });
+            // Delete transaction
+            document.querySelectorAll('.delete-tx-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const txId = btn.dataset.id;
+                    const userId = btn.dataset.userid;
+                    const source = btn.dataset.source;
+                    if (!confirm('Are you sure you want to permanently delete this transaction?')) return;
+                    try {
+                        if (source === 'pendingPurchases') {
+                            await remove(ref(db, `pendingPurchases/${userId}/${txId}`));
+                        } else {
+                            await remove(ref(db, `transactions/${txId}`));
+                        }
+                        showToast('Transaction deleted.', 'info');
+                        push(notificationsRef, { message: `🗑️ Transaction deleted`, timestamp: serverTimestamp() });
+                        // Re-fetch transactions
+                        const txSnap = await get(transactionsRef);
+                        const txData = txSnap.val() || {};
+                        const pendingSnap = await get(pendingPurchasesRef);
+                        const pendingData = pendingSnap.val() || {};
+                        const seen = new Map();
+                        Object.entries(txData).forEach(([id, tx]) => {
+                            seen.set(id, { id, ...tx, source: 'transactions' });
+                        });
+                        Object.entries(pendingData).forEach(([userId, userTxs]) => {
+                            Object.entries(userTxs).forEach(([txId, tx]) => {
+                                if (!seen.has(txId)) {
+                                    seen.set(txId, { id: txId, ...tx, userId, source: 'pendingPurchases' });
+                                } else {
+                                    const existing = seen.get(txId);
+                                    if (existing.status !== 'approved' && tx.status === 'approved') {
+                                        seen.set(txId, { id: txId, ...tx, userId, source: 'pendingPurchases' });
+                                    }
+                                }
+                            });
+                        });
+                        allTransactions = Array.from(seen.values());
+                        renderAccount();
+                    } catch (err) {
+                        showToast('Error deleting transaction: ' + err.message, 'error');
                     }
                 });
             });
@@ -8808,6 +9157,7 @@
                         '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
                     attachCardEvents();
                     attachEditEvents();
+                    attachCopyEvents();
                     attachCommentEvents();
                     document.getElementById('subfolderViewSection').classList.add('active');
                 } else {
@@ -9638,6 +9988,67 @@
         }
 
         // =================================================================
+        // COVER PAGE UPLOAD HANDLING
+        // =================================================================
+        function setupCoverUpload(prefix) {
+            const uploadBtn = document.getElementById(`${prefix}CoverUploadBtn`);
+            const removeBtn = document.getElementById(`${prefix}CoverRemoveBtn`);
+            const previewDiv = document.getElementById(`${prefix}CoverPreview`);
+            const imagePreview = document.getElementById(`${prefix}CoverImagePreview`);
+            const fileInfo = document.getElementById(`${prefix}CoverFileInfo`);
+            const urlInput = document.getElementById(`${prefix}CoverUrl`);
+            const placeholder = document.getElementById(`${prefix}CoverPlaceholder`);
+
+            if (!uploadBtn) return;
+
+            uploadBtn.addEventListener('click', function() {
+                const options = {
+                    cloudName: CLOUD_NAME,
+                    uploadPreset: UPLOAD_PRESET,
+                    sources: ['local', 'url'],
+                    maxFileSize: 155000000,
+                    resourceType: 'auto',
+                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx'],
+                    maxFiles: 1
+                };
+                cloudinary.openUploadWidget(options, (err, res) => {
+                    if (err) { showToast('Upload error: ' + err.message, 'error'); return; }
+                    if (res.event === 'success') {
+                        const info = res.info;
+                        const url = info.secure_url;
+                        urlInput.value = url;
+                        // Show preview
+                        placeholder.style.display = 'none';
+                        previewDiv.style.display = 'block';
+                        if (info.resource_type === 'image') {
+                            imagePreview.src = url;
+                            imagePreview.style.display = 'block';
+                            fileInfo.textContent = info.format.toUpperCase() + ' file uploaded.';
+                        } else {
+                            // For PDF/Word, show icon and link
+                            imagePreview.style.display = 'none';
+                            fileInfo.innerHTML = `<a href="${url}" target="_blank">View uploaded file</a>`;
+                        }
+                        removeBtn.style.display = 'inline-flex';
+                        showToast('Cover page uploaded!', 'success');
+                    }
+                });
+            });
+
+            removeBtn.addEventListener('click', function() {
+                urlInput.value = '';
+                previewDiv.style.display = 'none';
+                placeholder.style.display = 'flex';
+                removeBtn.style.display = 'none';
+            });
+        }
+
+        setupCoverUpload('test');
+        setupCoverUpload('quiz');
+        setupCoverUpload('exam');
+        setupCoverUpload('assignment');
+
+        // =================================================================
         // Two-step assessment creation logic (includes assignment)
         // =================================================================
         function setupCreateAssessmentSteps(type) {
@@ -9656,7 +10067,7 @@
                 const minutes = parseInt(document.getElementById(`${type}DurationMinutes`).value) || 0;
                 const register = document.getElementById(`${type}Register`).value;
                 if (!name) { showToast('Please enter a name.', 'error'); return; }
-                if (hours === 0 && minutes === 0) { showToast('Please set a valid duration.', 'error'); return; }
+                if (hours === 0 && minutes === 0 && type !== 'assignment') { showToast('Please set a valid duration.', 'error'); return; }
                 if (!register) { showToast('Please select a register.', 'error'); return; }
 
                 // For assignment: check deadline
@@ -9889,6 +10300,7 @@
             const logoUrl = document.getElementById(`${type}LogoUrl`).value || '';
             const passingScore = parseInt(document.getElementById(`${type}PassingScore`).value) || 50;
             const instructions = document.getElementById(`${type}Instructions`).value.trim();
+            const coverUrl = document.getElementById(`${type}CoverUrl`).value || '';
 
             return {
                 name,
@@ -9910,6 +10322,7 @@
                 logoUrl,
                 passingScore,
                 instructions,
+                coverUrl,
                 type
             };
         }
@@ -9932,12 +10345,26 @@
             const durationLabel = data.duration.replace(':', 'h ') + 'm';
             const rules = data.instructions ? data.instructions.split('\n').filter(line => line.trim() !== '') : [];
 
+            // Cover page might be an uploaded file. If it's an image, show it. Otherwise, show placeholder.
+            let coverHtml = '';
+            if (data.coverUrl) {
+                const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(data.coverUrl);
+                if (isImage) {
+                    coverHtml = `<img src="${data.coverUrl}" alt="Cover Page" style="width:100%;max-height:300px;object-fit:cover;" />`;
+                } else {
+                    coverHtml = `<div style="padding:20px;text-align:center;background:#f5f6f8;color:#6b6f7c;font-size:14px;font-weight:600;">Uploaded Cover Page (PDF/Word)</div>`;
+                }
+            } else {
+                coverHtml = `<div style="padding:20px;text-align:center;background:#f5f6f8;color:#6b6f7c;font-size:14px;font-weight:600;">No Cover Page Uploaded</div>`;
+            }
+
             let html = `
                 <div class="cover-header">
                     <img src="${logo}" alt="Logo" class="cover-logo" onerror="this.style.display='none'">
                     <h1>${escapeHtml(data.institutionName)}</h1>
                 </div>
                 <div class="cover-body">
+                    ${coverHtml}
                     <div class="assessment-type">${assessmentType}</div>
                     <div class="assessment-name">${escapeHtml(data.name)}</div>
                     <div class="details-grid">
@@ -10304,6 +10731,7 @@
                 '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos found</div>';
             attachCardEvents();
             attachEditEvents();
+            attachCopyEvents();
             attachCommentEvents();
         }
 
@@ -11304,8 +11732,7 @@
                     const user = users.find(u => u.uid === uid);
                     if (!user) return;
                     if (window._regMembers.find(m => m.uid === uid)) return;
-                    window._regMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                            'User', email: user.email });
+                    window._regMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
                     renderRegMemberList();
                     renderRegisterMemberSelector(document.getElementById('regMemberSearch').value);
                     showToast('Member added.', 'success');
@@ -11324,8 +11751,7 @@
                         renderRegisterMemberSelector(document.getElementById('regMemberSearch').value);
                         showToast('Member removed.', 'info');
                     } else {
-                        window._regMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                                'User', email: user.email });
+                        window._regMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
                         renderRegMemberList();
                         renderRegisterMemberSelector(document.getElementById('regMemberSearch').value);
                         showToast('Member added.', 'success');
@@ -11482,6 +11908,7 @@
             const instructions = coverData.instructions;
             const institutionName = coverData.institutionName;
             const logoUrl = coverData.logoUrl;
+            const coverUrl = coverData.coverUrl;
 
             const sections = [];
             document.querySelectorAll('#testSectionsContainer .question-builder').forEach(sec => {
@@ -11540,7 +11967,7 @@
                 return;
             }
 
-            const cover = { instructions, coverImage: '', institutionName, logoUrl };
+            const cover = { instructions, coverImage: coverUrl, institutionName, logoUrl };
             try {
                 const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
                 const data = {
@@ -11615,6 +12042,7 @@
             const instructions = coverData.instructions;
             const institutionName = coverData.institutionName;
             const logoUrl = coverData.logoUrl;
+            const coverUrl = coverData.coverUrl;
 
             const questions = [];
             document.querySelectorAll('#quizQuestionsContainer .question-builder').forEach(q => {
@@ -11665,7 +12093,7 @@
                 return;
             }
 
-            const cover = { instructions, coverImage: '', institutionName, logoUrl };
+            const cover = { instructions, coverImage: coverUrl, institutionName, logoUrl };
             try {
                 const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
                 const data = {
@@ -11739,6 +12167,7 @@
             const instructions = coverData.instructions;
             const institutionName = coverData.institutionName;
             const logoUrl = coverData.logoUrl;
+            const coverUrl = coverData.coverUrl;
 
             const sections = [];
             document.querySelectorAll('#examSectionsContainer .question-builder').forEach(sec => {
@@ -11799,7 +12228,7 @@
                 return;
             }
 
-            const cover = { instructions, coverImage: '', institutionName, logoUrl };
+            const cover = { instructions, coverImage: coverUrl, institutionName, logoUrl };
             try {
                 const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
                 const data = {
@@ -11858,7 +12287,7 @@
             }
 
             const name = coverData.name;
-            const duration = coverData.duration;
+            const duration = coverData.duration; // will be 0:00 for assignment
             const registerId = coverData.registerId;
             const deadline = coverData.deadline;
             const publishImmediately = coverData.publishImmediately;
@@ -11871,6 +12300,7 @@
             const instructions = coverData.instructions;
             const institutionName = coverData.institutionName;
             const logoUrl = coverData.logoUrl;
+            const coverUrl = coverData.coverUrl;
 
             const sections = [];
             document.querySelectorAll('#assignmentSectionsContainer .question-builder').forEach(sec => {
@@ -11929,13 +12359,13 @@
                 return;
             }
 
-            const cover = { instructions, coverImage: '', institutionName, logoUrl };
+            const cover = { instructions, coverImage: coverUrl, institutionName, logoUrl };
             try {
                 const assRef = editingAssessmentId ? ref(db, `assessments/${editingAssessmentId}`) : push(assessmentsRef);
                 const data = {
                     type: 'assignment',
                     name,
-                    duration,
+                    duration, // 0:00
                     registerId,
                     deadline,
                     publishImmediately,
@@ -13593,6 +14023,30 @@
                     preview.querySelector('img').src = ass.cover.logoUrl;
                     document.getElementById(type + 'LogoRemoveBtn').style.display = 'inline-flex';
                 }
+                if (ass.cover.coverImage) {
+                    document.getElementById(type + 'CoverUrl').value = ass.cover.coverImage;
+                    // set preview
+                    const area = document.getElementById(type + 'CoverUploadArea');
+                    if (area) {
+                        const placeholder = document.getElementById(type + 'CoverPlaceholder');
+                        const previewDiv = document.getElementById(type + 'CoverPreview');
+                        const imgPreview = document.getElementById(type + 'CoverImagePreview');
+                        const fileInfo = document.getElementById(type + 'CoverFileInfo');
+                        const removeBtn = document.getElementById(type + 'CoverRemoveBtn');
+                        placeholder.style.display = 'none';
+                        previewDiv.style.display = 'block';
+                        // if image, show image; else show link
+                        if (/\.(jpeg|jpg|png|gif|webp)$/i.test(ass.cover.coverImage)) {
+                            imgPreview.src = ass.cover.coverImage;
+                            imgPreview.style.display = 'block';
+                            fileInfo.textContent = 'Image file uploaded.';
+                        } else {
+                            imgPreview.style.display = 'none';
+                            fileInfo.innerHTML = `<a href="${ass.cover.coverImage}" target="_blank">View uploaded file</a>`;
+                        }
+                        removeBtn.style.display = 'inline-flex';
+                    }
+                }
                 document.getElementById(type + 'InstitutionName').value = ass.cover.institutionName || 'My University';
             }
             if (ass.passingScore !== undefined) {
@@ -13916,6 +14370,7 @@
                     <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
                     <div>
                         <button id="downloadReportBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-image"></i> Download Report PNG</button>
+                        <button id="downloadFullScoreListBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;"><i class="fas fa-print"></i> Print Full Score List</button>
                     </div>
                 </div>
                 <h2 style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(ass.name)}</h2>
@@ -13927,6 +14382,7 @@
                 container.innerHTML = html;
                 document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
                 document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
+                document.getElementById('downloadFullScoreListBtn')?.addEventListener('click', () => generateFullScoreListHTML(assId));
                 return;
             }
 
@@ -13971,6 +14427,7 @@
 
             document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
             document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
+            document.getElementById('downloadFullScoreListBtn')?.addEventListener('click', () => generateFullScoreListHTML(assId));
 
             container.querySelectorAll('.view-script-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -14121,6 +14578,90 @@
             }
         }
 
+        // Full score list HTML print
+        function generateFullScoreListHTML(assId) {
+            const ass = assessments.find(a => a.id === assId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+            const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
+            if (responses.length === 0) { showToast('No students to print.', 'error'); return; }
+
+            const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
+            let rowsHtml = '';
+            sorted.forEach((r, idx) => {
+                const user = users.find(u => u.uid === r.userId);
+                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                const email = user ? user.email : '';
+                const phone = user ? user.phone : 'N/A';
+                const score = r.score || 0;
+                const total = ass.totalMarks || 0;
+                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                const passed = percent >= (ass.passingScore || 50);
+                rowsHtml += `
+                    <tr style="border-bottom:1px solid #e5e8ed;">
+                        <td style="padding:8px 12px;">${idx+1}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(name)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(email)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(phone)}</td>
+                        <td style="padding:8px 12px;text-align:center;">${score}</td>
+                        <td style="padding:8px 12px;text-align:center;">${total}</td>
+                        <td style="padding:8px 12px;text-align:center;">${percent}%</td>
+                        <td style="padding:8px 12px;text-align:center;"><span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${passed ? 'Pass' : 'Fail'}</span></td>
+                    </tr>
+                `;
+            });
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Full Score List - ${escapeHtml(ass.name)}</title>
+                    <style>
+                        body { font-family: 'Inter', Arial, sans-serif; padding: 30px; }
+                        h1 { color: #1a1d28; font-size: 24px; text-align: center; margin-bottom: 4px; }
+                        h2 { color: #5f6377; font-size: 16px; text-align: center; margin-bottom: 16px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px; }
+                        th { background: #f5b042; color: #fff; padding: 10px; text-align: left; }
+                        td { padding: 8px; border-bottom: 1px solid #ddd; }
+                        .header-info { text-align: center; margin-bottom: 20px; }
+                        .print-btn { background: #f5b042; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+                        @media print { .print-btn { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <button class="print-btn" onclick="window.print()">Print</button>
+                    <div class="header-info">
+                        <h1>UTOM</h1>
+                        <h2>Full Score List - ${escapeHtml(ass.name)} (${ass.type})</h2>
+                        <div>Total Students: ${responses.length} · Date: ${new Date().toLocaleString()}</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Score</th>
+                                <th>Total</th>
+                                <th>Percentage</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+            win.focus();
+        }
+
         // ---- renderOngoingList ----
         function renderOngoingList() {
             const container = document.getElementById('ongoingListContainer');
@@ -14197,7 +14738,7 @@
                             ${ass.type !== 'assignment' && ass.scheduleType === 'self' ? ` · Available: ${ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A'} – ${ass.availableUntil ? new Date(ass.availableUntil).toLocaleString() : 'N/A'}` : ''}
                         </div>
                         <div style="border-top:1px solid #f0f0f5;padding-top:8px;">
-                            <span style="font-size:13px;font-weight:600;color:var(--text);">Students Started (${responses.length})</span>
+                            <span style="font-size:13px;font-weight:600;color:var(--text);">Students Doing (${responses.length})</span>
                             ${responses.length === 0 ? '<div style="font-size:12px;color:#8b8fa3;padding:4px 0;">No students have started yet.</div>' : ''}
                             ${responses.map(r => {
                                 const user = users.find(u => u.uid === r.userId);
@@ -14451,8 +14992,7 @@
                     const user = users.find(u => u.uid === uid);
                     if (!user) return;
                     if (window._editRegMembers.find(m => m.uid === uid)) return;
-                    window._editRegMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                            'User', email: user.email });
+                    window._editRegMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
                     renderEditRegMemberList();
                     renderEditRegMemberSelector(document.getElementById('editRegMemberSearch').value);
                     showToast('Member added.', 'success');
@@ -14471,8 +15011,7 @@
                         renderEditRegMemberSelector(document.getElementById('editRegMemberSearch').value);
                         showToast('Member removed.', 'info');
                     } else {
-                        window._editRegMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                                'User', email: user.email });
+                        window._editRegMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
                         renderEditRegMemberList();
                         renderEditRegMemberSelector(document.getElementById('editRegMemberSearch').value);
                         showToast('Member added.', 'success');
@@ -14833,7 +15372,7 @@
             });
         }
 
-        // ---- Download Assessment as colorful HTML ----
+        // ---- Download Assessment as colorful HTML (includes cover) ----
         function downloadAssessmentHTML(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) { showToast('Response not found.', 'error'); return; }
@@ -14858,6 +15397,18 @@
             const total = ass.totalMarks || 0;
             const studentInfo = response.studentInfo || {};
             const passed = total > 0 && score >= (ass.passingScore || 50);
+
+            // Cover page HTML - if uploaded cover URL exists, include it
+            let coverHtml = '';
+            if (ass.cover && ass.cover.coverImage) {
+                const coverUrl = ass.cover.coverImage;
+                const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(coverUrl);
+                if (isImage) {
+                    coverHtml = `<img src="${coverUrl}" style="width:100%; max-height:300px; object-fit:contain; margin-bottom:20px;" />`;
+                } else {
+                    coverHtml = `<div style="width:100%; height:200px; background:#f0f0f5; display:flex; align-items:center; justify-content:center; color:#888; font-weight:600; margin-bottom:20px;">Uploaded Cover Page (${coverUrl.split('.').pop().toUpperCase()})</div>`;
+                }
+            }
 
             let htmlContent = `
             <!DOCTYPE html>
@@ -14898,6 +15449,7 @@
                         <div class="sub">${escapeHtml(ass.name)} · ${ass.type}</div>
                         <div class="date">${formatDate(response.submittedAt || response.startedAt)}</div>
                     </div>
+                    ${coverHtml}
                     <div class="student-info">
                         <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || user?.email || 'N/A')}
                         <span class="score"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
@@ -15625,6 +16177,7 @@
         window.renderHistoryAssessments = renderHistoryAssessments;
         window.renderHistoryStudents = renderHistoryStudents;
         window.generateReportImage = generateReportImage;
+        window.generateFullScoreListHTML = generateFullScoreListHTML;
         window.downloadAssessmentHTML = downloadAssessmentHTML;
         window.exportSingleStudentCSV = exportSingleStudentCSV;
         window.duplicateAssessment = duplicateAssessment;
