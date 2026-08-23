@@ -52,7 +52,7 @@
             padding: 10px 20px;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-sm);
             font-weight: 600;
             font-size: 14px;
             margin-bottom: 20px;
@@ -85,38 +85,42 @@
         .form-card {
             background: var(--card-bg);
             border-radius: var(--radius-md);
-            padding: 24px;
+            padding: 32px;
             box-shadow: var(--shadow-sm);
             max-width: 600px;
             margin: 0 auto;
         }
         .form-card h2 {
-            margin-bottom: 20px;
-            font-size: 22px;
+            margin-bottom: 24px;
+            font-size: 24px;
             font-weight: 800;
+            text-align: center;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .form-group label {
             display: block;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
         }
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 18px;
             border-radius: 40px;
             border: 1.5px solid #e5e8ed;
-            font-size: 14px;
+            font-size: 15px;
             background: #fafbfc;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.1);
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--gold), #ff6b00);
@@ -128,6 +132,7 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
+            transition: var(--transition);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
@@ -137,7 +142,7 @@
             width: 100%;
             padding: 18px;
             font-size: 20px;
-            margin-top: 20px;
+            margin-top: 24px;
         }
         /* Live Streaming Page */
         .stream-container {
@@ -158,10 +163,12 @@
         }
         .stream-header .class-info h3 {
             margin: 0;
+            font-size: 18px;
         }
         .stream-header .class-info p {
             font-size: 12px;
             opacity: 0.8;
+            margin-top: 2px;
         }
         .stream-body {
             flex: 1;
@@ -218,6 +225,9 @@
             font-size: 20px;
             cursor: pointer;
             transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .control-btn.active {
             background: var(--gold);
@@ -249,13 +259,14 @@
         }
         .question-box h4,
         .stats-box h4 {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 14px;
+            font-weight: 700;
         }
         .question-box .question-form {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
         .question-box input {
             flex: 1;
@@ -270,6 +281,7 @@
             border-radius: 30px;
             font-weight: 600;
             color: #fff;
+            cursor: pointer;
         }
         .question-list {
             max-height: 150px;
@@ -289,10 +301,12 @@
             font-size: 28px;
             font-weight: 900;
             color: var(--gold);
+            text-align: center;
         }
         .stat-label {
             font-size: 10px;
             color: var(--text-secondary);
+            text-align: center;
         }
         .raised-hands-list {
             max-height: 100px;
@@ -368,6 +382,22 @@
             border-radius: 30px;
             font-weight: 600;
             cursor: pointer;
+            transition: var(--transition);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .bottom-panel {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .big-btn {
+                width: 90%;
+                padding: 30px;
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -385,7 +415,7 @@
     <!-- ========== HOME PAGE ========== -->
     <div id="homePage" class="page active">
         <button class="back-btn" onclick="window.location.href='admin.html'"><i class="fas fa-arrow-left"></i> Back to Admin</button>
-        <div style="text-align:center;padding-top:20px;">
+        <div style="text-align:center;padding-top:40px;">
             <button class="big-btn" onclick="showSection('createClassPage')">
                 <i class="fas fa-video" style="display:block;font-size:48px;margin-bottom:15px;"></i>
                 Create Live Class
@@ -404,11 +434,11 @@
             <h2><i class="fas fa-video" style="color:var(--gold);"></i> Create Live Class</h2>
             <div class="form-group">
                 <label>Class Name</label>
-                <input type="text" id="className" placeholder="e.g. Math 101">
+                <input type="text" id="className" placeholder="e.g. Math 101" />
             </div>
             <div class="form-group">
                 <label>Lecture Name</label>
-                <input type="text" id="lectureName" placeholder="e.g. Dr. Smith">
+                <input type="text" id="lectureName" placeholder="e.g. Dr. Smith" />
             </div>
             <div class="form-group">
                 <label>Select Register</label>
@@ -524,12 +554,14 @@
         let localStream = null;
         let classStartTime = null;
         let classTimerInterval = null;
-        let classQuestions = [];
         let isCameraOn = true;
         let isMicOn = true;
         let isDrawing = false;
         let joinedStudents = {};
         let raisedHands = {};
+        let drawingInProgress = false;
+        let lastDrawingTime = 0;
+        let drawingQueue = [];
 
         // TURN servers (from first code)
         const iceServers = {
@@ -621,7 +653,8 @@
                     duration: null,
                     questions: {},
                     joinedStudents: {},
-                    raisedHands: {}
+                    raisedHands: {},
+                    drawingFrame: null // will store data URL
                 };
 
                 await classRef.set(classData);
@@ -663,6 +696,11 @@
                     audio: true
                 });
                 document.getElementById('localVideo').srcObject = localStream;
+                // Reset toggles
+                isCameraOn = true;
+                isMicOn = true;
+                document.getElementById('toggleCameraBtn').classList.add('active');
+                document.getElementById('toggleMicBtn').classList.add('active');
             } catch (error) {
                 showToast('Cannot access camera/microphone: ' + error.message, 'error');
             }
@@ -701,7 +739,11 @@
             if (isDrawing) {
                 setupCanvas();
             } else {
-                // Clear? Keep as is but disable pointer events
+                // Optionally clear canvas
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Send clear frame
+                shareDrawingFrame();
             }
         }
 
@@ -729,8 +771,63 @@
                 ctx.stroke();
                 lastX = e.offsetX;
                 lastY = e.offsetY;
+                scheduleDrawingFrame();
             });
-            canvas.addEventListener('mouseup', () => isDrawingNow = false);
+            canvas.addEventListener('mouseup', () => {
+                isDrawingNow = false;
+                shareDrawingFrame();
+            });
+            canvas.addEventListener('mouseleave', () => {
+                isDrawingNow = false;
+            });
+
+            // Touch support
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                lastX = touch.clientX - rect.left;
+                lastY = touch.clientY - rect.top;
+                isDrawingNow = true;
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!isDrawingNow) return;
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                lastX = x;
+                lastY = y;
+                scheduleDrawingFrame();
+            });
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                isDrawingNow = false;
+                shareDrawingFrame();
+            });
+        }
+
+        // Debounce sending frames to Firebase
+        function scheduleDrawingFrame() {
+            clearTimeout(drawingQueue);
+            drawingQueue = setTimeout(() => {
+                shareDrawingFrame();
+            }, 300);
+        }
+
+        function shareDrawingFrame() {
+            if (!currentClass) return;
+            const canvas = document.getElementById('scratchCanvas');
+            const dataURL = canvas.toDataURL('image/png');
+            // Store as small frame to Firebase
+            db.ref(`liveClasses/${currentClass.id}/drawingFrame`).set(dataURL);
         }
 
         // ========== QUESTIONS ==========
@@ -752,6 +849,7 @@
 
         function appendQuestionToUI(question) {
             const list = document.getElementById('questionList');
+            // Remove placeholder if exists
             if (list.querySelector('.empty-msg')) list.innerHTML = '';
             const item = document.createElement('div');
             item.className = 'question-item';
@@ -765,7 +863,10 @@
 
             classRef.child('questions').on('child_added', (snap) => {
                 const q = snap.val();
-                appendQuestionToUI(q);
+                // Only add if it's not the admin's own question (already added)
+                if (q.askedBy !== 'Admin') {
+                    appendQuestionToUI(q);
+                }
             });
 
             classRef.child('joinedStudents').on('value', (snap) => {
@@ -820,7 +921,7 @@
                 startedAt: currentClass.startedAt,
                 endedAt: firebase.database.ServerValue.TIMESTAMP,
                 duration: duration,
-                questions: classQuestions,
+                questions: Object.values(currentClass.questions || {}),
                 joinedStudents: joinedStudents
             };
             await historyRef.set(historyData);
@@ -832,6 +933,8 @@
             currentClass = null;
             classStartTime = null;
             if (classTimerInterval) clearInterval(classTimerInterval);
+            isDrawing = false;
+            document.getElementById('scratchCanvas').classList.remove('active');
 
             // Reload history
             loadHistory();
@@ -876,7 +979,8 @@
                 const h = snap.val();
                 if (!h) return;
                 const content = document.getElementById('historyDetailContent');
-                const questions = Object.values(h.questions || {}).map(q => q.text);
+                const questions = h.questions || [];
+                const questionTexts = questions.map(q => q.text);
                 const joined = Object.values(h.joinedStudents || {}).map(s => s.name);
                 content.innerHTML = `
                     <h2>${escapeHtml(h.className)}</h2>
@@ -887,7 +991,7 @@
                     </div>
                     <div class="questions-list">
                         <h4>Questions Asked</h4>
-                        ${questions.length ? `<ul>${questions.map(q => `<li>${escapeHtml(q)}</li>`).join('')}</ul>` : '<p>No questions.</p>'}
+                        ${questionTexts.length ? `<ul>${questionTexts.map(q => `<li>${escapeHtml(q)}</li>`).join('')}</ul>` : '<p>No questions.</p>'}
                     </div>
                     <div style="margin-top:15px;">
                         <button class="download-btn" onclick="downloadRegister('${historyId}')"><i class="fas fa-download"></i> Download Register</button>
