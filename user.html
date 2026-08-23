@@ -8017,6 +8017,7 @@
             const headerToggle = document.getElementById('headerDarkModeToggle');
             const headerIcon = document.getElementById('headerDarkModeIcon');
             const profileToggle = document.getElementById('darkModeToggle');
+            initExamHubHandlers();
 
             if (savedDarkMode) {
                 document.body.classList.add('dark-mode');
@@ -8026,6 +8027,71 @@
                 headerIcon.className = 'fas fa-moon';
                 if (profileToggle) profileToggle.classList.remove('active');
             }
+
+        // ===== EXAM HUB BUTTON HANDLERS =====
+function initExamHubHandlers() {
+    document.querySelectorAll('.exam-hub-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const type = this.dataset.type;
+            const overlay = document.getElementById('examHubOverlay');
+            overlay.classList.remove('open');
+
+            // --- History: navigate to history page ---
+            if (type === 'history') {
+                renderAssessmentHistory();
+                showPage('assessmentHistory');
+                return;
+            }
+
+            // --- Submitted Assignments ---
+            if (type === 'submittedAssignment') {
+                const submittedResponses = allAssessmentResponses.filter(r =>
+                    r.userId === currentUser?.uid &&
+                    (r.status === 'completed' || r.status === 'ended')
+                );
+                const submittedAssignments = submittedResponses
+                    .map(r => {
+                        const ass = allAssessments.find(a => a.id === r.assessmentId);
+                        if (!ass || ass.type !== 'assignment') return null;
+                        return { ...ass, response: r };
+                    })
+                    .filter(Boolean);
+
+                if (submittedAssignments.length === 0) {
+                    addNotification('info', 'No submitted assignments found.');
+                    return;
+                }
+                showAssessmentSelection(submittedAssignments, 'Assignment', true);
+                return;
+            }
+
+            // --- Available Exams / Tests / Quizzes / Assignments ---
+            const available = allAssessments.filter(a => {
+                if (a.type !== type) return false;
+                if (!userRegisterIds.has(a.registerId)) return false;
+                if (a.status !== 'published' && a.status !== 'ongoing') return false;
+
+                // Already submitted?
+                const alreadyDone = allAssessmentResponses.some(r =>
+                    r.assessmentId === a.id &&
+                    r.userId === currentUser?.uid &&
+                    (r.status === 'completed' || r.status === 'ended')
+                );
+                if (alreadyDone) return false;
+
+                return true;
+            });
+
+            if (available.length === 0) {
+                const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
+                addNotification('info', `No available ${label} found.`);
+                return;
+            }
+            showAssessmentSelection(available, type);
+        });
+    });
+}
 
             function toggleDarkMode() {
                 document.body.classList.toggle('dark-mode');
