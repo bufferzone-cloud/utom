@@ -27,9 +27,12 @@
             --card-bg: #ffffff;
             --text: #1a1d28;
             --text-secondary: #5f6377;
+            --border-color: #e5e8ed;
+            --overlay-bg: rgba(255, 255, 255, 0.98);
             --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
             --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+            --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
             --radius-sm: 14px;
             --radius-md: 20px;
             --radius-lg: 28px;
@@ -41,6 +44,20 @@
             --topbar-height: 110px;
             --nav-height: 60px;
             --peek-percent: 4.75%;
+        }
+
+        /* Dark mode – variable overrides */
+        body.dark-mode {
+            --bg: #0f0f0f;
+            --card-bg: #1f1f1f;
+            --text: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --border-color: #333333;
+            --overlay-bg: rgba(31, 31, 31, 0.98);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+            --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         html,
@@ -78,7 +95,7 @@
         .loader-spinner {
             width: 48px;
             height: 48px;
-            border: 4px solid #e5e7eb;
+            border: 4px solid var(--border-color);
             border-top: 4px solid var(--gold);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -136,11 +153,11 @@
             left: 0;
             right: 0;
             height: var(--topbar-height);
-            background: white;
+            background: var(--card-bg);
             padding: 0 1rem;
             display: flex;
             flex-direction: column;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--border-color);
             z-index: 40;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
         }
@@ -154,10 +171,10 @@
         }
 
         .header-left {
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
             font-weight: 900;
             letter-spacing: 0.5px;
-            color: #1a1d28;
+            color: var(--text);
             background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -176,16 +193,16 @@
         .header-center .welcome-label {
             font-size: 0.6rem;
             font-weight: 600;
-            color: #8b8fa3;
+            color: var(--text-secondary);
             letter-spacing: 0.5px;
             text-transform: uppercase;
             margin-bottom: -2px;
         }
 
         .header-center .user-name-display {
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 3.5vw, 1.2rem);
             font-weight: 700;
-            color: #1a1d28;
+            color: var(--text);
             line-height: 1.2;
         }
 
@@ -204,7 +221,7 @@
 
         .notif-icon-wrapper i {
             font-size: 1.3rem;
-            color: #2c2c2c;
+            color: var(--text);
             cursor: pointer;
             padding: 6px;
             border-radius: 50%;
@@ -220,7 +237,7 @@
             position: absolute;
             top: -2px;
             right: -4px;
-            background: #e63946;
+            background: var(--red);
             color: #fff;
             font-size: 0.5rem;
             font-weight: 700;
@@ -260,9 +277,9 @@
         .search-bar {
             display: flex;
             align-items: center;
-            background: #f8f9fc;
+            background: var(--bg);
             border-radius: 40px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             padding: 0 6px 0 16px;
             transition: var(--transition);
         }
@@ -270,11 +287,11 @@
         .search-bar:focus-within {
             border-color: var(--gold);
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.12);
-            background: #fff;
+            background: var(--card-bg);
         }
 
         .search-bar .search-icon {
-            color: #8b8fa3;
+            color: var(--text-secondary);
             font-size: 0.9rem;
         }
 
@@ -320,13 +337,36 @@
             border-radius: 20px;
         }
 
-        /* ----- PAGE CONTAINERS ----- */
+        /* ----- PAGE CONTAINERS (Mac-style transition) ----- */
         .page-container {
             display: none !important;
             width: 100%;
+            opacity: 0;
+            transform: translateX(30px) scale(0.98);
+            transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1), transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            min-height: 100%;
         }
         .page-container.active-page {
             display: block !important;
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: auto;
+            position: relative;
+            animation: pageSlideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes pageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
         }
         .full-page-container {
             padding: 0.6rem 0.8rem;
@@ -341,7 +381,7 @@
             width: 92%;
             max-width: 400px;
             height: var(--nav-height);
-            background: rgba(255, 255, 255, 0.92);
+            background: var(--overlay-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-radius: 40px;
@@ -359,7 +399,7 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            color: #b0b4c0;
+            color: var(--text-secondary);
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             flex: 1;
             background: none;
@@ -367,24 +407,25 @@
             font-size: 6px;
             gap: 2px;
             user-select: none;
-            padding: 6px 0;
+            padding: 10px 6px;
             border-radius: 30px;
             position: relative;
+            min-height: 44px;
         }
 
         .nav-item i {
             font-size: 20px;
             margin-bottom: 1px;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: #b0b4c0;
+            color: var(--text-secondary);
         }
 
         .nav-item span {
-            font-size: 7px;
+            font-size: 8px;
             font-weight: 600;
             letter-spacing: 0.6px;
             transition: all 0.3s ease;
-            color: #b0b4c0;
+            color: var(--text-secondary);
         }
 
         .nav-item.active i {
@@ -396,7 +437,7 @@
         }
 
         .nav-item.active span {
-            color: #f5b042;
+            color: var(--gold);
             font-weight: 700;
         }
         .nav-item:active {
@@ -419,11 +460,9 @@
             transform: translateX(-50%) scaleX(1);
         }
 
-        /* ----- FLOATING EXAM BUTTON (modified for draggable) ----- */
+        /* ----- FLOATING EXAM BUTTON (draggable) ----- */
         .exam-floating-btn {
             position: fixed;
-            /* bottom: calc(var(--nav-height) + 30px);
-            right: 20px; */
             z-index: 600;
             width: 56px;
             height: 56px;
@@ -453,7 +492,7 @@
             position: absolute;
             top: -4px;
             right: -4px;
-            background: #e63946;
+            background: var(--red);
             color: #fff;
             font-size: 0.6rem;
             font-weight: 700;
@@ -509,7 +548,7 @@
         #liveClassPulseBtn .live-icon .pulse-dot {
             width: 16px;
             height: 16px;
-            background: #e74c3c;
+            background: var(--red);
             border-radius: 50%;
             display: inline-block;
             animation: live-dot 1.5s infinite;
@@ -551,7 +590,7 @@
         }
 
         .live-class-room {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 20px;
             overflow: hidden;
             box-shadow: var(--shadow-md);
@@ -625,11 +664,11 @@
         }
 
         .live-stream-section .stream-overlay button.active {
-            background: #2ecc71;
+            background: var(--green);
         }
 
         .live-stream-section .stream-overlay button.inactive {
-            background: #e74c3c;
+            background: var(--red);
         }
 
         .live-class-header-bar {
@@ -639,8 +678,8 @@
             flex-wrap: wrap;
             gap: 12px;
             padding: 14px 18px;
-            background: #fff;
-            border-bottom: 1px solid #f0f0f5;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .live-class-header-bar .left h2 {
@@ -668,7 +707,7 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            background: #f8f9fc;
+            background: var(--bg);
             padding: 8px 18px;
             border-radius: 40px;
             border: 1px solid rgba(245, 176, 66, 0.08);
@@ -688,13 +727,13 @@
             font-size: 18px;
         }
 
-        /* ===== STUDENT INTERACTIONS (NEW LAYOUT) ===== */
+        /* ----- STUDENT INTERACTIONS ----- */
         .live-interactions {
             display: flex;
             gap: 12px;
             padding: 12px 18px;
-            background: #fff;
-            border-bottom: 1px solid #f0f0f5;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
@@ -728,7 +767,7 @@
         }
 
         .live-interactions button.ask-question-btn {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, var(--blue), #2563eb);
             border: none;
             padding: 10px 24px;
             border-radius: 40px;
@@ -748,11 +787,11 @@
             box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
         }
 
-        /* ===== LIVE NOTES AREA ===== */
+        /* ----- LIVE NOTES AREA ----- */
         .live-notes-area {
             padding: 12px 18px;
-            background: #fff;
-            border-bottom: 1px solid #f0f0f5;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .live-notes-area label {
@@ -766,13 +805,13 @@
         .live-notes-area textarea {
             width: 100%;
             border-radius: 12px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             padding: 10px;
             font-size: 0.85rem;
             resize: vertical;
             min-height: 60px;
             font-family: inherit;
-            background: #fafbfc;
+            background: var(--bg);
             transition: var(--transition);
             color: var(--text);
         }
@@ -781,7 +820,7 @@
             outline: none;
             border-color: var(--gold);
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.08);
-            background: #fff;
+            background: var(--card-bg);
         }
 
         .live-notes-area .notes-actions {
@@ -793,7 +832,7 @@
         .live-notes-area .notes-actions button {
             padding: 4px 16px;
             border-radius: 30px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             background: transparent;
             font-weight: 600;
             font-size: 0.7rem;
@@ -811,9 +850,9 @@
             background: rgba(245, 176, 66, 0.05);
         }
 
-        /* ----- LIVE CLASS SIDEBAR (Attendees, Hands, Q&A) ----- */
+        /* ----- LIVE CLASS SIDEBAR ----- */
         .live-class-sidebar {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 0 0 20px 20px;
             overflow: hidden;
             max-height: 400px;
@@ -823,7 +862,7 @@
 
         .live-class-sidebar .sidebar-tabs {
             display: flex;
-            border-bottom: 1px solid #f0f0f5;
+            border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
         }
 
@@ -846,7 +885,7 @@
         }
 
         .live-class-sidebar .sidebar-tabs button:hover {
-            background: #f8f4ec;
+            background: var(--gold-light);
         }
 
         .live-class-sidebar .sidebar-content {
@@ -868,7 +907,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 8px 0;
-            border-bottom: 1px solid #f5f5f5;
+            border-bottom: 1px solid var(--border-color);
             font-size: 13px;
         }
 
@@ -906,13 +945,13 @@
         }
 
         .hand-item .hand-actions .remove-hand-btn:hover {
-            background: #e74c3c;
+            background: var(--red);
             color: #fff;
         }
 
         .question-item {
             padding: 8px 0;
-            border-bottom: 1px solid #f5f5f5;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .question-item .q-header {
@@ -959,7 +998,7 @@
         }
 
         .question-item .q-actions .remove-q-btn:hover {
-            background: #e74c3c;
+            background: var(--red);
             color: #fff;
         }
 
@@ -967,7 +1006,7 @@
             display: flex;
             justify-content: space-between;
             padding: 6px 0;
-            border-bottom: 1px solid #f5f5f5;
+            border-bottom: 1px solid var(--border-color);
             font-size: 12px;
         }
 
@@ -980,7 +1019,7 @@
             font-size: 11px;
         }
 
-        /* ----- EXAM HUB OVERLAY (unchanged) ----- */
+        /* ----- EXAM HUB OVERLAY ----- */
         .exam-hub-overlay {
             position: fixed;
             top: 0;
@@ -1002,7 +1041,7 @@
         }
 
         .exam-hub-modal {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 28px;
             width: 100%;
             max-width: 500px;
@@ -1055,8 +1094,8 @@
             justify-content: center;
             padding: 1rem 0.3rem;
             border-radius: 20px;
-            border: 2px solid #e5e8ed;
-            background: #fff;
+            border: 2px solid var(--border-color);
+            background: var(--card-bg);
             cursor: pointer;
             transition: var(--transition);
             font-weight: 600;
@@ -1067,7 +1106,7 @@
         .exam-hub-btn:hover {
             border-color: var(--gold);
             transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
         }
         .exam-hub-btn i {
             font-size: 1.6rem;
@@ -1092,18 +1131,18 @@
             background: none;
             border: none;
             font-size: 1.2rem;
-            color: #8b8fa3;
+            color: var(--text-secondary);
             cursor: pointer;
             padding: 4px;
             border-radius: 50%;
             transition: var(--transition);
         }
         .exam-hub-close:hover {
-            background: #f5f5f5;
-            color: #e74c3c;
+            background: var(--bg);
+            color: var(--red);
         }
 
-        /* ----- ASSESSMENT SELECTION MODAL (nested) ----- */
+        /* ----- ASSESSMENT SELECTION MODAL ----- */
         .assessment-select-overlay {
             position: fixed;
             top: 0;
@@ -1124,7 +1163,7 @@
         }
 
         .assessment-select-modal {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 24px;
             max-width: 500px;
             width: 100%;
@@ -1149,7 +1188,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 14px 18px;
-            background: #fafbfc;
+            background: var(--bg);
             border-radius: 14px;
             margin-bottom: 10px;
             cursor: pointer;
@@ -1188,23 +1227,23 @@
             color: #2e7d32;
         }
         .assessment-select-item .item-badge.paid {
-            background: #fff8ed;
-            color: #d4952a;
+            background: var(--gold-light);
+            color: var(--gold-dark);
         }
         .assessment-select-close {
             float: right;
             background: none;
             border: none;
             font-size: 1.2rem;
-            color: #8b8fa3;
+            color: var(--text-secondary);
             cursor: pointer;
             padding: 4px;
             border-radius: 50%;
             transition: var(--transition);
         }
         .assessment-select-close:hover {
-            background: #f5f5f5;
-            color: #e74c3c;
+            background: var(--bg);
+            color: var(--red);
         }
 
         /* ----- PAYMENT REQUIRED POPUP ----- */
@@ -1228,7 +1267,7 @@
         }
 
         .payment-required-modal {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 32px;
             width: 100%;
             max-width: 480px;
@@ -1243,7 +1282,7 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #fff8ed, #ffe8d0);
+            background: linear-gradient(135deg, var(--gold-light), var(--orange-light));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1256,7 +1295,7 @@
         .payment-required-modal h2 {
             font-size: 1.4rem;
             font-weight: 800;
-            color: #1a1d28;
+            color: var(--text);
             margin-bottom: 4px;
         }
 
@@ -1312,12 +1351,12 @@
         }
 
         .payment-required-modal .pay-actions .btn-cancel-pay {
-            background: #f0f2f5;
-            color: #5f6377;
+            background: var(--bg);
+            color: var(--text-secondary);
         }
 
         .payment-required-modal .pay-actions .btn-cancel-pay:hover {
-            background: #e5e7eb;
+            background: var(--border-color);
             transform: translateY(-2px);
         }
 
@@ -1338,14 +1377,14 @@
             text-transform: uppercase;
         }
 
-        /* ----- PAYMENT PAGE (for assessments) ----- */
+        /* ----- PAYMENT PAGE ----- */
         .payment-container {
             max-width: 600px;
             margin: 0 auto;
         }
 
         .payment-card {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
             overflow: hidden;
@@ -1387,7 +1426,7 @@
         }
 
         .payment-course-info {
-            background: #fcf9f4;
+            background: var(--gold-light);
             border-radius: var(--radius-md);
             padding: 1rem 1.2rem;
             margin-bottom: 1.2rem;
@@ -1423,7 +1462,7 @@
         }
 
         .payment-instruction-box {
-            background: #f8f6f2;
+            background: var(--bg);
             border-radius: var(--radius-md);
             padding: 1rem 1.2rem;
             margin: 1rem 0;
@@ -1446,19 +1485,18 @@
             line-height: 1.6;
         }
 
-        /* NEW: Payment processing note */
         .payment-processing-note {
             margin-top: 12px;
             padding: 10px 14px;
             background: #e8f4ff;
             border-radius: 12px;
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid var(--blue);
             font-size: 0.8rem;
             color: #1a3a5c;
             line-height: 1.6;
         }
         .payment-processing-note i {
-            color: #3b82f6;
+            color: var(--blue);
         }
 
         .payment-number-row {
@@ -1466,18 +1504,18 @@
             align-items: center;
             gap: 10px;
             padding: 12px 16px;
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 40px;
             margin-bottom: 10px;
             font-weight: 600;
             font-size: 0.8rem;
-            border: 1px solid #f0e8d0;
+            border: 1px solid var(--border-color);
             transition: var(--transition);
         }
 
         .payment-number-row:hover {
             border-color: var(--gold);
-            box-shadow: 0 4px 12px rgba(245, 176, 66, 0.08);
+            box-shadow: var(--shadow-sm);
         }
 
         .payment-number-row .number-label {
@@ -1494,7 +1532,7 @@
             font-family: 'SF Mono', 'Courier New', monospace;
             font-size: 0.85rem;
             letter-spacing: 0.5px;
-            color: #1a1d28;
+            color: var(--text);
         }
 
         .payment-number-row .copy-num-btn {
@@ -1525,15 +1563,15 @@
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
-            background: #fefdf7;
+            background: var(--gold-light);
             position: relative;
             min-height: 100px;
         }
 
         .payment-upload-area:hover {
             border-color: var(--gold);
-            background: #fffdf5;
-            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.06);
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
         }
 
         .payment-upload-area .upload-icon {
@@ -1550,7 +1588,7 @@
 
         .payment-upload-area .upload-hint {
             font-size: 0.7rem;
-            color: #b0b4c0;
+            color: var(--text-secondary);
             margin-top: 2px;
         }
 
@@ -1559,7 +1597,7 @@
             max-height: 180px;
             border-radius: 12px;
             margin-top: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-sm);
         }
 
         .payment-submit-btn {
@@ -1596,7 +1634,7 @@
             transform: none !important;
         }
 
-        /* ----- A4 PAGE STYLES (for assessment print/PDF) ----- */
+        /* ----- A4 PAGE STYLES ----- */
         .a4-page {
             background: #ffffff;
             width: 210mm;
@@ -1655,7 +1693,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: #fff8ed;
+            background: var(--gold-light);
             padding: 6px 16px;
             border-radius: 30px;
             font-weight: 700;
@@ -1666,11 +1704,11 @@
 
         .assessment-timer.warning {
             background: #fde8e8;
-            color: #e74c3c;
+            color: var(--red);
             border-color: rgba(231, 76, 60, 0.2);
         }
 
-        /* ----- ASSESSMENT COVER PAGE (A4) ----- */
+        /* ----- ASSESSMENT COVER PAGE ----- */
         .exam-cover-page {
             background: #fff;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -1685,7 +1723,7 @@
         .exam-cover-page .cover-header {
             text-align: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #f5b042;
+            border-bottom: 2px solid var(--gold);
             padding-bottom: 10px;
         }
         .exam-cover-page .cover-header .cover-logo {
@@ -1743,7 +1781,7 @@
         .exam-cover-page .cover-body .rules-section {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 2px solid #f5b042;
+            border-top: 2px solid var(--gold);
             text-align: left;
         }
         .exam-cover-page .cover-body .rules-section h4 {
@@ -1771,7 +1809,7 @@
             text-align: center;
         }
 
-        /* ----- ASSESSMENT QUESTIONS (A4 pagination) ----- */
+        /* ----- ASSESSMENT QUESTIONS ----- */
         .assessment-questions-pages {
             display: flex;
             flex-direction: column;
@@ -1795,7 +1833,7 @@
             break-after: auto;
         }
         .question-page .questions-header {
-            border-bottom: 2px solid #f5b042;
+            border-bottom: 2px solid var(--gold);
             padding-bottom: 8px;
             margin-bottom: 12px;
             display: flex;
@@ -1815,7 +1853,7 @@
         .student-info-section {
             max-width: 800px;
             margin: 0 auto 1.2rem auto;
-            background: #fff;
+            background: var(--card-bg);
             border-radius: var(--radius-lg);
             padding: 1.5rem 1.8rem;
             box-shadow: var(--shadow-sm);
@@ -1852,9 +1890,9 @@
         .student-info-grid .info-field input {
             padding: 8px 14px;
             border-radius: 30px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             font-size: 0.85rem;
-            background: #fafbfc;
+            background: var(--bg);
             transition: var(--transition);
             width: 100%;
         }
@@ -1863,7 +1901,7 @@
             outline: none;
             border-color: var(--gold);
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.08);
-            background: #fff;
+            background: var(--card-bg);
         }
 
         .cover-start-btn {
@@ -1904,12 +1942,12 @@
         }
 
         .question-block {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 1rem 1.2rem;
             margin-bottom: 12px;
             box-shadow: var(--shadow-sm);
-            border: 1px solid #f0f0f5;
+            border: 1px solid var(--border-color);
         }
 
         .question-block .q-number {
@@ -1946,13 +1984,13 @@
             font-size: 0.85rem;
             padding: 6px 10px;
             border-radius: 10px;
-            background: #f8f9fc;
+            background: var(--bg);
             transition: var(--transition);
             cursor: pointer;
         }
 
         .question-block .q-options label:hover {
-            background: #f0f1f5;
+            background: var(--border-color);
         }
 
         .question-block .q-options input[type="radio"],
@@ -1966,21 +2004,22 @@
         .question-block .q-textarea {
             width: 100%;
             border-radius: 12px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             padding: 10px;
             font-size: 0.85rem;
             resize: vertical;
             min-height: 60px;
             font-family: inherit;
             transition: var(--transition);
-            background: #fafbfc;
+            background: var(--bg);
+            color: var(--text);
         }
 
         .question-block .q-textarea:focus {
             outline: none;
             border-color: var(--gold);
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.08);
-            background: #fff;
+            background: var(--card-bg);
         }
 
         .question-block .q-matching {
@@ -1999,18 +2038,20 @@
             flex: 1;
             padding: 4px 8px;
             border-radius: 30px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             font-size: 0.8rem;
-            background: #fafbfc;
+            background: var(--bg);
+            color: var(--text);
         }
 
         .question-block .q-fillblank {
             width: 100%;
             padding: 6px 12px;
             border-radius: 30px;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             font-size: 0.85rem;
-            background: #fafbfc;
+            background: var(--bg);
+            color: var(--text);
             transition: var(--transition);
         }
 
@@ -2018,7 +2059,7 @@
             outline: none;
             border-color: var(--gold);
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.08);
-            background: #fff;
+            background: var(--card-bg);
         }
 
         .question-block .q-ordering {
@@ -2032,14 +2073,14 @@
             align-items: center;
             gap: 8px;
             padding: 6px 10px;
-            background: #f8f9fc;
+            background: var(--bg);
             border-radius: 8px;
-            border: 1px solid #e5e8ed;
+            border: 1px solid var(--border-color);
             cursor: grab;
         }
 
         .question-block .q-ordering-item .handle {
-            color: #8b8fa3;
+            color: var(--text-secondary);
             font-size: 1rem;
         }
 
@@ -2047,7 +2088,7 @@
             font-size: 0.85rem;
         }
 
-        /* ----- SCRATCHPAD (enhanced) ----- */
+        /* ----- SCRATCHPAD ----- */
         .scratch-toggle-btn {
             background: none;
             border: none;
@@ -2079,10 +2120,10 @@
         .scratchpad-wrapper {
             display: none;
             margin-top: 6px;
-            border: 1px solid #e5e8ed;
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             overflow: hidden;
-            background: #fafbfc;
+            background: var(--bg);
             position: relative;
         }
 
@@ -2102,15 +2143,15 @@
             display: flex;
             gap: 4px;
             padding: 6px 10px;
-            background: #f0f2f5;
-            border-top: 1px solid #e5e8ed;
+            background: var(--bg);
+            border-top: 1px solid var(--border-color);
             flex-wrap: wrap;
             align-items: center;
         }
 
         .scratchpad-tools button {
-            background: #fff;
-            border: 1px solid #ddd;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 30px;
             padding: 4px 10px;
             font-size: 0.7rem;
@@ -2122,7 +2163,7 @@
         }
 
         .scratchpad-tools button:hover {
-            background: #f0f0f5;
+            background: var(--border-color);
         }
 
         .scratchpad-tools .color-btn {
@@ -2141,7 +2182,7 @@
         }
 
         .scratchpad-tools .expand-btn {
-            background: #e5e8ed;
+            background: var(--border-color);
             border: none;
             border-radius: 30px;
             padding: 4px 10px;
@@ -2191,7 +2232,7 @@
 
         .btn-outline {
             background: transparent;
-            border: 2px solid #e5e8ed;
+            border: 2px solid var(--border-color);
             padding: 10px 24px;
             border-radius: 60px;
             font-weight: 600;
@@ -2217,11 +2258,11 @@
         }
 
         .history-item {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 1rem 1.2rem;
             box-shadow: var(--shadow-sm);
-            border: 1px solid #f0f0f5;
+            border: 1px solid var(--border-color);
             transition: var(--transition);
             cursor: pointer;
         }
@@ -2264,18 +2305,19 @@
 
         .history-item .h-actions button {
             background: none;
-            border: 1.5px solid #e5e8ed;
+            border: 1.5px solid var(--border-color);
             border-radius: 30px;
             padding: 4px 14px;
             font-size: 0.7rem;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            color: var(--text);
         }
 
         .history-item .h-actions button:hover {
             border-color: var(--gold);
-            background: rgba(245, 176, 66, 0.05);
+            background: var(--gold-light);
         }
 
         .history-item .h-actions .btn-download {
@@ -2495,7 +2537,7 @@
                 opacity 0.5s ease,
                 box-shadow 0.5s ease;
             aspect-ratio: 1200 / 675;
-            background: #ffffff;
+            background: var(--card-bg);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
             display: flex;
             align-items: center;
@@ -2517,7 +2559,7 @@
             height: 100%;
             object-fit: cover !important;
             display: block;
-            background-color: #ffffff;
+            background-color: var(--card-bg);
             border-radius: 28px;
         }
 
@@ -2655,8 +2697,8 @@
             flex: 0 0 auto;
             padding: 6px 16px;
             border-radius: 30px;
-            background: #ffffff;
-            border: 1.5px solid #e5e8ed;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border-color);
             font-weight: 600;
             font-size: 0.8rem;
             color: var(--text);
@@ -2725,11 +2767,13 @@
             background: var(--card-bg);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-float);
             cursor: pointer;
             transition: var(--transition);
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--border-color);
+            content-visibility: auto;
+            contain-intrinsic-size: 280px 200px;
         }
 
         .course-card-wrapper:hover {
@@ -2755,7 +2799,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: #2ecc71;
+            background: var(--green);
             color: white;
             padding: 3px 14px;
             border-radius: 30px;
@@ -2766,10 +2810,10 @@
         }
 
         .course-card-img-wrapper .course-badge.free {
-            background: #2ecc71;
+            background: var(--green);
         }
         .course-card-img-wrapper .course-badge.paid {
-            background: #f39c12;
+            background: var(--yellow);
         }
 
         .course-card-body {
@@ -2884,13 +2928,15 @@
             background: var(--card-bg);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-float);
             cursor: pointer;
             transition: var(--transition);
             position: relative;
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--border-color);
+            content-visibility: auto;
+            contain-intrinsic-size: 260px 200px;
         }
 
         .video-card:hover {
@@ -2912,7 +2958,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: #eaeef3;
+            background: var(--bg);
             display: block;
         }
 
@@ -2997,7 +3043,7 @@
         .like-video-btn {
             background: none;
             border: none;
-            color: #bbb;
+            color: var(--text-secondary);
             cursor: pointer;
             font-size: 1rem;
             padding: 4px 8px;
@@ -3006,11 +3052,11 @@
         }
 
         .like-video-btn:hover {
-            color: #e74c3c;
+            color: var(--red);
             background: #fde8e8;
         }
         .like-video-btn.liked {
-            color: #e74c3c;
+            color: var(--red);
         }
 
         .download-wrapper {
@@ -3061,7 +3107,7 @@
         }
 
         .download-wrapper svg .bg-circle {
-            stroke: #eaeef3;
+            stroke: var(--border-color);
         }
         .download-wrapper svg .progress-circle {
             stroke: var(--gold);
@@ -3086,7 +3132,7 @@
         .delete-offline-btn {
             background: none;
             border: none;
-            color: #bbb;
+            color: var(--text-secondary);
             cursor: pointer;
             font-size: 1rem;
             padding: 4px 6px;
@@ -3095,7 +3141,7 @@
         }
 
         .delete-offline-btn:hover {
-            color: #e63946;
+            color: var(--red);
             background: #fde8e8;
         }
 
@@ -3140,8 +3186,8 @@
             background: var(--card-bg);
             border-radius: var(--radius-lg);
             padding: 1rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid rgba(245, 176, 66, 0.10);
+            box-shadow: var(--shadow-float);
+            border: 1px solid var(--border-color);
             transition: var(--transition);
             position: relative;
         }
@@ -3168,17 +3214,17 @@
             font-size: 0.95rem;
             font-weight: 700;
             margin-bottom: 2px;
-            color: #1a1d28;
+            color: var(--text);
         }
 
         .doc-instructor {
-            color: #8b8fa3;
+            color: var(--text-secondary);
             font-size: 0.75rem;
             margin-bottom: 6px;
         }
 
         .doc-preview {
-            color: #4a4e5c;
+            color: var(--text);
             margin: 6px 0;
             line-height: 1.5;
             font-size: 0.8rem;
@@ -3241,7 +3287,7 @@
         .like-doc-btn {
             background: none;
             border: none;
-            color: #bbb;
+            color: var(--text-secondary);
             cursor: pointer;
             font-size: 1rem;
             padding: 4px;
@@ -3250,16 +3296,16 @@
         }
 
         .like-doc-btn:hover {
-            color: #e74c3c;
+            color: var(--red);
             background: #fde8e8;
         }
         .like-doc-btn.liked {
-            color: #e74c3c;
+            color: var(--red);
         }
 
         /* ----- DOC FULL PAGE ----- */
         .doc-full-content {
-            background: #fff;
+            background: var(--card-bg);
             padding: 1.2rem;
             border-radius: 0;
             white-space: pre-wrap;
@@ -3276,7 +3322,7 @@
             min-height: 400px;
             border: none;
             border-radius: 12px;
-            background: #f5f6f8;
+            background: var(--bg);
         }
 
         .doc-viewer-toolbar {
@@ -3285,26 +3331,26 @@
             gap: 10px;
             margin: 12px 0;
             padding: 12px 18px;
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
             align-items: center;
             border-left: 4px solid var(--gold);
         }
 
         .doc-viewer-toolbar .file-badge {
-            background: #f5f6f8;
+            background: var(--bg);
             padding: 4px 14px;
             border-radius: 30px;
             font-size: 10px;
             font-weight: 600;
-            color: #5f6377;
-            border: 1px solid #eee;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .doc-viewer-toolbar .btn-download {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            background: linear-gradient(135deg, var(--gold), var(--orange));
             color: #fff;
             border: none;
             padding: 8px 18px;
@@ -3326,7 +3372,7 @@
         }
 
         .doc-viewer-toolbar .btn-download.green {
-            background: #2ecc71;
+            background: var(--green);
             box-shadow: 0 4px 16px rgba(46, 204, 113, 0.20);
         }
 
@@ -3337,16 +3383,16 @@
         .doc-viewer-fallback {
             margin-top: 6px;
             padding: 10px 14px;
-            background: #fff8ed;
+            background: var(--gold-light);
             border-radius: 30px;
             font-size: 11px;
-            color: #5f6377;
+            color: var(--text-secondary);
             text-align: center;
-            border: 1px solid #f0e0c8;
+            border: 1px solid rgba(240, 224, 200, 1);
         }
 
         .doc-viewer-fallback a {
-            color: #d4952a;
+            color: var(--gold-dark);
             font-weight: 600;
             text-decoration: none;
         }
@@ -3366,31 +3412,31 @@
             align-items: center;
             gap: 8px;
             padding: 12px 28px;
-            background: #fff;
+            background: var(--card-bg);
             border: none;
             border-radius: 60px;
             font-size: 13px;
             font-weight: 600;
-            color: #1a1d28;
+            color: var(--text);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-sm);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            background: rgba(255, 255, 255, 0.92);
+            background: var(--overlay-bg);
             border: 1px solid rgba(245, 176, 66, 0.15);
         }
 
         .doc-back-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-            border-color: #f5b042;
+            box-shadow: var(--shadow-md);
+            border-color: var(--gold);
         }
         .doc-back-btn:active {
             transform: scale(0.96);
         }
         .doc-back-btn i {
-            color: #d4952a;
+            color: var(--gold-dark);
         }
 
         /* ----- NOTIFICATION SIDEBAR ----- */
@@ -3400,7 +3446,7 @@
             top: 0;
             width: 320px;
             height: 100%;
-            background: #fff;
+            background: var(--card-bg);
             box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12);
             z-index: 200;
             transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -3426,9 +3472,9 @@
 
         .notif-item {
             padding: 10px 0;
-            border-bottom: 1px solid #f2f2f5;
+            border-bottom: 1px solid var(--border-color);
             font-size: 0.75rem;
-            color: #4a4e5c;
+            color: var(--text);
             display: flex;
             align-items: flex-start;
             gap: 6px;
@@ -3455,7 +3501,7 @@
         .empty-state {
             text-align: center;
             padding: 1.5rem;
-            color: #b0b4c0;
+            color: var(--text-secondary);
             font-size: 0.8rem;
         }
 
@@ -3463,7 +3509,7 @@
             display: block;
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
-            color: #d0d4dc;
+            color: var(--text-secondary);
         }
 
         /* ----- TOAST ----- */
@@ -3478,8 +3524,8 @@
         }
 
         .toast {
-            background: #1a1d28;
-            color: #fff;
+            background: var(--text);
+            color: var(--card-bg);
             padding: 12px 20px;
             border-radius: 40px;
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
@@ -3495,7 +3541,7 @@
         }
 
         .toast i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            background: linear-gradient(135deg, var(--gold), var(--orange));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -3507,7 +3553,7 @@
             to { opacity: 1; transform: translateX(0) scale(1); }
         }
 
-        /* ----- PAYMENT APPROVED POPUP (styled like logout) ----- */
+        /* ----- PAYMENT APPROVED POPUP ----- */
         .payment-approved-overlay {
             position: fixed;
             top: 0;
@@ -3527,7 +3573,7 @@
         }
 
         .payment-approved-modal {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 32px;
             max-width: 480px;
             width: 100%;
@@ -3556,7 +3602,7 @@
         .payment-approved-modal h2 {
             font-size: 1.3rem;
             font-weight: 800;
-            color: #1a1d28;
+            color: var(--text);
             margin-bottom: 6px;
         }
 
@@ -3624,7 +3670,7 @@
         }
 
         .admin-notif-modal {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 28px;
             width: 100%;
             max-width: 420px;
@@ -3636,7 +3682,7 @@
         }
 
         .admin-notif-header {
-            background: #1a1d28;
+            background: var(--text);
             padding: 14px 16px;
             display: flex;
             align-items: center;
@@ -3652,7 +3698,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #1a1d28;
+            color: var(--text);
             font-size: 14px;
             flex-shrink: 0;
         }
@@ -3671,7 +3717,7 @@
 
         .admin-notif-body p {
             font-size: 13px;
-            color: #444;
+            color: var(--text);
             line-height: 1.6;
             margin-bottom: 4px;
         }
@@ -3680,7 +3726,7 @@
             margin-top: 8px;
             border-radius: 12px;
             overflow: hidden;
-            background: #f5f5f5;
+            background: var(--bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3734,7 +3780,7 @@
         }
 
         .logout-modal-content {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 28px;
             max-width: 400px;
             width: 100%;
@@ -3749,7 +3795,7 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: #fff8ed;
+            background: var(--gold-light);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3762,12 +3808,12 @@
         .logout-modal-content h3 {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #1a1d28;
+            color: var(--text);
             margin-bottom: 4px;
         }
         .logout-modal-content p {
             font-size: 0.85rem;
-            color: #5f6377;
+            color: var(--text-secondary);
             margin-bottom: 1.2rem;
             line-height: 1.5;
         }
@@ -3791,11 +3837,11 @@
         }
 
         .logout-modal-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5f6377;
+            background: var(--bg);
+            color: var(--text-secondary);
         }
         .logout-modal-actions .btn-cancel:hover {
-            background: #e5e7eb;
+            background: var(--border-color);
             transform: translateY(-2px);
         }
         .logout-modal-actions .btn-confirm {
@@ -3830,7 +3876,7 @@
         }
 
         .expiration-modal-content {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 28px;
             max-width: 420px;
             width: 100%;
@@ -3859,13 +3905,13 @@
         .expiration-modal-content h3 {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #1a1d28;
+            color: var(--text);
             margin-bottom: 4px;
         }
 
         .expiration-modal-content p {
             font-size: 0.9rem;
-            color: #5f6377;
+            color: var(--text-secondary);
             margin-bottom: 4px;
             line-height: 1.6;
         }
@@ -3930,7 +3976,7 @@
         }
 
         .exam-confirm-content {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 28px;
             max-width: 480px;
             width: 100%;
@@ -3944,7 +3990,7 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: #fff8ed;
+            background: var(--gold-light);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3956,7 +4002,7 @@
         .exam-confirm-content h2 {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #1a1d28;
+            color: var(--text);
             margin-bottom: 4px;
         }
         .exam-confirm-content .confirm-subtitle {
@@ -3965,7 +4011,7 @@
             margin-bottom: 0.8rem;
         }
         .exam-confirm-content .confirm-details {
-            background: #f8f9fc;
+            background: var(--bg);
             border-radius: 12px;
             padding: 0.8rem 1rem;
             margin: 0.6rem 0 1rem 0;
@@ -3976,7 +4022,7 @@
         .exam-confirm-content .confirm-details div {
             display: flex;
             justify-content: space-between;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
             padding: 4px 0;
         }
         .exam-confirm-content .confirm-details div:last-child {
@@ -3997,11 +4043,11 @@
             border: none;
         }
         .exam-confirm-content .confirm-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5f6377;
+            background: var(--bg);
+            color: var(--text-secondary);
         }
         .exam-confirm-content .confirm-actions .btn-cancel:hover {
-            background: #e5e7eb;
+            background: var(--border-color);
             transform: translateY(-2px);
         }
         .exam-confirm-content .confirm-actions .btn-start {
@@ -4034,7 +4080,7 @@
         }
 
         .warning-modal-content {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 28px;
             max-width: 480px;
             width: 100%;
@@ -4046,7 +4092,7 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: #fff8ed;
+            background: var(--gold-light);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -4058,7 +4104,7 @@
         .warning-modal-content h2 {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #1a1d28;
+            color: var(--text);
             text-align: center;
         }
         .warning-modal-content p {
@@ -4085,11 +4131,11 @@
             min-width: 100px;
         }
         .warning-modal-actions .btn-cancel {
-            background: #f0f2f5;
-            color: #5f6377;
+            background: var(--bg);
+            color: var(--text-secondary);
         }
         .warning-modal-actions .btn-cancel:hover {
-            background: #e5e7eb;
+            background: var(--border-color);
             transform: translateY(-2px);
         }
         .warning-modal-actions .btn-understood {
@@ -4102,457 +4148,94 @@
             box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
         }
 
-        /* ----- DARK MODE OVERRIDES ----- */
-        body.dark-mode {
-            background: #0f0f0f;
-            color: #e0e0e0;
-        }
-        body.dark-mode .app-root,
-        body.dark-mode .app-content {
-            background: #0f0f0f;
-        }
-        body.dark-mode .top-bar {
-            background: #161616;
-            border-bottom: 1px solid #2a2a2a;
-        }
-        body.dark-mode .header-left {
-            color: #e0e0e0;
-            background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        body.dark-mode .header-center .welcome-label {
-            color: #aaa;
-        }
-        body.dark-mode .header-center .user-name-display {
-            color: #f1f1f1;
-        }
-        body.dark-mode .header-right i {
-            color: #e0e0e0;
-        }
-        body.dark-mode .header-right i:hover {
-            color: #f5b042;
-        }
-        body.dark-mode .search-bar {
-            background: #222;
-            border-color: #333;
-        }
-        body.dark-mode .search-bar input {
-            color: #e0e0e0;
-        }
-        body.dark-mode .search-bar .search-icon {
-            color: #888;
-        }
-        body.dark-mode .course-name-item {
-            background: #1f1f1f !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .course-name-item:hover {
-            border-color: #f5b042 !important;
-            background: #2a2a2a !important;
-        }
-        body.dark-mode .course-card-wrapper,
-        body.dark-mode .video-card,
-        body.dark-mode .doc-card,
-        body.dark-mode .profile-card,
-        body.dark-mode .transaction-card,
-        body.dark-mode .side-notif,
-        body.dark-mode .payment-card,
-        body.dark-mode .doc-viewer-toolbar,
-        body.dark-mode .admin-notif-modal,
-        body.dark-mode .logout-modal-content,
-        body.dark-mode .expiration-modal-content,
-        body.dark-mode .payment-approved-modal,
-        body.dark-mode .exam-confirm-content,
-        body.dark-mode .warning-modal-content,
-        body.dark-mode .exam-hub-modal,
-        body.dark-mode .assessment-select-modal,
-        body.dark-mode .payment-required-modal,
-        body.dark-mode .live-class-room,
-        body.dark-mode .live-class-container,
-        body.dark-mode .live-interactions,
-        body.dark-mode .live-notes-area,
-        body.dark-mode .live-class-controls,
-        body.dark-mode .live-class-header-bar,
-        body.dark-mode .live-class-sidebar,
-        body.dark-mode .live-stream-section {
-            background: #1f1f1f !important;
-            border-color: #2a2a2a !important;
-            color: #e0e0e0 !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-        }
-        body.dark-mode .payment-card-header {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .payment-course-info {
-            background: #161616 !important;
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .payment-course-info .course-name {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .payment-course-info .course-amount {
-            background: rgba(245, 176, 66, 0.15) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .payment-instruction-box {
-            background: #161616 !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .payment-instruction-box .inst-text {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-number-row {
-            background: #1a1a1a !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .payment-number-row:hover {
-            border-color: #f5b042 !important;
-        }
-        body.dark-mode .payment-number-row .number-label {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .payment-number-row .number-value {
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .payment-upload-area {
-            background: #1a1a1a !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .payment-upload-area:hover {
-            border-color: #f5b042 !important;
-            background: #1f1f1f !important;
-        }
-        body.dark-mode .payment-upload-area .upload-text {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-upload-area .upload-hint {
-            color: #888 !important;
-        }
-        body.dark-mode .payment-submit-btn {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .logout-modal-content h3 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .logout-modal-content p {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .logout-modal-content .modal-icon {
-            background: #2a2a2a !important;
-            border-color: #444 !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-cancel {
-            background: #2a2a2a !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-cancel:hover {
-            background: #3a3a3a !important;
-        }
-        body.dark-mode .logout-modal-actions .btn-confirm {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .expiration-modal-content .exp-icon {
-            background: #2a1a1a !important;
-            border-color: #4a2a2a !important;
-        }
-        body.dark-mode .expiration-modal-content h3 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .expiration-modal-content p {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .expiration-modal-content .exp-course-name {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .expiration-modal-content .exp-amount {
-            color: #e74c3c !important;
-        }
-        body.dark-mode .course-card-body h4,
-        body.dark-mode .video-info h4,
-        body.dark-mode .doc-card h3,
-        body.dark-mode .profile-card .info-row span:last-child,
-        body.dark-mode .transaction-card .transaction-course-name {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .course-card-body .course-desc,
-        body.dark-mode .video-info .video-desc,
-        body.dark-mode .doc-preview,
-        body.dark-mode .info-row span:first-child,
-        body.dark-mode .transaction-detail-row {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .course-meta .course-price,
-        body.dark-mode .video-meta span {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .subfolder-header {
-            background: rgba(30, 30, 30, 0.8) !important;
-            border-color: rgba(255, 255, 255, 0.05) !important;
-            color: #e0e0e0 !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-        }
-        body.dark-mode .subfolder-header:hover {
-            background: rgba(50, 50, 50, 0.9) !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
-        }
-        body.dark-mode .subfolder-header i.fa-folder {
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .subfolder-header .folder-counts {
-            color: #888 !important;
-        }
-        body.dark-mode .subfolder-content {
-            background: #0f0f0f !important;
-        }
-        body.dark-mode .btn-outline {
-            border-color: #333 !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .btn-outline:hover {
-            border-color: #f5b042 !important;
-            color: #f5b042 !important;
-            background: rgba(245, 176, 66, 0.1) !important;
-        }
-        body.dark-mode .btn-profile {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .read-btn {
-            background: #d4952a !important;
-            color: #fff !important;
-        }
-        body.dark-mode .doc-viewer-toolbar .file-badge {
-            background: #161616 !important;
-            color: #aaaaaa !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-viewer-fallback {
-            background: #161616 !important;
-            color: #aaaaaa !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-back-btn {
-            background: #1f1f1f !important;
-            color: #e0e0e0 !important;
-            border-color: #333 !important;
-        }
-        body.dark-mode .doc-back-btn:hover {
-            border-color: #f5b042 !important;
-            background: #2a2a2a !important;
-        }
-        body.dark-mode .floating-player .player-drag-handle .handle-label {
-            color: rgba(255, 255, 255, 0.6) !important;
-        }
-        body.dark-mode .grid-title .badge-count {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .transaction-card {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .doc-card::before {
-            opacity: 0.6 !important;
-        }
-        body.dark-mode .side-notif {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .doc-viewer-toolbar {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .toast {
-            border-left-color: #d4952a !important;
-        }
-        body.dark-mode .nav-item i,
-        body.dark-mode .nav-item span {
-            color: #888 !important;
-        }
-        body.dark-mode .nav-item.active i {
-            background: linear-gradient(135deg, #f5b042, #ff6b00) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            background-clip: text !important;
-        }
-        body.dark-mode .nav-item.active span {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .download-wrapper svg .bg-circle {
-            stroke: #333 !important;
-        }
-        body.dark-mode .download-wrapper .dl-text {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-toggle-btn {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-toggle-btn .comment-count {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .comment-section {
-            background: #161616 !important;
-            border-top-color: #2a2a2a !important;
-        }
-        body.dark-mode .comment-item {
-            border-bottom-color: #2a2a2a !important;
-        }
-        body.dark-mode .comment-item .comment-user {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .comment-item .comment-text {
-            color: #cccccc !important;
-        }
-        body.dark-mode .comment-form input {
-            background: #1f1f1f !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .comment-empty {
-            color: #888 !important;
-        }
-        body.dark-mode .comment-disabled {
-            color: #e74c3c !important;
-        }
-        body.dark-mode .transaction-amount {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .video-thumb-wrapper img {
-            background: #1f1f1f !important;
-        }
-        body.dark-mode .course-duration-badge {
-            background: rgba(245, 176, 66, 0.15) !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .expiration-modal-content {
-            border-top-color: #e74c3c !important;
-        }
-        body.dark-mode .payment-approved-modal {
-            border-top-color: #2ecc71 !important;
-        }
-        body.dark-mode .payment-approved-modal .approve-icon {
-            background: #1a2a1a !important;
-            border-color: #2a4a2a !important;
-            color: #2ecc71 !important;
-        }
-        body.dark-mode .payment-approved-modal h2 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .payment-approved-modal .approve-message {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-approved-modal .approve-message strong {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .payment-approved-modal .approve-actions .btn-approve-ok {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-icon {
-            background: #2a2a2a !important;
-            border-color: #444 !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .exam-confirm-content h2 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-subtitle {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-details {
-            background: #161616 !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-details div {
-            border-bottom-color: #2a2a2a !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-actions .btn-cancel {
-            background: #2a2a2a !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-actions .btn-cancel:hover {
-            background: #3a3a3a !important;
-        }
-        body.dark-mode .exam-confirm-content .confirm-actions .btn-start {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .warning-modal-content .warning-icon {
-            background: #2a2a2a !important;
-            border-color: #444 !important;
-            color: #f5b042 !important;
-        }
-        body.dark-mode .warning-modal-content h2 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .warning-modal-content p {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .warning-modal-actions .btn-cancel {
-            background: #2a2a2a !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .warning-modal-actions .btn-cancel:hover {
-            background: #3a3a3a !important;
-        }
-        body.dark-mode .warning-modal-actions .btn-understood {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .exam-hub-modal .hub-title {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .exam-hub-modal .hub-subtitle {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .exam-hub-btn {
-            background: #161616 !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .exam-hub-btn:hover {
-            border-color: #f5b042 !important;
-        }
-        body.dark-mode .assessment-select-modal .sel-title {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .assessment-select-item {
-            background: #161616 !important;
-            border-color: #2a2a2a !important;
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .assessment-select-item:hover {
-            border-color: #f5b042 !important;
-            background: #2a2a2a !important;
-        }
-        body.dark-mode .assessment-select-item .item-name {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .assessment-select-item .item-duration {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-required-modal h2 {
-            color: #f1f1f1 !important;
-        }
-        body.dark-mode .payment-required-modal .pay-message {
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-required-modal .pay-amount {
-            color: #f5b042 !important;
-            background: rgba(245, 176, 66, 0.15) !important;
-        }
-        body.dark-mode .payment-required-modal .pay-actions .btn-pay-now {
-            background: linear-gradient(135deg, #d4952a, #ff6b00) !important;
-        }
-        body.dark-mode .payment-required-modal .pay-actions .btn-cancel-pay {
-            background: #2a2a2a !important;
-            color: #aaaaaa !important;
-        }
-        body.dark-mode .payment-required-modal .pay-actions .btn-cancel-pay:hover {
-            background: #3a3a3a !important;
-        }
-        body.dark-mode .payment-required-modal .pay-assessment-name {
-            color: #f5b042 !important;
-        }
-        body.dark-mode .payment-required-modal .pay-type-badge {
-            background: rgba(245, 176, 66, 0.2) !important;
-            color: #f5b042 !important;
+        /* ----- NEW PHONE EDIT MODAL ----- */
+        #phoneEditModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #phoneEditModal.open {
+            display: flex;
+        }
+        .phone-modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem 1.5rem 1.5rem 1.5rem;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(245, 176, 66, 0.15);
+        }
+        .phone-modal-content h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+        .phone-modal-content input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 40px;
+            border: 1.5px solid var(--border-color);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .phone-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .phone-modal-actions button {
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-cancel-edit {
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+        .btn-cancel-edit:hover {
+            background: var(--border-color);
+        }
+        .btn-save-edit {
+            background: linear-gradient(135deg, var(--gold), var(--orange));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
+        }
+        .btn-save-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 176, 66, 0.4);
+        }
+
+        /* ----- FOCUS STYLES ----- */
+        button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        /* ----- REDUCED MOTION ----- */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
 
         /* ----- RESPONSIVE ----- */
@@ -4583,7 +4266,7 @@
                 font-size: 18px;
             }
             .nav-item span {
-                font-size: 6px;
+                font-size: 7px;
             }
             .courses-scroll-container .course-card-wrapper {
                 flex: 0 0 220px;
@@ -4770,45 +4453,6 @@
             }
         }
 
-        /* ----- (additional: screenshot modal) ----- */
-        #screenshotModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        #screenshotModal.open {
-            display: flex;
-        }
-        #screenshotModal img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-        #screenshotModal .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: #fff;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-        }
-
         /* ----- SUBFOLDER STYLES ----- */
         .subfolder-item {
             margin-bottom: 0.8rem;
@@ -4819,7 +4463,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.7);
+            background: var(--overlay-bg);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: var(--radius-md);
@@ -4832,7 +4476,7 @@
         }
 
         .subfolder-header:hover {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--card-bg);
             box-shadow: var(--shadow-md);
             transform: translateY(-1px);
         }
@@ -4895,7 +4539,7 @@
         <p>Loading UTOM...</p>
     </div>
 
-    <!-- ===== COURSE LOADER (FIXED: NOW VISIBLE) ===== -->
+    <!-- ===== COURSE LOADER (FIXED) ===== -->
     <div id="courseLoader">
         <div class="loader-spinner"></div>
         <p id="courseLoaderText">Loading course...</p>
@@ -5027,7 +4671,7 @@
             </div>
         </div>
 
-        <!-- ===== PENDING PAYMENT POPUP (NEW) ===== -->
+        <!-- ===== PENDING PAYMENT POPUP ===== -->
         <div class="payment-required-overlay" id="pendingPaymentOverlay">
             <div class="payment-required-modal">
                 <div class="pay-icon">
@@ -5101,25 +4745,25 @@
             <!-- PROFILE -->
             <div id="profilePage" class="page-container">
                 <div class="profile-card" style="background:var(--card-bg);border-radius:var(--radius-lg);padding:1.2rem;box-shadow:var(--shadow-md);margin:0.6rem;">
-                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Full name</span><span id="profileName" style="font-weight:700;"></span></div>
-                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;"><span style="font-weight:600;color:var(--text-secondary);">Email</span><span id="profileEmail" style="font-weight:700;"></span></div>
-                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;">
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-color);"><span style="font-weight:600;color:var(--text-secondary);">Full name</span><span id="profileName" style="font-weight:700;"></span></div>
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-color);"><span style="font-weight:600;color:var(--text-secondary);">Email</span><span id="profileEmail" style="font-weight:700;"></span></div>
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-color);">
                         <span style="font-weight:600;color:var(--text-secondary);">Phone</span>
                         <span id="profilePhone" style="font-weight:700;cursor:pointer;color:var(--gold);" title="Click to edit"></span>
                     </div>
-                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f0f0f0;">
+                    <div class="info-row" style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-color);">
                         <span style="font-weight:600;color:var(--text-secondary);">Dark Mode</span>
                         <div id="darkModeToggle" class="iphone-toggle"></div>
                     </div>
                     <button class="btn-transaction" id="transactionHistoryBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:60px;font-weight:700;color:#fff;font-size:0.9rem;cursor:pointer;margin-top:0.8rem;box-shadow:0 4px 16px rgba(245,176,66,0.3);"><i class="fas fa-receipt"></i> Transaction History</button>
-                    <button class="btn-profile" id="changePasswordBtn" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid #e5e8ed;border-radius:60px;font-weight:700;color:var(--text);font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-key"></i> Change Password</button>
-                    <button class="btn-profile btn-outline" id="logoutBtn" style="width:100%;padding:12px;background:transparent;border:1.5px solid #e63946;border-radius:60px;font-weight:700;color:#e63946;font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    <button class="btn-profile" id="changePasswordBtn" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border-color);border-radius:60px;font-weight:700;color:var(--text);font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-key"></i> Change Password</button>
+                    <button class="btn-profile btn-outline" id="logoutBtn" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--red);border-radius:60px;font-weight:700;color:var(--red);font-size:0.9rem;cursor:pointer;margin-top:0.6rem;"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </div>
 
             <!-- TRANSACTION HISTORY -->
             <div id="transactionHistoryPage" class="page-container full-page-container">
-                <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.6rem;padding:8px 20px;border-radius:60px;border:1.5px solid #e5e8ed;background:transparent;font-weight:600;cursor:pointer;"><i class="fas fa-arrow-left"></i> Back to Profile</button>
+                <button id="backFromTransactionBtn" class="btn-outline" style="margin-bottom:0.6rem;padding:8px 20px;border-radius:60px;border:1.5px solid var(--border-color);background:transparent;font-weight:600;cursor:pointer;"><i class="fas fa-arrow-left"></i> Back to Profile</button>
                 <h2 style="margin-bottom:0.8rem;border-left:4px solid var(--gold);padding-left:12px;"><i class="fas fa-receipt" style="color:#F5B042;"></i> Transaction History</h2>
                 <div id="transactionHistoryList"></div>
                 <div id="emptyTransactionMsg" class="empty-state" style="display:none"><i class="fas fa-inbox"></i> No transactions yet.<br /><small>Purchase a course to see your history here.</small></div>
@@ -5135,7 +4779,7 @@
 
             <!-- PAYMENT PAGE (for paid assessments) -->
             <div id="paymentPage" class="page-container full-page-container">
-                <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.6rem;padding:8px 20px;border-radius:60px;border:1.5px solid #e5e8ed;background:transparent;font-weight:600;cursor:pointer;"><i class="fas fa-arrow-left"></i> Back</button>
+                <button id="backFromPaymentBtn" class="btn-outline" style="margin-bottom:0.6rem;padding:8px 20px;border-radius:60px;border:1.5px solid var(--border-color);background:transparent;font-weight:600;cursor:pointer;"><i class="fas fa-arrow-left"></i> Back</button>
                 <div class="payment-container">
                     <div class="payment-card">
                         <div class="payment-card-header">
@@ -5703,7 +5347,7 @@
             });
         }
 
-        // ===== PENDING PAYMENT POPUP (NEW) =====
+        // ===== PENDING PAYMENT POPUP =====
         function showPendingPaymentModal(course) {
             const overlay = document.getElementById('pendingPaymentOverlay');
             const userName = `${userData.firstName} ${userData.lastName}`.trim() ||
@@ -5777,13 +5421,11 @@
                 return true;
             });
 
-            // Counts for specific types
             const exams = available.filter(a => a.type === 'exam');
             const tests = available.filter(a => a.type === 'test');
             const quizzes = available.filter(a => a.type === 'quiz');
             const assignments = available.filter(a => a.type === 'assignment');
 
-            // Submitted assignments (completed/ended) for the user
             const submittedAssignments = allAssessmentResponses.filter(r => 
                 r.userId === currentUser?.uid && 
                 (r.status === 'completed' || r.status === 'ended') &&
@@ -5816,7 +5458,6 @@
                     let found = false;
                     for (const [id, cls] of entries) {
                         if (cls.status === 'active' || cls.status === 'ongoing') {
-                            // Check if user is a member of the register
                             const register = allRegisters.find(r => r.id === cls.registerId);
                             if (register && register.members && register.members.includes(uid)) {
                                 liveClassData = { id, ...cls };
@@ -5857,7 +5498,6 @@
             }
         }
 
-        // ===== OPEN LIVE CLASS PAGE =====
         function openLiveClassPage() {
             if (!liveClassData) return;
             showPage('liveClass');
@@ -5865,7 +5505,6 @@
             attachLiveClassListeners();
         }
 
-        // ===== LIVE CLASS PAGE RENDER =====
         function renderLiveClassPage() {
             if (!liveClassData) {
                 document.getElementById('liveClassContent').innerHTML = '<div class="empty-state">No live class available.</div>';
@@ -5888,7 +5527,6 @@
             renderLiveHands();
             renderLiveQuestions();
 
-            // Update stream
             const placeholder = document.getElementById('liveStreamPlaceholder');
             const canvas = document.getElementById('liveDrawCanvas');
             const video = document.getElementById('liveCameraVideo');
@@ -5912,7 +5550,6 @@
 
             if (cls.cameraActive) {
                 video.style.display = 'block';
-                // Camera feed is from admin; student just views
             } else {
                 video.style.display = 'none';
             }
@@ -5925,7 +5562,6 @@
                 docViewer.style.display = 'none';
             }
 
-            // Update raise hand button state
             const raiseBtn = document.getElementById('raiseHandBtn');
             if (cls.hands && cls.hands[currentUser.uid]) {
                 raiseBtn.disabled = true;
@@ -5935,7 +5571,6 @@
                 raiseBtn.innerHTML = '<i class="fas fa-hand-paper"></i> Raise Hand';
             }
 
-            // Load saved notes
             const savedNotes = localStorage.getItem(`live_notes_${liveClassId}`);
             if (savedNotes !== null) {
                 document.getElementById('liveNotesTextarea').value = savedNotes;
@@ -5944,7 +5579,6 @@
             }
         }
 
-        // ===== LIVE CLASS LISTENERS =====
         function attachLiveClassListeners() {
             if (liveClassListenersAttached || !liveClassId) return;
             liveClassListeners = [];
@@ -6032,7 +5666,6 @@
             }
         }
 
-        // ===== LIVE CLASS UI HELPERS =====
         function renderLiveAttendees() {
             const container = document.getElementById('liveAttendeesList');
             const attendees = liveClassData?.attendees || {};
@@ -6115,19 +5748,16 @@
             document.getElementById(`liveTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)?.classList.add('active');
         }
 
-        // ===== LIVE DRAW =====
         function initLiveDrawCanvas() {
             const canvas = document.getElementById('liveDrawCanvas');
             if (!canvas) return;
 
             if (!liveDrawInitialized) {
-                // Student only views, no drawing listeners needed
                 liveDrawCanvas = canvas;
                 liveDrawCtx = canvas.getContext('2d');
                 liveDrawInitialized = true;
             }
 
-            // Resize only when dimensions change
             const rect = canvas.parentElement.getBoundingClientRect();
             if (canvas.width !== rect.width || canvas.height !== rect.height) {
                 canvas.width = rect.width || 800;
@@ -6148,13 +5778,11 @@
             img.src = dataUrl;
         }
 
-        // ===== RAISE HAND & ASK QUESTION =====
         document.getElementById('raiseHandBtn').addEventListener('click', async () => {
             if (!liveClassId || !currentUser) return;
             const handsRef = ref(db, `liveClasses/${liveClassId}/hands/${currentUser.uid}`);
             const snap = await get(handsRef);
             if (snap.val()) {
-                // Already raised, remove it
                 await remove(handsRef);
                 addNotification('info', 'Hand lowered.');
             } else {
@@ -6178,7 +5806,6 @@
             }
         });
 
-        // ===== SAVE PRIVATE NOTES =====
         document.getElementById('saveNotesBtn').addEventListener('click', () => {
             const textarea = document.getElementById('liveNotesTextarea');
             const notes = textarea.value;
@@ -6191,7 +5818,6 @@
             }
         });
 
-        // ===== EXPIRATION CHECKER =====
         function startExpirationChecker() {
             if (expirationCheckInterval) clearInterval(expirationCheckInterval);
             if (countdownUpdateInterval) clearInterval(countdownUpdateInterval);
@@ -6272,7 +5898,6 @@
             renderOfflinePage();
         }
 
-        // ===== SHOWN ADMIN NOTIFICATIONS =====
         async function loadShownAdminNotifs(uid) {
             try {
                 const shownRef = ref(db, `users/${uid}/shownAdminNotifs`);
@@ -6294,7 +5919,6 @@
             } catch (e) { console.warn('Failed to mark notif seen:', e); }
         }
 
-        // ===== IN-APP NOTIFICATIONS LISTENER =====
         async function loadInAppNotifications() {
             return new Promise((resolve) => {
                 const notifRef = ref(db, 'inAppNotifications');
@@ -6369,7 +5993,6 @@
             dismissBtn.addEventListener('click', newDismiss);
         }
 
-        // ===== USER DATA =====
         async function loadUserData(uid) {
             try {
                 const userRef = ref(db, `users/${uid}`);
@@ -6416,7 +6039,6 @@
             if (airtelDisplay) airtelDisplay.innerText = paymentSettings.airtelNumber || 'Not set';
         }
 
-        // ===== NOTIFICATIONS =====
         function addNotification(type, msg) {
             const iconMap = {
                 'success': 'fa-check-circle notif-icon-success',
@@ -6518,7 +6140,6 @@
             return 'normal';
         }
 
-        // ===== DATA LOADING FUNCTIONS =====
         async function loadApprovedCourses(uid) {
             return new Promise((resolve) => {
                 const approvedRef = ref(db, `approvedPurchases/${uid}`);
@@ -6638,7 +6259,6 @@
             });
         }
 
-        // ===== TRANSACTION HISTORY =====
         function renderTransactionHistory() {
             const container = document.getElementById('transactionHistoryList');
             const emptyMsg = document.getElementById('emptyTransactionMsg');
@@ -6701,7 +6321,7 @@
                     <div class="tx-dropdown-toggle" style="cursor:pointer;font-size:0.7rem;color:var(--gold);margin-top:4px;display:flex;align-items:center;gap:4px;">
                         <i class="fas fa-chevron-down"></i> Show Details
                     </div>
-                    <div class="tx-dropdown-content" style="display:none;margin-top:6px;padding:6px 0;border-top:1px solid #eee;">
+                    <div class="tx-dropdown-content" style="display:none;margin-top:6px;padding:6px 0;border-top:1px solid var(--border-color);">
                         <div class="transaction-detail-row" style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.75rem;"><span style="color:var(--text-secondary);">User:</span><span>${escapeHtml(tx.userName || currentUser?.email || 'N/A')}</span></div>
                         <div class="transaction-detail-row" style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.75rem;"><span style="color:var(--text-secondary);">Email:</span><span>${escapeHtml(tx.userEmail || currentUser?.email || 'N/A')}</span></div>
                         <div class="transaction-detail-row" style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.75rem;"><span style="color:var(--text-secondary);">Phone:</span><span>${escapeHtml(tx.userPhone || 'N/A')}</span></div>
@@ -6743,7 +6363,6 @@
             });
         }
 
-        // ===== HOME: ALL COURSES =====
         function renderAllCourses() {
             let searchTerm = currentSearch.toLowerCase();
             let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
@@ -6865,7 +6484,6 @@
                 });
         }
 
-        // ===== COURSE LOADER (FIXED) =====
         function showCourseLoader(courseName) {
             const loader = document.getElementById('courseLoader');
             document.getElementById('courseLoaderText').textContent = `Loading ${courseName}...`;
@@ -6876,7 +6494,6 @@
             document.getElementById('courseLoader').style.display = 'none';
         }
 
-        // ===== COURSE DETAIL =====
         async function openCourseDetail(course) {
             selectedCourse = course;
             showCourseLoader(course.name);
@@ -6930,7 +6547,6 @@
             attachCommentListenersToVisibleVideos();
         }
 
-        // ===== VIDEO HELPERS =====
         function isDownloadableVideo(video) {
             if (!video.videoUrl) return false;
             const url = video.videoUrl.toLowerCase();
@@ -7003,7 +6619,6 @@
             </div>`;
         }
 
-        // ===== ASYNC THUMBNAIL PROCESSING =====
         async function processVideoThumbnailsAsync() {
             const images = document.querySelectorAll('.video-thumb-img:not([data-processed="true"])');
             if (images.length === 0) return;
@@ -7055,7 +6670,6 @@
             });
         }
 
-        // ===== COMMENT SYSTEM =====
         function renderCommentsList(videoId) {
             const comments = commentsCache.get(videoId) || [];
             if (comments.length === 0) {
@@ -7272,7 +6886,7 @@
             const hasUrl = doc.docUrl && doc.docUrl.trim() !== '';
             return `
             <div class="doc-card">
-                <img src="${UTOM_THUMBNAIL}" alt="document thumbnail" style="width:100%; height:100px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:0.6rem; background:#eaeef3;" />
+                <img src="${UTOM_THUMBNAIL}" alt="document thumbnail" style="width:100%; height:100px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:0.6rem; background:var(--bg);" />
                 <h3>${escapeHtml(doc.title)}</h3>
                 <div class="doc-instructor">by ${escapeHtml(doc.instructor)}</div>
                 <div class="doc-preview">${escapeHtml(doc.description || 'No description')}</div>
@@ -7286,7 +6900,6 @@
             </div>`;
         }
 
-        // ===== ATTACH EVENTS =====
         function attachVideoEvents() {
             document.querySelectorAll('.video-card').forEach(card => {
                 card.addEventListener('click', (e) => {
@@ -7374,7 +6987,6 @@
             });
         }
 
-        // ===== PLAYER =====
         let playerState = {
             isVisible: false,
             posX: null,
@@ -7636,7 +7248,6 @@
             }
         }
 
-        // ===== DOC FULL PAGE =====
         function openDocFullPage(doc) {
             showPage('docFull', { docId: doc.id });
         }
@@ -7652,14 +7263,14 @@
 
             let html = `
                 <div style="margin-bottom:16px;">
-                    <h1 style="font-size:1.2rem;font-weight:800;color:#1a1d28;margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
-                    <div style="color:#8b8fa3;font-size:0.8rem;display:flex;gap:12px;flex-wrap:wrap;">
+                    <h1 style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(doc.title)}</h1>
+                    <div style="color:var(--text-secondary);font-size:0.8rem;display:flex;gap:12px;flex-wrap:wrap;">
                         <span><i class="fas fa-user"></i> ${escapeHtml(doc.instructor)}</span>
                         <span><i class="fas fa-book"></i> ${escapeHtml(doc.courseName || '')} / ${escapeHtml(doc.subfolderName || '')}</span>
                         <span><i class="fas fa-eye"></i> ${doc.reads || 0} reads</span>
                         <span><i class="fas fa-heart"></i> ${doc.likes || 0} likes</span>
                     </div>
-                    ${doc.description ? `<div style="margin-top:10px;padding:10px 16px;background:#fff8ed;border-radius:12px;border-left:4px solid #f5b042;color:#4a4e5c;font-size:0.85rem;">${escapeHtml(doc.description)}</div>` : ''}
+                    ${doc.description ? `<div style="margin-top:10px;padding:10px 16px;background:var(--gold-light);border-radius:12px;border-left:4px solid var(--gold);color:var(--text);font-size:0.85rem;">${escapeHtml(doc.description)}</div>` : ''}
                 </div>
             `;
 
@@ -7672,14 +7283,14 @@
                 html += `
                     <div class="doc-viewer-toolbar">
                         <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
-                        <span style="font-size:11px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
+                        <span style="font-size:11px;color:var(--text-secondary);flex:1;">${escapeHtml(doc.title)}</span>
                         <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
                         <a href="${doc.docUrl}" download class="btn-download green"><i class="fas fa-download"></i> Download</a>
                     </div>
                 `;
 
                 html += `
-                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:400px;border:none;border-radius:12px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
+                    <iframe src="${googleViewerUrl}" style="width:100%;min-height:400px;border:none;border-radius:12px;background:var(--bg);" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
                     <div class="doc-viewer-fallback" style="display:none;">
                         <i class="fas fa-info-circle"></i> 
                         The document could not load directly. <a href="${doc.docUrl}" target="_blank">Click here to open it</a> 
@@ -7690,19 +7301,19 @@
                 html += `
                     <div style="margin-top:8px;padding:8px 14px;background:#f0f4ff;border-radius:30px;font-size:10px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
                         <i class="fas fa-info-circle"></i> 
-                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
-                        or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
+                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:var(--gold-dark);font-weight:600;">open it directly</a> 
+                        or <a href="${doc.docUrl}" download style="color:var(--green);font-weight:600;">download</a> it.
                     </div>
                 `;
             } else if (doc.content) {
                 html += `
-                    <div style="font-size:0.9rem;line-height:1.8;color:#1a1d28;background:#fff;padding:16px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.04);border:1px solid #f0f0f5;">
+                    <div style="font-size:0.9rem;line-height:1.8;color:var(--text);background:var(--card-bg);padding:16px;border-radius:16px;box-shadow:var(--shadow-sm);border:1px solid var(--border-color);">
                         ${doc.content}
                     </div>
                 `;
             } else {
                 html += `
-                    <div style="text-align:center;padding:40px;color:#8b8fa3;font-size:0.9rem;">
+                    <div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:0.9rem;">
                         <i class="fas fa-file-alt" style="font-size:40px;display:block;margin-bottom:12px;opacity:0.25;"></i>
                         No content available for this document.
                     </div>
@@ -7712,7 +7323,6 @@
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
-        // ===== OFFLINE DOWNLOAD =====
         async function downloadVideoWithProgress(video) {
             if (!isDownloadableVideo(video)) {
                 addNotification('warning', 'This video cannot be downloaded for offline viewing.');
@@ -7777,7 +7387,6 @@
             }
         }
 
-        // ===== MY LEARNING =====
         function renderMyLearn() {
             const watched = allVideos.filter(v => watchedVideos.has(v.id)).sort((a, b) => (b.createdAt || 0) - (a
             .createdAt || 0));
@@ -7842,7 +7451,6 @@
             }
         }
 
-        // ===== OFFLINE PAGE =====
         async function renderOfflinePage() {
             const container = document.getElementById('offlineVideosGrid');
             const offlineArray = [];
@@ -7880,7 +7488,7 @@
                     <h4>${escapeHtml(v.title)}</h4>
                     <div class="video-desc">${escapeHtml(v.description || '')}</div>
                     <div class="video-meta">
-                        <span><i class="fas fa-mobile-alt" style="color:#2ecc71;font-size:0.5rem;"></i> Offline</span>
+                        <span><i class="fas fa-mobile-alt" style="color:var(--green);font-size:0.5rem;"></i> Offline</span>
                     </div>
                     <div class="video-actions">
                         <button class="delete-offline-btn" data-id="${v.id}" title="Delete offline video"><i class="fas fa-trash-alt"></i></button>
@@ -7920,10 +7528,8 @@
             });
         }
 
-        // ===== PAYMENT (for assessments) =====
         function openPaymentPage(item, itemType = 'course') {
-            // item is either a course or an assessment
-            selectedCourse = item; // we reuse the same variable
+            selectedCourse = item;
             document.getElementById('paymentCourseTitle').innerText = item.name || 'Assessment';
             document.getElementById('paymentAmountDisplay').innerText = `ZMW ${item.price || 0}`;
 
@@ -7949,7 +7555,6 @@
             showPage('payment', { itemId: item.id });
         }
 
-        // ===== PAYMENT REQUIRED POPUP =====
         function showPaymentRequiredPopup(assessment) {
             const overlay = document.getElementById('paymentRequiredOverlay');
             document.getElementById('payRequiredName').textContent = assessment.name;
@@ -7977,7 +7582,6 @@
             });
         }
 
-        // ===== PAYMENT SUBMIT =====
         document.getElementById('submitPaymentPageBtn').addEventListener('click', async () => {
             if (!selectedCourse || !paymentScreenshotUrl) {
                 alert("Please upload a payment screenshot before submitting.");
@@ -7988,7 +7592,7 @@
                 await set(pendingRef, {
                     itemId: selectedCourse.id,
                     itemTitle: selectedCourse.name,
-                    itemType: 'course', // we treat assessments as courses for payment
+                    itemType: 'course',
                     amount: selectedCourse.price,
                     provider: 'MTN/Airtel',
                     screenshot: paymentScreenshotUrl,
@@ -8010,9 +7614,7 @@
             }
         });
 
-        // ===== UI SETUP =====
         function setupUI() {
-            // ---- Dark Mode (sync header + profile) ----
             const savedDarkMode = localStorage.getItem('darkMode') === 'true';
             const headerToggle = document.getElementById('headerDarkModeToggle');
             const headerIcon = document.getElementById('headerDarkModeIcon');
@@ -8028,82 +7630,73 @@
                 if (profileToggle) profileToggle.classList.remove('active');
             }
 
-        // ===== EXAM HUB BUTTON HANDLERS =====
-function initExamHubHandlers() {
-    document.querySelectorAll('.exam-hub-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const type = this.dataset.type;
-            const overlay = document.getElementById('examHubOverlay');
-            overlay.classList.remove('open');
+            function initExamHubHandlers() {
+                document.querySelectorAll('.exam-hub-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const type = this.dataset.type;
+                        const overlay = document.getElementById('examHubOverlay');
+                        overlay.classList.remove('open');
 
-            // --- History: navigate to history page ---
-            if (type === 'history') {
-                renderAssessmentHistory();
-                showPage('assessmentHistory');
-                return;
+                        if (type === 'history') {
+                            renderAssessmentHistory();
+                            showPage('assessmentHistory');
+                            return;
+                        }
+
+                        if (type === 'submittedAssignment') {
+                            const submittedResponses = allAssessmentResponses.filter(r =>
+                                r.userId === currentUser?.uid &&
+                                (r.status === 'completed' || r.status === 'ended')
+                            );
+                            const submittedAssignments = submittedResponses
+                                .map(r => {
+                                    const ass = allAssessments.find(a => a.id === r.assessmentId);
+                                    if (!ass || ass.type !== 'assignment') return null;
+                                    return { ...ass, response: r };
+                                })
+                                .filter(Boolean);
+
+                            if (submittedAssignments.length === 0) {
+                                addNotification('info', 'No submitted assignments found.');
+                                return;
+                            }
+                            showAssessmentSelection(submittedAssignments, 'Assignment', true);
+                            return;
+                        }
+
+                        const available = allAssessments.filter(a => {
+                            if (a.type !== type) return false;
+                            if (!userRegisterIds.has(a.registerId)) return false;
+                            if (a.status !== 'published' && a.status !== 'ongoing') return false;
+                            const alreadyDone = allAssessmentResponses.some(r =>
+                                r.assessmentId === a.id &&
+                                r.userId === currentUser?.uid &&
+                                (r.status === 'completed' || r.status === 'ended')
+                            );
+                            if (alreadyDone) return false;
+                            return true;
+                        });
+
+                        if (available.length === 0) {
+                            const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
+                            addNotification('info', `No available ${label} found.`);
+                            return;
+                        }
+                        showAssessmentSelection(available, type);
+                    });
+                });
             }
 
-            // --- Submitted Assignments ---
-            if (type === 'submittedAssignment') {
-                const submittedResponses = allAssessmentResponses.filter(r =>
-                    r.userId === currentUser?.uid &&
-                    (r.status === 'completed' || r.status === 'ended')
-                );
-                const submittedAssignments = submittedResponses
-                    .map(r => {
-                        const ass = allAssessments.find(a => a.id === r.assessmentId);
-                        if (!ass || ass.type !== 'assignment') return null;
-                        return { ...ass, response: r };
-                    })
-                    .filter(Boolean);
-
-                if (submittedAssignments.length === 0) {
-                    addNotification('info', 'No submitted assignments found.');
-                    return;
-                }
-                showAssessmentSelection(submittedAssignments, 'Assignment', true);
-                return;
-            }
-
-            // --- Available Exams / Tests / Quizzes / Assignments ---
-            const available = allAssessments.filter(a => {
-                if (a.type !== type) return false;
-                if (!userRegisterIds.has(a.registerId)) return false;
-                if (a.status !== 'published' && a.status !== 'ongoing') return false;
-
-                // Already submitted?
-                const alreadyDone = allAssessmentResponses.some(r =>
-                    r.assessmentId === a.id &&
-                    r.userId === currentUser?.uid &&
-                    (r.status === 'completed' || r.status === 'ended')
-                );
-                if (alreadyDone) return false;
-
-                return true;
+            document.getElementById('examHubClose').addEventListener('click', () => {
+                document.getElementById('examHubOverlay').classList.remove('open');
             });
 
-            if (available.length === 0) {
-                const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
-                addNotification('info', `No available ${label} found.`);
-                return;
-            }
-            showAssessmentSelection(available, type);
-        });
-    });
-}
-
-        // 1. Close button (X)
-document.getElementById('examHubClose').addEventListener('click', () => {
-    document.getElementById('examHubOverlay').classList.remove('open');
-});
-
-// 2. Click outside the modal to close
-document.getElementById('examHubOverlay').addEventListener('click', function(e) {
-    if (e.target === this) {
-        this.classList.remove('open');
-    }
-});
+            document.getElementById('examHubOverlay').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('open');
+                }
+            });
 
             function toggleDarkMode() {
                 document.body.classList.toggle('dark-mode');
@@ -8118,7 +7711,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 profileToggle.addEventListener('click', toggleDarkMode);
             }
 
-            // ---- Load player ----
             loadPlayerState();
             const wasVisible = localStorage.getItem('playerVisible') === 'true';
             if (wasVisible) {
@@ -8126,7 +7718,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 playerState.isVisible = true;
             }
 
-            // ---- Bottom nav ----
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const page = btn.dataset.page;
@@ -8134,7 +7725,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 });
             });
 
-            // ---- Logout ----
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', () => {
@@ -8151,7 +7741,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 signOut(auth);
             });
 
-            // ---- Navigation back buttons ----
             document.getElementById('backFromCourseBtn').addEventListener('click', () => {
                 selectedCourse = null;
                 showPage('home');
@@ -8185,7 +7774,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 handleExpirationOk();
             });
 
-            // ---- Search ----
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 let debounceTimer;
@@ -8198,7 +7786,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 });
             }
 
-            // ---- Payment copy buttons ----
             document.getElementById('copyMtnBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const num = paymentSettings.mtnNumber || '';
@@ -8227,7 +7814,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Payment upload ----
             const uploadBox = document.getElementById('paymentUploadBox');
             uploadBox.addEventListener('click', () => {
                 cloudinary.openUploadWidget({
@@ -8248,7 +7834,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 });
             });
 
-            // ---- Change password ----
             document.getElementById('changePasswordBtn').addEventListener('click', async () => {
                 if (currentUser) {
                     try {
@@ -8260,7 +7845,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Notifications ----
             document.getElementById('notifIcon').addEventListener('click', () => {
                 document.getElementById('sideNotif').classList.add('open');
                 markAllNotificationsRead();
@@ -8269,7 +7853,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 document.getElementById('sideNotif').classList.remove('open');
             });
 
-            // ---- Screenshot modal ----
             document.querySelector('#screenshotModal .close-modal').addEventListener('click', () => {
                 document.getElementById('screenshotModal').classList.remove('open');
             });
@@ -8279,7 +7862,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Exam floating button (draggable) ----
             const examBtn = document.getElementById('examFloatingBtn');
             let isDragging = false;
             let startX, startY, initialLeft, initialTop;
@@ -8308,7 +7890,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
                 const newLeft = initialLeft + dx;
                 const newTop = initialTop + dy;
-                // keep within viewport
                 const maxX = window.innerWidth - examBtn.offsetWidth - 10;
                 const maxY = window.innerHeight - examBtn.offsetHeight - 10;
                 examBtn.style.left = Math.max(10, Math.min(maxX, newLeft)) + 'px';
@@ -8321,18 +7902,15 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 if (!isDragging) return;
                 isDragging = false;
                 examBtn.style.transition = 'box-shadow 0.3s ease';
-                // If not moved, treat as click (open exam hub)
                 if (!moved) {
                     document.getElementById('examHubOverlay').classList.add('open');
                     updateExamBadge();
                 }
-                // Save position
                 const rect = examBtn.getBoundingClientRect();
                 localStorage.setItem('examBtnPosX', rect.left + 'px');
                 localStorage.setItem('examBtnPosY', rect.top + 'px');
             }
 
-            // Load saved position
             const savedExamX = localStorage.getItem('examBtnPosX');
             const savedExamY = localStorage.getItem('examBtnPosY');
             if (savedExamX && savedExamY) {
@@ -8354,24 +7932,37 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             document.addEventListener('touchmove', onDragMove, { passive: false });
             document.addEventListener('touchend', onDragEnd);
 
-            // --- Edit phone number in profile ---
+            // Phone edit modal (replacing prompt)
             const profilePhone = document.getElementById('profilePhone');
-            profilePhone.addEventListener('click', async () => {
-                const currentPhone = userData.phone || '';
-                const newPhone = prompt('Enter your phone number (e.g., +260 977 123456):', currentPhone);
-                if (newPhone !== null) {
-                    const trimmed = newPhone.trim();
-                    if (trimmed) {
-                        userData.phone = trimmed;
+            profilePhone.addEventListener('click', () => {
+                const modal = document.createElement('div');
+                modal.id = 'phoneEditModal';
+                modal.className = 'open';
+                modal.innerHTML = `
+                    <div class="phone-modal-content">
+                        <h3>Edit Phone Number</h3>
+                        <input type="tel" id="newPhoneInput" value="${userData.phone || ''}" placeholder="e.g., +260 977 123456" />
+                        <div class="phone-modal-actions">
+                            <button class="btn-cancel-edit" onclick="document.getElementById('phoneEditModal').remove()">Cancel</button>
+                            <button class="btn-save-edit" id="savePhoneBtn">Save</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                document.getElementById('savePhoneBtn').addEventListener('click', async () => {
+                    const newPhone = document.getElementById('newPhoneInput').value.trim();
+                    if (newPhone) {
+                        userData.phone = newPhone;
                         await saveUserData();
                         addNotification('success', 'Phone number updated.');
                     } else {
                         addNotification('warning', 'Phone number cannot be empty.');
                     }
-                }
+                    document.getElementById('phoneEditModal').remove();
+                });
             });
 
-            // ---- Assessment selection modal ----
             document.getElementById('assessmentSelectClose').addEventListener('click', () => {
                 document.getElementById('assessmentSelectOverlay').classList.remove('open');
             });
@@ -8381,7 +7972,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Assessment take back ----
             document.getElementById('backFromAssessmentBtn').addEventListener('click', () => {
                 if (currentAssessmentTaking) {
                     clearInterval(currentAssessmentTaking.timerInterval);
@@ -8390,7 +7980,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 showPage('home');
             });
 
-            // ---- Exam confirmation ----
             document.getElementById('examConfirmCancelBtn').addEventListener('click', () => {
                 document.getElementById('examConfirmationModal').classList.remove('open');
             });
@@ -8402,20 +7991,16 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 if (assessmentId) {
                     const assessment = allAssessments.find(a => a.id === assessmentId);
                     if (assessment) {
-                        // For assignments, we should not show the warning modal (no auto-submit on tab switch)
                         if (assessment.type === 'assignment') {
-                            // Directly start the assignment (no warning)
                             renderAssessmentTake(assessment);
                             showPage('assessmentTake');
                         } else {
-                            // For tests, quizzes, exams: show warning modal
                             showWarningModal(assessment);
                         }
                     }
                 }
             });
 
-            // ---- Warning modal (for tests, quizzes, exams) ----
             document.getElementById('warningCancelBtn').addEventListener('click', () => {
                 document.getElementById('warningModal').classList.remove('open');
             });
@@ -8433,10 +8018,8 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Auto-submit on visibility change (only for tests/quizzes/exams) ----
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden && currentAssessmentTaking && currentAssessmentTaking.warningAccepted) {
-                    // Only auto-submit if it's NOT an assignment
                     if (currentAssessmentTaking.assessment.type !== 'assignment') {
                         autoSubmitAssessment();
                     }
@@ -8468,7 +8051,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 }
             });
 
-            // ---- Live Class back button ----
             document.getElementById('backFromLiveClassBtn').addEventListener('click', () => {
                 if (liveClassListenersAttached) {
                     cleanupLiveClass();
@@ -8476,7 +8058,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 showPage('home');
             });
 
-            // ---- Scratchpad expand/orientation toggle ----
             document.addEventListener('click', (e) => {
                 const expandBtn = e.target.closest('.expand-btn');
                 if (expandBtn) {
@@ -8484,13 +8065,10 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                     if (wrapper) {
                         const canvas = wrapper.querySelector('canvas');
                         if (canvas) {
-                            // Toggle fullscreen or expand size
                             if (canvas.requestFullscreen) {
                                 canvas.requestFullscreen().catch(() => {
-                                    // Fallback: increase size
                                     canvas.style.width = '100%';
                                     canvas.style.height = '400px';
-                                    // Re-initialize scratchpad with new size
                                     initScratchpad(canvas);
                                 });
                             } else {
@@ -8510,7 +8088,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             }, 300);
         }
 
-        // ===== ASSESSMENT SELECTION MODAL (updated to handle submitted assignments) =====
         function showAssessmentSelection(assessments, type, isSubmitted = false) {
             const overlay = document.getElementById('assessmentSelectOverlay');
             const title = document.getElementById('assessmentSelectTitle');
@@ -8545,7 +8122,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                     overlay.classList.remove('open');
 
                     if (item.dataset.submitted === 'true') {
-                        // Show the submitted script
                         if (responseId) {
                             viewAssessmentScript(responseId);
                         } else {
@@ -8554,7 +8130,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                         return;
                     }
 
-                    // If paid and not purchased, show payment popup
                     if (assessment.paid) {
                         const hasPurchase = approvedCoursesData[assessment.id];
                         if (!hasPurchase) {
@@ -8568,20 +8143,17 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                         }
                     }
 
-                    // Show confirmation
                     showExamConfirmation(assessment);
                 });
             });
         }
 
-        // ===== WARNING MODAL =====
         function showWarningModal(assessment) {
             const modal = document.getElementById('warningModal');
             modal.dataset.assessmentId = assessment.id;
             modal.classList.add('open');
         }
 
-        // ===== EXAM CONFIRMATION =====
         function showExamConfirmation(assessment) {
             const modal = document.getElementById('examConfirmationModal');
             modal.dataset.assessmentId = assessment.id;
@@ -8594,12 +8166,10 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             modal.classList.add('open');
         }
 
-        // ===== ASSESSMENT TAKING (Cover + Info + Scratchpad) =====
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
 
-            // For assignments, there is no timer
             let totalSeconds = 0;
             let isAssignment = assessment.type === 'assignment';
 
@@ -8633,7 +8203,7 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 timerInterval: null,
                 answers: {},
                 scratchData: {},
-                warningAccepted: !isAssignment // Assignment: no warning needed
+                warningAccepted: !isAssignment
             };
 
             const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
@@ -8731,20 +8301,17 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 <div class="assessment-questions-wrapper" id="assessmentQuestionsWrapper">
                     <div class="assessment-header">
                         <h2>${escapeHtml(assessment.name)}</h2>
-                        ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-calendar-alt"></i> Deadline: ${assessment.deadline ? new Date(assessment.deadline).toLocaleString() : 'N/A'}</div>`}
+                        ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer" style="background:#e8f5e9;color:var(--green);"><i class="fas fa-calendar-alt"></i> Deadline: ${assessment.deadline ? new Date(assessment.deadline).toLocaleString() : 'N/A'}</div>`}
                     </div>
                     <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:12px;">${typeLabel} · ${isAssignment ? 'No time limit' : assessment.duration || 'No time limit'}</p>
                     
-                    <!-- Print/Download buttons (visible after start) -->
                     <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
                         <button class="btn-outline" id="printAssessmentBtn"><i class="fas fa-print"></i> Print</button>
                         <button class="btn-outline" id="downloadAssessmentPngBtn"><i class="fas fa-image"></i> Download PNG</button>
                         <button class="btn-outline" id="downloadAssessmentHtmlBtn"><i class="fas fa-file-code"></i> Download HTML</button>
                     </div>
                     
-                    <div class="assessment-questions-pages" id="assessmentQuestionsPages">
-                        <!-- Will be populated with multiple pages -->
-                    </div>
+                    <div class="assessment-questions-pages" id="assessmentQuestionsPages"></div>
                     <div class="assessment-submit-area">
                         <button class="btn-outline" id="saveProgressBtn"><i class="fas fa-save"></i> Save Progress</button>
                         <button class="btn-primary" id="submitAssessmentBtn"><i class="fas fa-paper-plane"></i> Submit</button>
@@ -8781,7 +8348,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 startBtn.style.display = 'none';
                 document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
 
-                // Paginate questions into A4 pages
                 paginateQuestions(allQuestions, assessment, studentInfo);
 
                 document.querySelectorAll('.scratchpad-wrapper canvas').forEach(canvas => {
@@ -8804,9 +8370,7 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                     });
                 });
 
-                // For assignments: no timer, but auto-save every 30 seconds
                 if (isAssignment) {
-                    // Set up auto-save interval
                     const saveInterval = setInterval(async () => {
                         if (currentAssessmentTaking) {
                             const answers = collectAnswers();
@@ -8819,21 +8383,15 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                                     scratchData: scratchData,
                                     lastSavedAt: Date.now()
                                 });
-                                console.log('Auto-saved progress for assignment');
-                            } catch (e) {
-                                console.warn('Auto-save failed:', e);
-                            }
+                            } catch (e) {}
                         }
                     }, 30000);
-                    // Store interval for cleanup
                     currentAssessmentTaking.autoSaveInterval = saveInterval;
 
-                    // Also check deadline for auto-submit
                     if (assessment.deadline) {
                         const deadlineTime = new Date(assessment.deadline).getTime();
                         const checkDeadline = setInterval(async () => {
                             if (Date.now() > deadlineTime && currentAssessmentTaking) {
-                                // Deadline passed, auto-submit
                                 clearInterval(checkDeadline);
                                 await autoSubmitAssessment();
                             }
@@ -8841,7 +8399,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                         currentAssessmentTaking.deadlineCheckInterval = checkDeadline;
                     }
                 } else {
-                    // For tests/quizzes/exams: timer
                     if (totalSeconds > 0) {
                         const timerElement = document.getElementById('assessmentTimer');
                         const timerInterval = setInterval(() => {
@@ -8889,7 +8446,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 await submitAssessment();
             });
 
-            // Print/Download buttons
             document.getElementById('printAssessmentBtn').addEventListener('click', () => {
                 window.print();
             });
@@ -8903,12 +8459,9 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             });
         }
 
-        // ===== PAGINATE QUESTIONS INTO A4 PAGES =====
         function paginateQuestions(allQuestions, assessment, studentInfo) {
             const container = document.getElementById('assessmentQuestionsPages');
-            // We'll split questions into groups of roughly 5 per page (or based on content length)
-            // Simple approach: chunk questions into arrays of 5
-            const chunkSize = 5; // adjust based on typical question length
+            const chunkSize = 5;
             const pages = [];
             for (let i = 0; i < allQuestions.length; i += chunkSize) {
                 pages.push(allQuestions.slice(i, i + chunkSize));
@@ -8929,7 +8482,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             container.innerHTML = html;
         }
 
-        // ===== QUESTION BLOCK =====
         function buildQuestionBlock(q, idx, qKey) {
             let optionsHtml = '';
             let inputHtml = '';
@@ -9024,7 +8576,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             `;
         }
 
-        // ===== SCRATCHPAD (improved) =====
         function initScratchpad(canvas) {
             const ctx = canvas.getContext('2d');
             let isDrawing = false;
@@ -9032,10 +8583,8 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             let color = '#000000';
             let lineWidth = 3;
 
-            // Set canvas size to match container for proper scaling
             const rect = canvas.getBoundingClientRect();
-            // Use a fixed internal resolution for smooth drawing
-            const dpr = 2; // Use higher resolution for better quality
+            const dpr = 2;
             const w = canvas.parentElement.clientWidth || 600;
             const h = 200;
             canvas.width = w * dpr;
@@ -9051,7 +8600,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 const clientX = e.clientX || (e.touches && e.touches[0].clientX);
                 const clientY = e.clientY || (e.touches && e.touches[0].clientY);
                 if (clientX == null) return { x: 0, y: 0 };
-                // Scale coordinates to canvas's internal coordinate system
                 const scaleX = w / rect.width;
                 const scaleY = h / rect.height;
                 const x = (clientX - rect.left) * scaleX;
@@ -9118,7 +8666,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             scratchpads[key] = { canvas, ctx, color, lineWidth };
         }
 
-        // ===== COLLECT ANSWERS & SCRATCH =====
         function collectAnswers() {
             const answers = {};
             document.querySelectorAll('.question-block').forEach(block => {
@@ -9180,7 +8727,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
-        // ===== SUBMIT (auto‑grading) =====
         async function autoSubmitAssessment() {
             if (!currentAssessmentTaking) return;
             addNotification('info', '⏰ Auto-submitting your assessment...');
@@ -9296,7 +8842,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             }
         }
 
-        // ===== ASSESSMENT HISTORY =====
         function renderAssessmentHistory() {
             const container = document.getElementById('assessmentHistoryList');
             const emptyMsg = document.getElementById('emptyHistoryMsg');
@@ -9365,11 +8910,11 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             modal.className = 'modal-overlay open';
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
             modal.innerHTML = `
-                <div class="modal-box" style="background:#fff;border-radius:28px;max-width:700px;width:100%;padding:1.5rem;max-height:80vh;overflow-y:auto;animation:modalIn 0.3s ease;">
-                    <button class="close-modal" onclick="this.closest('.modal-overlay').remove();" style="float:right;background:none;border:none;font-size:1.5rem;color:#8b8fa3;cursor:pointer;">&times;</button>
+                <div class="modal-box" style="background:var(--card-bg);border-radius:28px;max-width:700px;width:100%;padding:1.5rem;max-height:80vh;overflow-y:auto;animation:modalIn 0.3s ease;">
+                    <button class="close-modal" onclick="this.closest('.modal-overlay').remove();" style="float:right;background:none;border:none;font-size:1.5rem;color:var(--text-secondary);cursor:pointer;">&times;</button>
                     <h2 style="margin-bottom:0.4rem;">${escapeHtml(ass.name)} — Script</h2>
                     <p style="color:var(--text-secondary);font-size:0.85rem;">${ass.type} · ${response.status === 'completed' ? 'Completed' : 'Ended'} · ${formatDate(response.submittedAt || response.startedAt)}</p>
-                    <div style="margin:0.8rem 0;padding:0.8rem;background:#f8f9fc;border-radius:12px;">
+                    <div style="margin:0.8rem 0;padding:0.8rem;background:var(--bg);border-radius:12px;">
                         <strong>Score: </strong><span style="font-weight:700;color:${(response.score||0)/(ass.totalMarks||1) >= 0.5 ? '#2ecc71' : '#e74c3c'};">${response.score || 0}/${ass.totalMarks || 0}</span>
                         <span style="margin-left:8px;font-size:0.75rem;color:var(--text-secondary);">Auto-graded: ${response.autoScore || 0}/${response.totalAutoMarks || 0}</span>
                     </div>
@@ -9402,7 +8947,7 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
 
             let html = '';
             if (Object.keys(studentInfo).length > 0) {
-                html += `<div style="margin-bottom:0.8rem;padding:0.6rem;background:#fcf9f4;border-radius:8px;border-left:4px solid var(--gold);font-size:0.8rem;">
+                html += `<div style="margin-bottom:0.8rem;padding:0.6rem;background:var(--gold-light);border-radius:8px;border-left:4px solid var(--gold);font-size:0.8rem;">
                     <strong>Student Information</strong><br />
                     ${Object.entries(studentInfo).map(([k,v]) => `<span><strong>${k}:</strong> ${escapeHtml(v)}</span> `).join(' | ')}
                 </div>`;
@@ -9417,19 +8962,18 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering';
                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 html += `
-                    <div style="border-bottom:1px solid #f0f0f5;padding:12px 0;">
-                        <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
+                    <div style="border-bottom:1px solid var(--border-color);padding:12px 0;">
+                        <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:var(--text-secondary);">${q.section}</span></div>
                         <div style="font-size:0.8rem;color:var(--text-secondary);margin:4px 0;">Answer: ${escapeHtml(answer)}</div>
                         <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                        ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#fafbfc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
-                        ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                        ${scratch ? `<div style="margin-top:4px;border:1px solid var(--border-color);border-radius:8px;padding:4px;background:var(--bg);"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
+                        ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--text-secondary);"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                     </div>
                 `;
             });
             container.innerHTML = html;
         };
 
-        // ===== DOWNLOAD ASSESSMENT HTML (with cover page) =====
         window.downloadAssessmentHTML = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -9460,8 +9004,7 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             const instructions = ass.cover?.instructions || '';
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
 
-            // Split questions into pages (for A4 layout)
-            const chunkSize = 5; // adjust based on typical question length
+            const chunkSize = 5;
             const pages = [];
             for (let i = 0; i < allQuestions.length; i += chunkSize) {
                 pages.push(allQuestions.slice(i, i + chunkSize));
@@ -9523,10 +9066,8 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             </head>
             <body>
                 <div class="container">
-                    <!-- PAGE 1: COVER IMAGE (if exists) -->
                     ${coverImage ? `<div class="a4-page cover-image-section"><img src="${coverImage}" alt="Cover Page" style="width:100%;height:auto;object-fit:contain;" /></div>` : ''}
                     
-                    <!-- PAGE 2: COVER DETAILS (A4) -->
                     <div class="a4-page cover-page">
                         <div class="cover-header">
                             ${logo ? `<img src="${logo}" alt="Logo" class="cover-logo" />` : ''}
@@ -9552,7 +9093,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                         </div>
                     </div>
                     
-                    <!-- QUESTION PAGES (A4) -->
                     ${pages.map((questions, pageIdx) => `
                         <div class="a4-page">
                             <div class="questions-header">
@@ -9584,7 +9124,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             addNotification('success', 'Script HTML downloaded!');
         };
 
-        // ===== DOWNLOAD ASSESSMENT PNG (using html2canvas) =====
         window.downloadAssessmentPNG = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -9615,14 +9154,12 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             const instructions = ass.cover?.instructions || '';
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
 
-            // Split questions into pages
             const chunkSize = 5;
             const pages = [];
             for (let i = 0; i < allQuestions.length; i += chunkSize) {
                 pages.push(allQuestions.slice(i, i + chunkSize));
             }
 
-            // Build a single HTML element with multiple A4 pages for html2canvas capture
             let htmlContent = `
                 <div id="scriptReport" style="background:#ffffff;padding:0;">
                     ${coverImage ? `<div class="a4-page cover-image-section" style="width:210mm;min-height:297mm;padding:20mm;margin:0 auto;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.15);"><img src="${coverImage}" style="width:100%;height:auto;object-fit:contain;" /></div>` : ''}
@@ -9693,7 +9230,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             }
         };
 
-        // ===== PROMO CAROUSEL =====
         function renderPromoCarousel() {
             const track = document.getElementById('promoCarouselTrack');
             const wrapper = document.getElementById('promoCarouselWrapper');
@@ -9921,7 +9457,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
             }
         }
 
-        // ===== PAGE NAVIGATION =====
         function showPage(pageId, params = {}) {
             let hash = '#' + pageId;
             if (Object.keys(params).length > 0) {
@@ -9935,80 +9470,163 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
         }
 
         function navigateToPage(pageId, params) {
-            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
-            const targetPage = document.getElementById(pageId + 'Page');
-            if (targetPage) {
-                targetPage.classList.add('active-page');
-            } else {
-                document.getElementById('homePage').classList.add('active-page');
-                return;
-            }
+            const currentActive = document.querySelector('.page-container.active-page');
+            if (currentActive) {
+                currentActive.style.opacity = '0';
+                currentActive.style.transform = 'translateX(-30px) scale(0.98)';
+                setTimeout(() => {
+                    document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
+                    const targetPage = document.getElementById(pageId + 'Page');
+                    if (targetPage) {
+                        targetPage.classList.add('active-page');
+                    } else {
+                        document.getElementById('homePage').classList.add('active-page');
+                        return;
+                    }
 
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.page === pageId) btn.classList.add('active');
-            });
+                    document.querySelectorAll('.nav-item').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.page === pageId) btn.classList.add('active');
+                    });
 
-            switch (pageId) {
-                case 'home':
-                    renderAllCourses();
-                    break;
-                case 'mylearning':
-                    renderMyLearn();
-                    break;
-                case 'offline':
-                    renderOfflinePage();
-                    break;
-                case 'profile':
-                    updateUserInterface();
-                    break;
-                case 'courseDetail':
-                    if (params && params.courseId) {
-                        const course = allCourses.find(c => c.id === params.courseId);
-                        if (course) {
-                            selectedCourse = course;
-                            renderCourseDetail(course);
-                            document.getElementById('courseDetailTitle').innerText = course.name;
-                        } else {
-                            if (selectedCourse) {
+                    switch (pageId) {
+                        case 'home':
+                            renderAllCourses();
+                            break;
+                        case 'mylearning':
+                            renderMyLearn();
+                            break;
+                        case 'offline':
+                            renderOfflinePage();
+                            break;
+                        case 'profile':
+                            updateUserInterface();
+                            break;
+                        case 'courseDetail':
+                            if (params && params.courseId) {
+                                const course = allCourses.find(c => c.id === params.courseId);
+                                if (course) {
+                                    selectedCourse = course;
+                                    renderCourseDetail(course);
+                                    document.getElementById('courseDetailTitle').innerText = course.name;
+                                } else {
+                                    if (selectedCourse) {
+                                        renderCourseDetail(selectedCourse);
+                                    } else {
+                                        showPage('home');
+                                    }
+                                }
+                            } else if (selectedCourse) {
                                 renderCourseDetail(selectedCourse);
                             } else {
                                 showPage('home');
                             }
-                        }
-                    } else if (selectedCourse) {
-                        renderCourseDetail(selectedCourse);
-                    } else {
-                        showPage('home');
+                            break;
+                        case 'payment':
+                            break;
+                        case 'docFull':
+                            if (params && params.docId) renderDocFullPage(params.docId);
+                            else showPage('home');
+                            break;
+                        case 'transactionHistory':
+                            renderTransactionHistory();
+                            break;
+                        case 'assessmentTake':
+                            break;
+                        case 'assessmentHistory':
+                            renderAssessmentHistory();
+                            break;
+                        case 'liveClass':
+                            renderLiveClassPage();
+                            break;
+                        default:
+                            break;
                     }
-                    break;
-                case 'payment':
-                    break;
-                case 'docFull':
-                    if (params && params.docId) renderDocFullPage(params.docId);
-                    else showPage('home');
-                    break;
-                case 'transactionHistory':
-                    renderTransactionHistory();
-                    break;
-                case 'assessmentTake':
-                    break;
-                case 'assessmentHistory':
-                    renderAssessmentHistory();
-                    break;
-                case 'liveClass':
-                    renderLiveClassPage();
-                    break;
-                default:
-                    break;
-            }
 
-            if (['home', 'mylearning', 'courseDetail'].includes(pageId)) {
-                setTimeout(() => {
-                    setupCommentToggle();
-                    attachCommentListenersToVisibleVideos();
-                    processVideoThumbnails();
-                }, 300);
+                    if (['home', 'mylearning', 'courseDetail'].includes(pageId)) {
+                        setTimeout(() => {
+                            setupCommentToggle();
+                            attachCommentListenersToVisibleVideos();
+                            processVideoThumbnails();
+                        }, 300);
+                    }
+                }, 100);
+            } else {
+                document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
+                const targetPage = document.getElementById(pageId + 'Page');
+                if (targetPage) {
+                    targetPage.classList.add('active-page');
+                } else {
+                    document.getElementById('homePage').classList.add('active-page');
+                    return;
+                }
+
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.page === pageId) btn.classList.add('active');
+                });
+
+                switch (pageId) {
+                    case 'home':
+                        renderAllCourses();
+                        break;
+                    case 'mylearning':
+                        renderMyLearn();
+                        break;
+                    case 'offline':
+                        renderOfflinePage();
+                        break;
+                    case 'profile':
+                        updateUserInterface();
+                        break;
+                    case 'courseDetail':
+                        if (params && params.courseId) {
+                            const course = allCourses.find(c => c.id === params.courseId);
+                            if (course) {
+                                selectedCourse = course;
+                                renderCourseDetail(course);
+                                document.getElementById('courseDetailTitle').innerText = course.name;
+                            } else {
+                                if (selectedCourse) {
+                                    renderCourseDetail(selectedCourse);
+                                } else {
+                                    showPage('home');
+                                }
+                            }
+                        } else if (selectedCourse) {
+                            renderCourseDetail(selectedCourse);
+                        } else {
+                            showPage('home');
+                        }
+                        break;
+                    case 'payment':
+                        break;
+                    case 'docFull':
+                        if (params && params.docId) renderDocFullPage(params.docId);
+                        else showPage('home');
+                        break;
+                    case 'transactionHistory':
+                        renderTransactionHistory();
+                        break;
+                    case 'assessmentTake':
+                        break;
+                    case 'assessmentHistory':
+                        renderAssessmentHistory();
+                        break;
+                    case 'liveClass':
+                        renderLiveClassPage();
+                        break;
+                    default:
+                        break;
+                }
+
+                if (['home', 'mylearning', 'courseDetail'].includes(pageId)) {
+                    setTimeout(() => {
+                        setupCommentToggle();
+                        attachCommentListenersToVisibleVideos();
+                        processVideoThumbnails();
+                    }, 300);
+                }
             }
         }
 
@@ -10025,7 +9643,6 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
                 paramObj[key] = value;
             }
             
-            // Special handling for courseDetail to ensure params are passed correctly
             if (pageId === 'courseDetail' && paramObj.courseId) {
                 const course = allCourses.find(c => c.id === paramObj.courseId);
                 if (course) {
@@ -10040,22 +9657,7 @@ document.getElementById('examHubOverlay').addEventListener('click', function(e) 
 
         window.addEventListener('hashchange', handleHashChange);
 
-        console.log('✅ UTOM User — Full assessment system with free/paid support, payment popup, and auto‑grading.');
-        console.log('✅ Payment approval popups are now truly one-time (persisted in localStorage).');
-        console.log('✅ Dark mode toggle added in header.');
-        console.log('✅ Course loader fixed — course cards open without errors.');
-        console.log('✅ Added Assignments and Submitted Assignments buttons to Exam Hub.');
-        console.log('✅ Live class pulsing button appears only when enrolled in active class.');
-        console.log('✅ Live class viewer with raise hand, ask question, and private notes textbox.');
-        console.log('✅ Added processing note and pending payment popup.');
-        console.log('✅ Scratchpad: improved touch alignment and expand button added.');
-        console.log('✅ Assignments: no timer, auto-save, auto-submit only on deadline.');
-        console.log('✅ Script download: cover page + cover details + questions.');
-        console.log('✅ Tests/Quizzes/Exams: auto-submit on timer expiration.');
-        console.log('✅ A4 page layout for assessment cover and questions; print/download now produces A4 pages.');
-        console.log('✅ Floating exam button is now draggable (like the player).');
-        console.log('✅ User can now edit phone number in profile (click on phone).');
-        console.log('✅ Cover page image fills the whole A4 paper when downloaded.');
+        console.log('✅ UTOM User — Production ready with Mac-style transitions, improved shadows, and phone modal.');
     </script>
 </body>
 </html>
