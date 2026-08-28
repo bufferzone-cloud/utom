@@ -8693,99 +8693,103 @@
             container.innerHTML = html;
         }
 
-        function buildQuestionBlock(q, idx, qKey) {
-            let optionsHtml = '';
-            let inputHtml = '';
+       function buildQuestionBlock(q, idx, qKey, savedAnswer = null, savedScratch = null) {
+    let optionsHtml = '';
+    let inputHtml = '';
 
-            switch (q.type) {
-                case 'mcq':
-                    optionsHtml = `<div class="q-options">`;
-                    q.options.forEach((opt, oi) => {
-                        optionsHtml += `
-                            <label>
-                                <input type="radio" name="${qKey}" value="${oi}" />
-                                ${escapeHtml(opt)}
-                            </label>
-                        `;
-                    });
-                    optionsHtml += `</div>`;
-                    break;
-                case 'tf':
-                    optionsHtml = `<div class="q-options">
-                        <label><input type="radio" name="${qKey}" value="true" /> True</label>
-                        <label><input type="radio" name="${qKey}" value="false" /> False</label>
-                    </div>`;
-                    break;
-                case 'text':
-                case 'essay':
-                case 'short':
-                    inputHtml =
-                        `<textarea class="q-textarea" data-key="${qKey}" placeholder="Write your answer here..."></textarea>`;
-                    break;
-                case 'fillblank':
-                    inputHtml =
-                        `<input type="text" class="q-fillblank" data-key="${qKey}" placeholder="Type your answer..." />`;
-                    break;
-                case 'matching':
-                    optionsHtml = `<div class="q-matching">`;
-                    q.options.forEach((pair, pi) => {
-                        optionsHtml += `
-                            <div class="q-matching-row">
-                                <span>${escapeHtml(pair.left)}</span>
-                                <span>↔</span>
-                                <select data-key="${qKey}" data-index="${pi}">
-                                    <option value="">Select match</option>
-                                    ${q.options.map((p, oi) => `<option value="${oi}">${escapeHtml(p.right)}</option>`).join('')}
-                                </select>
-                            </div>
-                        `;
-                    });
-                    optionsHtml += `</div>`;
-                    break;
-                case 'ordering':
-                    optionsHtml = `<div class="q-ordering">`;
-                    q.options.forEach((item, pi) => {
-                        optionsHtml += `
-                            <div class="q-ordering-item" draggable="true" data-key="${qKey}" data-index="${pi}">
-                                <span class="handle">☰</span>
-                                <span>${escapeHtml(item)}</span>
-                            </div>
-                        `;
-                    });
-                    optionsHtml += `</div>`;
-                    break;
-                default:
-                    optionsHtml = `<p>Unsupported question type.</p>`;
-            }
-
-            const imageHtml = q.image ? `<img class="q-image" src="${q.image}" alt="Question image" />` : '';
-
-            return `
-                <div class="question-block" data-key="${qKey}">
-                    <div class="q-number">Question ${idx+1} (${q.marks} marks) — ${q.section || 'General'}</div>
-                    <div class="q-text">${escapeHtml(q.text)}</div>
-                    ${imageHtml}
-                    ${inputHtml}
-                    ${optionsHtml}
-                    <button class="scratch-toggle-btn" type="button">
-                        <i class="fas fa-paint-brush"></i> Scratchpad <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="scratchpad-wrapper">
-                        <canvas id="scratch-${qKey}" width="600" height="200"></canvas>
-                        <div class="scratchpad-tools">
-                            <button class="clear-scratch" data-key="${qKey}"><i class="fas fa-eraser"></i> Clear</button>
-                            <button class="color-btn" data-color="#000000" style="background:#000;"></button>
-                            <button class="color-btn" data-color="#e74c3c" style="background:#e74c3c;"></button>
-                            <button class="color-btn" data-color="#3498db" style="background:#3498db;"></button>
-                            <button class="color-btn" data-color="#2ecc71" style="background:#2ecc71;"></button>
-                            <button class="color-btn" data-color="#f1c40f" style="background:#f1c40f;"></button>
-                            <span style="font-size:0.6rem;color:var(--text-secondary);">Draw your scratch work here</span>
-                            <button class="expand-btn"><i class="fas fa-expand"></i> Expand</button>
-                        </div>
+    switch (q.type) {
+        case 'mcq':
+            optionsHtml = `<div class="q-options">`;
+            q.options.forEach((opt, oi) => {
+                const checked = savedAnswer !== null && Number(savedAnswer) === oi;
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="${qKey}" value="${oi}" ${checked ? 'checked' : ''} />
+                        ${escapeHtml(opt)}
+                    </label>
+                `;
+            });
+            optionsHtml += `</div>`;
+            break;
+        case 'tf':
+            const tfChecked = savedAnswer;
+            optionsHtml = `<div class="q-options">
+                <label><input type="radio" name="${qKey}" value="true" ${tfChecked === 'true' ? 'checked' : ''} /> True</label>
+                <label><input type="radio" name="${qKey}" value="false" ${tfChecked === 'false' ? 'checked' : ''} /> False</label>
+            </div>`;
+            break;
+        case 'text':
+        case 'essay':
+        case 'short':
+            inputHtml = `<textarea class="q-textarea" data-key="${qKey}" placeholder="Write your answer here...">${savedAnswer ? escapeHtml(savedAnswer) : ''}</textarea>`;
+            break;
+        case 'fillblank':
+            inputHtml = `<input type="text" class="q-fillblank" data-key="${qKey}" value="${savedAnswer ? escapeHtml(savedAnswer) : ''}" placeholder="Type your answer..." />`;
+            break;
+        case 'matching':
+            const savedMatch = savedAnswer || {};
+            optionsHtml = `<div class="q-matching">`;
+            q.options.forEach((pair, pi) => {
+                const selectedVal = savedMatch[pi] || '';
+                optionsHtml += `
+                    <div class="q-matching-row">
+                        <span>${escapeHtml(pair.left)}</span>
+                        <span>↔</span>
+                        <select data-key="${qKey}" data-index="${pi}">
+                            <option value="">Select match</option>
+                            ${q.options.map((p, oi) => `<option value="${oi}" ${String(oi) === selectedVal ? 'selected' : ''}>${escapeHtml(p.right)}</option>`).join('')}
+                        </select>
                     </div>
+                `;
+            });
+            optionsHtml += `</div>`;
+            break;
+        case 'ordering':
+            const savedOrder = savedAnswer || [];
+            optionsHtml = `<div class="q-ordering">`;
+            // Reorder savedOrder based on saved order
+            const orderedItems = savedOrder.length ? savedOrder.map((idx) => ({ idx, text: q.options[idx] })) : q.options.map((text, idx) => ({ idx, text }));
+            orderedItems.forEach((item, pi) => {
+                optionsHtml += `
+                    <div class="q-ordering-item" draggable="true" data-key="${qKey}" data-index="${item.idx}">
+                        <span class="handle">☰</span>
+                        <span>${escapeHtml(item.text)}</span>
+                    </div>
+                `;
+            });
+            optionsHtml += `</div>`;
+            break;
+        default:
+            optionsHtml = `<p>Unsupported question type.</p>`;
+    }
+
+    const imageHtml = q.image ? `<img class="q-image" src="${q.image}" alt="Question image" />` : '';
+
+    return `
+        <div class="question-block" data-key="${qKey}" style="background:var(--card-bg);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow-sm);border:1px solid var(--border-color);">
+            <div class="q-number" style="font-weight:700;font-size:0.9rem;color:var(--gold-dark);margin-bottom:6px;">Question ${idx+1} (${q.marks} marks) — ${q.section || 'General'}</div>
+            <div class="q-text" style="font-size:0.95rem;margin-bottom:8px;line-height:1.5;">${escapeHtml(q.text)}</div>
+            ${imageHtml}
+            ${inputHtml}
+            ${optionsHtml}
+            <button class="scratch-toggle-btn" type="button" style="background:none;border:none;color:var(--gold-dark);font-weight:600;font-size:0.8rem;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:6px;margin-top:8px;">
+                <i class="fas fa-paint-brush"></i> Scratchpad <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="scratchpad-wrapper">
+                <canvas id="scratch-${qKey}" width="600" height="200"></canvas>
+                <div class="scratchpad-tools" style="display:flex;gap:4px;padding:6px 10px;background:var(--bg);border-top:1px solid var(--border-color);flex-wrap:wrap;align-items:center;">
+                    <button class="clear-scratch" data-key="${qKey}" style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:30px;padding:4px 10px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="fas fa-eraser"></i> Clear</button>
+                    <button class="color-btn" data-color="#000000" style="background:#000;width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;"></button>
+                    <button class="color-btn" data-color="#e74c3c" style="background:#e74c3c;width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;"></button>
+                    <button class="color-btn" data-color="#3498db" style="background:#3498db;width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;"></button>
+                    <button class="color-btn" data-color="#2ecc71" style="background:#2ecc71;width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;"></button>
+                    <button class="color-btn" data-color="#f1c40f" style="background:#f1c40f;width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;"></button>
+                    <button class="expand-btn" style="background:var(--border-color);border:none;border-radius:30px;padding:4px 10px;font-size:0.7rem;cursor:pointer;margin-left:auto;display:flex;align-items:center;gap:4px;"><i class="fas fa-expand"></i> Expand</button>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
         function initScratchpad(canvas) {
             const ctx = canvas.getContext('2d');
@@ -8944,114 +8948,130 @@
             await submitAssessment();
         }
 
-        async function submitAssessment() {
-            if (!currentAssessmentTaking) return;
-            const { assessment, responseId } = currentAssessmentTaking;
-            clearInterval(currentAssessmentTaking.timerInterval);
-            if (currentAssessmentTaking.autoSaveInterval) {
-                clearInterval(currentAssessmentTaking.autoSaveInterval);
-            }
-            if (currentAssessmentTaking.deadlineCheckInterval) {
-                clearInterval(currentAssessmentTaking.deadlineCheckInterval);
-            }
-            const answers = collectAnswers();
-            const scratchData = collectScratchData();
+       async function submitAssessment() {
+    if (!currentAssessmentTaking) return;
+    const { assessment, responseId } = currentAssessmentTaking;
 
-            try {
-                let autoScore = 0;
-                let totalAutoMarks = 0;
-                let allQuestions = [];
-                if (assessment.sections) {
-                    assessment.sections.forEach(sec => {
-                        sec.questions.forEach(q => {
-                            allQuestions.push(q);
-                        });
-                    });
-                } else if (assessment.questions) {
-                    allQuestions = assessment.questions;
+    // Clean up all intervals and leave handlers
+    if (currentAssessmentTaking.onLeaveHandlers && currentAssessmentTaking.onLeaveHandlers.length) {
+        document.removeEventListener('visibilitychange', currentAssessmentTaking.onLeaveHandlers[0]);
+        window.removeEventListener('pagehide', currentAssessmentTaking.onLeaveHandlers[1]);
+        window.removeEventListener('beforeunload', currentAssessmentTaking.onLeaveHandlers[2]);
+    }
+    clearInterval(currentAssessmentTaking.timerInterval);
+    if (currentAssessmentTaking.autoSaveInterval) clearInterval(currentAssessmentTaking.autoSaveInterval);
+    if (currentAssessmentTaking.deadlineCheckInterval) clearInterval(currentAssessmentTaking.deadlineCheckInterval);
+
+    // Collect final answers and scratch data
+    const answers = collectAnswers();
+    const scratchData = collectScratchData();
+
+    try {
+        // Prepare grading logic
+        let autoScore = 0;
+        let totalAutoMarks = 0;
+        let allQuestions = [];
+
+        // Extract all questions from sections (test/exam/assignment) or top-level (quiz)
+        if (assessment.sections) {
+            assessment.sections.forEach(sec => {
+                sec.questions.forEach(q => {
+                    allQuestions.push(q);
+                });
+            });
+        } else if (assessment.questions) {
+            allQuestions = assessment.questions;
+        }
+
+        const marks = {};
+
+        allQuestions.forEach((q, idx) => {
+            const qKey = `q${idx}`;
+            const answer = answers[qKey] || '';
+            let mark = 0;
+            let isAuto = false;
+
+            if (q.type === 'mcq' || q.type === 'tf') {
+                isAuto = true;
+                totalAutoMarks += q.marks;
+                if (answer == q.correct) {
+                    mark = q.marks;
+                    autoScore += q.marks;
                 }
-
-                const marks = {};
-                allQuestions.forEach((q, idx) => {
-                    const qKey = `q${idx}`;
-                    const answer = answers[qKey] || '';
-                    let mark = 0;
-                    let isAuto = false;
-
-                    if (q.type === 'mcq' || q.type === 'tf') {
-                        isAuto = true;
-                        totalAutoMarks += q.marks;
-                        if (answer == q.correct) {
-                            mark = q.marks;
-                            autoScore += q.marks;
-                        }
-                    } else if (q.type === 'fillblank') {
-                        isAuto = true;
-                        totalAutoMarks += q.marks;
-                        if (answer.trim().toLowerCase() === (q.correct || '').trim().toLowerCase()) {
-                            mark = q.marks;
-                            autoScore += q.marks;
-                        }
-                    } else if (q.type === 'matching') {
-                        isAuto = true;
-                        totalAutoMarks += q.marks;
-                        if (q.options && q.options.length > 0) {
-                            let correctCount = 0;
-                            const adminPairs = q.options;
-                            adminPairs.forEach((pair, pi) => {
-                                const selectedIdx = answer[pi];
-                                if (selectedIdx !== undefined && selectedIdx !== '') {
-                                    const selectedRight = q.options[selectedIdx]?.right;
-                                    if (selectedRight && selectedRight === pair.right) {
-                                        correctCount++;
-                                    }
-                                }
-                            });
-                            mark = Math.round((correctCount / adminPairs.length) * q.marks);
-                            autoScore += mark;
-                        }
-                    } else if (q.type === 'ordering') {
-                        isAuto = true;
-                        totalAutoMarks += q.marks;
-                        if (q.options && q.options.length > 0 && Array.isArray(answer) && answer.length === q.options.length) {
-                            const userItems = answer.map(idx => q.options[idx]);
-                            const adminItems = q.options;
-                            if (userItems.every((item, idx) => item === adminItems[idx])) {
-                                mark = q.marks;
-                                autoScore += q.marks;
+            } else if (q.type === 'fillblank') {
+                isAuto = true;
+                totalAutoMarks += q.marks;
+                if (answer.trim().toLowerCase() === (q.correct || '').trim().toLowerCase()) {
+                    mark = q.marks;
+                    autoScore += q.marks;
+                }
+            } else if (q.type === 'matching') {
+                isAuto = true;
+                totalAutoMarks += q.marks;
+                if (q.options && q.options.length > 0) {
+                    let correctCount = 0;
+                    const adminPairs = q.options;
+                    adminPairs.forEach((pair, pi) => {
+                        const selectedIdx = answer[pi];
+                        if (selectedIdx !== undefined && selectedIdx !== '') {
+                            const selectedRight = q.options[selectedIdx]?.right;
+                            if (selectedRight && selectedRight === pair.right) {
+                                correctCount++;
                             }
                         }
+                    });
+                    mark = Math.round((correctCount / adminPairs.length) * q.marks);
+                    autoScore += mark;
+                }
+            } else if (q.type === 'ordering') {
+                isAuto = true;
+                totalAutoMarks += q.marks;
+                if (q.options && q.options.length > 0 && Array.isArray(answer) && answer.length === q.options.length) {
+                    const userItems = answer.map(idx => q.options[idx]);
+                    const adminItems = q.options;
+                    if (userItems.every((item, idx) => item === adminItems[idx])) {
+                        mark = q.marks;
+                        autoScore += q.marks;
                     }
-
-                    marks[qKey] = mark;
-                    if (!isAuto) {
-                        marks[qKey] = 0;
-                    }
-                });
-
-                await update(ref(db, `assessmentResponses/${responseId}`), {
-                    answers: answers,
-                    scratchData: scratchData,
-                    status: 'completed',
-                    submittedAt: Date.now(),
-                    score: autoScore,
-                    marks: marks,
-                    autoScore: autoScore,
-                    totalAutoMarks: totalAutoMarks
-                });
-
-                addNotification('success',
-                    `✅ Assessment "${assessment.name}" submitted successfully! Auto-graded score: ${autoScore}/${totalAutoMarks} (${totalAutoMarks > 0 ? Math.round((autoScore/totalAutoMarks)*100) : 0}%). Admin will review manual questions.`
-                    );
-
-                currentAssessmentTaking = null;
-                showPage('assessmentHistory');
-                renderAssessmentHistory();
-                updateExamBadge();
-            } catch (e) {
-                addNotification('danger', 'Failed to submit: ' + e.message);
+                }
             }
-        }
+
+            // For non-auto questions, initial mark is 0 (admin will grade later)
+            marks[qKey] = mark;
+            if (!isAuto) {
+                marks[qKey] = 0;
+            }
+        });
+
+        // Update the response in Firebase
+        await update(ref(db, `assessmentResponses/${responseId}`), {
+            answers: answers,
+            scratchData: scratchData,
+            status: 'completed',
+            submittedAt: Date.now(),
+            score: autoScore,
+            marks: marks,
+            autoScore: autoScore,
+            totalAutoMarks: totalAutoMarks
+        });
+
+        // Show success notification
+        const percentage = totalAutoMarks > 0 ? Math.round((autoScore / totalAutoMarks) * 100) : 0;
+        addNotification('success',
+            `✅ Assessment "${assessment.name}" submitted successfully! Auto-graded score: ${autoScore}/${totalAutoMarks} (${percentage}%). Admin will review manual questions.`
+        );
+
+        // Clear current assessment state
+        currentAssessmentTaking = null;
+
+        // Navigate to history
+        renderAssessmentHistory();
+        showPage('assessmentHistory');
+        updateExamBadge();
+    } catch (e) {
+        addNotification('danger', 'Failed to submit assessment: ' + e.message);
+    }
+}
 
         function renderAssessmentHistory() {
             const container = document.getElementById('assessmentHistoryList');
