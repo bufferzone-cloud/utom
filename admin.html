@@ -10769,97 +10769,87 @@
         }
 
         function collectCoverData(type) {
-            const coverUrl = document.getElementById(`${type}CoverUrl`).value || '';
-            const name = document.getElementById(`${type}Name`).value.trim();
-            const hours = parseInt(document.getElementById(`${type}DurationHours`).value) || 0;
-            const minutes = parseInt(document.getElementById(`${type}DurationMinutes`).value) || 0;
-            const duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-            const registerId = document.getElementById(`${type}Register`).value;
-            if (!name || !duration || !registerId) return null;
+    const coverUrl = document.getElementById(`${type}CoverUrl`).value || '';
+    const name = document.getElementById(`${type}Name`).value.trim();
+    
+    // Duration fields exist only for test/quiz/exam, not assignment
+    const hoursEl = document.getElementById(`${type}DurationHours`);
+    const minutesEl = document.getElementById(`${type}DurationMinutes`);
+    const hours = hoursEl ? parseInt(hoursEl.value) || 0 : 0;
+    const minutes = minutesEl ? parseInt(minutesEl.value) || 0 : 0;
+    const duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    
+    const registerId = document.getElementById(`${type}Register`).value;
+    
+    // For assignments, duration is not required
+    if (!name || !registerId) return null;
+    if (type !== 'assignment' && (!duration || duration === '00:00')) return null;
+    
+    let deadline = null;
+    let scheduleType = null, startTime = null, endTime = null, availableFrom = null, availableUntil = null;
+    let publishImmediately = false;
+    let scheduledPublishTime = null;
 
-            let deadline = null;
-            let scheduleType = null,
-                startTime = null,
-                endTime = null,
-                availableFrom = null,
-                availableUntil = null;
-            let publishImmediately = false;
-            let scheduledPublishTime = null;
-
-            if (type === 'assignment') {
-                deadline = document.getElementById(`${type}Deadline`).value;
-                publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
-                const schedulePublish = document.getElementById(`${type}SchedulePublish`).checked;
-                if (schedulePublish) {
-                    scheduledPublishTime = document.getElementById(`${type}ScheduledPublishTime`).value;
-                }
-                if (!deadline) return null;
-            } else {
-                scheduleType = document.querySelector(`input[name="${type}Schedule"]:checked`)?.value;
-                publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
-                const schedulePublish = document.getElementById(`${type}SchedulePublish`).checked;
-                if (schedulePublish) {
-                    scheduledPublishTime = document.getElementById(`${type}ScheduledPublishTime`).value;
-                }
-                if (publishImmediately) {
-                    startTime = new Date().toISOString().slice(0, 16);
-                    const end = new Date();
-                    end.setHours(end.getHours() + 2);
-                    endTime = end.toISOString().slice(0, 16);
-                } else if (scheduleType === 'fixed') {
-                    startTime = document.getElementById(`${type}StartTime`).value;
-                    endTime = document.getElementById(`${type}EndTime`).value;
-                } else {
-                    availableFrom = document.getElementById(`${type}AvailableFrom`).value;
-                    availableUntil = document.getElementById(`${type}AvailableUntil`).value;
-                }
-            }
-
-            const infoEnabled = document.getElementById(`${type}InfoToggle`).classList.contains('active');
-            const infoFields = [];
-            if (infoEnabled) {
-                document.querySelectorAll(`#${type}InfoFields .${type}-info-field:checked`).forEach(cb => infoFields.push(cb.value));
-                document.querySelectorAll(`#${type}CustomFieldsList span`).forEach(el => infoFields.push(el.dataset.label));
-            }
-
-            const paid = document.getElementById(`${type}PaymentToggle`).classList.contains('active');
-            let price = 0,
-                gateway = '';
-            if (paid) {
-                price = parseFloat(document.getElementById(`${type}Price`).value) || 0;
-                gateway = document.getElementById(`${type}Gateway`).value;
-            }
-
-            const institutionName = document.getElementById(`${type}InstitutionName`).value.trim() || 'My University';
-            const logoUrl = document.getElementById(`${type}LogoUrl`).value || '';
-            const passingScore = parseInt(document.getElementById(`${type}PassingScore`).value) || 50;
-            const instructions = document.getElementById(`${type}Instructions`).value.trim();
-
-            return {
-                name,
-                duration,
-                registerId,
-                scheduleType,
-                publishImmediately,
-                scheduledPublishTime,
-                startTime,
-                endTime,
-                availableFrom,
-                availableUntil,
-                deadline,
-                infoEnabled,
-                infoFields,
-                paid,
-                price,
-                gateway,
-                institutionName,
-                logoUrl,
-                passingScore,
-                instructions,
-                coverUrl,
-                type
-            };
+    if (type === 'assignment') {
+        deadline = document.getElementById(`${type}Deadline`).value;
+        publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
+        const schedulePublish = document.getElementById(`${type}SchedulePublish`).checked;
+        if (schedulePublish) {
+            scheduledPublishTime = document.getElementById(`${type}ScheduledPublishTime`).value;
         }
+        if (!deadline) return null;
+    } else {
+        scheduleType = document.querySelector(`input[name="${type}Schedule"]:checked`)?.value;
+        publishImmediately = document.getElementById(`${type}PublishImmediately`).checked;
+        const schedulePublish = document.getElementById(`${type}SchedulePublish`).checked;
+        if (schedulePublish) {
+            scheduledPublishTime = document.getElementById(`${type}ScheduledPublishTime`).value;
+        }
+        if (publishImmediately) {
+            startTime = new Date().toISOString().slice(0, 16);
+            const end = new Date();
+            end.setHours(end.getHours() + 2);
+            endTime = end.toISOString().slice(0, 16);
+        } else if (scheduleType === 'fixed') {
+            startTime = document.getElementById(`${type}StartTime`).value;
+            endTime = document.getElementById(`${type}EndTime`).value;
+        } else {
+            availableFrom = document.getElementById(`${type}AvailableFrom`).value;
+            availableUntil = document.getElementById(`${type}AvailableUntil`).value;
+        }
+    }
+
+    const infoEnabled = document.getElementById(`${type}InfoToggle`).classList.contains('active');
+    const infoFields = [];
+    if (infoEnabled) {
+        document.querySelectorAll(`#${type}InfoFields .${type}-info-field:checked`).forEach(cb => infoFields.push(cb.value));
+        document.querySelectorAll(`#${type}CustomFieldsList span`).forEach(el => infoFields.push(el.dataset.label));
+    }
+
+    const paid = document.getElementById(`${type}PaymentToggle`).classList.contains('active');
+    let price = 0, gateway = '';
+    if (paid) {
+        price = parseFloat(document.getElementById(`${type}Price`).value) || 0;
+        gateway = document.getElementById(`${type}Gateway`).value;
+    }
+
+    const institutionName = document.getElementById(`${type}InstitutionName`).value.trim() || 'My University';
+    const logoUrl = document.getElementById(`${type}LogoUrl`).value || '';
+    const passingScore = parseInt(document.getElementById(`${type}PassingScore`).value) || 50;
+    const instructions = document.getElementById(`${type}Instructions`).value.trim();
+
+    return {
+        name, duration, registerId,
+        scheduleType, publishImmediately, scheduledPublishTime,
+        startTime, endTime, availableFrom, availableUntil,
+        deadline,
+        infoEnabled, infoFields,
+        paid, price, gateway,
+        institutionName, logoUrl,
+        passingScore, instructions,
+        coverUrl, type
+    };
+}
 
         function collectFullAssessmentData(type) {
             const coverData = collectCoverData(type);
