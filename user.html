@@ -4536,6 +4536,140 @@
             padding-left: 0;
             padding-right: 0;
         }
+
+        /* ===== RESPONSIVE ASSESSMENT TAKING OVERRIDES ===== */
+.assessment-take-page {
+    padding: 0.6rem 0.8rem;
+}
+
+.assessment-take-page .exam-cover-page {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 20px !important;
+    margin: 0 auto 1rem auto !important;
+    border-radius: 20px !important;
+}
+
+.assessment-take-page .cover-header {
+    border-bottom: 2px solid var(--gold) !important;
+    padding-bottom: 8px !important;
+}
+
+.assessment-take-page .cover-header h1 {
+    font-size: 1.5rem !important;
+}
+
+.assessment-take-page .cover-body {
+    display: block !important;
+    text-align: left !important;
+    padding-top: 10px !important;
+}
+
+.assessment-take-page .assessment-type {
+    font-size: 24px !important;
+    letter-spacing: 1px !important;
+}
+
+.assessment-take-page .assessment-name {
+    font-size: 18px !important;
+    margin-bottom: 10px !important;
+}
+
+.assessment-take-page .details-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+    margin: 0 auto 10px auto !important;
+    font-size: 13px !important;
+}
+
+.assessment-take-page .rules-section {
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+}
+
+.assessment-take-page .cover-footer {
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    font-size: 11px !important;
+}
+
+/* Question list – continuous scroll */
+.assessment-questions-pages {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.question-page {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 0 1rem 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    display: block !important;
+}
+
+.question-page .questions-header {
+    display: none !important;
+}
+
+.question-block {
+    margin-bottom: 12px !important;
+    padding: 14px !important;
+}
+
+.question-block .q-textarea {
+    min-height: 80px !important;
+}
+
+.question-block .q-matching,
+.question-block .q-ordering {
+    gap: 6px !important;
+}
+
+/* Student info section */
+.student-info-section {
+    max-width: 100% !important;
+    margin: 0 0 1rem 0 !important;
+    padding: 16px !important;
+}
+
+.student-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+
+@media (max-width: 500px) {
+    .student-info-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Scratchpad */
+.scratchpad-wrapper canvas {
+    height: 150px !important;
+}
+
+/* Buttons container */
+.assessment-submit-area {
+    margin-top: 16px !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.assessment-submit-area button {
+    width: 100% !important;
+}
+
+/* Timer */
+.assessment-timer {
+    font-size: 0.9rem !important;
+    padding: 4px 12px !important;
+}
     </style>
 </head>
 <body>
@@ -8173,298 +8307,368 @@
             modal.classList.add('open');
         }
 
-        function renderAssessmentTake(assessment) {
-            const container = document.getElementById('assessmentTakeContent');
-            const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
+       function renderAssessmentTake(assessment) {
+    const container = document.getElementById('assessmentTakeContent');
+    const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
 
-            let totalSeconds = 0;
-            let isAssignment = assessment.type === 'assignment';
+    let totalSeconds = 0;
+    let isAssignment = assessment.type === 'assignment';
 
-            if (!isAssignment && assessment.duration) {
-                const parts = assessment.duration.split(':').map(Number);
-                totalSeconds = parts[0] * 3600 + parts[1] * 60;
-            }
+    if (!isAssignment && assessment.duration) {
+        const parts = assessment.duration.split(':').map(Number);
+        totalSeconds = parts[0] * 3600 + parts[1] * 60;
+    }
 
-            const responseRef = push(ref(db, 'assessmentResponses'));
-            const responseId = responseRef.key;
+    // Check if there's an existing ongoing response for this assessment
+    const existingResponse = allAssessmentResponses.find(r =>
+        r.assessmentId === assessment.id &&
+        r.userId === currentUser?.uid &&
+        (r.status === 'started' || r.status === 'ongoing')
+    );
 
-            const data = {
-                assessmentId: assessment.id,
-                userId: currentUser.uid,
-                startedAt: Date.now(),
-                status: 'started',
-                answers: {},
-                scratchData: {},
-                studentInfo: {},
-                score: 0,
-                marks: {},
-                remarks: {}
-            };
-            set(responseRef, data);
+    const responseRef = existingResponse ? ref(db, `assessmentResponses/${existingResponse.id}`) : push(ref(db, 'assessmentResponses'));
+    const responseId = existingResponse ? existingResponse.id : responseRef.key;
 
-            currentAssessmentTaking = {
-                assessment,
-                responseId,
-                startTime: Date.now(),
-                remainingSeconds: totalSeconds,
-                timerInterval: null,
-                answers: {},
-                scratchData: {},
-                warningAccepted: !isAssignment
-            };
+    if (!existingResponse) {
+        const data = {
+            assessmentId: assessment.id,
+            userId: currentUser.uid,
+            startedAt: Date.now(),
+            status: 'started',
+            answers: {},
+            scratchData: {},
+            studentInfo: {},
+            score: 0,
+            marks: {},
+            remarks: {}
+        };
+        set(responseRef, data);
+    }
 
-            const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
-            const instructionsList = coverData.instructions ? coverData.instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
+    currentAssessmentTaking = {
+        assessment,
+        responseId,
+        startTime: existingResponse ? existingResponse.startedAt : Date.now(),
+        remainingSeconds: totalSeconds,
+        timerInterval: null,
+        answers: existingResponse?.answers || {},
+        scratchData: existingResponse?.scratchData || {},
+        warningAccepted: !isAssignment,
+        isResume: !!existingResponse,
+        autoSaveInterval: null,
+        deadlineCheckInterval: null,
+        onLeaveHandlers: []
+    };
 
-            let coverHtml = `
-                <div class="exam-cover-page" id="assessmentCoverInfo">
-                    <div class="cover-header">
-                        ${coverData.logoUrl ? `<img src="${coverData.logoUrl}" alt="Logo" class="cover-logo" onerror="this.style.display='none'" />` : ''}
-                        <h1>${escapeHtml(coverData.institutionName || 'Institution')}</h1>
-                    </div>
-                    <div class="cover-body">
-                        <div class="assessment-type">${typeLabel}</div>
-                        <div class="assessment-name">${escapeHtml(assessment.name)}</div>
-                        <div class="details-grid">
-                            <div><span class="label">Duration:</span> ${assessment.duration ? assessment.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
-                            <div><span class="label">Passing Score:</span> ${assessment.passingScore || 0}%</div>
-                            ${assessment.paid ? `<div><span class="label">Price:</span> ZMW ${assessment.price} (${assessment.gateway})</div>` : '<div><span class="label">Price:</span> Free</div>'}
-                            <div><span class="label">Total Marks:</span> ${assessment.totalMarks || 0}</div>
-                            ${isAssignment && assessment.deadline ? `<div><span class="label">Deadline:</span> ${new Date(assessment.deadline).toLocaleString()}</div>` : ''}
-                        </div>
-                        <div class="rules-section">
-                            <h4>Instructions / Rules</h4>
-                            <ol>
-                                ${instructionsList.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
-                            </ol>
-                        </div>
-                        <div class="cover-footer">
-                            ${escapeHtml(coverData.institutionName || '')}
-                        </div>
-                    </div>
+    // ====== Build cover content (responsive) ======
+    const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
+    const instructionsList = coverData.instructions ? coverData.instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
+
+    let coverHtml = `
+        <div class="exam-cover-page" id="assessmentCoverInfo" style="background:var(--card-bg);border-radius:20px;padding:20px;margin-bottom:1rem;box-shadow:var(--shadow-sm);">
+            <div class="cover-header" style="text-align:center;border-bottom:2px solid var(--gold);padding-bottom:8px;">
+                ${coverData.logoUrl ? `<img src="${coverData.logoUrl}" alt="Logo" style="max-width:80px;max-height:80px;background:#fff;border-radius:8px;padding:4px;margin-bottom:8px;" />` : ''}
+                <h1 style="font-size:1.5rem;font-weight:800;color:var(--text);margin:0;">${escapeHtml(coverData.institutionName || 'Institution')}</h1>
+            </div>
+            <div class="cover-body" style="text-align:center;padding-top:10px;">
+                <div class="assessment-type" style="font-size:24px;font-weight:900;color:var(--text);letter-spacing:1px;margin-bottom:4px;">${typeLabel}</div>
+                <div class="assessment-name" style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px;">${escapeHtml(assessment.name)}</div>
+                <div class="details-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:100%;margin:0 auto 10px auto;text-align:left;font-size:13px;color:var(--text-secondary);">
+                    <div><span style="font-weight:600;color:var(--text);">Duration:</span> ${assessment.duration ? assessment.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
+                    <div><span style="font-weight:600;color:var(--text);">Passing Score:</span> ${assessment.passingScore || 0}%</div>
+                    ${assessment.paid ? `<div><span style="font-weight:600;color:var(--text);">Price:</span> ZMW ${assessment.price} (${assessment.gateway})</div>` : '<div><span style="font-weight:600;color:var(--text);">Price:</span> Free</div>'}
+                    <div><span style="font-weight:600;color:var(--text);">Total Marks:</span> ${assessment.totalMarks || 0}</div>
+                    ${isAssignment && assessment.deadline ? `<div style="grid-column:span 2;"><span style="font-weight:600;color:var(--text);">Deadline:</span> ${new Date(assessment.deadline).toLocaleString()}</div>` : ''}
                 </div>
-            `;
+                <div class="rules-section" style="margin-top:10px;padding-top:10px;border-top:2px solid var(--gold);text-align:left;">
+                    <h4 style="font-size:16px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;">Instructions / Rules</h4>
+                    <ol style="padding-left:20px;font-size:14px;color:var(--text-secondary);line-height:1.6;">
+                        ${instructionsList.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    `;
 
-            let infoHtml = '';
-            if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0) {
-                const fieldLabels = {
-                    studentNumber: 'Student Number',
-                    nrc: 'NRC',
-                    fullName: 'Full Name',
-                    dob: 'Date of Birth',
-                    phone: 'Phone Number',
-                    email: 'Email Address'
-                };
-                infoHtml = `
-                    <div class="student-info-section" id="assessmentInfoSection">
-                        <h4><i class="fas fa-address-card"></i> Student Information</h4>
-                        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.8rem;">Please fill in the required details before starting the assessment.</p>
-                        <div class="student-info-grid">
-                            ${assessment.infoFields.map(field => `
-                                <div class="info-field">
-                                    <label for="info-${field}">${fieldLabels[field] || field}</label>
-                                    <input type="${field === 'dob' ? 'date' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}" 
-                                           id="info-${field}" 
-                                           name="${field}" 
-                                           placeholder="${fieldLabels[field] || field}"
-                                           required />
-                                </div>
-                            `).join('')}
+    // ====== Student info section ======
+    let infoHtml = '';
+    if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0) {
+        const fieldLabels = {
+            studentNumber: 'Student Number',
+            nrc: 'NRC',
+            fullName: 'Full Name',
+            dob: 'Date of Birth',
+            phone: 'Phone Number',
+            email: 'Email Address'
+        };
+        const existingInfo = existingResponse?.studentInfo || {};
+        infoHtml = `
+            <div class="student-info-section" id="assessmentInfoSection" style="margin-bottom:1rem;padding:16px;background:var(--card-bg);border-radius:16px;box-shadow:var(--shadow-sm);">
+                <h4 style="font-size:1.1rem;font-weight:700;margin-bottom:0.8rem;border-left:4px solid var(--gold);padding-left:12px;">Student Information</h4>
+                <div class="student-info-grid">
+                    ${assessment.infoFields.map(field => `
+                        <div class="info-field">
+                            <label for="info-${field}" style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:2px;">${fieldLabels[field] || field}</label>
+                            <input type="${field === 'dob' ? 'date' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}" 
+                                   id="info-${field}" 
+                                   name="${field}" 
+                                   placeholder="${fieldLabels[field] || field}"
+                                   value="${escapeHtml(existingInfo[field] || '')}"
+                                   ${existingResponse ? '' : 'required'} />
                         </div>
-                    </div>
-                `;
-            } else {
-                infoHtml = `
-                    <div class="student-info-section" id="assessmentInfoSection" style="display:none;">
-                        <input type="hidden" id="info-skip" value="true" />
-                    </div>
-                `;
-            }
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        infoHtml = `<div class="student-info-section" id="assessmentInfoSection" style="display:none;"></div>`;
+    }
 
-            let allQuestions = [];
-            if (assessment.sections) {
-                assessment.sections.forEach(sec => {
-                    sec.questions.forEach(q => {
-                        allQuestions.push({ ...q, section: sec.name });
-                    });
-                });
-            } else if (assessment.questions) {
-                allQuestions = assessment.questions.map(q => ({ ...q, section: 'General' }));
-            }
-
-            let questionsHtml = '';
-            allQuestions.forEach((q, idx) => {
-                const qKey = `q${idx}`;
-                questionsHtml += buildQuestionBlock(q, idx, qKey);
+    // ====== Build questions (continuous scroll) ======
+    let allQuestions = [];
+    if (assessment.sections) {
+        assessment.sections.forEach(sec => {
+            sec.questions.forEach(q => {
+                allQuestions.push({ ...q, section: sec.name });
             });
+        });
+    } else if (assessment.questions) {
+        allQuestions = assessment.questions.map(q => ({ ...q, section: 'General' }));
+    }
 
-            container.innerHTML = `
-                ${coverHtml}
-                ${infoHtml}
-                <button class="cover-start-btn" id="startAssessmentBtn">
-                    <i class="fas fa-play-circle"></i> Start Assessment
-                </button>
+    // Pre-fill answers if resuming
+    const savedAnswers = existingResponse?.answers || {};
+    const savedScratch = existingResponse?.scratchData || {};
 
-                <div class="assessment-questions-wrapper" id="assessmentQuestionsWrapper">
-                    <div class="assessment-header">
-                        <h2>${escapeHtml(assessment.name)}</h2>
-                        ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer" style="background:#e8f5e9;color:var(--green);"><i class="fas fa-calendar-alt"></i> Deadline: ${assessment.deadline ? new Date(assessment.deadline).toLocaleString() : 'N/A'}</div>`}
-                    </div>
-                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:12px;">${typeLabel} · ${isAssignment ? 'No time limit' : assessment.duration || 'No time limit'}</p>
-                    
-                    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
-                        <button class="btn-outline" id="printAssessmentBtn"><i class="fas fa-print"></i> Print</button>
-                        <button class="btn-outline" id="downloadAssessmentPngBtn"><i class="fas fa-image"></i> Download PNG</button>
-                        <button class="btn-outline" id="downloadAssessmentHtmlBtn"><i class="fas fa-file-code"></i> Download HTML</button>
-                    </div>
-                    
-                    <div class="assessment-questions-pages" id="assessmentQuestionsPages"></div>
-                    <div class="assessment-submit-area">
-                        <button class="btn-outline" id="saveProgressBtn"><i class="fas fa-save"></i> Save Progress</button>
-                        <button class="btn-primary" id="submitAssessmentBtn"><i class="fas fa-paper-plane"></i> Submit</button>
-                    </div>
-                </div>
-            `;
+    let questionsHtml = allQuestions.map((q, idx) => {
+        const qKey = `q${idx}`;
+        const savedAnswer = savedAnswers[qKey];
+        const savedScratchData = savedScratch[qKey];
+        return buildQuestionBlock(q, idx, qKey, savedAnswer, savedScratchData);
+    }).join('');
 
-            const startBtn = document.getElementById('startAssessmentBtn');
-            startBtn.addEventListener('click', async () => {
-                const infoFields = document.querySelectorAll('#assessmentInfoSection .info-field input');
-                let valid = true;
-                const studentInfo = {};
-                infoFields.forEach(inp => {
-                    if (inp.hasAttribute('required') && !inp.value.trim()) {
-                        valid = false;
-                        inp.style.borderColor = '#e74c3c';
-                    } else {
-                        inp.style.borderColor = '';
-                        studentInfo[inp.name] = inp.value.trim();
-                    }
-                });
-                if (assessment.infoEnabled && !valid) {
-                    addNotification('warning', 'Please fill in all required student information fields.');
-                    return;
-                }
+    // ====== Compose HTML ======
+    container.innerHTML = `
+        ${coverHtml}
+        ${infoHtml}
+        <button class="cover-start-btn" id="startAssessmentBtn" style="width:100%;max-width:300px;margin:0 auto;display:block;padding:14px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:60px;font-weight:700;color:#fff;font-size:1rem;cursor:pointer;box-shadow:0 4px 16px rgba(245,176,66,0.3);">
+            <i class="fas fa-play-circle"></i> ${existingResponse ? 'Resume Assessment' : 'Start Assessment'}
+        </button>
 
-                await update(ref(db, `assessmentResponses/${responseId}`), {
-                    studentInfo: studentInfo,
-                    status: 'ongoing'
-                });
+        <div class="assessment-questions-wrapper" id="assessmentQuestionsWrapper" style="display:none;max-width:800px;margin:0 auto;">
+            <div class="assessment-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                <h2 style="font-size:1.2rem;font-weight:800;border-left:4px solid var(--gold);padding-left:12px;">${escapeHtml(assessment.name)}</h2>
+                ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer" style="display:flex;align-items:center;gap:6px;background:var(--gold-light);padding:6px 16px;border-radius:30px;font-weight:700;font-size:1rem;color:var(--gold-dark);">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer" style="display:flex;align-items:center;gap:6px;background:#e8f5e9;padding:6px 16px;border-radius:30px;font-weight:700;font-size:1rem;color:var(--green);"><i class="fas fa-calendar-alt"></i> Deadline: ${assessment.deadline ? new Date(assessment.deadline).toLocaleString() : 'N/A'}</div>`}
+            </div>
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:12px;">${typeLabel} · ${isAssignment ? 'No time limit' : assessment.duration || 'No time limit'}</p>
+            
+            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="btn-outline" id="printAssessmentBtn"><i class="fas fa-print"></i> Print</button>
+                <button class="btn-outline" id="downloadAssessmentPngBtn"><i class="fas fa-image"></i> Download PNG</button>
+                <button class="btn-outline" id="downloadAssessmentHtmlBtn"><i class="fas fa-file-code"></i> Download HTML</button>
+            </div>
+            
+            <div class="assessment-questions-pages" id="assessmentQuestionsPages" style="display:block;width:100%;">
+                ${questionsHtml}
+            </div>
+            
+            <div class="assessment-submit-area" style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                <button class="btn-outline" id="saveProgressBtn"><i class="fas fa-save"></i> Save Progress</button>
+                <button class="btn-primary" id="submitAssessmentBtn"><i class="fas fa-paper-plane"></i> Submit</button>
+            </div>
+        </div>
+    `;
 
-                document.getElementById('assessmentCoverInfo').style.display = 'none';
-                document.getElementById('assessmentInfoSection').style.display = 'none';
-                startBtn.style.display = 'none';
-                document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
-
-                paginateQuestions(allQuestions, assessment, studentInfo);
-
-                document.querySelectorAll('.scratchpad-wrapper canvas').forEach(canvas => {
-                    initScratchpad(canvas);
-                });
-
-                document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const wrapper = this.nextElementSibling;
-                        if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
-                            wrapper.classList.toggle('open');
-                            this.classList.toggle('open');
-                            if (wrapper.classList.contains('open')) {
-                                const canvas = wrapper.querySelector('canvas');
-                                if (canvas && !scratchpads[canvas.id.replace('scratch-', '')]) {
-                                    initScratchpad(canvas);
-                                }
-                            }
-                        }
-                    });
-                });
-
-                if (isAssignment) {
-                    const saveInterval = setInterval(async () => {
-                        if (currentAssessmentTaking) {
-                            const answers = collectAnswers();
-                            const scratchData = collectScratchData();
-                            currentAssessmentTaking.answers = answers;
-                            currentAssessmentTaking.scratchData = scratchData;
-                            try {
-                                await update(ref(db, `assessmentResponses/${responseId}`), {
-                                    answers: answers,
-                                    scratchData: scratchData,
-                                    lastSavedAt: Date.now()
-                                });
-                            } catch (e) {}
-                        }
-                    }, 30000);
-                    currentAssessmentTaking.autoSaveInterval = saveInterval;
-
-                    if (assessment.deadline) {
-                        const deadlineTime = new Date(assessment.deadline).getTime();
-                        const checkDeadline = setInterval(async () => {
-                            if (Date.now() > deadlineTime && currentAssessmentTaking) {
-                                clearInterval(checkDeadline);
-                                await autoSubmitAssessment();
-                            }
-                        }, 60000);
-                        currentAssessmentTaking.deadlineCheckInterval = checkDeadline;
-                    }
+    // ====== Event listeners ======
+    const startBtn = document.getElementById('startAssessmentBtn');
+    startBtn.addEventListener('click', async () => {
+        // Validate student info if needed
+        if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0 && !existingResponse) {
+            let valid = true;
+            const studentInfo = {};
+            document.querySelectorAll('#assessmentInfoSection .info-field input').forEach(inp => {
+                if (inp.hasAttribute('required') && !inp.value.trim()) {
+                    valid = false;
+                    inp.style.borderColor = '#e74c3c';
                 } else {
-                    if (totalSeconds > 0) {
-                        const timerElement = document.getElementById('assessmentTimer');
-                        const timerInterval = setInterval(() => {
-                            currentAssessmentTaking.remainingSeconds--;
-                            if (currentAssessmentTaking.remainingSeconds <= 0) {
-                                clearInterval(timerInterval);
-                                timerElement.textContent = '00:00:00';
-                                timerElement.classList.add('warning');
-                                addNotification('warning', '⏰ Time is up! Your assessment will be submitted automatically.');
-                                autoSubmitAssessment();
-                            } else {
-                                timerElement.textContent = formatTime(currentAssessmentTaking.remainingSeconds);
-                                if (currentAssessmentTaking.remainingSeconds < 60) {
-                                    timerElement.classList.add('warning');
-                                }
-                            }
-                        }, 1000);
-                        currentAssessmentTaking.timerInterval = timerInterval;
-                    }
+                    inp.style.borderColor = '';
+                    studentInfo[inp.name] = inp.value.trim();
                 }
             });
+            if (!valid) {
+                addNotification('warning', 'Please fill in all required student information fields.');
+                return;
+            }
+            await update(ref(db, `assessmentResponses/${responseId}`), {
+                studentInfo: studentInfo,
+                status: 'ongoing'
+            });
+        } else if (existingResponse) {
+            // update student info if changed
+            const studentInfo = {};
+            document.querySelectorAll('#assessmentInfoSection .info-field input').forEach(inp => {
+                studentInfo[inp.name] = inp.value.trim();
+            });
+            await update(ref(db, `assessmentResponses/${responseId}`), {
+                studentInfo: studentInfo
+            });
+        }
 
-            document.getElementById('saveProgressBtn').addEventListener('click', async () => {
+        // Hide cover and info, show questions
+        document.getElementById('assessmentCoverInfo').style.display = 'none';
+        document.getElementById('assessmentInfoSection').style.display = 'none';
+        startBtn.style.display = 'none';
+        document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
+
+        // Initialize scratchpads
+        document.querySelectorAll('.scratchpad-wrapper canvas').forEach(canvas => {
+            const key = canvas.id.replace('scratch-', '');
+            if (savedScratch[key]) {
+                const img = new Image();
+                img.onload = function() {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = savedScratch[key];
+            }
+            initScratchpad(canvas);
+        });
+
+        // Attach scratch toggle events
+        document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const wrapper = this.nextElementSibling;
+                if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
+                    wrapper.classList.toggle('open');
+                    this.classList.toggle('open');
+                }
+            });
+        });
+
+        if (isAssignment) {
+            // Auto-save every 30 seconds
+            currentAssessmentTaking.autoSaveInterval = setInterval(async () => {
                 const answers = collectAnswers();
                 const scratchData = collectScratchData();
-                if (currentAssessmentTaking) {
-                    currentAssessmentTaking.answers = answers;
-                    currentAssessmentTaking.scratchData = scratchData;
+                currentAssessmentTaking.answers = answers;
+                currentAssessmentTaking.scratchData = scratchData;
+                try {
+                    await update(ref(db, `assessmentResponses/${responseId}`), {
+                        answers: answers,
+                        scratchData: scratchData,
+                        lastSavedAt: Date.now()
+                    });
+                } catch (e) {}
+            }, 30000);
+
+            // Deadline auto-submit check
+            if (assessment.deadline) {
+                const deadlineTime = new Date(assessment.deadline).getTime();
+                currentAssessmentTaking.deadlineCheckInterval = setInterval(async () => {
+                    if (Date.now() > deadlineTime && currentAssessmentTaking) {
+                        clearInterval(currentAssessmentTaking.deadlineCheckInterval);
+                        await autoSubmitAssessment();
+                    }
+                }, 60000);
+            }
+
+            // Auto-save on page leave / hide / close
+            const saveOnLeave = async () => {
+                if (currentAssessmentTaking && currentAssessmentTaking.responseId) {
+                    const answers = collectAnswers();
+                    const scratchData = collectScratchData();
                     try {
                         await update(ref(db, `assessmentResponses/${responseId}`), {
                             answers: answers,
                             scratchData: scratchData,
                             lastSavedAt: Date.now()
                         });
-                        addNotification('success', 'Progress saved.');
-                    } catch (e) {
-                        addNotification('danger', 'Failed to save progress: ' + e.message);
-                    }
+                    } catch (e) {}
                 }
-            });
+            };
 
-            document.getElementById('submitAssessmentBtn').addEventListener('click', async () => {
-                if (!confirm('Are you sure you want to submit? You cannot change your answers after submission.'))
-                    return;
-                await submitAssessment();
-            });
+            const onVisibilityChange = () => {
+                if (document.hidden) saveOnLeave();
+            };
+            const onPageHide = () => {
+                saveOnLeave();
+            };
+            const onBeforeUnload = () => {
+                // Async fire-and-forget
+                saveOnLeave();
+                if (currentAssessmentTaking) {
+                    e.preventDefault();
+                    e.returnValue = 'You have an unsaved assignment. Progress is being saved automatically.';
+                }
+            };
 
-            document.getElementById('printAssessmentBtn').addEventListener('click', () => {
-                window.print();
-            });
-
-            document.getElementById('downloadAssessmentPngBtn').addEventListener('click', () => {
-                downloadAssessmentPNG(responseId);
-            });
-
-            document.getElementById('downloadAssessmentHtmlBtn').addEventListener('click', () => {
-                downloadAssessmentHTML(responseId);
-            });
+            document.addEventListener('visibilitychange', onVisibilityChange);
+            window.addEventListener('pagehide', onPageHide);
+            window.addEventListener('beforeunload', onBeforeUnload);
+            currentAssessmentTaking.onLeaveHandlers = [onVisibilityChange, onPageHide, onBeforeUnload];
+        } else {
+            // Non-assignment: start timer
+            if (totalSeconds > 0) {
+                const timerElement = document.getElementById('assessmentTimer');
+                const timerInterval = setInterval(() => {
+                    currentAssessmentTaking.remainingSeconds--;
+                    if (currentAssessmentTaking.remainingSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        timerElement.textContent = '00:00:00';
+                        timerElement.classList.add('warning');
+                        addNotification('warning', '⏰ Time is up! Your assessment will be submitted automatically.');
+                        autoSubmitAssessment();
+                    } else {
+                        timerElement.textContent = formatTime(currentAssessmentTaking.remainingSeconds);
+                        if (currentAssessmentTaking.remainingSeconds < 60) {
+                            timerElement.classList.add('warning');
+                        }
+                    }
+                }, 1000);
+                currentAssessmentTaking.timerInterval = timerInterval;
+            }
         }
+    });
+
+    // ====== Other buttons ======
+    document.getElementById('saveProgressBtn').addEventListener('click', async () => {
+        const answers = collectAnswers();
+        const scratchData = collectScratchData();
+        if (currentAssessmentTaking) {
+            currentAssessmentTaking.answers = answers;
+            currentAssessmentTaking.scratchData = scratchData;
+            try {
+                await update(ref(db, `assessmentResponses/${responseId}`), {
+                    answers: answers,
+                    scratchData: scratchData,
+                    lastSavedAt: Date.now()
+                });
+                addNotification('success', 'Progress saved.');
+            } catch (e) {
+                addNotification('danger', 'Failed to save progress: ' + e.message);
+            }
+        }
+    });
+
+    document.getElementById('submitAssessmentBtn').addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to submit? You cannot change your answers after submission.'))
+            return;
+        await submitAssessment();
+    });
+
+    document.getElementById('printAssessmentBtn').addEventListener('click', () => {
+        window.print();
+    });
+
+    document.getElementById('downloadAssessmentPngBtn').addEventListener('click', () => {
+        downloadAssessmentPNG(responseId);
+    });
+
+    document.getElementById('downloadAssessmentHtmlBtn').addEventListener('click', () => {
+        downloadAssessmentHTML(responseId);
+    });
+}
 
         function paginateQuestions(allQuestions, assessment, studentInfo) {
             const container = document.getElementById('assessmentQuestionsPages');
