@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
     <style>
         /* ----- RESET & BASE ----- */
         * {
@@ -5328,7 +5327,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const LIVEKIT_TOKEN_SERVER = "https://utom-livekit-token.jubelmobz19.workers.dev";
 
         let currentUser = null;
         let userData = { firstName: '', lastName: '', email: '', phone: '', likedVideos: [], likedDocs: [] };
@@ -5377,9 +5375,6 @@
         let liveHands = {};
         let liveQuestions = {};
         let liveDocInputListenerAttached = false;
-        let liveKitRoom = null;                // LiveKit room instance
-let liveKitConnected = false;          // flag to avoid duplicate connections
-let liveRemoteVideoAttached = false;   // track if remote video is attached
 
         let expirationCheckInterval = null;
         let countdownUpdateInterval = null;
@@ -5750,109 +5745,8 @@ let liveRemoteVideoAttached = false;   // track if remote video is attached
             showPage('liveClass');
             renderLiveClassPage();
             attachLiveClassListeners();
-            joinLiveKitRoom();
-        }
-        
-async function joinLiveKitRoom() {
-    if (liveKitConnected) return;
-
-    const user = auth.currentUser;
-    if (!user || !liveClassData) return;
-
-    try {
-        // 1. Request a token
-        const response = await fetch(LIVEKIT_TOKEN_SERVER + '/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                roomName: liveClassData.liveKitRoom,
-                identity: user.uid,
-                name: `${userData.firstName} ${userData.lastName}`.trim() || user.email.split('@')[0]
-            })
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Token server error (${response.status}): ${errText}`);
         }
 
-        const tokenData = await response.json();
-        if (!tokenData.success) throw new Error(tokenData.error || 'Token server returned no success flag.');
-        if (!tokenData.serverUrl) throw new Error('Token server did not provide a serverUrl.');
-
-        // 2. Create and connect the room
-        const room = new LivekitClient.Room({
-            adaptiveStream: true,
-            dynacast: true
-        });
-
-        liveKitRoom = room;
-        await room.connect(tokenData.serverUrl, tokenData.token);
-
-        // 3. Subscribe to remote tracks
-        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-            if (track.kind === 'video') {
-                // If this is the instructor or first video, attach to main stream area
-                if (!liveRemoteVideoAttached) {
-                    const videoEl = document.getElementById('liveCameraVideo');
-                    track.attach(videoEl);
-                    videoEl.style.display = 'block';
-                    liveRemoteVideoAttached = true;
-                } else {
-                    // Additional videos can be added to a small grid (optional)
-                    // For simplicity, we just ignore extra videos
-                }
-            } else if (track.kind === 'audio') {
-                // Audio is automatically played by LiveKit
-            }
-        });
-
-        // Re-attach when screen share is published
-        room.on(LivekitClient.RoomEvent.TrackPublished, (publication, participant) => {
-            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
-                // If instructor starts screen share, replace main video
-                publication.track.attach(document.getElementById('liveCameraVideo'));
-            }
-        });
-
-        // Cleanup when track unpublished
-        room.on(LivekitClient.RoomEvent.TrackUnpublished, (publication, participant) => {
-            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
-                // Revert to camera if available
-                const cameraPub = participant.getTrackPublication(LivekitClient.Track.Source.Camera);
-                if (cameraPub?.track) {
-                    cameraPub.track.attach(document.getElementById('liveCameraVideo'));
-                } else {
-                    document.getElementById('liveCameraVideo').style.display = 'none';
-                }
-            }
-        });
-
-        // 4. Record student attendance in the live class
-        await db.ref(`liveClasses/${liveClassId}/joinedStudents/${user.uid}`).set({
-            name: `${userData.firstName} ${userData.lastName}`.trim() || user.email.split('@')[0],
-            joinedAt: Date.now()
-        });
-
-        liveKitConnected = true;
-
-        // 5. Handle leaving the room
-        room.on(LivekitClient.RoomEvent.Disconnected, () => {
-            liveKitConnected = false;
-            liveRemoteVideoAttached = false;
-            // Remove attendance
-            if (liveClassId && currentUser) {
-                db.ref(`liveClasses/${liveClassId}/joinedStudents/${currentUser.uid}`).remove();
-            }
-        });
-
-        console.log('Successfully joined LiveKit room:', liveClassData.liveKitRoom);
-
-    } catch (error) {
-        console.error('Failed to join live class:', error);
-        showToast(error.message || 'Unable to join live class', 'danger');
-    }
-}
         function renderLiveClassPage() {
             if (!liveClassData) {
                 document.getElementById('liveClassContent').innerHTML = '<div class="empty-state">No live class available.</div>';
@@ -8441,19 +8335,12 @@ async function joinLiveKitRoom() {
                 }
             });
 
-            document.getElementById('backFromLiveClassBtn').addEventListener('click', async () => {
-    if (liveKitRoom) {
-        try {
-            await liveKitRoom.disconnect();
-        } catch (e) {}
-        liveKitRoom = null;
-        liveKitConnected = false;
-    }
-    if (liveClassListenersAttached) {
-        cleanupLiveClass();
-    }
-    showPage('home');
-});
+            document.getElementById('backFromLiveClassBtn').addEventListener('click', () => {
+                if (liveClassListenersAttached) {
+                    cleanupLiveClass();
+                }
+                showPage('home');
+            });
 
             document.addEventListener('click', (e) => {
                 const expandBtn = e.target.closest('.expand-btn');
