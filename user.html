@@ -4806,7 +4806,7 @@
         </div>
 
         <!-- ===== LIVE CLASS PULSING BUTTON ===== -->
-        <button id="liveClassPulseBtn" style="display:none;" onclick="openLiveClassPage()">
+        <button id="liveClassPulseBtn" style="display:none;" onclick="">
             <div class="live-icon">
                 <span class="pulse-dot"></span>
                 <i class="fas fa-broadcast-tower"></i> LIVE
@@ -5731,22 +5731,60 @@
         }
 
         function updateLiveClassPulseButton() {
-            const btn = document.getElementById('liveClassPulseBtn');
-            if (liveClassData && liveClassData.status === 'active') {
-                btn.style.display = 'flex';
-                document.getElementById('liveClassName').textContent = liveClassData.name || 'Live Class';
-            } else {
-                btn.style.display = 'none';
-            }
-        }
+    const btn = document.getElementById('liveClassPulseBtn');
+    if (!btn) return;
+
+    // Only show if there's an active or ongoing class
+    if (liveClassData && (liveClassData.status === 'active' || liveClassData.status === 'ongoing')) {
+        btn.style.display = 'flex';
+        document.getElementById('liveClassName').textContent = liveClassData.name || 'Live Class';
+    } else {
+        btn.style.display = 'none';
+    }
+}
 
         function openLiveClassPage() {
-            if (!liveClassData) return;
-            showPage('liveClass');
-            renderLiveClassPage();
-            attachLiveClassListeners();
-            joinLiveClass();
-        }
+    if (!liveClassId) {
+        addNotification('warning', 'No live class available right now.');
+        return;
+    }
+    // If liveClassData is missing, re-fetch it from Firebase
+    if (!liveClassData) {
+        get(ref(db, `liveClasses/${liveClassId}`)).then(snap => {
+            const data = snap.val();
+            if (data && (data.status === 'active' || data.status === 'ongoing')) {
+                liveClassData = { id: liveClassId, ...data };
+                showPage('liveClass');
+                renderLiveClassPage();
+                attachLiveClassListeners();
+                joinLiveClass(); // <-- newly added
+            } else {
+                liveClassData = null;
+                updateLiveClassPulseButton();
+                addNotification('info', 'The live class has ended.');
+            }
+        });
+    } else {
+        showPage('liveClass');
+        renderLiveClassPage();
+        attachLiveClassListeners();
+        joinLiveClass(); // <-- newly added
+    }
+}
+
+    async function joinLiveClass() {
+    if (!liveClassId || !currentUser) return;
+    const attendeeRef = ref(db, `liveClasses/${liveClassId}/attendees/${currentUser.uid}`);
+    const snap = await get(attendeeRef);
+    if (!snap.val()) {
+        await set(attendeeRef, {
+            joinedAt: Date.now(),
+            name: `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email?.split('@')[0] || 'User',
+            phone: userData.phone || ''
+        });
+        addNotification('success', 'You have joined the live class!');
+    }
+}
 
         async function joinLiveClass() {
     if (!liveClassId || !currentUser) return;
@@ -8350,8 +8388,7 @@
                 }
             });
 
-            document.getElementById('backFromLiveClassBtn').addEventListener('click', async () => {
-    // Remove student from attendees
+          document.getElementById('backFromLiveClassBtn').addEventListener('click', async () => {
     if (liveClassId && currentUser) {
         await remove(ref(db, `liveClasses/${liveClassId}/attendees/${currentUser.uid}`))
             .catch(() => {});
