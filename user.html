@@ -5745,7 +5745,22 @@
             showPage('liveClass');
             renderLiveClassPage();
             attachLiveClassListeners();
+            joinLiveClass();
         }
+
+        async function joinLiveClass() {
+    if (!liveClassId || !currentUser) return;
+    const attendeeRef = ref(db, `liveClasses/${liveClassId}/attendees/${currentUser.uid}`);
+    const snap = await get(attendeeRef);
+    if (!snap.val()) {
+        await set(attendeeRef, {
+            joinedAt: Date.now(),
+            name: `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email?.split('@')[0] || 'User',
+            phone: userData.phone || ''
+        });
+        addNotification('success', 'You have joined the live class!');
+    }
+}
 
         function renderLiveClassPage() {
             if (!liveClassData) {
@@ -8335,12 +8350,17 @@
                 }
             });
 
-            document.getElementById('backFromLiveClassBtn').addEventListener('click', () => {
-                if (liveClassListenersAttached) {
-                    cleanupLiveClass();
-                }
-                showPage('home');
-            });
+            document.getElementById('backFromLiveClassBtn').addEventListener('click', async () => {
+    // Remove student from attendees
+    if (liveClassId && currentUser) {
+        await remove(ref(db, `liveClasses/${liveClassId}/attendees/${currentUser.uid}`))
+            .catch(() => {});
+    }
+    if (liveClassListenersAttached) {
+        cleanupLiveClass();
+    }
+    showPage('home');
+});
 
             document.addEventListener('click', (e) => {
                 const expandBtn = e.target.closest('.expand-btn');
