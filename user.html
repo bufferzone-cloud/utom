@@ -6231,33 +6231,39 @@ function updateControlButtonStates() {
             img.src = dataUrl;
         }
 
-        document.getElementById('raiseHandBtn').addEventListener('click', async () => {
-            if (!liveClassId || !currentUser) return;
-            const handsRef = ref(db, `liveClasses/${liveClassId}/hands/${currentUser.uid}`);
-            const snap = await get(handsRef);
-            if (snap.val()) {
-                await remove(handsRef);
-                addNotification('info', 'Hand lowered.');
-            } else {
-                await set(handsRef, { timestamp: Date.now(), status: 'raised' });
-                addNotification('success', 'Hand raised!');
-            }
+       document.getElementById('raiseHandBtn').addEventListener('click', async () => {
+    if (!liveClassId || !currentUser) return;
+    const handsRef = ref(db, `liveClasses/${liveClassId}/hands/${currentUser.uid}`);
+    const snap = await get(handsRef);
+    if (snap.val()) {
+        await remove(handsRef);
+        addNotification('info', 'Hand lowered.');
+    } else {
+        await set(handsRef, {
+            timestamp: Date.now(),
+            status: 'raised',
+            name: `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student',
+            email: currentUser.email
         });
+        addNotification('success', 'Hand raised!');
+    }
+});
 
-        document.getElementById('askQuestionBtn').addEventListener('click', async () => {
-            if (!liveClassId || !currentUser) return;
-            const text = prompt("Enter your question:");
-            if (text && text.trim()) {
-                const questionsRef = push(ref(db, `liveClasses/${liveClassId}/questions`));
-                await set(questionsRef, {
-                    text: text.trim(),
-                    userId: currentUser.uid,
-                    timestamp: Date.now(),
-                    status: 'asked'
-                });
-                addNotification('success', 'Question asked!');
-            }
+       document.getElementById('askQuestionBtn').addEventListener('click', async () => {
+    if (!liveClassId || !currentUser) return;
+    const text = prompt("Enter your question:");
+    if (text && text.trim()) {
+        const questionsRef = push(ref(db, `liveClasses/${liveClassId}/questions`));
+        await set(questionsRef, {
+            text: text.trim(),
+            userId: currentUser.uid,
+            askedBy: `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student',
+            timestamp: Date.now(),
+            status: 'asked'
         });
+        addNotification('success', 'Question asked!');
+    }
+});
 
         document.getElementById('saveNotesBtn').addEventListener('click', () => {
             const textarea = document.getElementById('liveNotesTextarea');
