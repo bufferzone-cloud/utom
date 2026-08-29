@@ -5831,6 +5831,19 @@ if (!audioEl) {
     document.body.appendChild(audioEl);
 }
 
+// Handle disconnect - remove from joinedStudents
+room.on(LivekitClient.RoomEvent.Disconnected, () => {
+    if (liveClassData && liveClassData.id && currentUser) {
+        const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
+        remove(joinedRef).catch(() => {});
+    }
+    liveKitRoom = null;
+    isLiveKitConnected = false;
+    const videoEl = document.getElementById('liveCameraVideo');
+    if (videoEl) videoEl.style.display = 'none';
+    const placeholder = document.getElementById('liveStreamPlaceholder');
+    if (placeholder) placeholder.style.display = 'flex';
+});
         // Handle remote video tracks (teacher / screen share)
         room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
             if (track.kind === 'video') {
@@ -5870,8 +5883,24 @@ if (!audioEl) {
 });
 
         // Optionally enable local mic/camera? We'll leave them off by default.
-        await room.localParticipant.setMicrophoneEnabled(false);
-        await room.localParticipant.setCameraEnabled(false);
+       // Enable mic/camera based on current state (default: ON)
+await room.localParticipant.setMicrophoneEnabled(isMicOn);
+await room.localParticipant.setCameraEnabled(isCameraOn);
+
+// Register student in joinedStudents (so admin can see attendance)
+if (liveClassData && liveClassData.id && currentUser) {
+    const displayName = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student';
+    const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
+    try {
+        await set(joinedRef, {
+            name: displayName,
+            email: currentUser.email,
+            joinedAt: Date.now()
+        });
+    } catch (e) {
+        console.warn('Failed to register in joinedStudents:', e);
+    }
+}
         updateControlButtonStates();
 
         console.log('LiveKit connected to room:', roomName);
