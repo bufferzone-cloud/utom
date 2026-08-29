@@ -241,6 +241,7 @@
             gap: 15px;
             padding: 15px;
             background: #1a1d28;
+            flex-wrap: wrap;
         }
         .control-btn {
             background: #333;
@@ -432,6 +433,9 @@
                 width: 100px;
                 height: 75px;
             }
+            .control-bar {
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -510,6 +514,9 @@
                     <button class="control-btn" id="toggleMicBtn" onclick="toggleMic()" title="Mic On/Off">
                         <i class="fas fa-microphone"></i>
                     </button>
+                    <button class="control-btn" id="toggleScreenBtn" onclick="toggleScreenShare()" title="Share Screen">
+                        <i class="fas fa-desktop"></i>
+                    </button>
                     <button class="control-btn" id="toggleDrawingBtn" onclick="toggleDrawing()" title="Draw on Screen">
                         <i class="fas fa-pen"></i>
                     </button>
@@ -584,23 +591,21 @@
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        const LIVEKIT_TOKEN_SERVER = "https://utom-livekit-token.jubelmobz19.workers.dev"; // <-- fixed trailing slash
+        const LIVEKIT_TOKEN_SERVER = "https://utom-livekit-token.jubelmobz19.workers.dev"; // fixed trailing slash
 
         // Global Variables
         let currentClass = null;
-        let localStream = null; // Not used with LiveKit but kept for fallback
         let classStartTime = null;
         let classTimerInterval = null;
         let isCameraOn = true;
         let isMicOn = true;
+        let isScreenSharing = false;
         let isDrawing = false;
         let joinedStudents = {};
         let raisedHands = {};
-        let drawingInProgress = false;
-        let lastDrawingTime = 0;
         let drawingQueue = [];
 
-        // TURN servers (from first code)
+        // TURN servers
         const iceServers = {
             iceServers: [
                 { urls: "stun:stun.relay.metered.ca:80" },
@@ -669,12 +674,10 @@
             }
 
             try {
-                // 1. Create the class in Firebase
                 const classRef = db.ref('liveClasses').push();
                 const classId = classRef.key;
                 const roomName = `class_${classId}`;
 
-                // Fetch register details for later history
                 const regSnap = await db.ref('registers/' + registerId).once('value');
                 const registerData = regSnap.val();
 
@@ -691,17 +694,12 @@
 
                 await classRef.set(classData);
 
-                // Assign global state
                 currentClass = classData;
                 classStartTime = Date.now();
 
-                // 2. Get Firebase user
                 const user = firebase.auth().currentUser;
-                if (!user) {
-                    throw new Error('You are not logged in.');
-                }
+                if (!user) throw new Error('You are not logged in.');
 
-                // 3. Ask Cloudflare Worker for LiveKit token
                 const response = await fetch(LIVEKIT_TOKEN_SERVER + '/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -718,81 +716,74 @@
                 }
 
                 const tokenData = await response.json();
-                if (!tokenData.success) {
-                    throw new Error(tokenData.error || 'Token server returned no success flag.');
-                }
-                if (!tokenData.serverUrl) {
-                    throw new Error('Token server did not provide a serverUrl.');
-                }
+                if (!tokenData.success) throw new Error(tokenData.error || 'Token server returned no success flag.');
+                if (!tokenData.serverUrl) throw new Error('Token server did not provide a serverUrl.');
 
-                // 4. Create LiveKit room
                 const room = new LivekitClient.Room({
                     adaptiveStream: true,
                     dynacast: true
                 });
-
-                // Save room globally
                 window.liveKitRoom = room;
 
-                // 5. Connect admin to LiveKit
                 await room.connect(tokenData.serverUrl, tokenData.token);
 
-                // 6. Turn on camera
                 await room.localParticipant.setCameraEnabled(true);
-
-                // 7. Turn on microphone
                 await room.localParticipant.setMicrophoneEnabled(true);
 
-                // 8. Display local video
                 const localVideo = document.getElementById('localVideo');
                 const videoTrack = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
                 if (videoTrack && videoTrack.track) {
                     videoTrack.track.attach(localVideo);
                 }
 
-                // 9. Show classroom UI and start timers/listeners
+                // Register track events for screen share
+                room.on(LivekitClient.RoomEvent.TrackPublished, (publication, participant) => {
+                    if (participant.isLocal && publication.source === LivekitClient.Track.Source.ScreenShare) {
+                        const videoEl = document.getElementById('localVideo');
+                        publication.track.attach(videoEl);
+                    }
+                });
+
+                room.on(LivekitClient.RoomEvent.TrackUnpublished, (publication, participant) => {
+                    if (participant.isLocal && publication.source === LivekitClient.Track.Source.ScreenShare) {
+                        // Re-attach camera video when screen share ends
+                        const cameraTrack = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+                        if (cameraTrack?.track) {
+                            cameraTrack.track.attach(document.getElementById('localVideo'));
+                        }
+                    }
+                });
+
                 showClassroom();
 
-                // 10. Listen for students joining
                 room.on(LivekitClient.RoomEvent.ParticipantConnected, participant => {
                     addRemoteParticipant(participant);
                 });
 
-                // 11. Listen for students leaving
                 room.on(LivekitClient.RoomEvent.ParticipantDisconnected, participant => {
                     removeRemoteParticipant(participant.identity);
                 });
 
                 console.log('LiveKit connected to room:', roomName);
-
             } catch (error) {
                 console.error('Unable to start live class:', error);
                 alert('Unable to start live class: ' + error.message);
             }
         }
 
-        // ========== SHOW CLASSROOM (after successful connection) ==========
+        // ========== SHOW CLASSROOM ==========
         function showClassroom() {
-            // Set UI text
             document.getElementById('liveClassName').textContent = currentClass.className;
             document.getElementById('liveLectureName').textContent = currentClass.lectureName;
             document.getElementById('streamTimer').textContent = '00:00';
-
-            // Show live page
             showSection('livePage');
-
-            // Start timer
             startTimer();
-
-            // Listen to real‑time updates
             listenToLiveClass(currentClass.id);
-
-            // Reset camera/mic buttons to active
             document.getElementById('toggleCameraBtn').classList.add('active');
             document.getElementById('toggleMicBtn').classList.add('active');
         }
 
-        // ========== TOGGLE CAMERA / MIC (using LiveKit) ==========
+        // ========== TOGGLE CAMERA / MIC ==========
         function toggleCamera() {
             if (!window.liveKitRoom) return;
             const room = window.liveKitRoom;
@@ -811,6 +802,28 @@
                 const btn = document.getElementById('toggleMicBtn');
                 btn.classList.toggle('active', isMicOn);
             }).catch(err => showToast('Mic toggle failed: ' + err.message, 'error'));
+        }
+
+        // ========== SCREEN SHARE TOGGLE ==========
+        async function toggleScreenShare() {
+            const room = window.liveKitRoom;
+            if (!room) return;
+
+            if (!isScreenSharing) {
+                try {
+                    await room.localParticipant.setScreenShareEnabled(true);
+                    isScreenSharing = true;
+                    document.getElementById('toggleScreenBtn').classList.add('active');
+                    showToast('Screen sharing started', 'success');
+                } catch (err) {
+                    showToast('Screen share error: ' + err.message, 'error');
+                }
+            } else {
+                await room.localParticipant.setScreenShareEnabled(false);
+                isScreenSharing = false;
+                document.getElementById('toggleScreenBtn').classList.remove('active');
+                showToast('Screen sharing stopped');
+            }
         }
 
         // ========== REMOTE PARTICIPANT MANAGEMENT ==========
@@ -836,9 +849,7 @@
 
         function removeRemoteParticipant(identity) {
             const element = document.getElementById('participant-' + identity);
-            if (element) {
-                element.remove();
-            }
+            if (element) element.remove();
         }
 
         // ========== DRAWING TOGGLE ==========
@@ -924,7 +935,6 @@
             });
         }
 
-        // Debounce sending frames to Firebase
         function scheduleDrawingFrame() {
             clearTimeout(drawingQueue);
             drawingQueue = setTimeout(() => {
@@ -971,7 +981,6 @@
 
             classRef.child('questions').on('child_added', (snap) => {
                 const q = snap.val();
-                // Only add if it's not the admin's own question (already added)
                 if (q.askedBy !== 'Admin') {
                     appendQuestionToUI(q);
                 }
@@ -1006,14 +1015,12 @@
             const endTime = Date.now();
             const duration = Math.floor((endTime - classStartTime) / 1000);
 
-            // Fetch questions from Firebase before removal
             let questions = [];
             const qSnap = await db.ref(`liveClasses/${currentClass.id}/questions`).once('value');
             if (qSnap.val()) {
                 questions = Object.values(qSnap.val());
             }
 
-            // Disconnect from LiveKit room
             if (window.liveKitRoom) {
                 try {
                     await window.liveKitRoom.disconnect();
@@ -1023,14 +1030,12 @@
                 window.liveKitRoom = null;
             }
 
-            // Update class status in liveClasses (before removing)
             await db.ref(`liveClasses/${currentClass.id}`).update({
                 status: 'ended',
                 endedAt: firebase.database.ServerValue.TIMESTAMP,
                 duration: duration
             });
 
-            // Create history record
             const historyRef = db.ref('liveClassesHistory').push();
             const historyData = {
                 className: currentClass.className,
@@ -1045,18 +1050,16 @@
             };
             await historyRef.set(historyData);
 
-            // Remove from active liveClasses
             await db.ref(`liveClasses/${currentClass.id}`).remove();
 
-            // Reset state
             currentClass = null;
             classStartTime = null;
             if (classTimerInterval) clearInterval(classTimerInterval);
             isDrawing = false;
+            isScreenSharing = false;
             document.getElementById('scratchCanvas').classList.remove('active');
             document.getElementById('videoGrid').innerHTML = '';
 
-            // Reload history and navigate
             loadHistory();
             showSection('historyPage');
             showToast('Class ended and saved to history.', 'success');
@@ -1101,7 +1104,6 @@
                 const content = document.getElementById('historyDetailContent');
                 const questions = h.questions || [];
                 const questionTexts = questions.map(q => q.text);
-                const joined = Object.values(h.joinedStudents || {}).map(s => s.name);
                 content.innerHTML = `
                     <h2>${escapeHtml(h.className)}</h2>
                     <div class="meta">
