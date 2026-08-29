@@ -5774,7 +5774,7 @@ let isCameraOn = true;
             const btn = document.getElementById('liveClassPulseBtn');
             if (liveClassData && liveClassData.status === 'active') {
                 btn.style.display = 'flex';
-                document.getElementById('liveClassName').textContent = liveClassData.name || 'Live Class';
+                document.getElementById('liveClassName').textContent = liveClassData.className || 'Live Class';
             } else {
                 btn.style.display = 'none';
             }
@@ -5844,28 +5844,27 @@ if (!audioEl) {
             }
         });
 
-        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+       room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
     if (track.kind === 'audio') {
-        // Attach audio track to the audio element
+        let audioEl = document.getElementById('liveAudioElement');
+        if (!audioEl) {
+            audioEl = document.createElement('audio');
+            audioEl.id = 'liveAudioElement';
+            audioEl.autoplay = true;
+            document.body.appendChild(audioEl);
+        }
         track.attach(audioEl);
         audioEl.play().catch(() => {});
     } else if (track.kind === 'video') {
-        // Determine if it's camera or screen share
         const isScreenShare = publication.source === LivekitClient.Track.Source.ScreenShare;
         const videoElementId = isScreenShare ? 'liveScreenVideo' : 'liveCameraVideo';
         const videoEl = document.getElementById(videoElementId);
         if (videoEl) {
             track.attach(videoEl);
             videoEl.style.display = 'block';
-            // Hide placeholder if both are hidden
-            if (document.getElementById('liveCameraVideo').style.display === 'none' &&
-                document.getElementById('liveScreenVideo').style.display === 'none') {
-                const placeholder = document.getElementById('liveStreamPlaceholder');
-                if (placeholder) placeholder.style.display = 'flex';
-            } else {
-                const placeholder = document.getElementById('liveStreamPlaceholder');
-                if (placeholder) placeholder.style.display = 'none';
-            }
+            // Hide placeholder only if at least one video is showing
+            const placeholder = document.getElementById('liveStreamPlaceholder');
+            if (placeholder) placeholder.style.display = 'none';
         }
     }
 });
@@ -5926,78 +5925,83 @@ function updateControlButtonStates() {
 }
 
         function renderLiveClassPage() {
-            if (!liveClassData) {
-                document.getElementById('liveClassContent').innerHTML = '<div class="empty-state">No live class available.</div>';
-                return;
-            }
+    if (!liveClassData) {
+        document.getElementById('liveClassContent').innerHTML = '<div class="empty-state">No live class available.</div>';
+        return;
+    }
 
-            const cls = liveClassData;
-            document.getElementById('liveClassRoomTitle').textContent = cls.name || 'Live Class';
-            document.getElementById('liveClassRegisterName').textContent = cls.registerName || '—';
-            document.getElementById('liveClassLectureName').textContent = cls.lecture || '—';
+    const cls = liveClassData;
 
-            const attendeeCount = cls.attendees ? Object.keys(cls.attendees).length : 0;
-            const handCount = cls.hands ? Object.keys(cls.hands).length : 0;
-            const questionCount = cls.questions ? Object.keys(cls.questions).length : 0;
-            document.getElementById('liveClassAttendeeCount').textContent = attendeeCount;
-            document.getElementById('liveClassHandCount').textContent = handCount;
-            document.getElementById('liveClassQuestionCount').textContent = questionCount;
+    // ✅ Correct field names – Admin stores className, lectureName, register object
+    document.getElementById('liveClassRoomTitle').textContent = cls.className || 'Live Class';
+    document.getElementById('liveClassRegisterName').textContent = cls.register?.name || '—';
+    document.getElementById('liveClassLectureName').textContent = cls.lectureName || '—';
 
-            renderLiveAttendees();
-            renderLiveHands();
-            renderLiveQuestions();
+    // Stats
+    const attendeeCount = cls.attendees ? Object.keys(cls.attendees).length : 0;
+    const handCount = cls.hands ? Object.keys(cls.hands).length : 0;
+    const questionCount = cls.questions ? Object.keys(cls.questions).length : 0;
+    document.getElementById('liveClassAttendeeCount').textContent = attendeeCount;
+    document.getElementById('liveClassHandCount').textContent = handCount;
+    document.getElementById('liveClassQuestionCount').textContent = questionCount;
 
-            const placeholder = document.getElementById('liveStreamPlaceholder');
-            const canvas = document.getElementById('liveDrawCanvas');
-            const video = document.getElementById('liveCameraVideo');
-            const docViewer = document.getElementById('liveDocViewer');
+    renderLiveAttendees();
+    renderLiveHands();
+    renderLiveQuestions();
 
-            if (cls.streamActive) {
-                placeholder.style.display = 'none';
-            } else {
-                placeholder.style.display = 'flex';
-            }
+    const placeholder = document.getElementById('liveStreamPlaceholder');
+    const canvas = document.getElementById('liveDrawCanvas');
+    const cameraVideo = document.getElementById('liveCameraVideo');
+    const screenVideo = document.getElementById('liveScreenVideo');
+    const docViewer = document.getElementById('liveDocViewer');
 
-            if (cls.drawActive) {
-                canvas.style.display = 'block';
-                initLiveDrawCanvas();
-                if (cls.drawData) {
-                    loadLiveDrawData(cls.drawData);
-                }
-            } else {
-                canvas.style.display = 'none';
-            }
+    // Placeholder visibility: show if no stream has started AND no videos are visible
+    if (cls.streamActive) {
+        placeholder.style.display = 'none';
+    } else {
+        // If we already have a video element showing (due to track subscription), don't show placeholder
+        const anyVideoVisible = cameraVideo.style.display === 'block' || screenVideo.style.display === 'block';
+        placeholder.style.display = anyVideoVisible ? 'none' : 'flex';
+    }
 
-            if (cls.cameraActive) {
-                video.style.display = 'block';
-            } else {
-                video.style.display = 'none';
-            }
-
-            if (cls.docActive) {
-                docViewer.style.display = 'block';
-                docViewer.innerHTML = cls.docContent || '<div class="empty-state" style="padding:40px;">No document content.</div>';
-                docViewer.contentEditable = false;
-            } else {
-                docViewer.style.display = 'none';
-            }
-
-            const raiseBtn = document.getElementById('raiseHandBtn');
-            if (cls.hands && cls.hands[currentUser.uid]) {
-                raiseBtn.disabled = true;
-                raiseBtn.innerHTML = '<i class="fas fa-hand-paper"></i> Hand Raised';
-            } else {
-                raiseBtn.disabled = false;
-                raiseBtn.innerHTML = '<i class="fas fa-hand-paper"></i> Raise Hand';
-            }
-
-            const savedNotes = localStorage.getItem(`live_notes_${liveClassId}`);
-            if (savedNotes !== null) {
-                document.getElementById('liveNotesTextarea').value = savedNotes;
-            } else {
-                document.getElementById('liveNotesTextarea').value = '';
-            }
+    // Drawing board
+    if (cls.drawActive) {
+        canvas.style.display = 'block';
+        initLiveDrawCanvas();
+        if (cls.drawData) {
+            loadLiveDrawData(cls.drawData);
         }
+    } else {
+        canvas.style.display = 'none';
+    }
+
+    // Camera / screen video – DO NOT override visibility here!
+    // The LiveKit track subscription will control display.
+    // Only remove the old `if (cls.cameraActive) ... else display:none` logic.
+
+    // Document viewer
+    if (cls.docActive) {
+        docViewer.style.display = 'block';
+        docViewer.innerHTML = cls.docContent || '<div class="empty-state" style="padding:40px;">No document content.</div>';
+        docViewer.contentEditable = false;
+    } else {
+        docViewer.style.display = 'none';
+    }
+
+    // Raise hand button state
+    const raiseBtn = document.getElementById('raiseHandBtn');
+    if (cls.hands && cls.hands[currentUser.uid]) {
+        raiseBtn.disabled = true;
+        raiseBtn.innerHTML = '<i class="fas fa-hand-paper"></i> Hand Raised';
+    } else {
+        raiseBtn.disabled = false;
+        raiseBtn.innerHTML = '<i class="fas fa-hand-paper"></i> Raise Hand';
+    }
+
+    // Private notes
+    const savedNotes = localStorage.getItem(`live_notes_${liveClassId}`);
+    document.getElementById('liveNotesTextarea').value = savedNotes !== null ? savedNotes : '';
+}
 
         function attachLiveClassListeners() {
             if (liveClassListenersAttached || !liveClassId) return;
