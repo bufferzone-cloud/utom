@@ -662,6 +662,33 @@
             });
         }
 
+        function resetLiveUI() {
+    // Reset question list
+    document.getElementById('questionList').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;">No questions yet.</div>';
+    
+    // Reset hands list
+    document.getElementById('raisedHandsList').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;">No hands raised yet.</div>';
+    
+    // Reset counts
+    document.getElementById('joinedCount').textContent = '0';
+    document.getElementById('raisedHandsCount').textContent = '0';
+    
+    // Clear remote video grid
+    document.getElementById('videoGrid').innerHTML = '';
+    
+    // Clear drawing canvas
+    const canvas = document.getElementById('scratchCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.classList.remove('active');
+    document.getElementById('toggleDrawingBtn').classList.remove('active');
+    
+    // Reset flags
+    isDrawing = false;
+    isScreenSharing = false;
+    document.getElementById('toggleScreenBtn').classList.remove('active');
+}
+
         // ========== START LIVE CLASS ==========
         async function startLiveClass() {
             const className = document.getElementById('className').value.trim();
@@ -773,15 +800,20 @@
 
         // ========== SHOW CLASSROOM ==========
         function showClassroom() {
-            document.getElementById('liveClassName').textContent = currentClass.className;
-            document.getElementById('liveLectureName').textContent = currentClass.lectureName;
-            document.getElementById('streamTimer').textContent = '00:00';
-            showSection('livePage');
-            startTimer();
-            listenToLiveClass(currentClass.id);
-            document.getElementById('toggleCameraBtn').classList.add('active');
-            document.getElementById('toggleMicBtn').classList.add('active');
-        }
+    document.getElementById('liveClassName').textContent = currentClass.className;
+    document.getElementById('liveLectureName').textContent = currentClass.lectureName;
+    document.getElementById('streamTimer').textContent = '00:00';
+    
+    // 🔥 Reset UI to clean state for new class
+    resetLiveUI();
+    
+    showSection('livePage');
+    startTimer();
+    listenToLiveClass(currentClass.id);
+    
+    document.getElementById('toggleCameraBtn').classList.add('active');
+    document.getElementById('toggleMicBtn').classList.add('active');
+}
 
         // ========== TOGGLE CAMERA / MIC ==========
         function toggleCamera() {
