@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
     <style>
         /* ----- RESET & BASE ----- */
         * {
@@ -5101,10 +5102,12 @@
                     </div>
 
                     <!-- Student Interactions (Two horizontal buttons) -->
-                    <div class="live-interactions">
-                        <button class="raise-hand-btn" id="raiseHandBtn"><i class="fas fa-hand-paper"></i> Raise Hand</button>
-                        <button class="ask-question-btn" id="askQuestionBtn"><i class="fas fa-question-circle"></i> Ask Question</button>
-                    </div>
+                   <div class="live-interactions">
+    <button class="raise-hand-btn" id="raiseHandBtn"><i class="fas fa-hand-paper"></i> Raise Hand</button>
+    <button class="ask-question-btn" id="askQuestionBtn"><i class="fas fa-question-circle"></i> Ask Question</button>
+    <button class="control-btn" id="toggleMicBtn" onclick="toggleMic()" title="Mic On/Off"><i class="fas fa-microphone"></i></button>
+    <button class="control-btn" id="toggleCameraBtn" onclick="toggleCamera()" title="Camera On/Off"><i class="fas fa-video"></i></button>
+</div>
 
                     <!-- Private Notes Area -->
                     <div class="live-notes-area">
@@ -5323,7 +5326,19 @@
         };
         const CLOUD_NAME = "dd3lcymrk";
         const UPLOAD_PRESET = "h3eyhc2o";
+// ===== LIVEKIT TOKEN SERVER (same as admin) =====
+const LIVEKIT_TOKEN_SERVER = "https://utom-livekit-token.jubelmobz19.workers.dev";
 
+// TURN/STUN servers (same as admin)
+const iceServers = {
+    iceServers: [
+        { urls: "stun:stun.relay.metered.ca:80" },
+        { urls: "turn:global.relay.metered.ca:80", username: "ff9b5e603d75447bba6ebc9c", credential: "XMFx6MoZrP/NB3wb" },
+        { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "ff9b5e603d75447bba6ebc9c", credential: "XMFx6MoZrP/NB3wb" },
+        { urls: "turn:global.relay.metered.ca:443", username: "ff9b5e603d75447bba6ebc9c", credential: "XMFx6MoZrP/NB3wb" },
+        { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "ff9b5e603d75447bba6ebc9c", credential: "XMFx6MoZrP/NB3wb" }
+    ]
+};
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
@@ -5375,6 +5390,11 @@
         let liveHands = {};
         let liveQuestions = {};
         let liveDocInputListenerAttached = false;
+        // ===== LIVEKIT STATE =====
+let liveKitRoom = null;
+let isLiveKitConnected = false;
+let isMicOn = true;
+let isCameraOn = true;
 
         let expirationCheckInterval = null;
         let countdownUpdateInterval = null;
@@ -5741,11 +5761,120 @@
         }
 
         function openLiveClassPage() {
-            if (!liveClassData) return;
-            showPage('liveClass');
-            renderLiveClassPage();
-            attachLiveClassListeners();
-        }
+    if (!liveClassData) return;
+    showPage('liveClass');
+    renderLiveClassPage();
+    attachLiveClassListeners();
+    // Attempt LiveKit connection if not already connected
+    if (!isLiveKitConnected && liveClassData.liveKitRoom) {
+        connectToLiveKitRoom(liveClassData.liveKitRoom);
+    }
+}
+
+        // ===== CONNECT TO LIVEKIT =====
+async function connectToLiveKitRoom(roomName) {
+    if (!currentUser || !roomName) return;
+    try {
+        const identity = currentUser.uid;
+        const displayName = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student';
+
+        const response = await fetch(LIVEKIT_TOKEN_SERVER + '/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                roomName: roomName,
+                identity: identity,
+                name: displayName
+            })
+        });
+
+        const tokenData = await response.json();
+        if (!tokenData.success) throw new Error(tokenData.error || 'Failed to get token');
+
+        const room = new LivekitClient.Room({
+            adaptiveStream: true,
+            dynacast: true,
+            ...iceServers  // pass same ICE servers
+        });
+        liveKitRoom = room;
+
+        await room.connect(tokenData.serverUrl, tokenData.token);
+        isLiveKitConnected = true;
+
+        // Handle remote video tracks (teacher / screen share)
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+            if (track.kind === 'video') {
+                const videoEl = document.getElementById('liveCameraVideo');
+                if (videoEl) {
+                    track.attach(videoEl);
+                    videoEl.style.display = 'block';
+                    const placeholder = document.getElementById('liveStreamPlaceholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
+            }
+        });
+
+        room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+            if (track.kind === 'video') {
+                const videoEl = document.getElementById('liveCameraVideo');
+                if (videoEl) videoEl.style.display = 'none';
+            }
+        });
+
+        // Optionally enable local mic/camera? We'll leave them off by default.
+        await room.localParticipant.setMicrophoneEnabled(false);
+        await room.localParticipant.setCameraEnabled(false);
+        updateControlButtonStates();
+
+        console.log('LiveKit connected to room:', roomName);
+    } catch (error) {
+        console.error('LiveKit connection error:', error);
+        addNotification('danger', 'Failed to connect to live stream: ' + error.message);
+    }
+}
+        // ===== DISCONNECT FROM LIVEKIT =====
+function disconnectFromLiveKit() {
+    if (liveKitRoom) {
+        liveKitRoom.disconnect().catch(() => {});
+        liveKitRoom = null;
+    }
+    isLiveKitConnected = false;
+    const videoEl = document.getElementById('liveCameraVideo');
+    if (videoEl) videoEl.style.display = 'none';
+    const placeholder = document.getElementById('liveStreamPlaceholder');
+    if (placeholder) placeholder.style.display = 'flex';
+}
+// ===== TOGGLE MIC (via LiveKit) =====
+function toggleMic() {
+    if (!liveKitRoom) {
+        addNotification('warning', 'Not connected to a live class.');
+        return;
+    }
+    liveKitRoom.localParticipant.setMicrophoneEnabled(!isMicOn).then(() => {
+        isMicOn = !isMicOn;
+        updateControlButtonStates();
+    }).catch(err => addNotification('danger', 'Mic toggle failed: ' + err.message));
+}
+
+// ===== TOGGLE CAMERA (via LiveKit) =====
+function toggleCamera() {
+    if (!liveKitRoom) {
+        addNotification('warning', 'Not connected to a live class.');
+        return;
+    }
+    liveKitRoom.localParticipant.setCameraEnabled(!isCameraOn).then(() => {
+        isCameraOn = !isCameraOn;
+        updateControlButtonStates();
+    }).catch(err => addNotification('danger', 'Camera toggle failed: ' + err.message));
+}
+
+        // ===== UPDATE BUTTON VISUALS =====
+function updateControlButtonStates() {
+    const micBtn = document.getElementById('toggleMicBtn');
+    const camBtn = document.getElementById('toggleCameraBtn');
+    if (micBtn) micBtn.classList.toggle('active', isMicOn);
+    if (camBtn) camBtn.classList.toggle('active', isCameraOn);
+}
 
         function renderLiveClassPage() {
             if (!liveClassData) {
