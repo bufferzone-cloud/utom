@@ -5415,6 +5415,7 @@ let liveKitRoom = null;
 let isLiveKitConnected = false;
 let isMicOn = true;
 let isCameraOn = true;
+let remoteVideoActive = false;
 
         let expirationCheckInterval = null;
         let countdownUpdateInterval = null;
@@ -5799,6 +5800,7 @@ async function connectToLiveKitRoom(roomName) {
         const identity = currentUser.uid;
         const displayName = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student';
 
+        console.log('🔗 Connecting to LiveKit room:', roomName);
         const response = await fetch(LIVEKIT_TOKEN_SERVER + '/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -5815,50 +5817,15 @@ async function connectToLiveKitRoom(roomName) {
         const room = new LivekitClient.Room({
             adaptiveStream: true,
             dynacast: true,
-            ...iceServers  // pass same ICE servers
+            ...iceServers
         });
         liveKitRoom = room;
 
         await room.connect(tokenData.serverUrl, tokenData.token);
         isLiveKitConnected = true;
+        console.log('✅ LiveKit connected to room:', roomName);
 
-        // Create or get an audio element for remote audio
-let audioEl = document.getElementById('liveAudioElement');
-if (!audioEl) {
-    audioEl = document.createElement('audio');
-    audioEl.id = 'liveAudioElement';
-    audioEl.autoplay = true;
-    document.body.appendChild(audioEl);
-}
-
-// Handle disconnect - remove from joinedStudents
-room.on(LivekitClient.RoomEvent.Disconnected, () => {
-    if (liveClassData && liveClassData.id && currentUser) {
-        const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
-        remove(joinedRef).catch(() => {});
-    }
-    liveKitRoom = null;
-    isLiveKitConnected = false;
-    const videoEl = document.getElementById('liveCameraVideo');
-    if (videoEl) videoEl.style.display = 'none';
-    const placeholder = document.getElementById('liveStreamPlaceholder');
-    if (placeholder) placeholder.style.display = 'flex';
-});
-        // Handle remote video tracks (teacher / screen share)
-        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-            if (track.kind === 'video') {
-                const videoEl = document.getElementById('liveCameraVideo');
-                if (videoEl) {
-                    track.attach(videoEl);
-                    videoEl.style.display = 'block';
-                    const placeholder = document.getElementById('liveStreamPlaceholder');
-                    if (placeholder) placeholder.style.display = 'none';
-                }
-            }
-        });
-
-       room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-    if (track.kind === 'audio') {
+        // Create/attach audio element for remote audio
         let audioEl = document.getElementById('liveAudioElement');
         if (!audioEl) {
             audioEl = document.createElement('audio');
@@ -5866,46 +5833,96 @@ room.on(LivekitClient.RoomEvent.Disconnected, () => {
             audioEl.autoplay = true;
             document.body.appendChild(audioEl);
         }
-        track.attach(audioEl);
-        audioEl.play().catch(() => {});
-    } else if (track.kind === 'video') {
-        const isScreenShare = publication.source === LivekitClient.Track.Source.ScreenShare;
-        const videoElementId = isScreenShare ? 'liveScreenVideo' : 'liveCameraVideo';
-        const videoEl = document.getElementById(videoElementId);
-        if (videoEl) {
-            track.attach(videoEl);
-            videoEl.style.display = 'block';
-            // Hide placeholder only if at least one video is showing
-            const placeholder = document.getElementById('liveStreamPlaceholder');
-            if (placeholder) placeholder.style.display = 'none';
-        }
-    }
-});
 
-        // Optionally enable local mic/camera? We'll leave them off by default.
-       // Enable mic/camera based on current state (default: ON)
-await room.localParticipant.setMicrophoneEnabled(isMicOn);
-await room.localParticipant.setCameraEnabled(isCameraOn);
+        // Handle remote video/audio tracks
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+            console.log('📡 Track subscribed:', track.kind, 'source:', publication.source, 'participant:', participant.identity);
 
-// Register student in joinedStudents (so admin can see attendance)
-if (liveClassData && liveClassData.id && currentUser) {
-    const displayName = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student';
-    const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
-    try {
-        await set(joinedRef, {
-            name: displayName,
-            email: currentUser.email,
-            joinedAt: Date.now()
+            if (track.kind === 'audio') {
+                track.attach(audioEl);
+                audioEl.play().catch(() => {});
+            } else if (track.kind === 'video') {
+                remoteVideoActive = true;
+                const isScreenShare = publication.source === LivekitClient.Track.Source.ScreenShare;
+                const videoElementId = isScreenShare ? 'liveScreenVideo' : 'liveCameraVideo';
+                const videoEl = document.getElementById(videoElementId);
+                if (videoEl) {
+                    track.attach(videoEl);
+                    videoEl.style.display = 'block';
+                    videoEl.style.width = '100%';
+                    videoEl.style.height = '100%';
+                    // Hide placeholder now
+                    const placeholder = document.getElementById('liveStreamPlaceholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
+            }
         });
-    } catch (e) {
-        console.warn('Failed to register in joinedStudents:', e);
-    }
-}
+
+        // Handle track unsubscription
+        room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+            if (track.kind === 'video') {
+                // Check if any other video tracks remain
+                let hasVideo = false;
+                room.remoteParticipants.forEach(p => {
+                    p.trackPublications.forEach(pub => {
+                        if (pub.track && pub.track.kind === 'video') hasVideo = true;
+                    });
+                });
+                remoteVideoActive = hasVideo;
+                if (!hasVideo) {
+                    const placeholder = document.getElementById('liveStreamPlaceholder');
+                    if (placeholder) placeholder.style.display = 'flex';
+                    const videoEl = document.getElementById('liveCameraVideo');
+                    if (videoEl) videoEl.style.display = 'none';
+                    const screenEl = document.getElementById('liveScreenVideo');
+                    if (screenEl) screenEl.style.display = 'none';
+                }
+            }
+        });
+
+        // Handle disconnect
+        room.on(LivekitClient.RoomEvent.Disconnected, () => {
+            console.log('🔌 Disconnected from LiveKit room');
+            remoteVideoActive = false;
+            liveKitRoom = null;
+            isLiveKitConnected = false;
+            const videoEl = document.getElementById('liveCameraVideo');
+            if (videoEl) videoEl.style.display = 'none';
+            const screenEl = document.getElementById('liveScreenVideo');
+            if (screenEl) screenEl.style.display = 'none';
+            const placeholder = document.getElementById('liveStreamPlaceholder');
+            if (placeholder) placeholder.style.display = 'flex';
+
+            // Remove from joinedStudents
+            if (liveClassData && liveClassData.id && currentUser) {
+                const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
+                remove(joinedRef).catch(() => {});
+            }
+        });
+
+        // Enable mic/camera based on current state
+        await room.localParticipant.setMicrophoneEnabled(isMicOn);
+        await room.localParticipant.setCameraEnabled(isCameraOn);
         updateControlButtonStates();
 
-        console.log('LiveKit connected to room:', roomName);
+        // Register in joinedStudents
+        if (liveClassData && liveClassData.id && currentUser) {
+            const displayName2 = `${userData.firstName} ${userData.lastName}`.trim() || currentUser.email.split('@')[0] || 'Student';
+            const joinedRef = ref(db, `liveClasses/${liveClassData.id}/joinedStudents/${currentUser.uid}`);
+            try {
+                await set(joinedRef, {
+                    name: displayName2,
+                    email: currentUser.email,
+                    joinedAt: Date.now()
+                });
+                console.log('📋 Registered in joinedStudents');
+            } catch (e) {
+                console.warn('Failed to register in joinedStudents:', e);
+            }
+        }
+
     } catch (error) {
-        console.error('LiveKit connection error:', error);
+        console.error('❌ LiveKit connection error:', error);
         addNotification('danger', 'Failed to connect to live stream: ' + error.message);
     }
 }
@@ -5984,13 +6001,11 @@ function updateControlButtonStates() {
     const screenVideo = document.getElementById('liveScreenVideo');
     const docViewer = document.getElementById('liveDocViewer');
 
-    // Placeholder visibility: show if no stream has started AND no videos are visible
-    if (cls.streamActive) {
+    // 🔥 Placeholder visibility: hide if remote video is active or a video element is already visible
+    if (remoteVideoActive || cameraVideo.style.display === 'block' || screenVideo.style.display === 'block') {
         placeholder.style.display = 'none';
     } else {
-        // If we already have a video element showing (due to track subscription), don't show placeholder
-        const anyVideoVisible = cameraVideo.style.display === 'block' || screenVideo.style.display === 'block';
-        placeholder.style.display = anyVideoVisible ? 'none' : 'flex';
+        placeholder.style.display = 'flex';
     }
 
     // Drawing board
@@ -6004,10 +6019,6 @@ function updateControlButtonStates() {
         canvas.style.display = 'none';
     }
 
-    // Camera / screen video – DO NOT override visibility here!
-    // The LiveKit track subscription will control display.
-    // Only remove the old `if (cls.cameraActive) ... else display:none` logic.
-
     // Document viewer
     if (cls.docActive) {
         docViewer.style.display = 'block';
@@ -6017,7 +6028,7 @@ function updateControlButtonStates() {
         docViewer.style.display = 'none';
     }
 
-    // Raise hand button state
+    // Raise hand button state (based on current user's hand)
     const raiseBtn = document.getElementById('raiseHandBtn');
     if (cls.hands && cls.hands[currentUser.uid]) {
         raiseBtn.disabled = true;
