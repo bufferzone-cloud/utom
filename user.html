@@ -4760,6 +4760,25 @@
     font-size: 0.9rem !important;
     padding: 4px 12px !important;
 }
+
+#liveCameraVideo {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 25%;
+    max-width: 200px;
+    height: auto;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    z-index: 20;
+}
+
+#liveScreenVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
     </style>
 </head>
 <body>
@@ -5080,6 +5099,7 @@
                         </div>
                         <canvas id="liveDrawCanvas" style="display:none;width:100%;height:100%;background:#fff;touch-action:none;"></canvas>
                         <video id="liveCameraVideo" style="display:none;width:100%;height:100%;object-fit:cover;" autoplay muted></video>
+                        <video id="liveScreenVideo" style="display:none;width:100%;height:100%;object-fit:contain;" autoplay playsinline></video>
                         <div id="liveDocViewer" style="display:none;width:100%;height:100%;background:#fff;overflow:auto;padding:20px;font-size:14px;line-height:1.7;color:#1a1d28;"></div>
                         <div class="stream-overlay">
                             <button class="inactive" disabled><i class="fas fa-paint-brush"></i> Draw</button>
@@ -5802,6 +5822,15 @@ async function connectToLiveKitRoom(roomName) {
         await room.connect(tokenData.serverUrl, tokenData.token);
         isLiveKitConnected = true;
 
+        // Create or get an audio element for remote audio
+let audioEl = document.getElementById('liveAudioElement');
+if (!audioEl) {
+    audioEl = document.createElement('audio');
+    audioEl.id = 'liveAudioElement';
+    audioEl.autoplay = true;
+    document.body.appendChild(audioEl);
+}
+
         // Handle remote video tracks (teacher / screen share)
         room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
             if (track.kind === 'video') {
@@ -5815,12 +5844,31 @@ async function connectToLiveKitRoom(roomName) {
             }
         });
 
-        room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-            if (track.kind === 'video') {
-                const videoEl = document.getElementById('liveCameraVideo');
-                if (videoEl) videoEl.style.display = 'none';
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+    if (track.kind === 'audio') {
+        // Attach audio track to the audio element
+        track.attach(audioEl);
+        audioEl.play().catch(() => {});
+    } else if (track.kind === 'video') {
+        // Determine if it's camera or screen share
+        const isScreenShare = publication.source === LivekitClient.Track.Source.ScreenShare;
+        const videoElementId = isScreenShare ? 'liveScreenVideo' : 'liveCameraVideo';
+        const videoEl = document.getElementById(videoElementId);
+        if (videoEl) {
+            track.attach(videoEl);
+            videoEl.style.display = 'block';
+            // Hide placeholder if both are hidden
+            if (document.getElementById('liveCameraVideo').style.display === 'none' &&
+                document.getElementById('liveScreenVideo').style.display === 'none') {
+                const placeholder = document.getElementById('liveStreamPlaceholder');
+                if (placeholder) placeholder.style.display = 'flex';
+            } else {
+                const placeholder = document.getElementById('liveStreamPlaceholder');
+                if (placeholder) placeholder.style.display = 'none';
             }
-        });
+        }
+    }
+});
 
         // Optionally enable local mic/camera? We'll leave them off by default.
         await room.localParticipant.setMicrophoneEnabled(false);
