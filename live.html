@@ -209,6 +209,32 @@
             cursor: crosshair;
             background: transparent;
         }
+        /* Video grid for remote participants */
+        #videoGrid {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 200px;
+            max-height: 100%;
+            overflow-y: auto;
+        }
+        .participant-video {
+            width: 160px;
+            height: 120px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #111;
+        }
+        .participant-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
         .control-bar {
             display: flex;
             justify-content: center;
@@ -399,6 +425,13 @@
                 padding: 30px;
                 font-size: 18px;
             }
+            #videoGrid {
+                max-width: 120px;
+            }
+            .participant-video {
+                width: 100px;
+                height: 75px;
+            }
         }
     </style>
 </head>
@@ -467,6 +500,8 @@
                 <div class="video-box">
                     <video id="localVideo" autoplay playsinline muted></video>
                     <canvas id="scratchCanvas" class="drawing-overlay"></canvas>
+                    <!-- Video grid for remote participants (overlay) -->
+                    <div id="videoGrid"></div>
                 </div>
                 <div class="control-bar">
                     <button class="control-btn" id="toggleCameraBtn" onclick="toggleCamera()" title="Camera On/Off">
@@ -549,12 +584,11 @@
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        const LIVEKIT_TOKEN_SERVER =
-    "https://utom-livekit-token.jubelmobz19.workers.dev/";
+        const LIVEKIT_TOKEN_SERVER = "https://utom-livekit-token.jubelmobz19.workers.dev"; // <-- fixed trailing slash
 
         // Global Variables
         let currentClass = null;
-        let localStream = null;
+        let localStream = null; // Not used with LiveKit but kept for fallback
         let classStartTime = null;
         let classTimerInterval = null;
         let isCameraOn = true;
@@ -624,252 +658,186 @@
         }
 
         // ========== START LIVE CLASS ==========
-       async function startLiveClass() {
-    const className =
-        document.getElementById('className').value.trim();
+        async function startLiveClass() {
+            const className = document.getElementById('className').value.trim();
+            const lectureName = document.getElementById('lectureName').value.trim();
+            const registerId = document.getElementById('registerSelect').value;
 
-    const lectureName =
-        document.getElementById('lectureName').value.trim();
-
-    const registerId =
-        document.getElementById('registerSelect').value;
-
-    if (!className || !lectureName || !registerId) {
-        alert('Please complete all required fields.');
-        return;
-    }
-
-    try {
-        // 1. Create the class in Firebase
-        const classRef = db.ref('liveClasses').push();
-
-        const classId = classRef.key;
-
-        // Unique LiveKit room for this class
-        const roomName = `class_${classId}`;
-
-        const classData = {
-            id: classId,
-            className: className,
-            lectureName: lectureName,
-            registerId: registerId,
-            liveKitRoom: roomName,
-            status: 'active',
-            startedAt: firebase.database.ServerValue.TIMESTAMP
-        };
-
-        await classRef.set(classData);
-
-        // 2. Get Firebase user
-        const user = firebase.auth().currentUser;
-
-        if (!user) {
-            throw new Error('You are not logged in.');
-        }
-
-        // 3. Ask Cloudflare Worker for LiveKit token
-        const response = await fetch(
-            LIVEKIT_TOKEN_SERVER + '/token',
-            {
-                method: 'POST',
-
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-
-                body: JSON.stringify({
-                    roomName: roomName,
-                    identity: user.uid,
-                    name: user.displayName || 'Admin'
-                })
+            if (!className || !lectureName || !registerId) {
+                alert('Please complete all required fields.');
+                return;
             }
-        );
 
-        const tokenData = await response.json();
-
-        if (!tokenData.success) {
-            throw new Error(
-                tokenData.error || 'Unable to obtain LiveKit token.'
-            );
-        }
-
-        // 4. Create LiveKit room
-        const room = new LivekitClient.Room({
-            adaptiveStream: true,
-            dynacast: true
-        });
-
-        // Save room globally so other functions can access it
-        window.liveKitRoom = room;
-
-        // 5. Connect admin to LiveKit
-        await room.connect(
-            tokenData.serverUrl,
-            tokenData.token
-        );
-
-        // 6. Turn on camera
-        await room.localParticipant.setCameraEnabled(true);
-
-        // 7. Turn on microphone
-        await room.localParticipant.setMicrophoneEnabled(true);
-
-        // 8. Display local video
-        const localVideo =
-            document.getElementById('localVideo');
-
-        if (localVideo) {
-            const videoTrack =
-                room.localParticipant.getTrackPublication(
-                    LivekitClient.Track.Source.Camera
-                );
-
-            if (videoTrack && videoTrack.track) {
-                videoTrack.track.attach(localVideo);
-            }
-        }
-
-        // 9. Show classroom
-        showClassroom();
-
-        // 10. Listen for students joining
-        room.on(
-            LivekitClient.RoomEvent.ParticipantConnected,
-            participant => {
-                console.log(
-                    'Participant joined:',
-                    participant.identity
-                );
-
-                addRemoteParticipant(participant);
-            }
-        );
-
-        // 11. Listen for students leaving
-        room.on(
-            LivekitClient.RoomEvent.ParticipantDisconnected,
-            participant => {
-                console.log(
-                    'Participant left:',
-                    participant.identity
-                );
-
-                removeRemoteParticipant(participant.identity);
-            }
-        );
-
-        console.log(
-            'LiveKit connected to room:',
-            roomName
-        );
-
-    } catch (error) {
-        console.error(
-            'Unable to start live class:',
-            error
-        );
-
-        alert(
-            'Unable to start live class: ' +
-            error.message
-        );
-    }
-}
-
-        // ========== START MEDIA ==========
-        async function startMedia() {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
+                // 1. Create the class in Firebase
+                const classRef = db.ref('liveClasses').push();
+                const classId = classRef.key;
+                const roomName = `class_${classId}`;
+
+                // Fetch register details for later history
+                const regSnap = await db.ref('registers/' + registerId).once('value');
+                const registerData = regSnap.val();
+
+                const classData = {
+                    id: classId,
+                    className: className,
+                    lectureName: lectureName,
+                    registerId: registerId,
+                    register: registerData || {},
+                    liveKitRoom: roomName,
+                    status: 'active',
+                    startedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                await classRef.set(classData);
+
+                // Assign global state
+                currentClass = classData;
+                classStartTime = Date.now();
+
+                // 2. Get Firebase user
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    throw new Error('You are not logged in.');
+                }
+
+                // 3. Ask Cloudflare Worker for LiveKit token
+                const response = await fetch(LIVEKIT_TOKEN_SERVER + '/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roomName: roomName,
+                        identity: user.uid,
+                        name: user.displayName || 'Admin'
+                    })
                 });
-                document.getElementById('localVideo').srcObject = localStream;
-                // Reset toggles
-                isCameraOn = true;
-                isMicOn = true;
-                document.getElementById('toggleCameraBtn').classList.add('active');
-                document.getElementById('toggleMicBtn').classList.add('active');
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`Token server error (${response.status}): ${errText}`);
+                }
+
+                const tokenData = await response.json();
+                if (!tokenData.success) {
+                    throw new Error(tokenData.error || 'Token server returned no success flag.');
+                }
+                if (!tokenData.serverUrl) {
+                    throw new Error('Token server did not provide a serverUrl.');
+                }
+
+                // 4. Create LiveKit room
+                const room = new LivekitClient.Room({
+                    adaptiveStream: true,
+                    dynacast: true
+                });
+
+                // Save room globally
+                window.liveKitRoom = room;
+
+                // 5. Connect admin to LiveKit
+                await room.connect(tokenData.serverUrl, tokenData.token);
+
+                // 6. Turn on camera
+                await room.localParticipant.setCameraEnabled(true);
+
+                // 7. Turn on microphone
+                await room.localParticipant.setMicrophoneEnabled(true);
+
+                // 8. Display local video
+                const localVideo = document.getElementById('localVideo');
+                const videoTrack = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+                if (videoTrack && videoTrack.track) {
+                    videoTrack.track.attach(localVideo);
+                }
+
+                // 9. Show classroom UI and start timers/listeners
+                showClassroom();
+
+                // 10. Listen for students joining
+                room.on(LivekitClient.RoomEvent.ParticipantConnected, participant => {
+                    addRemoteParticipant(participant);
+                });
+
+                // 11. Listen for students leaving
+                room.on(LivekitClient.RoomEvent.ParticipantDisconnected, participant => {
+                    removeRemoteParticipant(participant.identity);
+                });
+
+                console.log('LiveKit connected to room:', roomName);
+
             } catch (error) {
-                showToast('Cannot access camera/microphone: ' + error.message, 'error');
+                console.error('Unable to start live class:', error);
+                alert('Unable to start live class: ' + error.message);
             }
         }
 
-        // ========== TOGGLE CAMERA / MIC ==========
+        // ========== SHOW CLASSROOM (after successful connection) ==========
+        function showClassroom() {
+            // Set UI text
+            document.getElementById('liveClassName').textContent = currentClass.className;
+            document.getElementById('liveLectureName').textContent = currentClass.lectureName;
+            document.getElementById('streamTimer').textContent = '00:00';
+
+            // Show live page
+            showSection('livePage');
+
+            // Start timer
+            startTimer();
+
+            // Listen to real‑time updates
+            listenToLiveClass(currentClass.id);
+
+            // Reset camera/mic buttons to active
+            document.getElementById('toggleCameraBtn').classList.add('active');
+            document.getElementById('toggleMicBtn').classList.add('active');
+        }
+
+        // ========== TOGGLE CAMERA / MIC (using LiveKit) ==========
         function toggleCamera() {
-            if (!localStream) return;
-            const videoTrack = localStream.getVideoTracks()[0];
-            if (videoTrack) {
-                videoTrack.enabled = !videoTrack.enabled;
-                isCameraOn = videoTrack.enabled;
+            if (!window.liveKitRoom) return;
+            const room = window.liveKitRoom;
+            room.localParticipant.setCameraEnabled(!isCameraOn).then(() => {
+                isCameraOn = !isCameraOn;
                 const btn = document.getElementById('toggleCameraBtn');
                 btn.classList.toggle('active', isCameraOn);
-            }
+            }).catch(err => showToast('Camera toggle failed: ' + err.message, 'error'));
         }
-
-        function addRemoteParticipant(participant) {
-
-    const container =
-        document.getElementById('videoGrid');
-
-    if (!container) return;
-
-    let participantElement =
-        document.getElementById(
-            'participant-' + participant.identity
-        );
-
-    if (!participantElement) {
-
-        participantElement =
-            document.createElement('div');
-
-        participantElement.id =
-            'participant-' + participant.identity;
-
-        participantElement.className =
-            'participant-video';
-
-        container.appendChild(
-            participantElement
-        );
-    }
-
-    participant.trackPublications.forEach(
-        publication => {
-
-            if (publication.track) {
-
-                const element =
-                    publication.track.attach();
-
-                participantElement.appendChild(
-                    element
-                );
-            }
-        }
-    );
-}
-
-function removeRemoteParticipant(identity) {
-
-    const element =
-        document.getElementById(
-            'participant-' + identity
-        );
-
-    if (element) {
-        element.remove();
-    }
-}
 
         function toggleMic() {
-            if (!localStream) return;
-            const audioTrack = localStream.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                isMicOn = audioTrack.enabled;
+            if (!window.liveKitRoom) return;
+            const room = window.liveKitRoom;
+            room.localParticipant.setMicrophoneEnabled(!isMicOn).then(() => {
+                isMicOn = !isMicOn;
                 const btn = document.getElementById('toggleMicBtn');
                 btn.classList.toggle('active', isMicOn);
+            }).catch(err => showToast('Mic toggle failed: ' + err.message, 'error'));
+        }
+
+        // ========== REMOTE PARTICIPANT MANAGEMENT ==========
+        function addRemoteParticipant(participant) {
+            const container = document.getElementById('videoGrid');
+            if (!container) return;
+
+            let participantElement = document.getElementById('participant-' + participant.identity);
+            if (!participantElement) {
+                participantElement = document.createElement('div');
+                participantElement.id = 'participant-' + participant.identity;
+                participantElement.className = 'participant-video';
+                container.appendChild(participantElement);
+            }
+
+            participant.trackPublications.forEach(publication => {
+                if (publication.track && publication.track.kind === 'video') {
+                    const element = publication.track.attach();
+                    participantElement.appendChild(element);
+                }
+            });
+        }
+
+        function removeRemoteParticipant(identity) {
+            const element = document.getElementById('participant-' + identity);
+            if (element) {
+                element.remove();
             }
         }
 
@@ -883,10 +851,8 @@ function removeRemoteParticipant(identity) {
             if (isDrawing) {
                 setupCanvas();
             } else {
-                // Optionally clear canvas
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Send clear frame
                 shareDrawingFrame();
             }
         }
@@ -970,7 +936,6 @@ function removeRemoteParticipant(identity) {
             if (!currentClass) return;
             const canvas = document.getElementById('scratchCanvas');
             const dataURL = canvas.toDataURL('image/png');
-            // Store as small frame to Firebase
             db.ref(`liveClasses/${currentClass.id}/drawingFrame`).set(dataURL);
         }
 
@@ -993,7 +958,6 @@ function removeRemoteParticipant(identity) {
 
         function appendQuestionToUI(question) {
             const list = document.getElementById('questionList');
-            // Remove placeholder if exists
             if (list.querySelector('.empty-msg')) list.innerHTML = '';
             const item = document.createElement('div');
             item.className = 'question-item';
@@ -1040,22 +1004,33 @@ function removeRemoteParticipant(identity) {
             if (!currentClass) return;
 
             const endTime = Date.now();
-            const duration = Math.floor((endTime - classStartTime) / 1000); // seconds
+            const duration = Math.floor((endTime - classStartTime) / 1000);
 
-            // Stop media
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
+            // Fetch questions from Firebase before removal
+            let questions = [];
+            const qSnap = await db.ref(`liveClasses/${currentClass.id}/questions`).once('value');
+            if (qSnap.val()) {
+                questions = Object.values(qSnap.val());
             }
 
-            // Update class status
+            // Disconnect from LiveKit room
+            if (window.liveKitRoom) {
+                try {
+                    await window.liveKitRoom.disconnect();
+                } catch (e) {
+                    console.warn('LiveKit disconnect error:', e);
+                }
+                window.liveKitRoom = null;
+            }
+
+            // Update class status in liveClasses (before removing)
             await db.ref(`liveClasses/${currentClass.id}`).update({
                 status: 'ended',
                 endedAt: firebase.database.ServerValue.TIMESTAMP,
                 duration: duration
             });
 
-            // Move to history record
+            // Create history record
             const historyRef = db.ref('liveClassesHistory').push();
             const historyData = {
                 className: currentClass.className,
@@ -1065,7 +1040,7 @@ function removeRemoteParticipant(identity) {
                 startedAt: currentClass.startedAt,
                 endedAt: firebase.database.ServerValue.TIMESTAMP,
                 duration: duration,
-                questions: Object.values(currentClass.questions || {}),
+                questions: questions,
                 joinedStudents: joinedStudents
             };
             await historyRef.set(historyData);
@@ -1079,8 +1054,9 @@ function removeRemoteParticipant(identity) {
             if (classTimerInterval) clearInterval(classTimerInterval);
             isDrawing = false;
             document.getElementById('scratchCanvas').classList.remove('active');
+            document.getElementById('videoGrid').innerHTML = '';
 
-            // Reload history
+            // Reload history and navigate
             loadHistory();
             showSection('historyPage');
             showToast('Class ended and saved to history.', 'success');
@@ -1151,7 +1127,6 @@ function removeRemoteParticipant(identity) {
                 const h = snap.val();
                 if (!h) return;
 
-                // Register data
                 const register = h.register || {};
                 const members = register.memberDetails || [];
                 const joined = h.joinedStudents || {};
