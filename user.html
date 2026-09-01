@@ -6556,32 +6556,6 @@ function updateControlButtonStates() {
             return div.innerHTML;
         }
 
-        function formatAnswerForReport(q, answer) {
-    if (!answer || answer === '') return 'Not answered';
-    if (q.type === 'mcq') {
-        const idx = Number(answer);
-        return q.options[idx] || answer;
-    }
-    if (q.type === 'tf') {
-        return answer === 'true' ? 'True' : 'False';
-    }
-    if (q.type === 'matching') {
-        const pairs = q.options;
-        return Object.entries(answer).map(([leftIdx, rightIdx]) => {
-            const left = pairs[leftIdx]?.left || leftIdx;
-            const right = rightIdx !== '' ? pairs[rightIdx]?.right : '';
-            return `${left} → ${right}`;
-        }).join('; ');
-    }
-    if (q.type === 'ordering') {
-        if (Array.isArray(answer)) {
-            return answer.map(idx => q.options[idx]).join(' > ');
-        }
-        return answer;
-    }
-    return answer;
-}
-
         function formatDate(timestamp) {
             if (!timestamp) return 'Unknown date';
             const date = new Date(timestamp);
@@ -9090,23 +9064,7 @@ function updateControlButtonStates() {
                             <h3>${escapeHtml(assessment.name)}</h3>
                             <span class="page-num">Page ${pageIdx + 1} of ${pages.length}</span>
                         </div>
-                        ${questions.map((q, idx) => {
-    const qKey = `q${pageIdx * chunkSize + idx}`;
-    const answer = answers[qKey] || 'Not answered';
-    const scratch = scratchData[qKey] || null;
-    const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-    const isAuto = ['mcq','tf','fillblank','matching','ordering'].includes(q.type);
-    const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-    const answerDisplay = formatAnswerForReport(q, answer);
-    return `
-        <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
-            <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks)</div>
-            <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${answerDisplay}</div>
-            <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-            ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
-        </div>
-    `;
-}).join('')}
+                        ${questions.map((q, idx) => buildQuestionBlock(q, pageIdx * chunkSize + idx, `q${pageIdx * chunkSize + idx}`)).join('')}
                     </div>
                 `;
             });
@@ -9755,23 +9713,7 @@ function updateControlButtonStates() {
                                 <span class="score"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
                                 <br /><span style="font-size:12px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
                             </div>
-                            ${questions${questions.map((q, idx) => {
-    const qKey = `q${pageIdx * chunkSize + idx}`;
-    const answer = answers[qKey] || 'Not answered';
-    const scratch = scratchData[qKey] || null;
-    const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-    const isAuto = ['mcq','tf','fillblank','matching','ordering'].includes(q.type);
-    const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-    const answerDisplay = formatAnswerForReport(q, answer);
-    return `
-        <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
-            <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks)</div>
-            <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${answerDisplay}</div>
-            <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-            ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
-        </div>
-    `;
-}).join('')}.map((q, idx) => buildQuestionBlock(q, pageIdx * chunkSize + idx, `q${pageIdx * chunkSize + idx}`)).join('')}
+                            ${questions.map((q, idx) => buildQuestionBlock(q, pageIdx * chunkSize + idx, `q${pageIdx * chunkSize + idx}`)).join('')}
                         </div>
                     `).join('')}
                 </div>
@@ -9866,23 +9808,7 @@ function updateControlButtonStates() {
                                 <span style="float:right;"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${score}/${total} (${total>0?Math.round((score/total)*100):0}%)</span></span>
                                 <br /><span style="font-size:12px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
                             </div>
-                            ${questions.map((q, idx) => buildQue${questions.map((q, idx) => {
-    const qKey = `q${pageIdx * chunkSize + idx}`;
-    const answer = answers[qKey] || 'Not answered';
-    const scratch = scratchData[qKey] || null;
-    const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-    const isAuto = ['mcq','tf','fillblank','matching','ordering'].includes(q.type);
-    const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-    const answerDisplay = formatAnswerForReport(q, answer);
-    return `
-        <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
-            <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks)</div>
-            <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${answerDisplay}</div>
-            <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-            ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
-        </div>
-    `;
-}).join('')}stionBlock(q, pageIdx * chunkSize + idx, `q${pageIdx * chunkSize + idx}`)).join('')}
+                            ${questions.map((q, idx) => buildQuestionBlock(q, pageIdx * chunkSize + idx, `q${pageIdx * chunkSize + idx}`)).join('')}
                         </div>
                     `).join('')}
                 </div>
