@@ -9071,7 +9071,7 @@ function updateControlButtonStates() {
             container.innerHTML = html;
         }
 
-       function buildQuestionBlock(q, idx, qKey, savedAnswer = null, savedScratch = null) {
+      function buildQuestionBlock(q, idx, qKey, savedAnswer = null, savedScratch = null) {
     let optionsHtml = '';
     let inputHtml = '';
 
@@ -9125,7 +9125,6 @@ function updateControlButtonStates() {
         case 'ordering':
             const savedOrder = savedAnswer || [];
             optionsHtml = `<div class="q-ordering">`;
-            // Reorder savedOrder based on saved order
             const orderedItems = savedOrder.length ? savedOrder.map((idx) => ({ idx, text: q.options[idx] })) : q.options.map((text, idx) => ({ idx, text }));
             orderedItems.forEach((item, pi) => {
                 optionsHtml += `
@@ -9135,6 +9134,28 @@ function updateControlButtonStates() {
                     </div>
                 `;
             });
+            optionsHtml += `</div>`;
+            break;
+        // 👇 NEW CASE: MULTIPLE ANSWERS (TYPED)
+        case 'multi-answer':
+            const savedArr = Array.isArray(savedAnswer) ? savedAnswer : [];
+            optionsHtml = `<div class="q-multi-answer">`;
+            if (q.options && Array.isArray(q.options)) {
+                q.options.forEach((part, pi) => {
+                    const inputValue = savedArr[pi] || '';
+                    optionsHtml += `
+                        <div class="q-multi-answer-row" style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                            <label style="font-weight:600;min-width:30px;">${escapeHtml(part.label)}</label>
+                            <input type="text" class="q-multi-answer-input" data-key="${qKey}" data-index="${pi}" 
+                                   value="${escapeHtml(inputValue)}" 
+                                   placeholder="Answer for ${escapeHtml(part.label)}" 
+                                   style="flex:1;padding:6px 12px;border-radius:30px;border:1.5px solid var(--border-color);font-size:0.85rem;background:var(--bg);color:var(--text);" />
+                        </div>
+                    `;
+                });
+            } else {
+                optionsHtml = `<div style="color:#e74c3c;">No answer parts defined.</div>`;
+            }
             optionsHtml += `</div>`;
             break;
         default:
@@ -9168,7 +9189,6 @@ function updateControlButtonStates() {
         </div>
     `;
 }
-
         function initScratchpad(canvas) {
             const ctx = canvas.getContext('2d');
             let isDrawing = false;
@@ -9260,46 +9280,59 @@ function updateControlButtonStates() {
         }
 
         function collectAnswers() {
-            const answers = {};
-            document.querySelectorAll('.question-block').forEach(block => {
-                const key = block.dataset.key;
-                const radio = block.querySelector(`input[type="radio"]:checked`);
-                if (radio) {
-                    answers[key] = radio.value;
-                    return;
-                }
-                const textarea = block.querySelector('.q-textarea');
-                if (textarea) {
-                    answers[key] = textarea.value.trim();
-                    return;
-                }
-                const fillblank = block.querySelector('.q-fillblank');
-                if (fillblank) {
-                    answers[key] = fillblank.value.trim();
-                    return;
-                }
-                const selects = block.querySelectorAll('.q-matching select');
-                if (selects.length) {
-                    const match = {};
-                    selects.forEach(sel => {
-                        const idx = sel.dataset.index;
-                        match[idx] = sel.value;
-                    });
-                    answers[key] = match;
-                    return;
-                }
-                const orderItems = block.querySelectorAll('.q-ordering-item');
-                if (orderItems.length) {
-                    const order = [];
-                    orderItems.forEach(item => {
-                        order.push(item.dataset.index);
-                    });
-                    answers[key] = order;
-                    return;
-                }
+    const answers = {};
+    document.querySelectorAll('.question-block').forEach(block => {
+        const key = block.dataset.key;
+        
+        // Multi-answer (typed)
+        const multiInputs = block.querySelectorAll('.q-multi-answer-input');
+        if (multiInputs.length > 0) {
+            const values = [];
+            multiInputs.forEach(input => {
+                values.push(input.value.trim());
             });
-            return answers;
+            answers[key] = values;
+            return;
         }
+
+        // Existing types
+        const radio = block.querySelector(`input[type="radio"]:checked`);
+        if (radio) {
+            answers[key] = radio.value;
+            return;
+        }
+        const textarea = block.querySelector('.q-textarea');
+        if (textarea) {
+            answers[key] = textarea.value.trim();
+            return;
+        }
+        const fillblank = block.querySelector('.q-fillblank');
+        if (fillblank) {
+            answers[key] = fillblank.value.trim();
+            return;
+        }
+        const selects = block.querySelectorAll('.q-matching select');
+        if (selects.length) {
+            const match = {};
+            selects.forEach(sel => {
+                const idx = sel.dataset.index;
+                match[idx] = sel.value;
+            });
+            answers[key] = match;
+            return;
+        }
+        const orderItems = block.querySelectorAll('.q-ordering-item');
+        if (orderItems.length) {
+            const order = [];
+            orderItems.forEach(item => {
+                order.push(item.dataset.index);
+            });
+            answers[key] = order;
+            return;
+        }
+    });
+    return answers;
+}
 
         function collectScratchData() {
             const scratchData = {};
@@ -9326,7 +9359,7 @@ function updateControlButtonStates() {
             await submitAssessment();
         }
 
-       async function submitAssessment() {
+      async function submitAssessment() {
     if (!currentAssessmentTaking) return;
     const { assessment, responseId } = currentAssessmentTaking;
 
@@ -9411,6 +9444,35 @@ function updateControlButtonStates() {
                         mark = q.marks;
                         autoScore += q.marks;
                     }
+                }
+            }
+            // 👇 NEW: MULTI-ANSWER (TYPED) AUTO-GRADING
+            else if (q.type === 'multi-answer') {
+                // Only auto-grade if ALL parts have correctAnswer set
+                const parts = q.options || [];
+                const allHaveCorrect = parts.every(p => p.correctAnswer && p.correctAnswer.trim() !== '');
+                if (allHaveCorrect) {
+                    isAuto = true;
+                    totalAutoMarks += q.marks; // Each part's marks sum to q.marks
+                    // Actually we assign each part marks, so totalAutoMarks should sum parts marks
+                    // Let's compute total possible from parts:
+                    const totalPartMarks = parts.reduce((sum, p) => sum + (p.marks || 0), 0);
+                    totalAutoMarks += totalPartMarks;
+                    const studentArr = Array.isArray(answer) ? answer : [];
+                    let partScore = 0;
+                    parts.forEach((part, pi) => {
+                        const studentVal = (studentArr[pi] || '').toString().trim().toLowerCase();
+                        const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+                        if (studentVal === correctVal) {
+                            partScore += part.marks || 0;
+                        }
+                    });
+                    mark = partScore;
+                    autoScore += partScore;
+                } else {
+                    // Not fully auto-gradable; set isAuto=false and mark 0 for manual grading
+                    isAuto = false;
+                    mark = 0;
                 }
             }
 
@@ -9564,7 +9626,16 @@ function updateControlButtonStates() {
 
             allQuestions.forEach((q, idx) => {
                 const qKey = `q${idx}`;
-                const answer = answers[qKey] || 'Not answered';
+                let answer = answers[qKey];
+let answerDisplay = 'Not answered';
+if (q.type === 'multi-answer' && Array.isArray(answer)) {
+    answerDisplay = q.options.map((part, idx) => {
+        const val = answer[idx] || '';
+        return `${part.label}: ${val}`;
+    }).join('; ');
+} else {
+    answerDisplay = answer || 'Not answered';
+}
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (
                     answer == q.correct ? q.marks : 0) : 'Not graded');
