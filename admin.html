@@ -7912,6 +7912,94 @@
         };
 
         // =================================================================
+        // PERFORMANCE OPTIMIZATION: Debounce, Throttle, Render Manager
+        // =================================================================
+        function debounce(fn, delay = 300) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        function throttle(fn, limit = 100) {
+            let inThrottle;
+            return (...args) => {
+                if (!inThrottle) {
+                    fn(...args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // Render manager: batches render requests in requestAnimationFrame
+        const pendingRenders = new Set();
+        let renderScheduled = false;
+
+        function scheduleRender(section) {
+            pendingRenders.add(section);
+            if (!renderScheduled) {
+                renderScheduled = true;
+                requestAnimationFrame(() => {
+                    pendingRenders.forEach(sec => {
+                        switch (sec) {
+                            case 'home':
+                                renderAdminHome();
+                                break;
+                            case 'videos':
+                                renderPostedGrid();
+                                break;
+                            case 'users':
+                                renderUsers();
+                                break;
+                            case 'courses':
+                                renderCoursesAccordion();
+                                break;
+                            case 'docs':
+                                renderDocsList();
+                                break;
+                            case 'account':
+                                renderAccount();
+                                break;
+                            case 'settings':
+                                updateBannedList();
+                                break;
+                            case 'promo':
+                                renderPromoPics();
+                                break;
+                            case 'popup':
+                                renderSentPopups();
+                                break;
+                            case 'testExams':
+                                renderTestExamsDashboard();
+                                break;
+                            case 'registers':
+                                renderRegistersList();
+                                break;
+                            case 'ongoing':
+                                renderOngoingList();
+                                break;
+                            case 'history':
+                                renderHistoryList();
+                                break;
+                            case 'assessments':
+                                renderAssessmentsList();
+                                break;
+                            case 'all':
+                                refreshAll();
+                                break;
+                            default:
+                                break;
+                        }
+                    });
+                    pendingRenders.clear();
+                    renderScheduled = false;
+                });
+            }
+        }
+
+        // =================================================================
         // REFS
         // =================================================================
         const videosRef = ref(db, 'videos');
@@ -8152,9 +8240,9 @@
                 }
             }
             if (updated) {
-                renderAssessmentsList();
-                renderOngoingList();
-                renderTestExamsDashboard();
+                scheduleRender('assessments');
+                scheduleRender('ongoing');
+                scheduleRender('testExams');
             }
         }
 
@@ -8356,7 +8444,8 @@
                 updateAdminCarouselClasses(1);
             }
 
-            track.addEventListener('scroll', () => {
+            // Throttled scroll
+            track.addEventListener('scroll', throttle(() => {
                 if (isUserInteracting) {
                     const containerWidth = track.clientWidth;
                     const scrollLeft = track.scrollLeft;
@@ -8409,7 +8498,7 @@
                     isUserInteracting = false;
                     resetAdminAutoScroll();
                 }, 2000);
-            });
+            }, 100));
 
             updateAdminCarouselClasses(1);
             setTimeout(() => {
@@ -10326,10 +10415,13 @@
                 setLoadingForAction('saveSettings', false, 'savePaymentNumbersBtn');
             });
             document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-            document.getElementById('searchVideoInput')?.addEventListener('input', renderPostedGrid);
-            document.getElementById('filterCourseSelect')?.addEventListener('change', renderPostedGrid);
-            document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
-            document.getElementById('usersSearchInput')?.addEventListener('input', renderUsers);
+
+            // --- Debounced search inputs ---
+            document.getElementById('searchVideoInput')?.addEventListener('input', debounce(renderPostedGrid, 300));
+            document.getElementById('filterCourseSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
+            document.getElementById('filterPriceSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
+            document.getElementById('usersSearchInput')?.addEventListener('input', debounce(renderUsers, 300));
+
             document.querySelectorAll('.filter-pill').forEach(pill => {
                 pill.addEventListener('click', () => {
                     document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
@@ -12705,9 +12797,9 @@
                 resetPopupFlow();
             });
 
-            document.getElementById('popupUserSearch').addEventListener('input', function() {
+            document.getElementById('popupUserSearch').addEventListener('input', debounce(function() {
                 renderPopupUserList(this.value);
-            });
+            }, 300));
 
             const popupMediaPreview = document.getElementById('popupMediaPreview');
             const popupMediaUrl = document.getElementById('popupMediaUrl');
@@ -13159,22 +13251,22 @@
         function setupRealtime() {
             onValue(videosRef, snap => {
                 videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                renderAdminHome();
-                renderPostedGrid();
-                renderCoursesAccordion();
+                scheduleRender('home');
+                scheduleRender('videos');
+                scheduleRender('courses');
                 videos.forEach(v => {
                     loadCommentsForVideo(v.id, () => {
-                        renderPostedGrid();
+                        scheduleRender('videos');
                     });
                 });
             });
 
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
-                renderUsers();
-                updateBannedList();
-                updateStats();
-                updateDashboard();
+                scheduleRender('users');
+                scheduleRender('settings');
+                scheduleRender('home');
+                scheduleRender('account');
                 if (document.getElementById('popupSection')?.classList.contains('active')) {
                     resetPopupFlow();
                     renderPopupUserList();
@@ -13182,36 +13274,36 @@
             });
 
             onValue(coursesRef, snap => {
-                courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                courses = snap.val() ? Object.entries(coursesRef).map(([id, d]) => ({ id, ...d })) : [];
                 updateCourseSelects();
-                renderAdminHome();
-                renderCoursesAccordion();
-                updateDashboard();
+                scheduleRender('home');
+                scheduleRender('courses');
+                scheduleRender('account');
             });
 
             onValue(subfoldersRef, snap => {
-                subfolders = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                renderAdminHome();
-                renderCoursesAccordion();
+                subfolders = snap.val() ? Object.entries(subfoldersRef).map(([id, d]) => ({ id, ...d })) : [];
+                scheduleRender('home');
+                scheduleRender('courses');
                 updateSubfolderSelects();
             });
 
             onValue(docsRef, snap => {
-                docs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                renderDocsList();
-                renderCoursesAccordion();
+                docs = snap.val() ? Object.entries(docsRef).map(([id, d]) => ({ id, ...d })) : [];
+                scheduleRender('docs');
+                scheduleRender('courses');
             });
 
             onValue(notificationsRef, snap => {
-                notifications = snap.val() ? Object.values(notifSnap.val()) : [];
+                notifications = snap.val() ? Object.values(notificationsRef) : [];
                 updateNotifBadge();
                 renderNotificationsSidebar();
             });
 
             onValue(bannedUsersRef, snap => {
                 bannedUsersMap = snap.val() || {};
-                renderUsers();
-                updateBannedList();
+                scheduleRender('users');
+                scheduleRender('settings');
             });
 
             onValue(paymentSettingsRef, snap => {
@@ -13244,9 +13336,8 @@
                     });
                 });
                 allTransactions = Array.from(seen.values());
-                renderAdminHome();
-                renderAccount();
-                updateDashboard();
+                scheduleRender('home');
+                scheduleRender('account');
                 // Check for pending popup after transactions update
                 checkAndShowPendingPopup();
             };
@@ -13256,22 +13347,22 @@
             onValue(promosRef, snap => {
                 const data = snap.val();
                 promos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
-                renderAdminHome();
-                renderPromoPics();
+                scheduleRender('home');
+                scheduleRender('promo');
             });
 
             onValue(inAppNotificationsRef, snap => {
                 const data = snap.val();
                 inAppNotifications = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
-                renderSentPopups();
+                scheduleRender('popup');
             });
 
             onValue(registersRef, (snap) => {
                 try {
                     const data = snap.val();
                     registers = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                    renderTestExamsDashboard();
-                    renderRegistersList();
+                    scheduleRender('testExams');
+                    scheduleRender('registers');
                     updateTestExamsDropdowns();
                 } catch (err) {
                     console.error('Error in registers listener:', err);
@@ -13284,10 +13375,10 @@
                 try {
                     const data = snap.val();
                     assessments = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                    renderTestExamsDashboard();
-                    renderOngoingList();
-                    renderHistoryList();
-                    renderAssessmentsList();
+                    scheduleRender('testExams');
+                    scheduleRender('ongoing');
+                    scheduleRender('history');
+                    scheduleRender('assessments');
                     updateTestExamsDropdowns();
                 } catch (err) {
                     console.error('Error in assessments listener:', err);
@@ -13300,8 +13391,8 @@
                 try {
                     const data = snap.val();
                     assessmentResponses = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-                    renderOngoingList();
-                    renderHistoryList();
+                    scheduleRender('ongoing');
+                    scheduleRender('history');
                 } catch (err) {
                     console.error('Error in assessmentResponses listener:', err);
                 }
@@ -13360,9 +13451,9 @@
             window._regMembers = [];
             window._regSearchTerm = '';
             document.getElementById('regMemberSearch').value = '';
-            document.getElementById('regMemberSearch').addEventListener('input', function() {
+            document.getElementById('regMemberSearch').addEventListener('input', debounce(function() {
                 renderRegisterMemberSelector(this.value);
-            });
+            }, 300));
         }
 
         function renderRegisterMemberSelector(searchTerm = '') {
@@ -16523,8 +16614,8 @@
             });
         }
 
-        document.getElementById('ongoingSearch')?.addEventListener('input', renderOngoingList);
-        document.getElementById('ongoingFilterAssessment')?.addEventListener('change', renderOngoingList);
+        document.getElementById('ongoingSearch')?.addEventListener('input', debounce(renderOngoingList, 300));
+        document.getElementById('ongoingFilterAssessment')?.addEventListener('change', debounce(renderOngoingList, 200));
 
         function showStudentScratchView(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
@@ -16668,7 +16759,7 @@
             });
         }
 
-        document.getElementById('registersSearch')?.addEventListener('input', renderRegistersList);
+        document.getElementById('registersSearch')?.addEventListener('input', debounce(renderRegistersList, 300));
 
         // ---- EDIT REGISTER MODAL ----
         function openEditRegisterModal(regId) {
@@ -16688,9 +16779,9 @@
             renderEditRegMemberList();
             renderEditRegMemberSelector('');
 
-            document.getElementById('editRegMemberSearch').addEventListener('input', function() {
+            document.getElementById('editRegMemberSearch').addEventListener('input', debounce(function() {
                 renderEditRegMemberSelector(this.value);
-            });
+            }, 300));
 
             document.getElementById('registerEditModal').classList.add('open');
         }
@@ -17515,9 +17606,9 @@
             modal.classList.add('open');
         };
 
-        document.getElementById('assessmentsSearch')?.addEventListener('input', renderAssessmentsList);
-        document.getElementById('assessmentsFilterType')?.addEventListener('change', renderAssessmentsList);
-        document.getElementById('assessmentsFilterStatus')?.addEventListener('change', renderAssessmentsList);
+        document.getElementById('assessmentsSearch')?.addEventListener('input', debounce(renderAssessmentsList, 300));
+        document.getElementById('assessmentsFilterType')?.addEventListener('change', debounce(renderAssessmentsList, 200));
+        document.getElementById('assessmentsFilterStatus')?.addEventListener('change', debounce(renderAssessmentsList, 200));
 
         // =================================================================
         // EXPIRATION CHECKER (auto-clear ongoing and move to history)
@@ -17575,10 +17666,10 @@
             }
 
             if (updated) {
-                renderOngoingList();
-                renderHistoryList();
-                renderAssessmentsList();
-                renderTestExamsDashboard();
+                scheduleRender('ongoing');
+                scheduleRender('history');
+                scheduleRender('assessments');
+                scheduleRender('testExams');
             }
         }
 
