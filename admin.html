@@ -39,8 +39,7 @@
             --radius-md: 18px;
             --radius-lg: 24px;
             --radius-xl: 32px;
-            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --transition-slow: 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --transition: 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             --green: #2ecc71;
             --red: #e63946;
             --yellow: #f39c12;
@@ -122,7 +121,7 @@
             display: none;
             width: 100%;
             min-height: 100px;
-            animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation: slideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         .section.active {
             display: block;
@@ -130,7 +129,7 @@
         @keyframes slideIn {
             0% {
                 opacity: 0;
-                transform: translateY(18px) scale(0.98);
+                transform: translateY(12px) scale(0.98);
             }
             100% {
                 opacity: 1;
@@ -6002,6 +6001,37 @@
             justify-content: space-between;
             align-items: center;
         }
+        /* ===== EDITED BADGE ===== */
+        .edited-badge {
+            display: inline-block;
+            background: #f39c12;
+            color: #fff;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+        }
+        .edited-badge.edited {
+            background: #f39c12;
+        }
+        .edited-badge.draft {
+            background: #8b8fa3;
+        }
+        /* ===== VERSION BADGE ===== */
+        .version-badge {
+            font-size: 9px;
+            color: #8b8fa3;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 2px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -7510,9 +7540,6 @@
             <button class="nav-link" data-section="docs"><i class="fas fa-file-alt"></i> <span class="nav-label">Docs</span></button>
             <button class="nav-link" data-section="testExams"><i class="fas fa-graduation-cap"></i> <span class="nav-label">Test/Exams</span></button>
             <button class="nav-link" data-section="assessments"><i class="fas fa-folder-open"></i> <span class="nav-label">Assessments</span></button>
-            <button class="nav-link" onclick="window.location.href='live.html'">
-    <i class="fas fa-broadcast-tower"></i> <span class="nav-label">Live Class</span>
-</button>
             <button class="nav-link" data-section="promo"><i class="fas fa-images"></i> <span class="nav-label">Promo</span></button>
             <button class="nav-link" data-section="popup"><i class="fas fa-bell"></i> <span class="nav-label">Popups</span></button>
             <button class="nav-link" data-section="account"><i class="fas fa-wallet"></i> <span class="nav-label">Account</span></button>
@@ -7830,7 +7857,7 @@
         // =================================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp, onChildAdded, onChildChanged, onChildRemoved } from
+        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp, query, orderByChild } from
         "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -7886,34 +7913,7 @@
         let currentAssessmentType = 'test';
         window._previewData = null;
 
-        // ---- Loading state tracker ----
-        const loadingState = {
-            'createRegister': false,
-            'createTest': false,
-            'createQuiz': false,
-            'createExam': false,
-            'createAssignment': false,
-            'publishVideo': false,
-            'publishDoc': false,
-            'addCourse': false,
-            'addSubfolder': false,
-            'approveTx': false,
-            'rejectTx': false,
-            'sendPopup': false,
-            'promoUpload': false,
-            'saveSettings': false,
-            'deleteItem': false,
-            'editItem': false,
-            'editCourse': false,
-            'editRegister': false,
-            'saveMarks': false,
-            'duplicateAssessment': false,
-            'editAssessment': false
-        };
-
-        // =================================================================
-        // PERFORMANCE OPTIMIZATION: Debounce, Throttle, Render Manager
-        // =================================================================
+        // ---- Debounce and throttle helpers ----
         function debounce(fn, delay = 300) {
             let timer;
             return (...args) => {
@@ -7933,7 +7933,7 @@
             };
         }
 
-        // Render manager: batches render requests in requestAnimationFrame
+        // ---- Render batching with requestAnimationFrame ----
         const pendingRenders = new Set();
         let renderScheduled = false;
 
@@ -7985,9 +7985,6 @@
                                 break;
                             case 'assessments':
                                 renderAssessmentsList();
-                                break;
-                            case 'all':
-                                refreshAll();
                                 break;
                             default:
                                 break;
@@ -8071,7 +8068,6 @@
         // LOADING STATE HELPERS
         // =================================================================
         function setLoading(key, isLoading, btnSelector) {
-            loadingState[key] = isLoading;
             if (btnSelector) {
                 const btn = document.querySelector(btnSelector);
                 if (btn) {
@@ -8083,7 +8079,7 @@
                             btn.dataset.originalText = btn.innerHTML;
                         }
                         btn.innerHTML =
-                            `<span class="loader-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;margin-right:6px;"></span> ${btn.dataset.loadingText || 'Processing...'}`;
+                            `<span class="loader-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;margin-right:6px;"></span> Processing...`;
                     } else {
                         btn.disabled = false;
                         btn.style.opacity = '1';
@@ -8094,11 +8090,6 @@
                     }
                 }
             }
-        }
-
-        function setLoadingForAction(key, isLoading, buttonId) {
-            const selector = buttonId ? `#${buttonId}` : null;
-            setLoading(key, isLoading, selector);
         }
 
         // =================================================================
@@ -8126,7 +8117,6 @@
             } else {
                 handleHashChange();
             }
-            // Show pending payment popup if any
             setTimeout(checkAndShowPendingPopup, 1500);
         });
 
@@ -8302,15 +8292,16 @@
             return id || null;
         }
 
-        function getYouTubeThumbnail(url) {
-            const id = getYouTubeId(url);
-            return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : null;
-        }
-
         function getYouTubeEmbedWithStart(url, startSeconds = 0) {
             const id = getYouTubeId(url);
             if (!id) return null;
             return `https://www.youtube-nocookie.com/embed/${id}?controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=1&playsinline=1&autoplay=1&start=${startSeconds}`;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return 'N/A';
+            const d = new Date(ts);
+            return d.toLocaleString();
         }
 
         function downloadCSV(filename, rows) {
@@ -8332,16 +8323,6 @@
                 return '"' + str.replace(/"/g, '""') + '"';
             }
             return str;
-        }
-
-        function getKeyByValue(obj, value) {
-            return Object.keys(obj).find(key => obj[key] === value);
-        }
-
-        function formatDate(ts) {
-            if (!ts) return 'N/A';
-            const d = new Date(ts);
-            return d.toLocaleString();
         }
 
         // =================================================================
@@ -8444,7 +8425,6 @@
                 updateAdminCarouselClasses(1);
             }
 
-            // Throttled scroll
             track.addEventListener('scroll', throttle(() => {
                 if (isUserInteracting) {
                     const containerWidth = track.clientWidth;
@@ -9147,11 +9127,6 @@
         document.getElementById('closeCopyVideoModal').addEventListener('click', () => {
             document.getElementById('copyVideoModal').classList.remove('open');
         });
-        document.getElementById('copyVideoModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                document.getElementById('copyVideoModal').classList.remove('open');
-            }
-        });
 
         document.getElementById('confirmCopyVideoBtn').addEventListener('click', async function() {
             const sourceId = document.getElementById('copyVideoSourceId').value;
@@ -9230,12 +9205,6 @@
         document.getElementById('cancelCourseEditBtn').addEventListener('click', () => {
             document.getElementById('courseEditModal').classList.remove('open');
             pendingEditCourseId = null;
-        });
-        document.getElementById('courseEditModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                document.getElementById('courseEditModal').classList.remove('open');
-                pendingEditCourseId = null;
-            }
         });
         document.getElementById('editCoursePriceType').addEventListener('change', function() {
             document.getElementById('editCoursePrice').style.display = this.value === 'paid' ? 'inline-block' :
@@ -9356,42 +9325,14 @@
             `;
 
             if (doc.docUrl) {
-                const fileExtension = doc.docUrl.split('.').pop().split('?')[0].toLowerCase();
-                const fileExt = fileExtension || '';
-                const isWord = ['doc', 'docx'].includes(fileExt);
-                const isExcel = ['xls', 'xlsx', 'csv'].includes(fileExt);
-                const isPdf = ['pdf'].includes(fileExt);
-                const isPowerpoint = ['ppt', 'pptx'].includes(fileExt);
-                let fileTypeLabel = fileExt.toUpperCase();
-                if (isWord) fileTypeLabel = '📝 Word';
-                else if (isExcel) fileTypeLabel = '📊 Excel';
-                else if (isPdf) fileTypeLabel = '📄 PDF';
-                else if (isPowerpoint) fileTypeLabel = '📊 PowerPoint';
-                else fileTypeLabel = '📎 File';
-
                 const googleViewerUrl =
                     `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(doc.docUrl)}`;
-
-                html += `<div class="doc-viewer-toolbar">
-                    <span class="file-badge"><i class="fas fa-file"></i> ${fileTypeLabel}</span>
-                    <span style="font-size:11px;color:#8b8fa3;flex:1;">${escapeHtml(doc.title)}</span>
-                    <a href="${doc.docUrl}" target="_blank" class="btn-download"><i class="fas fa-external-link-alt"></i> Open</a>
-                    <a href="${doc.docUrl}" download class="btn-download" style="background:#2ecc71;"><i class="fas fa-download"></i> Download</a>
-                </div>`;
-
                 html += `
                     <iframe src="${googleViewerUrl}" style="width:100%;min-height:500px;border:none;border-radius:14px;background:#f5f6f8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></iframe>
                     <div class="doc-viewer-fallback" style="display:none;">
                         <i class="fas fa-info-circle"></i> 
                         The document could not load directly. <a href="${doc.docUrl}" target="_blank">Click here to open it</a> 
                         or <a href="${doc.docUrl}" download>download it</a>.
-                    </div>
-                `;
-                html += `
-                    <div style="margin-top:8px;padding:8px 14px;background:#f0f4ff;border-radius:30px;font-size:10px;color:#4a5c7a;border:1px solid #d0dce8;text-align:center;">
-                        <i class="fas fa-info-circle"></i> 
-                        If the document doesn't load, <a href="${doc.docUrl}" target="_blank" style="color:#d4952a;font-weight:600;">open it directly</a> 
-                        or <a href="${doc.docUrl}" download style="color:#2ecc71;font-weight:600;">download</a> it.
                     </div>
                 `;
             } else if (doc.content) {
@@ -9552,7 +9493,7 @@
                         okClass: 'btn-confirm-success'
                     });
                     if (!confirmed) return;
-                    setLoadingForAction('approveTx', true, 'approve-btn');
+                    setLoading('approveTx', true, '.approve-btn');
                     try {
                         let txData = null;
                         let durationType = 'lifetime';
@@ -9645,7 +9586,7 @@
                         });
                         showToast('Approved!', 'success');
                     } catch (err) { showToast('Error approving: ' + err.message, 'error'); } finally {
-                        setLoadingForAction('approveTx', false, 'approve-btn');
+                        setLoading('approveTx', false, '.approve-btn');
                     }
                 });
             });
@@ -9664,7 +9605,7 @@
                         okClass: 'btn-confirm-danger'
                     });
                     if (!confirmed) return;
-                    setLoadingForAction('rejectTx', true, 'reject-btn');
+                    setLoading('rejectTx', true, '.reject-btn');
                     try {
                         if (source === 'pendingPurchases') {
                             await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'rejected',
@@ -9678,7 +9619,7 @@
                         });
                         showToast('Transaction rejected', 'info');
                     } catch (err) { showToast('Error rejecting', 'error'); } finally {
-                        setLoadingForAction('rejectTx', false, 'reject-btn');
+                        setLoading('rejectTx', false, '.reject-btn');
                     }
                 });
             });
@@ -10141,30 +10082,16 @@
             const hamburger = document.getElementById('hamburgerBtn');
             const sidebarClose = document.getElementById('leftSidebarClose');
 
-            let sidebarOpenTimeout = null;
-
             function openSidebar() {
-                if (sidebarOpenTimeout) {
-                    clearTimeout(sidebarOpenTimeout);
-                    sidebarOpenTimeout = null;
-                }
-                requestAnimationFrame(() => {
-                    sidebarOverlay.classList.add('open');
-                    sidebar.classList.add('open');
-                    document.body.style.overflow = 'hidden';
-                });
+                sidebarOverlay.classList.add('open');
+                sidebar.classList.add('open');
+                document.body.style.overflow = 'hidden';
             }
 
             function closeSidebar() {
-                if (sidebarOpenTimeout) {
-                    clearTimeout(sidebarOpenTimeout);
-                    sidebarOpenTimeout = null;
-                }
-                requestAnimationFrame(() => {
-                    sidebarOverlay.classList.remove('open');
-                    sidebar.classList.remove('open');
-                    document.body.style.overflow = '';
-                });
+                sidebarOverlay.classList.remove('open');
+                sidebar.classList.remove('open');
+                document.body.style.overflow = '';
             }
 
             hamburger.addEventListener('click', openSidebar);
@@ -10232,25 +10159,19 @@
 
             notifBell.addEventListener('click', (e) => {
                 e.stopPropagation();
-                requestAnimationFrame(() => {
-                    notifOverlay.classList.add('open');
-                    notifSidebar.classList.add('open');
-                    renderNotificationsSidebar();
-                });
+                notifOverlay.classList.add('open');
+                notifSidebar.classList.add('open');
+                renderNotificationsSidebar();
             });
 
             notifClose.addEventListener('click', () => {
-                requestAnimationFrame(() => {
-                    notifOverlay.classList.remove('open');
-                    notifSidebar.classList.remove('open');
-                });
+                notifOverlay.classList.remove('open');
+                notifSidebar.classList.remove('open');
             });
 
             notifOverlay.addEventListener('click', () => {
-                requestAnimationFrame(() => {
-                    notifOverlay.classList.remove('open');
-                    notifSidebar.classList.remove('open');
-                });
+                notifOverlay.classList.remove('open');
+                notifSidebar.classList.remove('open');
             });
 
             document.getElementById('backFromDocBtn').addEventListener('click', () => {
@@ -10379,7 +10300,7 @@
                 }
             });
             document.getElementById('addCourseBtn').addEventListener('click', async () => {
-                setLoadingForAction('addCourse', true, 'addCourseBtn');
+                setLoading('addCourse', true, '#addCourseBtn');
                 const name = document.getElementById('newCourseName').value.trim();
                 const priceType = document.getElementById('newCoursePriceType').value;
                 const price = priceType === 'free' ? 0 : parseFloat(document.getElementById('newCoursePrice')
@@ -10398,21 +10319,21 @@
                     document.getElementById('newCourseRemoveImageBtn').style.display = 'none';
                     showToast('Course added!', 'success');
                 }
-                setLoadingForAction('addCourse', false, 'addCourseBtn');
+                setLoading('addCourse', false, '#addCourseBtn');
             });
             document.getElementById('newCoursePriceType').addEventListener('change', e => {
                 document.getElementById('newCoursePrice').style.display = e.target.value === 'paid' ?
                     'inline-block' : 'none';
             });
             document.getElementById('savePaymentNumbersBtn').addEventListener('click', async () => {
-                setLoadingForAction('saveSettings', true, 'savePaymentNumbersBtn');
+                setLoading('saveSettings', true, '#savePaymentNumbersBtn');
                 const mtn = document.getElementById('mtnNumberInput').value.trim();
                 const airtel = document.getElementById('airtelNumberInput').value.trim();
                 const method = document.getElementById('paymentMethodSelect').value;
                 await set(paymentSettingsRef, { mtnNumber: mtn, airtelNumber: airtel,
                     paymentMethod: method });
                 showToast('Payment numbers saved!', 'success');
-                setLoadingForAction('saveSettings', false, 'savePaymentNumbersBtn');
+                setLoading('saveSettings', false, '#savePaymentNumbersBtn');
             });
             document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
@@ -10606,7 +10527,7 @@
             // Video post form submit
             document.getElementById('homePostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                setLoadingForAction('publishVideo', true, 'homePostForm button[type="submit"]');
+                setLoading('publishVideo', true, '#homePostForm button[type="submit"]');
 
                 const title = document.getElementById('videoTitle').value.trim();
                 const instructor = document.getElementById('instructorName').value.trim();
@@ -10629,17 +10550,17 @@
 
                 if (!title || !instructor) {
                     showToast('Please fill in Title and Instructor.', 'error');
-                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
+                    setLoading('publishVideo', false, '#homePostForm button[type="submit"]');
                     return;
                 }
                 if (!videoUrl) {
                     showToast('Please provide a video URL or upload a video.', 'error');
-                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
+                    setLoading('publishVideo', false, '#homePostForm button[type="submit"]');
                     return;
                 }
                 if (!courseId) {
                     showToast('Please select a course.', 'error');
-                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
+                    setLoading('publishVideo', false, '#homePostForm button[type="submit"]');
                     return;
                 }
 
@@ -10684,14 +10605,14 @@
                 } catch (err) {
                     showToast('Error publishing video: ' + err.message, 'error');
                 } finally {
-                    setLoadingForAction('publishVideo', false, 'homePostForm button[type="submit"]');
+                    setLoading('publishVideo', false, '#homePostForm button[type="submit"]');
                 }
             });
 
             // Doc post form submit
             document.getElementById('docPostForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                setLoadingForAction('publishDoc', true, 'docPostForm button[type="submit"]');
+                setLoading('publishDoc', true, '#docPostForm button[type="submit"]');
 
                 const title = document.getElementById('docTitle').value.trim();
                 const instructor = document.getElementById('docInstructor').value.trim();
@@ -10707,33 +10628,33 @@
                     content = document.getElementById('docContentHidden').value || '';
                     if (!content) {
                         showToast('Please write some content or open the editor.', 'error');
-                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                        setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                         return;
                     }
                 } else if (sourceType === 'upload') {
                     docUrl = document.getElementById('cloudinaryDocUrl').value.trim();
                     if (!docUrl) {
                         showToast('Please upload a document.', 'error');
-                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                        setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                         return;
                     }
                 } else if (sourceType === 'link') {
                     docUrl = document.getElementById('docLinkInput').value.trim();
                     if (!docUrl) {
                         showToast('Please paste a document link.', 'error');
-                        setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                        setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                         return;
                     }
                 }
 
                 if (!title || !instructor) {
                     showToast('Please fill in Title and Instructor.', 'error');
-                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                    setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                     return;
                 }
                 if (!courseId) {
                     showToast('Please select a course.', 'error');
-                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                    setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                     return;
                 }
 
@@ -10775,7 +10696,7 @@
                 } catch (err) {
                     showToast('Error publishing document: ' + err.message, 'error');
                 } finally {
-                    setLoadingForAction('publishDoc', false, 'docPostForm button[type="submit"]');
+                    setLoading('publishDoc', false, '#docPostForm button[type="submit"]');
                 }
             });
 
@@ -10848,7 +10769,6 @@
                 if (pendingTxs.length === 0) pendingPopupShown = false;
                 return;
             }
-            // Pick the first pending transaction
             const tx = pendingTxs[0];
             const userName = tx.userName || 'User';
             const itemTitle = tx.itemTitle || 'Item';
@@ -10865,27 +10785,23 @@
             pendingPopupData = tx;
             pendingPopupShown = true;
 
-            // Auto-hide after 15s
             clearTimeout(popup._hideTimer);
             popup._hideTimer = setTimeout(() => {
                 popup.classList.remove('show');
                 pendingPopupShown = false;
             }, 15000);
 
-            // Click to go to account
             popup.onclick = function(e) {
                 if (e.target.closest('.popup-close-btn')) return;
                 popup.classList.remove('show');
                 pendingPopupShown = false;
                 showSection('account');
-                // Highlight the pending filter
                 document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
                 document.querySelector('.filter-pill[data-filter="pending"]')?.classList.add('active');
                 currentTxFilter = 'pending';
                 applyTransactionFilter();
             };
 
-            // Close button
             document.getElementById('pendingPopupClose').onclick = function(e) {
                 e.stopPropagation();
                 popup.classList.remove('show');
@@ -10970,10 +10886,8 @@
 
             if (!coverStep || !detailsStep || !questionsStep) return;
 
-            // Step 1 → Step 2
             if (nextToDetailsBtn) {
                 nextToDetailsBtn.addEventListener('click', function() {
-                    // Save draft before moving
                     saveAssessmentDraft(type);
                     coverStep.style.display = 'none';
                     detailsStep.style.display = 'block';
@@ -10984,10 +10898,8 @@
                 });
             }
 
-            // Step 2 → Step 3
             if (nextToQuestionsBtn) {
                 nextToQuestionsBtn.addEventListener('click', function() {
-                    // Validate details
                     const name = document.getElementById(`${type}Name`).value.trim();
                     const durHoursEl = document.getElementById(`${type}DurationHours`);
                     const durMinsEl = document.getElementById(`${type}DurationMinutes`);
@@ -11034,7 +10946,6 @@
                         const price = parseFloat(document.getElementById(`${type}Price`).value);
                         if (!price || price <= 0) { showToast('Please enter a valid price.', 'error'); return; }
                     }
-                    // Save draft
                     saveAssessmentDraft(type);
                     detailsStep.style.display = 'none';
                     questionsStep.style.display = 'block';
@@ -11045,7 +10956,6 @@
                 });
             }
 
-            // Back from details to cover
             if (backFromDetailsBtn) {
                 backFromDetailsBtn.addEventListener('click', function() {
                     saveAssessmentDraft(type);
@@ -11058,7 +10968,6 @@
                 });
             }
 
-            // Back from questions to details
             if (backToDetailsBtn) {
                 backToDetailsBtn.addEventListener('click', function() {
                     saveAssessmentDraft(type);
@@ -11071,7 +10980,6 @@
                 });
             }
 
-            // Preview cover (step 1 only)
             if (previewCoverBtn) {
                 previewCoverBtn.addEventListener('click', function() {
                     const coverData = collectCoverData(type);
@@ -11085,7 +10993,6 @@
                 });
             }
 
-            // Preview full (all 3 pages)
             if (previewFullBtn) {
                 previewFullBtn.addEventListener('click', function() {
                     const fullData = collectFullAssessmentData(type);
@@ -11139,7 +11046,6 @@
                 });
             }
 
-            // Schedule radios (only for non-assignment)
             if (type !== 'assignment') {
                 const scheduleRadios = document.querySelectorAll(`input[name="${type}Schedule"]`);
                 const fixedDiv = document.getElementById(`${type}FixedSchedule`);
@@ -11241,7 +11147,6 @@
                 showToast('Draft saved!', 'success');
             });
 
-            // Load draft if exists
             loadAssessmentDraft(type);
         }
 
@@ -11269,7 +11174,6 @@
                 const data = snap.val();
                 if (!data) return;
 
-                // Populate cover step
                 const coverUrl = data.coverUrl || '';
                 document.getElementById(`${type}CoverUrl`).value = coverUrl;
                 if (coverUrl) {
@@ -11293,7 +11197,6 @@
                     }
                 }
 
-                // Populate details
                 document.getElementById(`${type}Name`).value = data.name || '';
                 if (data.duration) {
                     const parts = data.duration.split(':');
@@ -11361,7 +11264,6 @@
                     document.getElementById(`${type}LogoRemoveBtn`).style.display = 'inline-flex';
                 }
 
-                // Populate questions/sections
                 if (type === 'quiz') {
                     const container = document.getElementById('quizQuestionsContainer');
                     container.innerHTML = '';
@@ -11584,7 +11486,6 @@
                     else if (type === 'assignment') updateAssignmentQuestionNumbers();
                 }
 
-                // Go to step 2 or 3 if draft has data
                 if (data.name || data.registerId) {
                     coverStep.style.display = 'none';
                     detailsStep.style.display = 'block';
@@ -11620,7 +11521,6 @@
             const target = sectionMap[type];
             if (!target) { showToast('Unknown assessment type.', 'error'); return; }
             showSection(target);
-            // Populate the form
             setTimeout(() => {
                 populateAssessmentForm(type);
                 showToast(`Editing "${ass.name}"`, 'info');
@@ -11628,7 +11528,7 @@
         };
 
         window.duplicateAssessment = async function(assessmentId) {
-            setLoadingForAction('duplicateAssessment', true, 'duplicateAssessment');
+            setLoading('duplicateAssessment', true, null);
             const ass = assessments.find(a => a.id === assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             const confirmed = await showConfirmPopup({
@@ -11639,7 +11539,7 @@
                 okText: 'Duplicate',
                 okClass: 'btn-confirm'
             });
-            if (!confirmed) { setLoadingForAction('duplicateAssessment', false, 'duplicateAssessment'); return; }
+            if (!confirmed) { setLoading('duplicateAssessment', false, null); return; }
 
             try {
                 const newRef = push(assessmentsRef);
@@ -11650,7 +11550,10 @@
                     createdAt: serverTimestamp(),
                     status: 'draft',
                     scheduledPublishTime: null,
-                    publishImmediately: false
+                    publishImmediately: false,
+                    isEdited: false,
+                    editedVersion: false,
+                    originalId: id
                 };
                 await set(newRef, newAss);
                 showToast(`Assessment "${ass.name}" duplicated as draft!`, 'success');
@@ -11663,7 +11566,7 @@
             } catch (err) {
                 showToast('Error duplicating: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('duplicateAssessment', false, 'duplicateAssessment');
+                setLoading('duplicateAssessment', false, null);
             }
         };
 
@@ -11908,6 +11811,10 @@
                 status = 'scheduled';
             }
 
+            // Check if editing an existing assessment
+            const isEditing = !!editingAssessmentId;
+            const originalAss = isEditing ? assessments.find(a => a.id === editingAssessmentId) : null;
+
             return {
                 type: type,
                 name: coverData.name,
@@ -11934,7 +11841,10 @@
                 sections: sections,
                 questions: questions,
                 totalMarks: totalMarks,
-                status: status
+                status: status,
+                isEdited: isEditing,
+                editedVersion: isEditing ? true : false,
+                originalId: isEditing ? originalAss?.originalId || editingAssessmentId : null
             };
         }
 
@@ -12033,6 +11943,8 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                         <span style="background:linear-gradient(135deg,#d4952a,#f5b042);color:#fff;padding:2px 14px;border-radius:30px;font-size:10px;font-weight:700;">📋 PAGE 2 — DETAILS</span>
                         <span style="font-size:18px;font-weight:800;color:var(--text);">${escapeHtml(data.name)}</span>
+                        ${data.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                        ${data.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                     </div>
                     <div class="details-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:13px;color:#5f6377;max-width:100%;">
                         <div><span class="label" style="font-weight:600;color:#1a1d28;">Duration:</span> ${data.duration ? data.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
@@ -12596,7 +12508,7 @@
 
             document.getElementById('promoPicUploadForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                setLoadingForAction('promoUpload', true, 'promoPicUploadForm .btn-primary[type="submit"]');
+                setLoading('promoUpload', true, '#promoPicUploadForm .btn-primary[type="submit"]');
 
                 const imageUrl = document.getElementById('promoPicImageUrl').value;
                 const text = document.getElementById('promoPicText').value.trim();
@@ -12605,12 +12517,12 @@
 
                 if (!imageUrl) {
                     showToast('Please upload a media file first.', 'error');
-                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
+                    setLoading('promoUpload', false, '#promoPicUploadForm .btn-primary[type="submit"]');
                     return;
                 }
                 if (!text) {
                     showToast('Please enter overlay text.', 'error');
-                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
+                    setLoading('promoUpload', false, '#promoPicUploadForm .btn-primary[type="submit"]');
                     return;
                 }
 
@@ -12644,7 +12556,7 @@
                 } catch (err) {
                     showToast('Error: ' + err.message, 'error');
                 } finally {
-                    setLoadingForAction('promoUpload', false, 'promoPicUploadForm .btn-primary[type="submit"]');
+                    setLoading('promoUpload', false, '#promoPicUploadForm .btn-primary[type="submit"]');
                 }
             });
         }
@@ -12874,7 +12786,7 @@
 
             document.getElementById('popupNotificationForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                setLoadingForAction('sendPopup', true, 'popupNotificationForm .btn-submit');
+                setLoading('sendPopup', true, '#popupNotificationForm .btn-submit');
 
                 const recipientType = document.getElementById('composeRecipientType').value;
                 let userIds = [];
@@ -12885,7 +12797,7 @@
                     userIds = idsJson ? JSON.parse(idsJson) : [];
                     if (userIds.length === 0) {
                         showToast('No users selected.', 'error');
-                        setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
+                        setLoading('sendPopup', false, '#popupNotificationForm .btn-submit');
                         return;
                     }
                 }
@@ -12894,7 +12806,7 @@
                 const message = document.getElementById('popupMessage').value.trim();
                 if (!message) {
                     showToast('Please enter a message.', 'error');
-                    setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
+                    setLoading('sendPopup', false, '#popupNotificationForm .btn-submit');
                     return;
                 }
                 const mediaUrl = document.getElementById('popupMediaUrl').value || '';
@@ -12935,7 +12847,7 @@
                     showToast('Error sending popup: ' + err.message, 'error');
                 } finally {
                     progressEl.style.display = 'none';
-                    setLoadingForAction('sendPopup', false, 'popupNotificationForm .btn-submit');
+                    setLoading('sendPopup', false, '#popupNotificationForm .btn-submit');
                 }
             });
         }
@@ -13274,7 +13186,7 @@
             });
 
             onValue(coursesRef, snap => {
-                courses = snap.val() ? Object.entries(coursesRef).map(([id, d]) => ({ id, ...d })) : [];
+                courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 updateCourseSelects();
                 scheduleRender('home');
                 scheduleRender('courses');
@@ -13282,20 +13194,20 @@
             });
 
             onValue(subfoldersRef, snap => {
-                subfolders = snap.val() ? Object.entries(subfoldersRef).map(([id, d]) => ({ id, ...d })) : [];
+                subfolders = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 scheduleRender('home');
                 scheduleRender('courses');
                 updateSubfolderSelects();
             });
 
             onValue(docsRef, snap => {
-                docs = snap.val() ? Object.entries(docsRef).map(([id, d]) => ({ id, ...d })) : [];
+                docs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 scheduleRender('docs');
                 scheduleRender('courses');
             });
 
             onValue(notificationsRef, snap => {
-                notifications = snap.val() ? Object.values(notificationsRef) : [];
+                notifications = snap.val() ? Object.values(snap.val()) : [];
                 updateNotifBadge();
                 renderNotificationsSidebar();
             });
@@ -13338,7 +13250,6 @@
                 allTransactions = Array.from(seen.values());
                 scheduleRender('home');
                 scheduleRender('account');
-                // Check for pending popup after transactions update
                 checkAndShowPendingPopup();
             };
             onValue(transactionsRef, fetchTransactions);
@@ -13550,18 +13461,18 @@
 
         async function handleRegisterSubmit(e) {
             e.preventDefault();
-            setLoadingForAction('createRegister', true, 'createRegisterForm button[type="submit"]');
+            setLoading('createRegister', true, '#createRegisterForm button[type="submit"]');
 
             const name = document.getElementById('regName').value.trim();
             const lecture = document.getElementById('regLecture').value.trim();
             if (!name || !lecture) {
                 showToast('Register name and lecture are required.', 'error');
-                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+                setLoading('createRegister', false, '#createRegisterForm button[type="submit"]');
                 return;
             }
             if (!window._regMembers || window._regMembers.length === 0) {
                 showToast('Please add at least one member.', 'error');
-                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+                setLoading('createRegister', false, '#createRegisterForm button[type="submit"]');
                 return;
             }
             const memberIds = window._regMembers.map(m => m.uid);
@@ -13585,7 +13496,7 @@
             } catch (err) {
                 showToast('Error creating register: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('createRegister', false, 'createRegisterForm button[type="submit"]');
+                setLoading('createRegister', false, '#createRegisterForm button[type="submit"]');
             }
         }
 
@@ -13653,12 +13564,12 @@
                 showToast('Please fill in all required fields.', 'error');
                 return;
             }
-            setLoadingForAction('createTest', true, 'createTestForm button[type="submit"]');
+            setLoading('createTest', true, '#createTestForm button[type="submit"]');
 
             const sections = data.sections || [];
             if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
                 showToast('Please add at least one question.', 'error');
-                setLoadingForAction('createTest', false, 'createTestForm button[type="submit"]');
+                setLoading('createTest', false, '#createTestForm button[type="submit"]');
                 return;
             }
 
@@ -13688,7 +13599,11 @@
                     passingScore: data.passingScore,
                     status: data.status || 'draft',
                     createdAt: serverTimestamp(),
-                    totalMarks: data.totalMarks
+                    totalMarks: data.totalMarks,
+                    isEdited: !!editingAssessmentId,
+                    editedVersion: !!editingAssessmentId,
+                    originalId: editingAssessmentId || null,
+                    editedAt: editingAssessmentId ? serverTimestamp() : null
                 };
                 if (editingAssessmentId) {
                     await update(assRef, payload);
@@ -13704,7 +13619,7 @@
             } catch (err) {
                 showToast('Error saving test: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('createTest', false, 'createTestForm button[type="submit"]');
+                setLoading('createTest', false, '#createTestForm button[type="submit"]');
             }
         }
 
@@ -13715,12 +13630,12 @@
                 showToast('Please fill in all required fields.', 'error');
                 return;
             }
-            setLoadingForAction('createQuiz', true, 'createQuizForm button[type="submit"]');
+            setLoading('createQuiz', true, '#createQuizForm button[type="submit"]');
 
             const questions = data.questions || [];
             if (questions.length === 0) {
                 showToast('Please add at least one question.', 'error');
-                setLoadingForAction('createQuiz', false, 'createQuizForm button[type="submit"]');
+                setLoading('createQuiz', false, '#createQuizForm button[type="submit"]');
                 return;
             }
 
@@ -13750,7 +13665,11 @@
                     passingScore: data.passingScore,
                     status: data.status || 'draft',
                     createdAt: serverTimestamp(),
-                    totalMarks: data.totalMarks
+                    totalMarks: data.totalMarks,
+                    isEdited: !!editingAssessmentId,
+                    editedVersion: !!editingAssessmentId,
+                    originalId: editingAssessmentId || null,
+                    editedAt: editingAssessmentId ? serverTimestamp() : null
                 };
                 if (editingAssessmentId) {
                     await update(assRef, payload);
@@ -13766,7 +13685,7 @@
             } catch (err) {
                 showToast('Error saving quiz: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('createQuiz', false, 'createQuizForm button[type="submit"]');
+                setLoading('createQuiz', false, '#createQuizForm button[type="submit"]');
             }
         }
 
@@ -13777,12 +13696,12 @@
                 showToast('Please fill in all required fields.', 'error');
                 return;
             }
-            setLoadingForAction('createExam', true, 'createExamForm button[type="submit"]');
+            setLoading('createExam', true, '#createExamForm button[type="submit"]');
 
             const sections = data.sections || [];
             if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
                 showToast('Please add at least one question.', 'error');
-                setLoadingForAction('createExam', false, 'createExamForm button[type="submit"]');
+                setLoading('createExam', false, '#createExamForm button[type="submit"]');
                 return;
             }
 
@@ -13807,13 +13726,16 @@
                     paid: data.paid,
                     price: data.price,
                     gateway: data.gateway,
-                    partialPayment: false,
                     sections: data.sections,
                     cover: cover,
                     passingScore: data.passingScore,
                     status: data.status || 'draft',
                     createdAt: serverTimestamp(),
-                    totalMarks: data.totalMarks
+                    totalMarks: data.totalMarks,
+                    isEdited: !!editingAssessmentId,
+                    editedVersion: !!editingAssessmentId,
+                    originalId: editingAssessmentId || null,
+                    editedAt: editingAssessmentId ? serverTimestamp() : null
                 };
                 if (editingAssessmentId) {
                     await update(assRef, payload);
@@ -13829,7 +13751,7 @@
             } catch (err) {
                 showToast('Error saving exam: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('createExam', false, 'createExamForm button[type="submit"]');
+                setLoading('createExam', false, '#createExamForm button[type="submit"]');
             }
         }
 
@@ -13840,12 +13762,12 @@
                 showToast('Please fill in all required fields.', 'error');
                 return;
             }
-            setLoadingForAction('createAssignment', true, 'createAssignmentForm button[type="submit"]');
+            setLoading('createAssignment', true, '#createAssignmentForm button[type="submit"]');
 
             const sections = data.sections || [];
             if (sections.length === 0 || sections.every(s => s.questions.length === 0)) {
                 showToast('Please add at least one question.', 'error');
-                setLoadingForAction('createAssignment', false, 'createAssignmentForm button[type="submit"]');
+                setLoading('createAssignment', false, '#createAssignmentForm button[type="submit"]');
                 return;
             }
 
@@ -13871,7 +13793,11 @@
                     passingScore: data.passingScore,
                     status: data.status || 'draft',
                     createdAt: serverTimestamp(),
-                    totalMarks: data.totalMarks
+                    totalMarks: data.totalMarks,
+                    isEdited: !!editingAssessmentId,
+                    editedVersion: !!editingAssessmentId,
+                    originalId: editingAssessmentId || null,
+                    editedAt: editingAssessmentId ? serverTimestamp() : null
                 };
                 if (editingAssessmentId) {
                     await update(assRef, payload);
@@ -13887,7 +13813,7 @@
             } catch (err) {
                 showToast('Error saving assignment: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('createAssignment', false, 'createAssignmentForm button[type="submit"]');
+                setLoading('createAssignment', false, '#createAssignmentForm button[type="submit"]');
             }
         }
 
@@ -16085,6 +16011,8 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                             <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);">${escapeHtml(ass.name)}</h3>
+                            ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                            ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                             <div style="font-size:12px;color:#8b8fa3;margin-top:4px;">
                                 ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}
                                 <br>Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
@@ -16097,6 +16025,8 @@
                     <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="btn-outline" onclick="viewRegisterDetails('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-address-book"></i> View Register</button>
                         <button class="btn-outline" onclick="renderHistoryStudents('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-users"></i> View Students</button>
+                        <button class="btn-outline" onclick="editAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-pen-to-square"></i> Edit</button>
+                        <button class="btn-outline" onclick="duplicateAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-copy"></i> Duplicate</button>
                     </div>
                 </div>
             `).join('');
@@ -16192,6 +16122,8 @@
                     </div>
                 </div>
                 <h2 style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(ass.name)}</h2>
+                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                 <div style="font-size:12px;color:#8b8fa3;margin-bottom:12px;">${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
             `;
 
@@ -16325,6 +16257,8 @@
                         <h2 style="color:#1a1d28;font-size:20px;font-weight:700;margin:4px 0;">Assessment Report</h2>
                         <div style="color:#5f6377;font-size:14px;margin-top:4px;">
                             ${escapeHtml(ass.name)} · ${ass.type}
+                            ${ass.isEdited ? ' ✏️ EDITED' : ''}
+                            ${ass.editedVersion ? ' 🔄 VERSION' : ''}
                         </div>
                         <div style="color:#8b8fa3;font-size:12px;">
                             ${new Date().toLocaleString()}
@@ -16509,7 +16443,7 @@
             if (filterSel) {
                 filterSel.innerHTML = '<option value="all">All Assessments</option>' +
                     publishedAssessments.map(a =>
-                        `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`).join('');
+                        `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})${a.isEdited ? ' ✏️' : ''}${a.editedVersion ? ' 🔄' : ''}</option>`).join('');
             }
 
             let filteredAssessments = publishedAssessments;
@@ -16545,6 +16479,8 @@
                         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid rgba(240,240,245,0.5);padding-bottom:8px;margin-bottom:8px;">
                             <div>
                                 <strong style="font-size:16px;">${escapeHtml(ass.name)}</strong>
+                                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                                 <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
                             </div>
                             <div style="font-size:12px;color:#8b8fa3;">
@@ -16880,20 +16816,20 @@
 
         document.getElementById('editRegisterForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            setLoadingForAction('editRegister', true, 'editRegisterForm button[type="submit"]');
+            setLoading('editRegister', true, '#editRegisterForm button[type="submit"]');
 
             const regId = document.getElementById('editRegisterId').value;
             const name = document.getElementById('editRegName').value.trim();
             const lecture = document.getElementById('editRegLecture').value.trim();
             if (!name || !lecture) {
                 showToast('Register name and lecture are required.', 'error');
-                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
+                setLoading('editRegister', false, '#editRegisterForm button[type="submit"]');
                 return;
             }
             const members = (window._editRegMembers || []).map(m => m.uid);
             if (members.length === 0) {
                 showToast('Please add at least one member.', 'error');
-                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
+                setLoading('editRegister', false, '#editRegisterForm button[type="submit"]');
                 return;
             }
             try {
@@ -16911,7 +16847,7 @@
             } catch (err) {
                 showToast('Error updating register: ' + err.message, 'error');
             } finally {
-                setLoadingForAction('editRegister', false, 'editRegisterForm button[type="submit"]');
+                setLoading('editRegister', false, '#editRegisterForm button[type="submit"]');
             }
         });
 
@@ -16920,9 +16856,6 @@
         });
         document.getElementById('closeRegisterEditModal').addEventListener('click', function() {
             document.getElementById('registerEditModal').classList.remove('open');
-        });
-        document.getElementById('registerEditModal').addEventListener('click', function(e) {
-            if (e.target === this) this.classList.remove('open');
         });
 
         // ---- TEST REGISTER ----
@@ -16939,6 +16872,8 @@
             let html = `
                 <div class="cover-header">
                     <h1>Test Register: ${escapeHtml(ass.name)}</h1>
+                    ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                    ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                 </div>
                 <div class="cover-body">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
@@ -17021,6 +16956,8 @@
                 <div class="script-booklet">
                     <div class="cover-header" style="background:#f5b042;padding:24px 20px;border-radius:20px 20px 0 0;text-align:center;">
                         <h1 style="font-size:28px;font-weight:900;color:#1a1d28;">${escapeHtml(ass.name)}</h1>
+                        ${ass.isEdited ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#f39c12;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">✏️ EDITED</span>' : ''}
+                        ${ass.editedVersion ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#8e44ad;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">🔄 VERSION</span>' : ''}
                         <p style="font-size:14px;color:#1a1d28;margin-top:4px;">${ass.type} · ${ass.duration || 'N/A'}</p>
                         <div style="margin-top:8px;color:#1a1d28;font-size:13px;">
                             <strong>Student:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</div>
@@ -17140,7 +17077,7 @@
 
             if (manualMark) {
                 document.getElementById('saveManualMarksBtn')?.addEventListener('click', async function() {
-                    setLoadingForAction('saveMarks', true, 'saveManualMarksBtn');
+                    setLoading('saveMarks', true, '#saveManualMarksBtn');
                     const newMarks = {};
                     document.querySelectorAll('.q-marks-input').forEach(inp => {
                         const key = inp.dataset.qkey;
@@ -17160,7 +17097,7 @@
                         gradedAt: serverTimestamp()
                     });
                     showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                    setLoadingForAction('saveMarks', false, 'saveManualMarksBtn');
+                    setLoading('saveMarks', false, '#saveManualMarksBtn');
                     renderStudentScript(responseId, true);
                 });
 
@@ -17173,7 +17110,7 @@
                 });
             } else {
                 document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
-                    setLoadingForAction('saveMarks', true, 'saveScriptBtn');
+                    setLoading('saveMarks', true, '#saveScriptBtn');
                     const newMarks = {};
                     document.querySelectorAll('.q-marks-input').forEach(inp => {
                         const key = inp.dataset.qkey;
@@ -17193,7 +17130,7 @@
                         gradedAt: serverTimestamp()
                     });
                     showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                    setLoadingForAction('saveMarks', false, 'saveScriptBtn');
+                    setLoading('saveMarks', false, '#saveScriptBtn');
                     renderStudentScript(responseId);
                 });
 
@@ -17309,6 +17246,7 @@
                     .question .remark { margin-top: 4px; font-size: 12px; color: #5f6377; }
                     .footer { text-align: center; margin-top: 20px; color: #8b8fa3; font-size: 12px; border-top: 1px solid #e5e8ed; padding-top: 12px; }
                     .page-break { page-break-after: always; break-after: page; }
+                    .edited-badge { display: inline-block; background: #f39c12; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 14px; border-radius: 30px; margin-left: 6px; }
                 </style>
             </head>
             <body>
@@ -17324,6 +17262,8 @@
                     <div class="cover-body">
                         <div class="assessment-type">${ass.type.toUpperCase()}</div>
                         <div class="assessment-name">${escapeHtml(ass.name)}</div>
+                        ${ass.isEdited ? '<span class="edited-badge">✏️ EDITED</span>' : ''}
+                        ${ass.editedVersion ? '<span class="edited-badge">🔄 VERSION</span>' : ''}
                         <div class="details-grid">
                             <div><span class="label">Duration:</span> ${ass.duration ? ass.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
                             <div><span class="label">Passing Score:</span> ${ass.passingScore || 0}%</div>
@@ -17477,6 +17417,8 @@
                         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
                             <div>
                                 <strong style="font-size:14px;">${escapeHtml(ass.name)}</strong>
+                                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                                 <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
                                 <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Register: ${escapeHtml(registerName)}</span>
                                 ${scheduledBadge}
@@ -17571,7 +17513,7 @@
             titleEl.textContent = `Preview: ${escapeHtml(ass.name)} (${ass.type})`;
             let html = `
                 <div style="margin-bottom:12px;padding:8px 12px;background:rgba(245,176,66,0.08);border-radius:8px;border-left:4px solid var(--gold);">
-                    <div style="font-size:13px;font-weight:600;">${escapeHtml(ass.name)}</div>
+                    <div style="font-size:13px;font-weight:600;">${escapeHtml(ass.name)} ${ass.isEdited ? '✏️' : ''} ${ass.editedVersion ? '🔄' : ''}</div>
                     <div style="font-size:11px;color:#8b8fa3;">Type: ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</div>
                     ${ass.cover && ass.cover.instructions ? `<div style="font-size:12px;margin-top:4px;color:var(--text-secondary);">${escapeHtml(ass.cover.instructions)}</div>` : ''}
                     ${ass.deadline ? `<div style="font-size:11px;color:#8b8fa3;">Deadline: ${new Date(ass.deadline).toLocaleString()}</div>` : ''}
@@ -17740,14 +17682,12 @@
         window.previewAssessment = previewAssessment;
         window.publishAssessment = publishAssessment;
         window.publishAssessmentNow = publishAssessmentNow;
-        window.exportAssessmentResults = exportAssessmentResults;
-        window.openAssessmentEditModal = openAssessmentEditModal;
         window.viewRegisterDetails = viewRegisterDetails;
         window.showConfirmPopup = showConfirmPopup;
 
         setupRealtime();
 
-        console.log('✅ UTOM Admin — Full real-time with auto-publish scheduling, draft saving, edit/duplicate, Apple UI.');
+        console.log('✅ UTOM Admin — Fully optimized with real-time updates, edited badges, and version tracking.');
     </script>
 </body>
 </html>
