@@ -5258,6 +5258,18 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             object-fit: contain;
         }
+
+        /* custom styles for range answer correct display */
+        .q-correct-range {
+            font-size: 0.85rem;
+            color: var(--green);
+            font-weight: 600;
+            margin-top: 4px;
+            padding: 4px 12px;
+            background: #e8f5e9;
+            border-radius: 30px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -5946,6 +5958,59 @@
             }
         }
 
+        // ---- REVOKE ACCESS AND DELETE OFFLINE VIDEOS WHEN APPROVED PURCHASE IS REMOVED ----
+        function listenForApprovedPurchaseRemovals(uid) {
+            const approvedRef = ref(db, `approvedPurchases/${uid}`);
+            let previousData = {};
+            onValue(approvedRef, (snap) => {
+                const currentData = snap.val() || {};
+                // Find items that were removed
+                for (const [courseId, data] of Object.entries(previousData)) {
+                    if (!currentData[courseId]) {
+                        // This course was removed from approved purchases
+                        const course = allCourses.find(c => c.id === courseId);
+                        const courseName = course ? course.name : 'a course';
+                        // Revoke access: remove from approvedCourses set and delete offline videos
+                        approvedCourses.delete(courseId);
+                        delete approvedCoursesData[courseId];
+                        // Delete all offline videos for this course
+                        const courseVideos = allVideos.filter(v => v.courseId === courseId);
+                        for (const video of courseVideos) {
+                            if (offlineVideos.has(video.id)) {
+                                deleteOfflineVideo(video.id);
+                            }
+                        }
+                        addNotification('danger', `Your access to "${courseName}" has been revoked by admin. Offline videos have been deleted.`);
+                        // Refresh UI
+                        renderAllCourses();
+                        renderMyLearn();
+                        renderOfflinePage();
+                    }
+                }
+                previousData = currentData;
+                // Also update approvedCourses set and data (for new approvals)
+                approvedCourses.clear();
+                approvedCoursesData = {};
+                if (currentData) {
+                    Object.keys(currentData).forEach(id => {
+                        approvedCourses.add(id);
+                        approvedCoursesData[id] = {
+                            expiresAt: currentData[id].expiresAt || null,
+                            durationType: currentData[id].durationType || 'lifetime',
+                            durationValue: currentData[id].durationValue || 0,
+                            amount: currentData[id].amount || 0,
+                            title: currentData[id].itemTitle || 'Assessment'
+                        };
+                    });
+                }
+                renderAllCourses();
+                renderMyLearn();
+                if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
+                    renderTransactionHistory();
+                }
+            });
+        }
+
         const videoThumbnailCache = {};
 
         function captureVideoFrame(url) {
@@ -6021,6 +6086,8 @@
                     loadRegistersAndAssessments(user.uid)
                 ];
                 await Promise.all(dataPromises);
+                // Listen for approved purchase removals
+                listenForApprovedPurchaseRemovals(user.uid);
                 document.getElementById('appLoader').classList.add('hidden');
                 setupUI();
                 handleHashChange();
@@ -8145,7 +8212,6 @@
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
-        // ----- MODIFIED: downloadVideoForOffline (no device download) -----
         async function downloadVideoForOffline(video) {
             if (!isDownloadableVideo(video)) {
                 addNotification('warning', 'This video cannot be saved for offline viewing.');
@@ -9026,6 +9092,7 @@
             modal.classList.add('open');
         }
 
+        // ---- MODIFIED: renderAssessmentTake (range grading in submit) ----
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
@@ -9674,6 +9741,7 @@
             await submitAssessment();
         }
 
+        // ---- MODIFIED: submitAssessment with range handling ----
         async function submitAssessment() {
             if (!currentAssessmentTaking) return;
             const { assessment, responseId } = currentAssessmentTaking;
@@ -9774,6 +9842,19 @@
                             isAuto = false;
                             mark = 0;
                         }
+                    } else if (q.type === 'range') {
+                        // ---- AUTO-MARK RANGE ----
+                        isAuto = true;
+                        totalAutoMarks += q.marks;
+                        const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
+                        const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
+                        const studentAnswer = parseFloat(answer);
+                        if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
+                            mark = q.marks;
+                            autoScore += q.marks;
+                        } else {
+                            mark = 0;
+                        }
                     }
                     marks[qKey] = mark;
                     if (!isAuto) {
@@ -9805,6 +9886,7 @@
             }
         }
 
+        // ---- MODIFIED: renderAssessmentHistory (nothing changed, but keep) ----
         function renderAssessmentHistory() {
             const container = document.getElementById('assessmentHistoryList');
             const emptyMsg = document.getElementById('emptyHistoryMsg');
@@ -9857,6 +9939,7 @@
             });
         }
 
+        // ---- MODIFIED: viewAssessmentScriptFull, renderScriptFullPage, downloadAssessmentHTML/PNG to conditionally show correct answers ----
         window.viewAssessmentScriptFull = function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -9940,7 +10023,7 @@
                 }
                 const scratch = scratchData[qKey] || null;
                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer';
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
                 const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options.map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
                 let correctDisplay = '';
@@ -9952,6 +10035,10 @@
                     } else {
                         correctDisplay = correctAnswer;
                     }
+                }
+                // For range, show min-max
+                if (q.type === 'range' && canShowAnswers) {
+                    correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
                 }
 
                 html += `
@@ -10018,6 +10105,7 @@
             document.getElementById('downloadSpinnerOverlay').classList.remove('open');
         }
 
+        // ---- MODIFIED: downloadAssessmentHTML with correct answers condition ----
         window.downloadAssessmentHTML = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -10047,6 +10135,13 @@
             const institutionName = ass.cover?.institutionName || 'Institution';
             const instructions = ass.cover?.instructions || '';
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
+
+            const now = Date.now();
+            const deadline = ass.deadline ? new Date(ass.deadline).getTime() : null;
+            const isPastDue = deadline ? now > deadline : false;
+            const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
+            const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
+            const canShowAnswers = (isPastDue || isPastAvailability) && (ass.type === 'exam' || ass.type === 'test' || ass.type === 'quiz');
 
             const chunkSize = 5;
             const pages = [];
@@ -10165,29 +10260,30 @@
                                 }
                                 const scratch = scratchData[qKey] || null;
                                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-                                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer';
+                                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                                // Correct answer display logic
                                 const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options.map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
                                 let correctDisplay = '';
-                                if (correctAnswer !== null) {
-                                    if (Array.isArray(correctAnswer)) {
-                                        correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
-                                    } else if (typeof correctAnswer === 'number') {
-                                        correctDisplay = q.options[correctAnswer] || 'N/A';
-                                    } else {
-                                        correctDisplay = correctAnswer;
+                                if (canShowAnswers) {
+                                    if (q.type === 'range') {
+                                        correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
+                                    } else if (correctAnswer !== null) {
+                                        if (Array.isArray(correctAnswer)) {
+                                            correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
+                                        } else if (typeof correctAnswer === 'number') {
+                                            correctDisplay = q.options[correctAnswer] || 'N/A';
+                                        } else {
+                                            correctDisplay = correctAnswer;
+                                        }
                                     }
                                 }
-                                const now2 = Date.now();
-                                const deadline2 = ass.deadline ? new Date(ass.deadline).getTime() : null;
-                                const availabilityEnd2 = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
-                                const canShowAnswers2 = (deadline2 ? now2 > deadline2 : false) || (availabilityEnd2 ? now2 > availabilityEnd2 : false);
                                 return `
                                     <div class="question-block" style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
                                         <div class="q-number">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
                                         <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtml(answerDisplay)}</div>
                                         <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                                        ${canShowAnswers2 && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:var(--green);"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
+                                        ${canShowAnswers && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:var(--green);"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
                                         ${scratch ? `<div class="scratch-image"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                                         ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                                     </div>
@@ -10213,6 +10309,7 @@
             hideSpinner();
         };
 
+        // ---- MODIFIED: downloadAssessmentPNG with correct answers condition ----
         window.downloadAssessmentPNG = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -10242,6 +10339,13 @@
             const institutionName = ass.cover?.institutionName || 'Institution';
             const instructions = ass.cover?.instructions || '';
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : ['No rules provided.'];
+
+            const now = Date.now();
+            const deadline = ass.deadline ? new Date(ass.deadline).getTime() : null;
+            const isPastDue = deadline ? now > deadline : false;
+            const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
+            const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
+            const canShowAnswers = (isPastDue || isPastAvailability) && (ass.type === 'exam' || ass.type === 'test' || ass.type === 'quiz');
 
             const chunkSize = 5;
             const pages = [];
@@ -10302,29 +10406,30 @@
                                 }
                                 const scratch = scratchData[qKey] || null;
                                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
-                                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer';
+                                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                                // Correct answer display
                                 const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options.map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
                                 let correctDisplay = '';
-                                if (correctAnswer !== null) {
-                                    if (Array.isArray(correctAnswer)) {
-                                        correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
-                                    } else if (typeof correctAnswer === 'number') {
-                                        correctDisplay = q.options[correctAnswer] || 'N/A';
-                                    } else {
-                                        correctDisplay = correctAnswer;
+                                if (canShowAnswers) {
+                                    if (q.type === 'range') {
+                                        correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
+                                    } else if (correctAnswer !== null) {
+                                        if (Array.isArray(correctAnswer)) {
+                                            correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
+                                        } else if (typeof correctAnswer === 'number') {
+                                            correctDisplay = q.options[correctAnswer] || 'N/A';
+                                        } else {
+                                            correctDisplay = correctAnswer;
+                                        }
                                     }
                                 }
-                                const now2 = Date.now();
-                                const deadline2 = ass.deadline ? new Date(ass.deadline).getTime() : null;
-                                const availabilityEnd2 = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
-                                const canShowAnswers2 = (deadline2 ? now2 > deadline2 : false) || (availabilityEnd2 ? now2 > availabilityEnd2 : false);
                                 return `
                                     <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
                                         <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
                                         <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtml(answerDisplay)}</div>
                                         <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                                        ${canShowAnswers2 && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
+                                        ${canShowAnswers && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
                                         ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:150px;object-fit:contain;" /></div>` : ''}
                                         ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                                     </div>
@@ -10719,7 +10824,7 @@
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        console.log('✅ UTOM User — Offline videos are stored only in IndexedDB; expired course videos are auto-deleted.');
+        console.log('✅ UTOM User — Updated: range auto-mark, correct answers only after deadline, revoke access on transaction deletion, offline video deletion.');
     </script>
 </body>
 </html>
