@@ -4974,6 +4974,35 @@
             border-color: #f5b042;
             color: #d4952a;
         }
+        /* ===== RANGE ANSWER SUPPORT ===== */
+        .qb-range-answer-container {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .qb-range-answer-container label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .qb-range-answer-container input {
+            width: 60px;
+            padding: 4px 8px;
+            border-radius: 30px;
+            border: 1.5px solid rgba(229, 232, 237, 0.6);
+            font-size: 11px;
+            text-align: center;
+        }
+        .qb-range-answer-container .range-dash {
+            font-weight: 700;
+            color: #d4952a;
+        }
+        .qb-range-answer-container .range-hint {
+            font-size: 9px;
+            color: #8b8fa3;
+        }
         /* ===== TEST/EXAMS POPUP ===== */
         .test-exams-popup {
             position: fixed;
@@ -6032,6 +6061,89 @@
             display: inline-block;
             margin-left: 4px;
         }
+        /* ===== Payment popup large centered ===== */
+        .payment-action-modal .modal-box {
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.97);
+        }
+        .payment-action-modal .modal-box .pay-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .payment-action-modal .modal-box .pay-actions .btn-approve {
+            min-width: 120px;
+            padding: 10px 20px;
+            font-size: 13px;
+        }
+        .payment-action-modal .modal-box .pay-actions .btn-reject {
+            min-width: 120px;
+            padding: 10px 20px;
+            font-size: 13px;
+        }
+        .payment-action-modal .modal-box .pay-actions .btn-cancel-pay {
+            background: #f5f6f8;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5f6377;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+        .payment-action-modal .modal-box .pay-actions .btn-cancel-pay:hover {
+            background: #e5e8ed;
+        }
+        .payment-action-modal .modal-box .pay-amount-big {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--gold-dark);
+            text-align: center;
+            margin: 8px 0;
+            background: rgba(245, 176, 66, 0.08);
+            padding: 6px 0;
+            border-radius: 16px;
+        }
+        .payment-action-modal .modal-box .pay-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+            font-size: 13px;
+            margin: 12px 0;
+            padding: 12px 16px;
+            background: rgba(248, 249, 252, 0.6);
+            border-radius: var(--radius-sm);
+        }
+        .payment-action-modal .modal-box .pay-info-grid .label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .payment-action-modal .modal-box .pay-info-grid .value {
+            color: var(--text);
+        }
+        body.dark-mode .payment-action-modal .modal-box .pay-actions .btn-cancel-pay {
+            background: #2a2a2a;
+            color: #aaaaaa;
+        }
+        body.dark-mode .payment-action-modal .modal-box .pay-actions .btn-cancel-pay:hover {
+            background: #333;
+        }
+        body.dark-mode .payment-action-modal .modal-box .pay-info-grid {
+            background: #1a1a1a;
+        }
+        /* ===== Logout button ===== */
+        .logout-btn-sidebar {
+            color: #e74c3c !important;
+        }
+        .logout-btn-sidebar i {
+            color: #e74c3c !important;
+        }
+        .logout-btn-sidebar:hover {
+            background: rgba(231, 76, 60, 0.08) !important;
+        }
     </style>
 </head>
 <body>
@@ -7042,6 +7154,8 @@
                                                     <option value="fillblank">Fill in the Blank</option>
                                                     <option value="ordering">Ordering</option>
                                                     <option value="short">Short Answer</option>
+                                                    <option value="multi-answer">Multiple Answers</option>
+                                                    <option value="range">Range Answer</option>
                                                 </select>
                                             </div>
                                             <div class="qb-options-container" style="margin-top:6px;">
@@ -7545,7 +7659,33 @@
             <button class="nav-link" data-section="account"><i class="fas fa-wallet"></i> <span class="nav-label">Account</span></button>
             <button class="nav-link" data-section="settings"><i class="fas fa-cog"></i> <span class="nav-label">Settings</span></button>
             <div class="divider"></div>
-            <button id="logoutBtn" class="btn-primary full"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <button id="logoutBtnSidebar" class="btn-primary full logout-btn-sidebar" style="margin-top:18px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <!-- ===== PAYMENT ACTION MODAL (Large centered) ===== -->
+    <div id="paymentActionModal" class="modal-overlay payment-action-modal">
+        <div class="modal-box">
+            <button class="close-modal" id="paymentActionClose">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-coins"></i> Payment Action</h3>
+            <div id="paymentActionContent">
+                <div style="text-align:center;padding:4px 0;">
+                    <div class="pay-amount-big" id="payActionAmount">ZMW 0</div>
+                    <div class="pay-info-grid" id="payActionInfo">
+                        <div><span class="label">User</span><div class="value" id="payActionUser">—</div></div>
+                        <div><span class="label">Email</span><div class="value" id="payActionEmail">—</div></div>
+                        <div><span class="label">Item</span><div class="value" id="payActionItem">—</div></div>
+                        <div><span class="label">Date</span><div class="value" id="payActionDate">—</div></div>
+                        <div style="grid-column:span 2;"><span class="label">Screenshot</span><div id="payActionScreenshot" style="margin-top:4px;"></div></div>
+                    </div>
+                    <div class="pay-actions">
+                        <button class="btn-approve" id="payActionApprove"><i class="fas fa-check"></i> Approve</button>
+                        <button class="btn-reject" id="payActionReject"><i class="fas fa-times"></i> Reject</button>
+                        <button class="btn-cancel-pay" id="payActionCancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -7850,14 +7990,16 @@
         </div>
     </div>
 
+    <!-- ============================================================= -->
     <!-- ===== MAIN SCRIPT ===== -->
+    <!-- ============================================================= -->
     <script type="module">
         // =================================================================
         // FIREBASE SETUP
         // =================================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp, query, orderByChild } from
+        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp } from
         "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -8361,12 +8503,19 @@
             }
             playerDiv.style.display = 'flex';
 
+            // Close button is already in the DOM, we keep it.
+            // Update views
             const viewers = video.uniqueViewers || {};
             if (!viewers[currentAdmin?.uid]) {
                 viewers[currentAdmin?.uid] = true;
                 update(ref(db, `videos/${video.id}`), { uniqueViewers: viewers, views: (video.views || 0) + 1 });
             }
         }
+
+        document.getElementById('closePlayerBtn').addEventListener('click', () => {
+            document.getElementById('persistentPlayer').style.display = 'none';
+            document.getElementById('playerEmbedContainer').innerHTML = '';
+        });
 
         // =================================================================
         // ADMIN HOME
@@ -8463,8 +8612,7 @@
                         if (realIndex > currentCarouselIndex || (realIndex === 0 && currentCarouselIndex ===
                                 carouselItems.length - 1)) {
                             carouselDirection = 1;
-                        } else if (realIndex < currentCarouselIndex || (realIndex === carouselItems.length - 1 &&
-                                currentCarouselIndex === 0)) {
+                        } else if (realIndex < currentCarouselIndex || (realIndex === carouselItems.length - 1 && currentCarouselIndex === 0)) {
                             carouselDirection = -1;
                         }
                         currentCarouselIndex = realIndex;
@@ -8614,7 +8762,7 @@
         // --- All Courses Name List ---
         function renderAdminAllCoursesNames() {
             const container = document.getElementById('adminAllCoursesNameContainer');
-            const filtered = [...courses].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const filtered = [...courses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // oldest to newest
             container.innerHTML = filtered.map(c => {
                 const subfolderCount = subfolders.filter(sf => sf.courseId === c.id).length;
                 const durationLabel = c.durationType && c.durationType !== 'lifetime' ?
@@ -8644,8 +8792,8 @@
 
         // --- Course Grids ---
         function renderAdminCourseGrids() {
-            const free = courses.filter(c => c.price === 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            const paid = courses.filter(c => c.price > 0).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const free = courses.filter(c => c.price === 0).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            const paid = courses.filter(c => c.price > 0).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
             document.getElementById('adminFreeCoursesGrid').innerHTML = free.map(c => buildAdminCourseCard(c))
                 .join('') || '<div class="empty-state">No free courses</div>';
@@ -9363,6 +9511,229 @@
             applyTransactionFilter();
         }
 
+        // ---- Payment action modal ----
+        let pendingPaymentAction = null;
+
+        function openPaymentActionModal(tx, userId, txId, source) {
+            const modal = document.getElementById('paymentActionModal');
+            const user = users.find(u => u.uid === userId);
+            document.getElementById('payActionAmount').textContent = `ZMW ${tx.amount || 0}`;
+            document.getElementById('payActionUser').textContent = tx.userName || user?.firstName + ' ' + user?.lastName || 'User';
+            document.getElementById('payActionEmail').textContent = tx.userEmail || user?.email || 'N/A';
+            document.getElementById('payActionItem').textContent = tx.itemTitle || 'Item';
+            document.getElementById('payActionDate').textContent = tx.timestamp ? new Date(tx.timestamp).toLocaleString() :
+                'N/A';
+
+            const screenshotDiv = document.getElementById('payActionScreenshot');
+            if (tx.screenshot) {
+                screenshotDiv.innerHTML =
+                    `<img src="${tx.screenshot}" alt="Screenshot" style="max-width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid rgba(238,238,238,0.6);cursor:pointer;" onclick="window.open('${tx.screenshot}','_blank')" />`;
+            } else {
+                screenshotDiv.innerHTML =
+                    `<span style="color:#e74c3c;font-weight:600;font-size:12px;"><i class="fas fa-exclamation-circle"></i> No screenshot provided</span>`;
+            }
+
+            modal.dataset.txId = txId;
+            modal.dataset.userId = userId;
+            modal.dataset.source = source;
+            modal.dataset.txData = JSON.stringify(tx);
+            modal.classList.add('open');
+            pendingPaymentAction = { tx, userId, txId, source };
+        }
+
+        document.getElementById('paymentActionClose').addEventListener('click', () => {
+            document.getElementById('paymentActionModal').classList.remove('open');
+            pendingPaymentAction = null;
+        });
+        document.getElementById('payActionCancel').addEventListener('click', () => {
+            document.getElementById('paymentActionModal').classList.remove('open');
+            pendingPaymentAction = null;
+        });
+
+        document.getElementById('payActionApprove').addEventListener('click', async function() {
+            const modal = document.getElementById('paymentActionModal');
+            const txId = modal.dataset.txId;
+            const userId = modal.dataset.userId;
+            const source = modal.dataset.source;
+            const tx = JSON.parse(modal.dataset.txData);
+            if (!txId || !userId || !tx) {
+                showToast('Transaction data missing.', 'error');
+                return;
+            }
+            const confirmed = await showConfirmPopup({
+                icon: '💳',
+                type: 'info',
+                title: 'Approve Payment?',
+                message: 'Approve payment of <strong>ZMW ' + (tx.amount || 0) + '</strong> for "<strong>' + escapeHtml(tx
+                    .itemTitle) + '</strong>"?',
+                okText: 'Approve',
+                okClass: 'btn-confirm-success'
+            });
+            if (!confirmed) return;
+            setLoading('approveTx', true, '#payActionApprove');
+
+            try {
+                let txData = null;
+                let durationType = 'lifetime';
+                let durationValue = 0;
+                const itemType = tx.itemType || 'course';
+                const itemId = tx.itemId;
+
+                if (itemType === 'course') {
+                    const courseSnap = await get(ref(db, `courses/${itemId}`));
+                    if (courseSnap.val()) {
+                        const course = courseSnap.val();
+                        durationType = course.durationType || 'lifetime';
+                        durationValue = course.durationValue || 0;
+                    }
+                } else if (['test', 'quiz', 'exam', 'assignment'].includes(itemType)) {
+                    const assSnap = await get(ref(db, `assessments/${itemId}`));
+                    if (assSnap.val()) {
+                        const ass = assSnap.val();
+                        const durParts = ass.duration ? ass.duration.split(':').map(Number) : [0, 0];
+                        durationValue = durParts[0] * 60 + durParts[1];
+                        durationType = 'minutes';
+                    }
+                }
+
+                let expiresAt = null;
+                if (durationType !== 'lifetime' && durationValue > 0) {
+                    const now = Date.now();
+                    let ms = 0;
+                    switch (durationType) {
+                        case 'minutes':
+                            ms = durationValue * 60 * 1000;
+                            break;
+                        case 'hours':
+                            ms = durationValue * 60 * 60 * 1000;
+                            break;
+                        case 'days':
+                            ms = durationValue * 24 * 60 * 60 * 1000;
+                            break;
+                        case 'weeks':
+                            ms = durationValue * 7 * 24 * 60 * 60 * 1000;
+                            break;
+                        case 'months':
+                            ms = durationValue * 30 * 24 * 60 * 60 * 1000;
+                            break;
+                        default:
+                            ms = 0;
+                    }
+                    expiresAt = now + ms;
+                }
+
+                if (source === 'pendingPurchases') {
+                    const txSnap = await get(ref(db, `pendingPurchases/${userId}/${txId}`));
+                    txData = txSnap.val();
+                    if (!txData) return showToast('Transaction not found', 'error');
+                    if (!txData.screenshot) {
+                        return showToast('Cannot approve: No screenshot provided', 'error');
+                    }
+                    await set(ref(db, `transactions/${txId}`), {
+                        ...txData,
+                        userId,
+                        status: 'approved',
+                        approvedAt: serverTimestamp(),
+                        timestamp: Date.now(),
+                        date: new Date().toLocaleString()
+                    });
+                    await remove(ref(db, `pendingPurchases/${userId}/${txId}`));
+                } else {
+                    const txSnap = await get(ref(db, `transactions/${txId}`));
+                    txData = txSnap.val();
+                    if (!txData) return showToast('Transaction not found', 'error');
+                    if (!txData.screenshot) {
+                        return showToast('Cannot approve: No screenshot provided', 'error');
+                    }
+                    await update(ref(db, `transactions/${txId}`), { status: 'approved' });
+                }
+
+                const approvalData = {
+                    approvedAt: serverTimestamp(),
+                    itemType: itemType,
+                    amount: tx.amount,
+                    itemTitle: tx.itemTitle,
+                    durationType: durationType,
+                    durationValue: durationValue
+                };
+                if (expiresAt) {
+                    approvalData.expiresAt = expiresAt;
+                }
+                await set(ref(db, `approvedPurchases/${userId}/${itemId}`), approvalData);
+                push(notificationsRef, {
+                    message: `💵 Payment of ZMW ${tx.amount} for "${tx.itemTitle}" approved${expiresAt ? ' (duration: '+durationValue+' '+durationType+')' : ''}`,
+                    timestamp: serverTimestamp()
+                });
+                showToast('Approved!', 'success');
+                modal.classList.remove('open');
+                pendingPaymentAction = null;
+
+                // Redirect to popup section with user selected
+                popupSelectedUsers.clear();
+                popupSelectedUsers.add(userId);
+                document.getElementById('popupSelectedCount').textContent = '1';
+                document.getElementById('popupUserSelectView').style.display = 'block';
+                document.getElementById('popupSelectionView').style.display = 'none';
+                document.getElementById('popupComposeView').style.display = 'none';
+                renderPopupUserList();
+                showSection('popup');
+                showToast('Payment approved! Now send a notification to the user.', 'success');
+
+            } catch (err) {
+                showToast('Error approving: ' + err.message, 'error');
+            } finally {
+                setLoading('approveTx', false, '#payActionApprove');
+            }
+        });
+
+        document.getElementById('payActionReject').addEventListener('click', async function() {
+            const modal = document.getElementById('paymentActionModal');
+            const txId = modal.dataset.txId;
+            const userId = modal.dataset.userId;
+            const source = modal.dataset.source;
+            const confirmed = await showConfirmPopup({
+                icon: '❌',
+                type: 'danger',
+                title: 'Reject Payment?',
+                message: 'Are you sure you want to reject this payment?',
+                okText: 'Reject',
+                okClass: 'btn-confirm-danger'
+            });
+            if (!confirmed) return;
+            setLoading('rejectTx', true, '#payActionReject');
+            try {
+                if (source === 'pendingPurchases') {
+                    await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'rejected',
+                        rejectedAt: serverTimestamp() });
+                } else {
+                    await update(ref(db, `transactions/${txId}`), { status: 'rejected' });
+                }
+                push(notificationsRef, {
+                    message: `❌ Payment rejected`,
+                    timestamp: serverTimestamp()
+                });
+                showToast('Transaction rejected', 'info');
+                modal.classList.remove('open');
+                pendingPaymentAction = null;
+
+                // Redirect to popup section with user selected
+                popupSelectedUsers.clear();
+                popupSelectedUsers.add(userId);
+                document.getElementById('popupSelectedCount').textContent = '1';
+                document.getElementById('popupUserSelectView').style.display = 'block';
+                document.getElementById('popupSelectionView').style.display = 'none';
+                document.getElementById('popupComposeView').style.display = 'none';
+                renderPopupUserList();
+                showSection('popup');
+                showToast('Payment rejected. Send a notification to the user.', 'info');
+
+            } catch (err) {
+                showToast('Error rejecting', 'error');
+            } finally {
+                setLoading('rejectTx', false, '#payActionReject');
+            }
+        });
+
         function applyTransactionFilter() {
             const filtered = allTransactions.filter(t => t.status === currentTxFilter);
             filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -9375,7 +9746,7 @@
                 const statusClass = tx.status || 'pending';
                 const statusLabel = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
                 return `
-                <div class="tx-card" data-txid="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}">
+                <div class="tx-card" data-txid="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}" data-tx='${JSON.stringify(tx).replace(/'/g,"&#39;")}'>
                     <div class="tx-main-row">
                         <span class="tx-user">${escapeHtml(tx.userName)}</span>
                         <span class="tx-amount">ZMW ${tx.amount}</span>
@@ -9428,11 +9799,7 @@
                             ${isPending ? `
                             <div class="detail-item" style="flex-basis:100%;">
                                 <div class="tx-actions-stack">
-                                    ${hasScreenshot ? `
-                                        <button class="btn-approve approve-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}"><i class="fas fa-check"></i> Approve</button>
-                                    ` : `
-                                        <span style="color:#e74c3c;font-size:10px;font-weight:600;background:#fee;padding:3px 12px;border-radius:30px;display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-image"></i> Screenshot required</span>
-                                    `}
+                                    <button class="btn-approve approve-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-itemid="${tx.itemId}" data-itemtype="${itemType}" data-amount="${tx.amount}" data-title="${escapeHtml(tx.itemTitle)}" data-source="${tx.source}"><i class="fas fa-check"></i> Approve</button>
                                     <button class="btn-reject reject-btn" data-id="${tx.id}" data-userid="${tx.userId}" data-source="${tx.source}"><i class="fas fa-times"></i> Reject</button>
                                 </div>
                             </div>` : ''}
@@ -9474,153 +9841,39 @@
 
         function attachTxEvents() {
             document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+                btn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const txId = btn.dataset.id;
-                    const userId = btn.dataset.userid;
-                    const itemId = btn.dataset.itemid;
-                    const itemType = btn.dataset.itemtype;
-                    const amount = parseFloat(btn.dataset.amount);
-                    const itemTitle = btn.dataset.title;
-                    const source = btn.dataset.source;
-                    const confirmed = await showConfirmPopup({
-                        icon: '💳',
-                        type: 'info',
-                        title: 'Approve Payment?',
-                        message: 'Approve payment of <strong>ZMW ' + amount +
-                            '</strong> for "<strong>' + escapeHtml(itemTitle) + '</strong>"?',
-                        okText: 'Approve',
-                        okClass: 'btn-confirm-success'
-                    });
-                    if (!confirmed) return;
-                    setLoading('approveTx', true, '.approve-btn');
-                    try {
-                        let txData = null;
-                        let durationType = 'lifetime';
-                        let durationValue = 0;
-
-                        if (itemType === 'course') {
-                            const courseSnap = await get(ref(db, `courses/${itemId}`));
-                            if (courseSnap.val()) {
-                                const course = courseSnap.val();
-                                durationType = course.durationType || 'lifetime';
-                                durationValue = course.durationValue || 0;
-                            }
-                        } else if (['test', 'quiz', 'exam', 'assignment'].includes(itemType)) {
-                            const assSnap = await get(ref(db, `assessments/${itemId}`));
-                            if (assSnap.val()) {
-                                const ass = assSnap.val();
-                                const durParts = ass.duration ? ass.duration.split(':').map(Number) : [0, 0];
-                                durationValue = durParts[0] * 60 + durParts[1];
-                                durationType = 'minutes';
-                            }
-                        }
-
-                        let expiresAt = null;
-                        if (durationType !== 'lifetime' && durationValue > 0) {
-                            const now = Date.now();
-                            let ms = 0;
-                            switch (durationType) {
-                                case 'minutes':
-                                    ms = durationValue * 60 * 1000;
-                                    break;
-                                case 'hours':
-                                    ms = durationValue * 60 * 60 * 1000;
-                                    break;
-                                case 'days':
-                                    ms = durationValue * 24 * 60 * 60 * 1000;
-                                    break;
-                                case 'weeks':
-                                    ms = durationValue * 7 * 24 * 60 * 60 * 1000;
-                                    break;
-                                case 'months':
-                                    ms = durationValue * 30 * 24 * 60 * 60 * 1000;
-                                    break;
-                                default:
-                                    ms = 0;
-                            }
-                            expiresAt = now + ms;
-                        }
-
-                        if (source === 'pendingPurchases') {
-                            const txSnap = await get(ref(db, `pendingPurchases/${userId}/${txId}`));
-                            txData = txSnap.val();
-                            if (!txData) return showToast('Transaction not found', 'error');
-                            if (!txData.screenshot) {
-                                return showToast('Cannot approve: No screenshot provided', 'error');
-                            }
-                            await set(ref(db, `transactions/${txId}`), {
-                                ...txData,
-                                userId,
-                                status: 'approved',
-                                approvedAt: serverTimestamp(),
-                                timestamp: Date.now(),
-                                date: new Date().toLocaleString()
-                            });
-                            await remove(ref(db, `pendingPurchases/${userId}/${txId}`));
-                        } else {
-                            const txSnap = await get(ref(db, `transactions/${txId}`));
-                            txData = txSnap.val();
-                            if (!txData) return showToast('Transaction not found', 'error');
-                            if (!txData.screenshot) {
-                                return showToast('Cannot approve: No screenshot provided', 'error');
-                            }
-                            await update(ref(db, `transactions/${txId}`), { status: 'approved' });
-                        }
-
-                        const approvalData = {
-                            approvedAt: serverTimestamp(),
-                            itemType: itemType,
-                            amount: amount,
-                            itemTitle: itemTitle,
-                            durationType: durationType,
-                            durationValue: durationValue
-                        };
-                        if (expiresAt) {
-                            approvalData.expiresAt = expiresAt;
-                        }
-                        await set(ref(db, `approvedPurchases/${userId}/${itemId}`), approvalData);
-                        push(notificationsRef, {
-                            message: `💵 Payment of ZMW ${amount} for "${itemTitle}" approved${expiresAt ? ' (duration: '+durationValue+' '+durationType+')' : ''}`,
-                            timestamp: serverTimestamp()
-                        });
-                        showToast('Approved!', 'success');
-                    } catch (err) { showToast('Error approving: ' + err.message, 'error'); } finally {
-                        setLoading('approveTx', false, '.approve-btn');
-                    }
+                    const tx = {
+                        id: this.dataset.id,
+                        userId: this.dataset.userid,
+                        itemId: this.dataset.itemid,
+                        itemType: this.dataset.itemtype,
+                        amount: this.dataset.amount,
+                        itemTitle: this.dataset.title,
+                        source: this.dataset.source,
+                        userName: this.closest('.tx-card')?.querySelector('.tx-user')?.textContent || 'User',
+                        userEmail: this.closest('.tx-card')?.querySelector('.tx-details-inner .detail-item:nth-child(1)')?.textContent?.trim() || '',
+                        screenshot: this.closest('.tx-card')?.querySelector('.screenshot-box img')?.src || null,
+                        timestamp: this.closest('.tx-card')?.dataset?.timestamp || null
+                    };
+                    openPaymentActionModal(tx, tx.userId, tx.id, tx.source);
                 });
             });
             document.querySelectorAll('.reject-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+                btn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const txId = btn.dataset.id;
-                    const userId = btn.dataset.userid;
-                    const source = btn.dataset.source;
-                    const confirmed = await showConfirmPopup({
-                        icon: '❌',
-                        type: 'danger',
-                        title: 'Reject Payment?',
-                        message: 'Are you sure you want to reject this payment?',
-                        okText: 'Reject',
-                        okClass: 'btn-confirm-danger'
-                    });
-                    if (!confirmed) return;
-                    setLoading('rejectTx', true, '.reject-btn');
-                    try {
-                        if (source === 'pendingPurchases') {
-                            await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'rejected',
-                                rejectedAt: serverTimestamp() });
-                        } else {
-                            await update(ref(db, `transactions/${txId}`), { status: 'rejected' });
-                        }
-                        push(notificationsRef, {
-                            message: `❌ Payment rejected`,
-                            timestamp: serverTimestamp()
-                        });
-                        showToast('Transaction rejected', 'info');
-                    } catch (err) { showToast('Error rejecting', 'error'); } finally {
-                        setLoading('rejectTx', false, '.reject-btn');
-                    }
+                    const tx = {
+                        id: this.dataset.id,
+                        userId: this.dataset.userid,
+                        source: this.dataset.source,
+                        userName: this.closest('.tx-card')?.querySelector('.tx-user')?.textContent || 'User',
+                        userEmail: this.closest('.tx-card')?.querySelector('.tx-details-inner .detail-item:nth-child(1)')?.textContent?.trim() || '',
+                        amount: this.closest('.tx-card')?.querySelector('.tx-amount')?.textContent?.replace('ZMW ', '') || 0,
+                        itemTitle: this.closest('.tx-card')?.dataset?.title || 'Item',
+                        screenshot: this.closest('.tx-card')?.querySelector('.screenshot-box img')?.src || null,
+                        timestamp: this.closest('.tx-card')?.dataset?.timestamp || null
+                    };
+                    openPaymentActionModal(tx, tx.userId, tx.id, tx.source);
                 });
             });
             document.querySelectorAll('.delete-tx-btn').forEach(btn => {
@@ -9889,10 +10142,10 @@
                 if (subfolder) {
                     const course = courses.find(c => c.id === subfolder.courseId);
                     document.getElementById('subfolderViewTitle').innerText = `${course?.name || ''} / ${subfolder.name}`;
-                    const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a, b) => (b
-                        .createdAt || 0) - (a.createdAt || 0));
-                    const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a, b) => (b
-                        .createdAt || 0) - (a.createdAt || 0));
+                    const subVideos = videos.filter(v => v.subfolderId === subfolder.id).sort((a, b) => (a
+                        .createdAt || 0) - (b.createdAt || 0));
+                    const subDocs = docs.filter(d => d.subfolderId === subfolder.id).sort((a, b) => (a
+                        .createdAt || 0) - (b.createdAt || 0));
                     document.getElementById('subfolderVideosContainer').innerHTML = subVideos.map(v =>
                         renderVideoCardWithComments(v, true)).join('') ||
                         '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos</div>';
@@ -10113,6 +10366,12 @@
                 });
             });
 
+            // Logout sidebar button redirects to index.html
+            document.getElementById('logoutBtnSidebar').addEventListener('click', function() {
+                signOut(auth);
+                window.location.href = 'index.html';
+            });
+
             // Test/Exams Popup
             const popup = document.getElementById('testExamsPopup');
             const popupClose = document.getElementById('testExamsPopupClose');
@@ -10234,10 +10493,7 @@
                     if (e.target === this) this.classList.remove('open');
                 });
             });
-            document.getElementById('closePlayerBtn').addEventListener('click', () => {
-                document.getElementById('persistentPlayer').style.display = 'none';
-                document.getElementById('playerEmbedContainer').innerHTML = '';
-            });
+
             document.getElementById('bigPostBtn').onclick = () => {
                 document.getElementById('dynamicPostForm').style.display = 'block';
                 document.getElementById('bigPostBtn').style.display = 'none';
@@ -10335,7 +10591,10 @@
                 showToast('Payment numbers saved!', 'success');
                 setLoading('saveSettings', false, '#savePaymentNumbersBtn');
             });
-            document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                signOut(auth);
+                window.location.href = 'index.html';
+            });
 
             // --- Debounced search inputs ---
             document.getElementById('searchVideoInput')?.addEventListener('input', debounce(renderPostedGrid, 300));
@@ -10755,59 +11014,187 @@
             // PENDING PAYMENT POPUP — check every 30s
             // =================================================================
             setInterval(checkAndShowPendingPopup, 30000);
-        }
 
-        // =================================================================
-        // PENDING PAYMENT POPUP
-        // =================================================================
-        let pendingPopupShown = false;
-        let pendingPopupData = null;
+            // =================================================================
+            // RANGE ANSWER SUPPORT: When type changes to 'range', show range inputs
+            // =================================================================
+            document.addEventListener('change', function(e) {
+                if (e.target.matches('.qb-type')) {
+                    const container = e.target.closest('.qb-body').querySelector('.qb-options-container');
+                    const qDiv = e.target.closest('.question-builder');
+                    const idx = qDiv?.dataset?.index;
+                    const sectionIdx = qDiv?.dataset?.section;
+                    const qNum = qDiv?.querySelector('.qb-number')?.textContent?.replace('Question ', '') || '1';
+                    if (e.target.value === 'range') {
+                        container.innerHTML = `
+                            <div class="qb-range-answer-container">
+                                <label>Correct range:</label>
+                                <input type="number" class="range-min" placeholder="Min" />
+                                <span class="range-dash">–</span>
+                                <input type="number" class="range-max" placeholder="Max" />
+                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                            </div>
+                        `;
+                        const imageArea = qDiv?.querySelector('.qb-image-area');
+                        if (imageArea) imageArea.style.display = 'flex';
+                    } else if (e.target.value === 'mcq') {
+                        container.innerHTML = `
+                            <div class="qb-options">
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="0" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option A">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="1" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option B">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="2" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option C">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="3" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option D">
+                                </div>
+                                <button type="button" class="qb-add-option">+ Add Option</button>
+                            </div>
+                        `;
+                        attachAddOptionEvents(container);
+                    } else if (e.target.value === 'tf') {
+                        container.innerHTML = `
+                            <div class="qb-options">
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="true" class="qb-correct">
+                                    <span style="font-size:12px;">True</span>
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="false" class="qb-correct">
+                                    <span style="font-size:12px;">False</span>
+                                </div>
+                            </div>
+                        `;
+                    } else if (e.target.value === 'matching') {
+                        container.innerHTML = `
+                            <div class="qb-matching-container">
+                                <div class="qb-matching-row">
+                                    <input type="text" class="matching-left" placeholder="Left item" />
+                                    <span class="matching-match">↔</span>
+                                    <input type="text" class="matching-right" placeholder="Right item" />
+                                </div>
+                                <button type="button" class="qb-add-match">+ Add Pair</button>
+                            </div>
+                        `;
+                        container.querySelector('.qb-add-match')?.addEventListener('click', function() {
+                            const parent = this.closest('.qb-matching-container');
+                            const row = document.createElement('div');
+                            row.className = 'qb-matching-row';
+                            row.innerHTML = `
+                                <input type="text" class="matching-left" placeholder="Left item" />
+                                <span class="matching-match">↔</span>
+                                <input type="text" class="matching-right" placeholder="Right item" />
+                            `;
+                            parent.insertBefore(row, this);
+                        });
+                    } else if (e.target.value === 'fillblank') {
+                        container.innerHTML = `
+                            <div class="qb-fillblank-container">
+                                <input type="text" class="fillblank-answer" placeholder="Correct answer" />
+                            </div>
+                        `;
+                    } else if (e.target.value === 'ordering') {
+                        container.innerHTML = `
+                            <div class="qb-ordering-container">
+                                <div class="qb-order-item">
+                                    <span class="order-handle">☰</span>
+                                    <input type="text" class="order-item" placeholder="Item 1" />
+                                </div>
+                                <button type="button" class="qb-add-order">+ Add Item</button>
+                            </div>
+                        `;
+                        container.querySelector('.qb-add-order')?.addEventListener('click', function() {
+                            const parent = this.closest('.qb-ordering-container');
+                            const row = document.createElement('div');
+                            row.className = 'qb-order-item';
+                            const count = parent.querySelectorAll('.qb-order-item').length;
+                            row.innerHTML = `
+                                <span class="order-handle">☰</span>
+                                <input type="text" class="order-item" placeholder="Item ${count + 1}" />
+                            `;
+                            parent.insertBefore(row, this);
+                        });
+                    } else if (e.target.value === 'multi-answer') {
+                        container.innerHTML = `
+                            <div class="qb-parts-container">
+                                <div class="qb-part-row">
+                                    <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
+                                    <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                </div>
+                                <div class="qb-part-row">
+                                    <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
+                                    <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                </div>
+                                <div class="qb-part-row">
+                                    <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
+                                    <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                </div>
+                                <button type="button" class="qb-add-part">+ Add Part</button>
+                            </div>
+                        `;
+                        container.querySelector('.qb-add-part')?.addEventListener('click', function() {
+                            const parent = this.closest('.qb-parts-container');
+                            const count = parent.querySelectorAll('.qb-part-row').length;
+                            const partRow = document.createElement('div');
+                            partRow.className = 'qb-part-row';
+                            partRow.innerHTML = `
+                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                            `;
+                            parent.insertBefore(partRow, this);
+                        });
+                    } else {
+                        container.innerHTML = `
+                            <div class="qb-options">
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="0" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option A">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="1" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option B">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="2" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option C">
+                                </div>
+                                <div class="qb-option">
+                                    <input type="radio" name="qb-correct-${sectionIdx || idx}-${qNum}" value="3" class="qb-correct">
+                                    <input type="text" class="qb-option-text" placeholder="Option D">
+                                </div>
+                                <button type="button" class="qb-add-option">+ Add Option</button>
+                            </div>
+                        `;
+                        attachAddOptionEvents(container);
+                    }
+                }
+            });
 
-        function checkAndShowPendingPopup() {
-            const pendingTxs = allTransactions.filter(t => t.status === 'pending');
-            if (pendingTxs.length === 0 || pendingPopupShown) {
-                if (pendingTxs.length === 0) pendingPopupShown = false;
-                return;
+            function attachAddOptionEvents(container) {
+                container.querySelector('.qb-add-option')?.addEventListener('click', function() {
+                    const parent = this.closest('.qb-options');
+                    const optionCount = parent.querySelectorAll('.qb-option').length;
+                    const optDiv = document.createElement('div');
+                    optDiv.className = 'qb-option';
+                    optDiv.innerHTML = `
+                        <input type="radio" name="${parent.querySelector('.qb-option input[type="radio"]')?.name || 'qb-correct'}" value="${optionCount}" class="qb-correct">
+                        <input type="text" class="qb-option-text" placeholder="Option ${String.fromCharCode(65 + optionCount)}">
+                    `;
+                    parent.insertBefore(optDiv, this);
+                });
             }
-            const tx = pendingTxs[0];
-            const userName = tx.userName || 'User';
-            const itemTitle = tx.itemTitle || 'Item';
-            const amount = tx.amount || 0;
-            const phone = tx.userPhone || 'N/A';
-            const popup = document.getElementById('pendingPaymentPopup');
-            const titleEl = document.getElementById('pendingPopupTitle');
-            const descEl = document.getElementById('pendingPopupDesc');
-
-            titleEl.textContent = `💳 Pending Payment — ${escapeHtml(userName)}`;
-            descEl.textContent = `${escapeHtml(itemTitle)} · ZMW ${amount} · 📞 ${escapeHtml(phone)}`;
-
-            popup.classList.add('show');
-            pendingPopupData = tx;
-            pendingPopupShown = true;
-
-            clearTimeout(popup._hideTimer);
-            popup._hideTimer = setTimeout(() => {
-                popup.classList.remove('show');
-                pendingPopupShown = false;
-            }, 15000);
-
-            popup.onclick = function(e) {
-                if (e.target.closest('.popup-close-btn')) return;
-                popup.classList.remove('show');
-                pendingPopupShown = false;
-                showSection('account');
-                document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-                document.querySelector('.filter-pill[data-filter="pending"]')?.classList.add('active');
-                currentTxFilter = 'pending';
-                applyTransactionFilter();
-            };
-
-            document.getElementById('pendingPopupClose').onclick = function(e) {
-                e.stopPropagation();
-                popup.classList.remove('show');
-                pendingPopupShown = false;
-                clearTimeout(popup._hideTimer);
-            };
         }
 
         // =================================================================
@@ -11321,6 +11708,18 @@
                                     `).join('')}
                                     <button type="button" class="qb-add-part">+ Add Part</button>
                                 </div>`;
+                            } else if (q.type === 'range') {
+                                const rangeMin = q.rangeMin !== undefined ? q.rangeMin : '';
+                                const rangeMax = q.rangeMax !== undefined ? q.rangeMax : '';
+                                optionsHtml = `
+                                    <div class="qb-range-answer-container">
+                                        <label>Correct range:</label>
+                                        <input type="number" class="range-min" value="${escapeHtml(rangeMin)}" placeholder="Min" />
+                                        <span class="range-dash">–</span>
+                                        <input type="number" class="range-max" value="${escapeHtml(rangeMax)}" placeholder="Max" />
+                                        <span class="range-hint">Any answer between Min and Max is correct</span>
+                                    </div>
+                                `;
                             } else {
                                 optionsHtml = `<div style="color:#8b8fa3;font-size:11px;padding:4px;">${q.type === 'short' ? 'Short answer' : 'Text box'} (no options needed)</div>`;
                             }
@@ -11353,6 +11752,7 @@
                                             <option value="ordering" ${q.type === 'ordering' ? 'selected' : ''}>Ordering</option>
                                             <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
                                             <option value="multi-answer" ${q.type === 'multi-answer' ? 'selected' : ''}>Multiple Answers</option>
+                                            <option value="range" ${q.type === 'range' ? 'selected' : ''}>Range Answer</option>
                                         </select>
                                     </div>
                                     <div class="qb-options-container" style="margin-top:6px;">
@@ -11435,6 +11835,18 @@
                                             `).join('')}
                                             <button type="button" class="qb-add-part">+ Add Part</button>
                                         </div>`;
+                                    } else if (q.type === 'range') {
+                                        const rangeMin = q.rangeMin !== undefined ? q.rangeMin : '';
+                                        const rangeMax = q.rangeMax !== undefined ? q.rangeMax : '';
+                                        optionsHtml = `
+                                            <div class="qb-range-answer-container">
+                                                <label>Correct range:</label>
+                                                <input type="number" class="range-min" value="${escapeHtml(rangeMin)}" placeholder="Min" />
+                                                <span class="range-dash">–</span>
+                                                <input type="number" class="range-max" value="${escapeHtml(rangeMax)}" placeholder="Max" />
+                                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                                            </div>
+                                        `;
                                     } else {
                                         optionsHtml = `<div style="color:#8b8fa3;font-size:11px;padding:4px;">${q.type === 'short' ? 'Short answer' : 'Text box'} (no options needed)</div>`;
                                     }
@@ -11466,6 +11878,7 @@
                                                     <option value="ordering" ${q.type === 'ordering' ? 'selected' : ''}>Ordering</option>
                                                     <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
                                                     <option value="multi-answer" ${q.type === 'multi-answer' ? 'selected' : ''}>Multiple Answers</option>
+                                                    <option value="range" ${q.type === 'range' ? 'selected' : ''}>Range Answer</option>
                                                 </select>
                                             </div>
                                             <div class="qb-options-container" style="margin-top:6px;">
@@ -11677,6 +12090,8 @@
                     const image = q.querySelector('.qb-image-url')?.value || '';
                     let opts = [];
                     let correct = null;
+                    let rangeMin = null,
+                        rangeMax = null;
                     if (qtype === 'mcq') {
                         q.querySelectorAll('.qb-option').forEach((opt, idx) => {
                             const optText = opt.querySelector('.qb-option-text').value.trim();
@@ -11715,9 +12130,16 @@
                         });
                         opts = parts;
                         correct = parts.map(p => p.correctAnswer);
+                    } else if (qtype === 'range') {
+                        const minInp = q.querySelector('.range-min');
+                        const maxInp = q.querySelector('.range-max');
+                        rangeMin = minInp ? parseFloat(minInp.value) : null;
+                        rangeMax = maxInp ? parseFloat(maxInp.value) : null;
+                        correct = null;
+                        opts = [];
                     }
-                    if (text) {
-                        questions.push({ text, marks, type: qtype, options: opts, correct, image });
+                    if (text || qtype === 'range') {
+                        questions.push({ text, marks, type: qtype, options: opts, correct, image, rangeMin, rangeMax });
                     }
                 });
             } else {
@@ -11735,6 +12157,8 @@
                         const image = q.querySelector('.qb-image-url')?.value || '';
                         let opts = [];
                         let correct = null;
+                        let rangeMin = null,
+                            rangeMax = null;
                         if (qtype === 'mcq') {
                             q.querySelectorAll('.qb-option').forEach((opt, idx) => {
                                 const optText = opt.querySelector('.qb-option-text')
@@ -11776,9 +12200,16 @@
                             });
                             opts = parts;
                             correct = parts.map(p => p.correctAnswer);
+                        } else if (qtype === 'range') {
+                            const minInp = q.querySelector('.range-min');
+                            const maxInp = q.querySelector('.range-max');
+                            rangeMin = minInp ? parseFloat(minInp.value) : null;
+                            rangeMax = maxInp ? parseFloat(maxInp.value) : null;
+                            correct = null;
+                            opts = [];
                         }
-                        if (text) {
-                            qs.push({ text, marks, type: qtype, options: opts, correct, image });
+                        if (text || qtype === 'range') {
+                            qs.push({ text, marks, type: qtype, options: opts, correct, image, rangeMin, rangeMax });
                         }
                     });
                     if (qs.length > 0) {
@@ -12010,6 +12441,9 @@
                     `<ul class="pq-options">${q.options.map((item, oi) => `<li>${oi+1}. ${escapeHtml(item)}</li>`).join('')}</ul>`;
             } else if (q.type === 'fillblank') {
                 optionsHtml = `<div class="pq-answer">Correct answer: ${escapeHtml(q.correct)}</div>`;
+            } else if (q.type === 'range') {
+                optionsHtml =
+                    `<div class="pq-answer">Correct range: ${q.rangeMin} – ${q.rangeMax}</div>`;
             } else if (q.type === 'text' || q.type === 'essay' || q.type === 'short') {
                 optionsHtml =
                     `<div style="font-size:11px;color:#8b8fa3;">${q.type === 'essay' ? 'Essay' : q.type === 'short' ? 'Short answer' : 'Text box'} response</div>`;
@@ -12028,7 +12462,8 @@
                 ordering: 'Ordering',
                 short: 'Short Answer',
                 essay: 'Essay',
-                'multi-answer': 'Multiple Answers'
+                'multi-answer': 'Multiple Answers',
+                range: 'Range Answer'
             };
 
             return `
@@ -12097,6 +12532,12 @@
                 </div>
                 <span class="preview-label">Draft</span>
             `;
+        }
+
+        function getYouTubeThumbnail(url) {
+            const id = getYouTubeId(url);
+            if (id) return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+            return '';
         }
 
         // =================================================================
@@ -12387,7 +12828,7 @@
                 (courseFilter === 'all' || v.courseId === courseFilter) &&
                 (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
             );
-            filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // oldest to newest
             document.getElementById('postedVideosGrid').innerHTML = filtered.map(v => renderVideoCardWithComments(v,
                 true)).join('') ||
                 '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos found</div>';
@@ -12422,7 +12863,7 @@
         }
 
         function renderDocsList() {
-            const sortedDocs = [...docs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const sortedDocs = [...docs].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             const container = document.getElementById('docsListContainer');
             container.innerHTML = sortedDocs.map(d => buildDocCard(d)).join('') ||
                 '<div style="color:#8b8fa3;padding:20px;text-align:center;">No documents</div>';
@@ -13222,8 +13663,7 @@
                 if (snap.val()) paymentSettings = snap.val();
                 document.getElementById('mtnNumberInput').value = paymentSettings.mtnNumber || '';
                 document.getElementById('airtelNumberInput').value = paymentSettings.airtelNumber || '';
-                document.getElementById('paymentMethodSelect').value = paymentSettings.paymentMethod ||
-                    'MTN Mobile Money';
+                document.getElementById('paymentMethodSelect').value = paymentSettings.paymentMethod || 'MTN Mobile Money';
             });
 
             const fetchTransactions = async () => {
@@ -13903,6 +14343,7 @@
                                     <option value="ordering">Ordering</option>
                                     <option value="short">Short Answer</option>
                                     <option value="multi-answer">Multiple Answers</option>
+                                    <option value="range">Range Answer</option>
                                 </select>
                             </div>
                             <div class="qb-options-container" style="margin-top:6px;">
@@ -14068,6 +14509,17 @@
                             `;
                             parent.insertBefore(partRow, this);
                         });
+                    } else if (this.value === 'range') {
+                        container.innerHTML = `
+                            <div class="qb-range-answer-container">
+                                <label>Correct range:</label>
+                                <input type="number" class="range-min" placeholder="Min" />
+                                <span class="range-dash">–</span>
+                                <input type="number" class="range-max" placeholder="Max" />
+                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                            </div>
+                        `;
+                        if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
                             <div class="qb-options">
@@ -14202,6 +14654,16 @@
                         `;
                         parent.insertBefore(partRow, this);
                     });
+                } else if (this.value === 'range') {
+                    container.innerHTML = `
+                        <div class="qb-range-answer-container">
+                            <label>Correct range:</label>
+                            <input type="number" class="range-min" placeholder="Min" />
+                            <span class="range-dash">–</span>
+                            <input type="number" class="range-max" placeholder="Max" />
+                            <span class="range-hint">Any answer between Min and Max is correct</span>
+                        </div>
+                    `;
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -14349,6 +14811,7 @@
                                     <option value="ordering">Ordering</option>
                                     <option value="short">Short Answer</option>
                                     <option value="multi-answer">Multiple Answers</option>
+                                    <option value="range">Range Answer</option>
                                 </select>
                             </div>
                             <div class="qb-options-container" style="margin-top:6px;">
@@ -14514,6 +14977,17 @@
                             `;
                             parent.insertBefore(partRow, this);
                         });
+                    } else if (this.value === 'range') {
+                        container.innerHTML = `
+                            <div class="qb-range-answer-container">
+                                <label>Correct range:</label>
+                                <input type="number" class="range-min" placeholder="Min" />
+                                <span class="range-dash">–</span>
+                                <input type="number" class="range-max" placeholder="Max" />
+                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                            </div>
+                        `;
+                        if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
                             <div class="qb-options">
@@ -14648,6 +15122,16 @@
                         `;
                         parent.insertBefore(partRow, this);
                     });
+                } else if (this.value === 'range') {
+                    container.innerHTML = `
+                        <div class="qb-range-answer-container">
+                            <label>Correct range:</label>
+                            <input type="number" class="range-min" placeholder="Min" />
+                            <span class="range-dash">–</span>
+                            <input type="number" class="range-max" placeholder="Max" />
+                            <span class="range-hint">Any answer between Min and Max is correct</span>
+                        </div>
+                    `;
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -14733,6 +15217,8 @@
                                 <option value="fillblank">Fill in the Blank</option>
                                 <option value="ordering">Ordering</option>
                                 <option value="short">Short Answer</option>
+                                <option value="multi-answer">Multiple Answers</option>
+                                <option value="range">Range Answer</option>
                             </select>
                         </div>
                         <div class="qb-options-container" style="margin-top:6px;">
@@ -14917,6 +15403,17 @@
                             `;
                             parent.insertBefore(partRow, this);
                         });
+                    } else if (this.value === 'range') {
+                        container.innerHTML = `
+                            <div class="qb-range-answer-container">
+                                <label>Correct range:</label>
+                                <input type="number" class="range-min" placeholder="Min" />
+                                <span class="range-dash">–</span>
+                                <input type="number" class="range-max" placeholder="Max" />
+                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                            </div>
+                        `;
+                        if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
                             <div class="qb-options">
@@ -15070,6 +15567,16 @@
                         `;
                         parent.insertBefore(partRow, this);
                     });
+                } else if (this.value === 'range') {
+                    container.innerHTML = `
+                        <div class="qb-range-answer-container">
+                            <label>Correct range:</label>
+                            <input type="number" class="range-min" placeholder="Min" />
+                            <span class="range-dash">–</span>
+                            <input type="number" class="range-max" placeholder="Max" />
+                            <span class="range-hint">Any answer between Min and Max is correct</span>
+                        </div>
+                    `;
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -15145,6 +15652,8 @@
                             <option value="fillblank">Fill in the Blank</option>
                             <option value="ordering">Ordering</option>
                             <option value="short">Short Answer</option>
+                            <option value="multi-answer">Multiple Answers</option>
+                            <option value="range">Range Answer</option>
                         </select>
                     </div>
                     <div class="qb-options-container" style="margin-top:6px;">
@@ -15267,6 +15776,7 @@
                                     <option value="ordering">Ordering</option>
                                     <option value="short">Short Answer</option>
                                     <option value="multi-answer">Multiple Answers</option>
+                                    <option value="range">Range Answer</option>
                                 </select>
                             </div>
                             <div class="qb-options-container" style="margin-top:6px;">
@@ -15446,6 +15956,17 @@
                             `;
                             parent.insertBefore(partRow, this);
                         });
+                    } else if (this.value === 'range') {
+                        container.innerHTML = `
+                            <div class="qb-range-answer-container">
+                                <label>Correct range:</label>
+                                <input type="number" class="range-min" placeholder="Min" />
+                                <span class="range-dash">–</span>
+                                <input type="number" class="range-max" placeholder="Max" />
+                                <span class="range-hint">Any answer between Min and Max is correct</span>
+                            </div>
+                        `;
+                        if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
                             <div class="qb-options">
@@ -15593,6 +16114,16 @@
                         `;
                         parent.insertBefore(partRow, this);
                     });
+                } else if (this.value === 'range') {
+                    container.innerHTML = `
+                        <div class="qb-range-answer-container">
+                            <label>Correct range:</label>
+                            <input type="number" class="range-min" placeholder="Min" />
+                            <span class="range-dash">–</span>
+                            <input type="number" class="range-max" placeholder="Max" />
+                            <span class="range-hint">Any answer between Min and Max is correct</span>
+                        </div>
+                    `;
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -15830,6 +16361,18 @@
                                         `).join('')}
                                         <button type="button" class="qb-add-part">+ Add Part</button>
                                     </div>`;
+                                } else if (q.type === 'range') {
+                                    const rangeMin = q.rangeMin !== undefined ? q.rangeMin : '';
+                                    const rangeMax = q.rangeMax !== undefined ? q.rangeMax : '';
+                                    optionsHtml = `
+                                        <div class="qb-range-answer-container">
+                                            <label>Correct range:</label>
+                                            <input type="number" class="range-min" value="${escapeHtml(rangeMin)}" placeholder="Min" />
+                                            <span class="range-dash">–</span>
+                                            <input type="number" class="range-max" value="${escapeHtml(rangeMax)}" placeholder="Max" />
+                                            <span class="range-hint">Any answer between Min and Max is correct</span>
+                                        </div>
+                                    `;
                                 } else {
                                     optionsHtml = `<div style="color:#8b8fa3;font-size:11px;padding:4px;">${q.type === 'short' ? 'Short answer' : 'Text box'} (no options needed)</div>`;
                                 }
@@ -15861,6 +16404,7 @@
                                                 <option value="ordering" ${q.type === 'ordering' ? 'selected' : ''}>Ordering</option>
                                                 <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
                                                 <option value="multi-answer" ${q.type === 'multi-answer' ? 'selected' : ''}>Multiple Answers</option>
+                                                <option value="range" ${q.type === 'range' ? 'selected' : ''}>Range Answer</option>
                                             </select>
                                         </div>
                                         <div class="qb-options-container" style="margin-top:6px;">
@@ -15936,6 +16480,18 @@
                                 `).join('')}
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>`;
+                        } else if (q.type === 'range') {
+                            const rangeMin = q.rangeMin !== undefined ? q.rangeMin : '';
+                            const rangeMax = q.rangeMax !== undefined ? q.rangeMax : '';
+                            optionsHtml = `
+                                <div class="qb-range-answer-container">
+                                    <label>Correct range:</label>
+                                    <input type="number" class="range-min" value="${escapeHtml(rangeMin)}" placeholder="Min" />
+                                    <span class="range-dash">–</span>
+                                    <input type="number" class="range-max" value="${escapeHtml(rangeMax)}" placeholder="Max" />
+                                    <span class="range-hint">Any answer between Min and Max is correct</span>
+                                </div>
+                            `;
                         } else {
                             optionsHtml = `<div style="color:#8b8fa3;font-size:11px;padding:4px;">${q.type === 'short' ? 'Short answer' : 'Text box'} (no options needed)</div>`;
                         }
@@ -15968,6 +16524,7 @@
                                         <option value="ordering" ${q.type === 'ordering' ? 'selected' : ''}>Ordering</option>
                                         <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
                                         <option value="multi-answer" ${q.type === 'multi-answer' ? 'selected' : ''}>Multiple Answers</option>
+                                        <option value="range" ${q.type === 'range' ? 'selected' : ''}>Range Answer</option>
                                     </select>
                                 </div>
                                 <div class="qb-options-container" style="margin-top:6px;">
@@ -16906,7 +17463,7 @@
                                 </div>
                             </div>
                             <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
-                                Submitted: ${r.endedAt ? new Date(r.endedAt).toLocaleString() : (r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'N/A')}
+                                Submitted: ${response.submittedAt ? new Date(response.submittedAt).toLocaleString() : (response.endedAt ? new Date(response.endedAt).toLocaleString() : 'N/A')}
                             </div>
                         </div>
                     `;
@@ -17005,9 +17562,18 @@
                             }
                         });
                         mark = autoMarks;
+                    } else if (q.type === 'range') {
+                        const studentAnswer = parseFloat(answer);
+                        const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
+                        const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
+                        if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
+                            mark = q.marks;
+                        } else {
+                            mark = 0;
+                        }
                     }
                 }
-                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank';
+                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                 html += `
                     <div class="script-question" style="border-bottom:1px solid #f0f0f5;padding:14px 0;">
                         <div class="q-head" style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--text);">
@@ -17023,6 +17589,7 @@
                         </div>
                         <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
                             <strong>Answer:</strong> ${escapeHtml(answerDisplay)}
+                            ${q.type === 'range' ? ` <span style="font-size:11px;color:#8b8fa3;">(Correct range: ${q.rangeMin} – ${q.rangeMax})</span>` : ''}
                         </div>
                         <div style="margin-top:6px;">
                             <button class="scratch-toggle-btn btn-outline" style="padding:3px 12px;font-size:9px;border-radius:30px;" data-target="scratch-${idx}">
@@ -17247,6 +17814,7 @@
                     .footer { text-align: center; margin-top: 20px; color: #8b8fa3; font-size: 12px; border-top: 1px solid #e5e8ed; padding-top: 12px; }
                     .page-break { page-break-after: always; break-after: page; }
                     .edited-badge { display: inline-block; background: #f39c12; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 14px; border-radius: 30px; margin-left: 6px; }
+                    .range-correct { font-size: 0.85rem; color: #2ecc71; font-weight: 600; margin-top: 4px; padding: 4px 12px; background: #e8f5e9; border-radius: 30px; display: inline-block; }
                 </style>
             </head>
             <body>
@@ -17337,15 +17905,25 @@
                                 }
                             });
                             mark = autoMarks;
+                        } else if (q.type === 'range') {
+                            const studentAnswer = parseFloat(answer);
+                            const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
+                            const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
+                            if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
+                                mark = q.marks;
+                            } else {
+                                mark = 0;
+                            }
                         }
                     }
-                    const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank';
+                    const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                     const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
+                    const correctDisplay = q.type === 'range' ? `${q.rangeMin} – ${q.rangeMax}` : (q.correct !== undefined && q.correct !== null ? q.correct : '');
                     htmlContent += `
                         <div class="question">
                             <div class="q-title">Q${idx+1}: ${escapeHtml(q.text)} <span class="meta">(${q.marks} marks) · ${q.section}</span></div>
                             <div class="answer"><strong>Answer:</strong> ${escapeHtml(answerDisplay)}</div>
-                            <div class="marks" style="color:${markColor};">Marks: ${mark}</div>
+                            ${q.type === 'range' ? `<div class="marks" style="color:${markColor};font-weight:600;">Marks: ${mark} (Correct range: ${correctDisplay})</div>` : `<div class="marks" style="color:${markColor};">Marks: ${mark}</div>`}
                             ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                             ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                         </div>
@@ -17687,7 +18265,7 @@
 
         setupRealtime();
 
-        console.log('✅ UTOM Admin — Fully optimized with real-time updates, edited badges, and version tracking.');
+        console.log('✅ UTOM Admin — Fully optimized with real-time updates, edited badges, version tracking, range answers, multiple registers, and smooth navigation.');
     </script>
 </body>
 </html>
