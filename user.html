@@ -7432,7 +7432,7 @@
                         <button class="like-video-btn ${isLiked?'liked':''}" data-id="${video.id}" title="Like"><i class="far fa-heart"></i></button>
                         ${canDownload ? `
                             <div class="download-wrapper" data-id="${video.id}">
-                                <button class="download-video-btn" data-id="${video.id}" title="Download for offline"><i class="fas fa-download"></i></button>
+                                <button class="download-video-btn" data-id="${video.id}" title="Save for offline"><i class="fas fa-download"></i></button>
                                 <svg viewBox="0 0 44 44">
                                     <circle class="bg-circle" cx="22" cy="22" r="18" />
                                     <circle class="progress-circle" cx="22" cy="22" r="18" id="progress-${video.id}" />
@@ -7768,7 +7768,7 @@
                     const videoId = btn.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
                     if (video && isDownloadableVideo(video)) {
-                        await downloadVideoWithProgress(video);
+                        await downloadVideoForOffline(video);
                     }
                 });
             });
@@ -8145,13 +8145,14 @@
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
-        async function downloadVideoWithProgress(video) {
+        // ----- MODIFIED: downloadVideoForOffline (no device download) -----
+        async function downloadVideoForOffline(video) {
             if (!isDownloadableVideo(video)) {
-                addNotification('warning', 'This video cannot be downloaded for offline viewing.');
+                addNotification('warning', 'This video cannot be saved for offline viewing.');
                 return;
             }
             try {
-                addNotification('download', `Downloading "${video.title}"...`);
+                addNotification('download', `Saving "${video.title}" offline...`);
                 const wrapper = document.querySelector(`.download-wrapper[data-id="${video.id}"]`);
                 const progCircle = wrapper?.querySelector('.progress-circle');
                 const dlText = wrapper?.querySelector('.dl-text');
@@ -8182,23 +8183,14 @@
                 await new Promise((res, rej) => { tx.oncomplete = res;
                     tx.onerror = rej; });
                 offlineVideos.add(video.id);
-                const blobUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                const ext = video.videoUrl.split('.').pop().split('?')[0] || 'mp4';
-                const filename = `${video.title || 'video'}.${ext}`;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                addNotification('success', `"${video.title}" saved offline and downloaded to your device.`);
+                // No download to device; only stored in IndexedDB
+                addNotification('success', `"${video.title}" saved for offline viewing.`);
                 renderOfflinePage();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
                 if (progCircle) progCircle.style.strokeDashoffset = 94.248;
                 if (dlText) dlText.textContent = '0%';
             } catch (e) {
-                addNotification('danger', 'Download failed: ' + e.message);
+                addNotification('danger', 'Failed to save offline: ' + e.message);
             }
         }
 
@@ -10727,7 +10719,7 @@
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        console.log('✅ UTOM User — Production ready with all requested features: videos oldest-first, scratchpad eraser+pen sizes, one-click payment, line breaks, script full-page with show answers, share app, live UI improvements, subfolder UI, styled comments, transaction history with screenshots, download spinner.');
+        console.log('✅ UTOM User — Offline videos are stored only in IndexedDB; expired course videos are auto-deleted.');
     </script>
 </body>
 </html>
