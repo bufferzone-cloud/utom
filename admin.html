@@ -6144,6 +6144,88 @@
         .logout-btn-sidebar:hover {
             background: rgba(231, 76, 60, 0.08) !important;
         }
+        /* ===== MULTI-REGISTER SELECT ===== */
+        .multi-register-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px 0;
+        }
+        .multi-register-select .reg-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 176, 66, 0.12);
+            padding: 4px 12px 4px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #d4952a;
+            border: 1px solid rgba(245, 176, 66, 0.15);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .multi-register-select .reg-chip:hover {
+            background: rgba(245, 176, 66, 0.20);
+        }
+        .multi-register-select .reg-chip.selected {
+            background: #f5b042;
+            color: #fff;
+            border-color: #f5b042;
+        }
+        .multi-register-select .reg-chip .chip-remove {
+            cursor: pointer;
+            opacity: 0.6;
+            font-size: 12px;
+        }
+        .multi-register-select .reg-chip .chip-remove:hover {
+            opacity: 1;
+            color: #e74c3c;
+        }
+        .register-dropdown-wrap {
+            position: relative;
+        }
+        .register-dropdown-wrap .reg-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(229, 232, 237, 0.6);
+            box-shadow: var(--shadow-md);
+            z-index: 50;
+            display: none;
+            padding: 4px;
+        }
+        .register-dropdown-wrap .reg-dropdown.open {
+            display: block;
+        }
+        .register-dropdown-wrap .reg-dropdown .reg-option {
+            padding: 8px 14px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .register-dropdown-wrap .reg-dropdown .reg-option:hover {
+            background: rgba(245, 176, 66, 0.08);
+        }
+        .register-dropdown-wrap .reg-dropdown .reg-option.selected {
+            background: rgba(245, 176, 66, 0.15);
+            color: #d4952a;
+        }
+        .register-dropdown-wrap .reg-dropdown .reg-option .reg-check {
+            color: #b0b4c0;
+        }
+        .register-dropdown-wrap .reg-dropdown .reg-option.selected .reg-check {
+            color: #f5b042;
+        }
     </style>
 </head>
 <body>
@@ -6859,8 +6941,17 @@
                                     <span style="margin:0 4px;">m</span>
                                     <span id="testDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">1h 30m</span>
                                 </div>
-                                <div class="form-row">
-                                    <select id="testRegister" required><option value="">Select Register *</option></select>
+                                <!-- MULTI-REGISTER SELECT -->
+                                <div style="margin:8px 0;">
+                                    <label style="font-weight:600;font-size:12px;">Select Registers (multiple) *</label>
+                                    <div class="multi-register-select" id="testRegisterSelect">
+                                        <div class="register-dropdown-wrap">
+                                            <button type="button" class="btn-outline" style="padding:4px 14px;font-size:11px;" id="testRegisterDropdownBtn"><i class="fas fa-chevron-down"></i> Select Registers</button>
+                                            <div class="reg-dropdown" id="testRegisterDropdown"></div>
+                                        </div>
+                                        <div id="testSelectedRegisters" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                                    </div>
+                                    <input type="hidden" id="testRegisterIds" value="">
                                 </div>
                                 <div style="margin:10px 0;">
                                     <label style="font-weight:600;font-size:12px;">Schedule Type:</label>
@@ -7033,8 +7124,17 @@
                                     <span style="margin:0 4px;">m</span>
                                     <span id="quizDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">0h 30m</span>
                                 </div>
-                                <div class="form-row">
-                                    <select id="quizRegister" required><option value="">Select Register *</option></select>
+                                <!-- MULTI-REGISTER SELECT -->
+                                <div style="margin:8px 0;">
+                                    <label style="font-weight:600;font-size:12px;">Select Registers (multiple) *</label>
+                                    <div class="multi-register-select" id="quizRegisterSelect">
+                                        <div class="register-dropdown-wrap">
+                                            <button type="button" class="btn-outline" style="padding:4px 14px;font-size:11px;" id="quizRegisterDropdownBtn"><i class="fas fa-chevron-down"></i> Select Registers</button>
+                                            <div class="reg-dropdown" id="quizRegisterDropdown"></div>
+                                        </div>
+                                        <div id="quizSelectedRegisters" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                                    </div>
+                                    <input type="hidden" id="quizRegisterIds" value="">
                                 </div>
                                 <div style="margin:10px 0;">
                                     <label style="font-weight:600;font-size:12px;">Schedule Type:</label>
@@ -7240,8 +7340,17 @@
                                     <span style="margin:0 4px;">m</span>
                                     <span id="examDurationDisplay" style="font-weight:700;color:var(--gold);font-size:12px;margin-left:6px;">3h 0m</span>
                                 </div>
-                                <div class="form-row">
-                                    <select id="examRegister" required><option value="">Select Register *</option></select>
+                                <!-- MULTI-REGISTER SELECT -->
+                                <div style="margin:8px 0;">
+                                    <label style="font-weight:600;font-size:12px;">Select Registers (multiple) *</label>
+                                    <div class="multi-register-select" id="examRegisterSelect">
+                                        <div class="register-dropdown-wrap">
+                                            <button type="button" class="btn-outline" style="padding:4px 14px;font-size:11px;" id="examRegisterDropdownBtn"><i class="fas fa-chevron-down"></i> Select Registers</button>
+                                            <div class="reg-dropdown" id="examRegisterDropdown"></div>
+                                        </div>
+                                        <div id="examSelectedRegisters" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                                    </div>
+                                    <input type="hidden" id="examRegisterIds" value="">
                                 </div>
                                 <div style="margin:10px 0;">
                                     <label style="font-weight:600;font-size:12px;">Schedule Type:</label>
@@ -7407,8 +7516,17 @@
                                 <div class="form-row">
                                     <input type="text" id="assignmentName" placeholder="Assignment Name *" required>
                                 </div>
-                                <div class="form-row">
-                                    <select id="assignmentRegister" required><option value="">Select Register *</option></select>
+                                <!-- MULTI-REGISTER SELECT -->
+                                <div style="margin:8px 0;">
+                                    <label style="font-weight:600;font-size:12px;">Select Registers (multiple) *</label>
+                                    <div class="multi-register-select" id="assignmentRegisterSelect">
+                                        <div class="register-dropdown-wrap">
+                                            <button type="button" class="btn-outline" style="padding:4px 14px;font-size:11px;" id="assignmentRegisterDropdownBtn"><i class="fas fa-chevron-down"></i> Select Registers</button>
+                                            <div class="reg-dropdown" id="assignmentRegisterDropdown"></div>
+                                        </div>
+                                        <div id="assignmentSelectedRegisters" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+                                    </div>
+                                    <input type="hidden" id="assignmentRegisterIds" value="">
                                 </div>
                                 <div class="deadline-row">
                                     <label for="assignmentDeadline">Deadline *</label>
@@ -7603,6 +7721,8 @@
                         <h4><i class="fas fa-history"></i> History / Final Script</h4>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                             <button id="goToAssessmentsBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;"><i class="fas fa-folder-open"></i> All Assessments</button>
+                            <!-- Download full score sheet button removed PNG, replaced with HTML A4 -->
+                            <button id="downloadFullScoreSheetBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;"><i class="fas fa-print"></i> Download Full Score Sheet (HTML)</button>
                         </div>
                         <div id="historyListContainer"></div>
                     </div>
@@ -8503,8 +8623,6 @@
             }
             playerDiv.style.display = 'flex';
 
-            // Close button is already in the DOM, we keep it.
-            // Update views
             const viewers = video.uniqueViewers || {};
             if (!viewers[currentAdmin?.uid]) {
                 viewers[currentAdmin?.uid] = true;
@@ -8512,6 +8630,7 @@
             }
         }
 
+        // Video player close button
         document.getElementById('closePlayerBtn').addEventListener('click', () => {
             document.getElementById('persistentPlayer').style.display = 'none';
             document.getElementById('playerEmbedContainer').innerHTML = '';
@@ -8762,7 +8881,7 @@
         // --- All Courses Name List ---
         function renderAdminAllCoursesNames() {
             const container = document.getElementById('adminAllCoursesNameContainer');
-            const filtered = [...courses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // oldest to newest
+            const filtered = [...courses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             container.innerHTML = filtered.map(c => {
                 const subfolderCount = subfolders.filter(sf => sf.courseId === c.id).length;
                 const durationLabel = c.durationType && c.durationType !== 'lifetime' ?
@@ -9539,6 +9658,10 @@
             modal.dataset.txData = JSON.stringify(tx);
             modal.classList.add('open');
             pendingPaymentAction = { tx, userId, txId, source };
+
+            // AUTO-DETECT USER: after opening the payment modal, we auto-populate the popup section with this user
+            // We'll set a flag to auto-navigate after approval/rejection
+            window._pendingPopupUser = userId;
         }
 
         document.getElementById('paymentActionClose').addEventListener('click', () => {
@@ -9668,7 +9791,7 @@
                 modal.classList.remove('open');
                 pendingPaymentAction = null;
 
-                // Redirect to popup section with user selected
+                // AUTO-DETECT USER: redirect to popup with this user selected
                 popupSelectedUsers.clear();
                 popupSelectedUsers.add(userId);
                 document.getElementById('popupSelectedCount').textContent = '1';
@@ -9716,7 +9839,7 @@
                 modal.classList.remove('open');
                 pendingPaymentAction = null;
 
-                // Redirect to popup section with user selected
+                // AUTO-DETECT USER: redirect to popup with this user selected
                 popupSelectedUsers.clear();
                 popupSelectedUsers.add(userId);
                 document.getElementById('popupSelectedCount').textContent = '1';
@@ -11292,11 +11415,13 @@
                     const durMinsEl = document.getElementById(`${type}DurationMinutes`);
                     const hours = durHoursEl ? parseInt(durHoursEl.value) || 0 : 0;
                     const minutes = durMinsEl ? parseInt(durMinsEl.value) || 0 : 0;
-                    const register = document.getElementById(`${type}Register`).value;
+                    // MULTI-REGISTER: get selected register IDs
+                    const registerIdsInput = document.getElementById(`${type}RegisterIds`);
+                    const registerIds = registerIdsInput ? registerIdsInput.value.split(',').filter(id => id.trim() !== '') : [];
                     if (!name) { showToast('Please enter a name.', 'error'); return; }
                     if (hours === 0 && minutes === 0 && type !== 'assignment') { showToast('Please set a valid duration.',
                             'error'); return; }
-                    if (!register) { showToast('Please select a register.', 'error'); return; }
+                    if (registerIds.length === 0) { showToast('Please select at least one register.', 'error'); return; }
                     if (type === 'assignment') {
                         const deadline = document.getElementById(`${type}Deadline`).value;
                         if (!deadline) { showToast('Please set a deadline.', 'error'); return; }
@@ -11535,6 +11660,104 @@
             });
 
             loadAssessmentDraft(type);
+
+            // ---- MULTI-REGISTER SELECT ----
+            setupMultiRegisterSelect(type);
+        }
+
+        // ---- MULTI-REGISTER SELECT SETUP ----
+        function setupMultiRegisterSelect(type) {
+            const dropdownBtn = document.getElementById(`${type}RegisterDropdownBtn`);
+            const dropdown = document.getElementById(`${type}RegisterDropdown`);
+            const selectedContainer = document.getElementById(`${type}SelectedRegisters`);
+            const hiddenInput = document.getElementById(`${type}RegisterIds`);
+
+            if (!dropdownBtn || !dropdown || !selectedContainer || !hiddenInput) return;
+
+            let selectedRegisters = new Set();
+
+            function renderRegisterOptions() {
+                const available = registers.filter(r => !selectedRegisters.has(r.id));
+                dropdown.innerHTML = available.map(r => `
+                    <div class="reg-option" data-id="${r.id}">
+                        <span class="reg-check"><i class="fas fa-circle"></i></span>
+                        <span>${escapeHtml(r.name)} (${escapeHtml(r.lecture)})</span>
+                    </div>
+                `).join('');
+                if (available.length === 0) {
+                    dropdown.innerHTML = '<div style="padding:8px 14px;color:#8b8fa3;font-size:12px;">All registers selected</div>';
+                }
+                dropdown.querySelectorAll('.reg-option').forEach(opt => {
+                    opt.addEventListener('click', function() {
+                        const id = this.dataset.id;
+                        selectedRegisters.add(id);
+                        updateSelectedDisplay();
+                        renderRegisterOptions();
+                        updateHiddenInput();
+                        dropdown.classList.remove('open');
+                        dropdownBtn.classList.remove('active');
+                    });
+                });
+            }
+
+            function updateSelectedDisplay() {
+                selectedContainer.innerHTML = Array.from(selectedRegisters).map(id => {
+                    const reg = registers.find(r => r.id === id);
+                    return reg ? `
+                        <span class="reg-chip selected">
+                            ${escapeHtml(reg.name)}
+                            <span class="chip-remove" data-id="${id}">×</span>
+                        </span>
+                    ` : '';
+                }).join('');
+                selectedContainer.querySelectorAll('.chip-remove').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = this.dataset.id;
+                        selectedRegisters.delete(id);
+                        updateSelectedDisplay();
+                        renderRegisterOptions();
+                        updateHiddenInput();
+                    });
+                });
+                if (selectedRegisters.size === 0) {
+                    selectedContainer.innerHTML = '<span style="font-size:11px;color:#8b8fa3;">No registers selected</span>';
+                }
+            }
+
+            function updateHiddenInput() {
+                hiddenInput.value = Array.from(selectedRegisters).join(',');
+            }
+
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+                this.classList.toggle('active');
+                if (dropdown.classList.contains('open')) {
+                    renderRegisterOptions();
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                    dropdownBtn.classList.remove('active');
+                }
+            });
+
+            // Pre-populate from existing data (if editing)
+            const existingIds = hiddenInput.value.split(',').filter(id => id.trim() !== '');
+            existingIds.forEach(id => selectedRegisters.add(id));
+            updateSelectedDisplay();
+
+            // Expose for draft loading
+            window._multiRegisterSelects = window._multiRegisterSelects || {};
+            window._multiRegisterSelects[type] = {
+                selectedRegisters,
+                updateSelectedDisplay,
+                updateHiddenInput,
+                renderRegisterOptions
+            };
         }
 
         // =================================================================
@@ -11590,7 +11813,19 @@
                     document.getElementById(`${type}DurationHours`).value = parts[0] || 0;
                     document.getElementById(`${type}DurationMinutes`).value = parts[1] || 0;
                 }
-                document.getElementById(`${type}Register`).value = data.registerId || '';
+                // MULTI-REGISTER: restore register IDs
+                if (data.registerIds && Array.isArray(data.registerIds)) {
+                    const hiddenInput = document.getElementById(`${type}RegisterIds`);
+                    if (hiddenInput) {
+                        hiddenInput.value = data.registerIds.join(',');
+                        const ms = window._multiRegisterSelects && window._multiRegisterSelects[type];
+                        if (ms) {
+                            ms.selectedRegisters = new Set(data.registerIds);
+                            ms.updateSelectedDisplay();
+                            ms.updateHiddenInput();
+                        }
+                    }
+                }
 
                 if (type === 'assignment') {
                     if (data.deadline) document.getElementById(`${type}Deadline`).value = data.deadline;
@@ -11899,7 +12134,7 @@
                     else if (type === 'assignment') updateAssignmentQuestionNumbers();
                 }
 
-                if (data.name || data.registerId) {
+                if (data.name || data.registerIds) {
                     coverStep.style.display = 'none';
                     detailsStep.style.display = 'block';
                     if (stepTitle) {
@@ -11928,16 +12163,8 @@
         window.editAssessment = function(assessmentId) {
             const ass = assessments.find(a => a.id === assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
-            editingAssessmentId = assessmentId;
-            const type = ass.type;
-            const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
-            const target = sectionMap[type];
-            if (!target) { showToast('Unknown assessment type.', 'error'); return; }
-            showSection(target);
-            setTimeout(() => {
-                populateAssessmentForm(type);
-                showToast(`Editing "${ass.name}"`, 'info');
-            }, 300);
+            // Instead of publishing, we create a duplicate with editing mode
+            duplicateAssessment(assessmentId);
         };
 
         window.duplicateAssessment = async function(assessmentId) {
@@ -11947,9 +12174,9 @@
             const confirmed = await showConfirmPopup({
                 icon: '📋',
                 type: 'info',
-                title: 'Duplicate Assessment?',
-                message: `Duplicate "${ass.name}" with all questions and settings?`,
-                okText: 'Duplicate',
+                title: 'Duplicate & Edit?',
+                message: `This will create a duplicate of "${ass.name}" for editing. The original will remain unchanged.`,
+                okText: 'Duplicate & Edit',
                 okClass: 'btn-confirm'
             });
             if (!confirmed) { setLoading('duplicateAssessment', false, null); return; }
@@ -11964,18 +12191,31 @@
                     status: 'draft',
                     scheduledPublishTime: null,
                     publishImmediately: false,
-                    isEdited: false,
-                    editedVersion: false,
+                    isEdited: true,
+                    editedVersion: true,
                     originalId: id
                 };
                 await set(newRef, newAss);
-                showToast(`Assessment "${ass.name}" duplicated as draft!`, 'success');
+                showToast(`Assessment "${ass.name}" duplicated as draft! You can now edit it.`, 'success');
                 push(notificationsRef, {
-                    message: `📋 Assessment "${ass.name}" duplicated`,
+                    message: `📋 Assessment "${ass.name}" duplicated for editing`,
                     timestamp: serverTimestamp()
                 });
                 renderAssessmentsList();
                 renderTestExamsDashboard();
+                // Navigate to edit the new copy
+                const newId = newRef.key;
+                const type = ass.type;
+                const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
+                const target = sectionMap[type];
+                if (target) {
+                    editingAssessmentId = newId;
+                    showSection(target);
+                    setTimeout(() => {
+                        populateAssessmentForm(type);
+                        showToast(`Editing copy of "${ass.name}"`, 'info');
+                    }, 300);
+                }
             } catch (err) {
                 showToast('Error duplicating: ' + err.message, 'error');
             } finally {
@@ -11996,9 +12236,11 @@
             const minutes = minutesEl ? parseInt(minutesEl.value) || 0 : 0;
             const duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-            const registerId = document.getElementById(`${type}Register`).value;
+            // MULTI-REGISTER: get register IDs
+            const hiddenInput = document.getElementById(`${type}RegisterIds`);
+            const registerIds = hiddenInput ? hiddenInput.value.split(',').filter(id => id.trim() !== '') : [];
 
-            if (!name || !registerId) return null;
+            if (!name || registerIds.length === 0) return null;
             if (type !== 'assignment' && (!duration || duration === '00:00')) return null;
 
             let deadline = null;
@@ -12060,7 +12302,7 @@
             const instructions = document.getElementById(`${type}Instructions`).value.trim();
 
             return {
-                name, duration, registerId,
+                name, duration, registerIds,
                 scheduleType, publishImmediately, scheduledPublishTime,
                 startTime, endTime, availableFrom, availableUntil,
                 deadline,
@@ -12250,7 +12492,7 @@
                 type: type,
                 name: coverData.name,
                 duration: coverData.duration,
-                registerId: coverData.registerId,
+                registerIds: coverData.registerIds,
                 scheduleType: coverData.scheduleType,
                 publishImmediately: coverData.publishImmediately,
                 scheduledPublishTime: coverData.scheduledPublishTime,
@@ -12329,6 +12571,7 @@
                         <div><span class="label">Info Collection:</span> ${data.infoEnabled ? data.infoFields.join(', ') : 'None'}</div>
                         ${data.paid ? `<div><span class="label">Price:</span> ZMW ${data.price} (${data.gateway})</div>` : ''}
                         ${data.scheduledPublishTime ? `<div><span class="label">Auto-Publish:</span> ${new Date(data.scheduledPublishTime).toLocaleString()}</div>` : ''}
+                        <div><span class="label">Registers:</span> ${data.registerIds ? data.registerIds.length : 0} selected</div>
                     </div>
                     <div class="rules-section">
                         <h4>${type === 'assignment' ? 'Assignment Instructions' : 'Exam Rules'}</h4>
@@ -12385,6 +12628,7 @@
                         <div style="grid-column:span 2;"><span class="label" style="font-weight:600;color:#1a1d28;">Info Collection:</span> ${data.infoEnabled ? (data.infoFields || []).join(', ') : 'None'}</div>
                         ${data.paid ? `<div style="grid-column:span 2;"><span class="label" style="font-weight:600;color:#1a1d28;">Price:</span> ZMW ${data.price} (${data.gateway})</div>` : ''}
                         <div style="grid-column:span 2;"><span class="label" style="font-weight:600;color:#1a1d28;">Passing Score:</span> ${data.passingScore || 50}%</div>
+                        <div style="grid-column:span 2;"><span class="label" style="font-weight:600;color:#1a1d28;">Registers:</span> ${data.registerIds ? data.registerIds.length : 0} selected</div>
                         ${data.instructions ? `<div style="grid-column:span 2;background:#f8f9fc;padding:8px 12px;border-radius:8px;border-left:4px solid #f5b042;"><span class="label" style="font-weight:600;color:#1a1d28;">Instructions:</span> ${escapeHtml(data.instructions)}</div>` : ''}
                     </div>
                 </div>
@@ -12828,7 +13072,7 @@
                 (courseFilter === 'all' || v.courseId === courseFilter) &&
                 (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
             );
-            filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // oldest to newest
+            filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             document.getElementById('postedVideosGrid').innerHTML = filtered.map(v => renderVideoCardWithComments(v,
                 true)).join('') ||
                 '<div style="color:#8b8fa3;padding:20px;text-align:center;">No videos found</div>';
@@ -13126,6 +13370,13 @@
             document.getElementById('popupSpecificUserBtn').addEventListener('click', () => {
                 document.getElementById('popupSelectionView').style.display = 'none';
                 document.getElementById('popupUserSelectView').style.display = 'block';
+                // If there's a pending user from payment, pre-select them
+                if (window._pendingPopupUser) {
+                    popupSelectedUsers.clear();
+                    popupSelectedUsers.add(window._pendingPopupUser);
+                    document.getElementById('popupSelectedCount').textContent = '1';
+                    window._pendingPopupUser = null;
+                }
                 renderPopupUserList();
             });
 
@@ -13715,6 +13966,13 @@
                     scheduleRender('testExams');
                     scheduleRender('registers');
                     updateTestExamsDropdowns();
+                    // Update multi-register dropdowns
+                    ['test', 'quiz', 'exam', 'assignment'].forEach(type => {
+                        const ms = window._multiRegisterSelects && window._multiRegisterSelects[type];
+                        if (ms) {
+                            ms.renderRegisterOptions();
+                        }
+                    });
                 } catch (err) {
                     console.error('Error in registers listener:', err);
                 }
@@ -13783,14 +14041,7 @@
 
         // ---- Update dropdowns ----
         function updateTestExamsDropdowns() {
-            const regSelects = ['testRegister', 'quizRegister', 'examRegister', 'assignmentRegister'];
-            regSelects.forEach(id => {
-                const sel = document.getElementById(id);
-                if (sel) {
-                    sel.innerHTML = '<option value="">Select Register *</option>' +
-                        registers.map(r => `<option value="${r.id}">${escapeHtml(r.name)} (${escapeHtml(r.lecture)})</option>`).join('');
-                }
-            });
+            // Multi-register selects are handled separately via the multi-register component
         }
 
         // ---- CREATE REGISTER ----
@@ -14021,7 +14272,7 @@
                     type: 'test',
                     name: data.name,
                     duration: data.duration,
-                    registerId: data.registerId,
+                    registerIds: data.registerIds || [],
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
                     endTime: data.endTime,
@@ -14087,7 +14338,7 @@
                     type: 'quiz',
                     name: data.name,
                     duration: data.duration,
-                    registerId: data.registerId,
+                    registerIds: data.registerIds || [],
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
                     endTime: data.endTime,
@@ -14153,7 +14404,7 @@
                     type: 'exam',
                     name: data.name,
                     duration: data.duration,
-                    registerId: data.registerId,
+                    registerIds: data.registerIds || [],
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
                     endTime: data.endTime,
@@ -14219,7 +14470,7 @@
                     type: 'assignment',
                     name: data.name,
                     duration: data.duration,
-                    registerId: data.registerId,
+                    registerIds: data.registerIds || [],
                     deadline: data.deadline,
                     publishImmediately: data.publishImmediately,
                     scheduledPublishTime: data.scheduledPublishTime || null,
@@ -14289,6 +14540,14 @@
             document.getElementById('assignmentPassingScore').value = 50;
             document.getElementById('assignmentSchedulePublish').checked = false;
             document.getElementById('assignmentSchedulePublishFields').style.display = 'none';
+
+            // Reset multi-register
+            const ms = window._multiRegisterSelects && window._multiRegisterSelects['assignment'];
+            if (ms) {
+                ms.selectedRegisters.clear();
+                ms.updateSelectedDisplay();
+                ms.updateHiddenInput();
+            }
 
             if (editingAssessmentId) {
                 populateAssessmentForm('assignment');
@@ -14757,6 +15016,14 @@
             document.getElementById('testPassingScore').value = 50;
             document.getElementById('testSchedulePublish').checked = false;
             document.getElementById('testSchedulePublishFields').style.display = 'none';
+
+            // Reset multi-register
+            const ms = window._multiRegisterSelects && window._multiRegisterSelects['test'];
+            if (ms) {
+                ms.selectedRegisters.clear();
+                ms.updateSelectedDisplay();
+                ms.updateHiddenInput();
+            }
 
             if (editingAssessmentId) {
                 populateAssessmentForm('test');
@@ -15258,6 +15525,14 @@
             document.getElementById('quizSchedulePublish').checked = false;
             document.getElementById('quizSchedulePublishFields').style.display = 'none';
 
+            // Reset multi-register
+            const ms = window._multiRegisterSelects && window._multiRegisterSelects['quiz'];
+            if (ms) {
+                ms.selectedRegisters.clear();
+                ms.updateSelectedDisplay();
+                ms.updateHiddenInput();
+            }
+
             if (editingAssessmentId) {
                 populateAssessmentForm('quiz');
             }
@@ -15720,6 +15995,14 @@
             document.getElementById('examPassingScore').value = 50;
             document.getElementById('examSchedulePublish').checked = false;
             document.getElementById('examSchedulePublishFields').style.display = 'none';
+
+            // Reset multi-register
+            const ms = window._multiRegisterSelects && window._multiRegisterSelects['exam'];
+            if (ms) {
+                ms.selectedRegisters.clear();
+                ms.updateSelectedDisplay();
+                ms.updateHiddenInput();
+            }
 
             if (editingAssessmentId) {
                 populateAssessmentForm('exam');
@@ -16193,7 +16476,20 @@
                 document.getElementById(type + 'DurationHours').value = parts[0] || 0;
                 document.getElementById(type + 'DurationMinutes').value = parts[1] || 0;
             }
-            document.getElementById(type + 'Register').value = ass.registerId || '';
+
+            // MULTI-REGISTER: restore register IDs
+            if (ass.registerIds && Array.isArray(ass.registerIds)) {
+                const hiddenInput = document.getElementById(`${type}RegisterIds`);
+                if (hiddenInput) {
+                    hiddenInput.value = ass.registerIds.join(',');
+                    const ms = window._multiRegisterSelects && window._multiRegisterSelects[type];
+                    if (ms) {
+                        ms.selectedRegisters = new Set(ass.registerIds);
+                        ms.updateSelectedDisplay();
+                        ms.updateHiddenInput();
+                    }
+                }
+            }
 
             if (type === 'assignment') {
                 if (ass.deadline) document.getElementById('assignmentDeadline').value = ass.deadline;
@@ -16572,7 +16868,7 @@
                             ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                             <div style="font-size:12px;color:#8b8fa3;margin-top:4px;">
                                 ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}
-                                <br>Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
+                                <br>Registers: ${ass.registerIds && Array.isArray(ass.registerIds) ? ass.registerIds.map(id => escapeHtml(registers.find(r => r.id === id)?.name || 'N/A')).join(', ') : 'N/A'}
                             </div>
                         </div>
                         <div style="font-size:12px;background:rgba(245,176,66,0.10);padding:4px 14px;border-radius:30px;color:#d4952a;font-weight:600;">
@@ -16582,8 +16878,7 @@
                     <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="btn-outline" onclick="viewRegisterDetails('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-address-book"></i> View Register</button>
                         <button class="btn-outline" onclick="renderHistoryStudents('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-users"></i> View Students</button>
-                        <button class="btn-outline" onclick="editAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-pen-to-square"></i> Edit</button>
-                        <button class="btn-outline" onclick="duplicateAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-copy"></i> Duplicate</button>
+                        <button class="btn-outline" onclick="duplicateAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-copy"></i> Duplicate & Edit</button>
                     </div>
                 </div>
             `).join('');
@@ -16595,18 +16890,32 @@
                     renderHistoryStudents(assId);
                 });
             });
+
+            // Download full score sheet button
+            document.getElementById('downloadFullScoreSheetBtn')?.addEventListener('click', function() {
+                const assId = currentHistoryAssessmentId;
+                if (!assId) { showToast('Please select an assessment first.', 'error'); return; }
+                generateFullScoreSheetHTML(assId);
+            });
         }
 
         window.viewRegisterDetails = function(assId) {
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
-            const register = registers.find(r => r.id === ass.registerId);
-            if (!register) { showToast('Register not found.', 'error'); return; }
+            const registerIds = ass.registerIds || [];
+            const registersData = registerIds.map(id => registers.find(r => r.id === id)).filter(Boolean);
 
-            const members = register.memberDetails || register.members?.map(uid => {
+            const allMembers = [];
+            const allUserIds = new Set();
+            registersData.forEach(reg => {
+                (reg.members || []).forEach(uid => allUserIds.add(uid));
+            });
+            allUserIds.forEach(uid => {
                 const user = users.find(u => u.uid === uid);
-                return user ? { uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email } : null;
-            }).filter(Boolean) || [];
+                if (user) {
+                    allMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
+                }
+            });
 
             const submittedUserIds = assessmentResponses
                 .filter(r => r.assessmentId === assId && (r.status === 'completed' || r.status === 'ended'))
@@ -16620,12 +16929,12 @@
                 <div class="modal-box" style="max-width:600px;width:100%;padding:1.5rem;max-height:80vh;overflow-y:auto;">
                     <button class="close-modal" onclick="this.closest('.modal-overlay').remove();" style="float:right;background:none;border:none;font-size:1.5rem;color:#8b8fa3;cursor:pointer;">&times;</button>
                     <div class="utom-brand">UTOM</div>
-                    <h3 style="margin-bottom:0.4rem;"><i class="fas fa-address-book"></i> Register: ${escapeHtml(register.name)}</h3>
+                    <h3 style="margin-bottom:0.4rem;"><i class="fas fa-address-book"></i> Registers: ${registersData.map(r => escapeHtml(r.name)).join(', ')}</h3>
                     <p style="font-size:12px;color:#8b8fa3;margin-bottom:0.8rem;">Assessment: ${escapeHtml(ass.name)}</p>
                     <div style="margin-bottom:0.8rem;">
-                        <strong>Total Members:</strong> ${members.length}<br>
+                        <strong>Total Members:</strong> ${allMembers.length}<br>
                         <strong>Submitted:</strong> ${submittedUserIds.length}<br>
-                        <strong>Not Submitted:</strong> ${members.length - submittedUserIds.length}
+                        <strong>Not Submitted:</strong> ${allMembers.length - submittedUserIds.length}
                     </div>
                     <div style="border-top:1px solid #eee;padding-top:0.8rem;">
                         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -16638,7 +16947,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${members.map((m, idx) => {
+                                ${allMembers.map((m, idx) => {
                                     const submitted = submittedUserIds.includes(m.uid);
                                     return `
                                         <tr style="border-bottom:1px solid #f0f0f5;">
@@ -16674,8 +16983,7 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
                     <div>
-                        <button id="downloadReportBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;"><i class="fas fa-image"></i> Download Report PNG</button>
-                        <button id="downloadFullScoreListBtn" class="btn-primary" style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;"><i class="fas fa-print"></i> Print Full Score List</button>
+                        <button id="downloadFullScoreSheetBtn2" class="btn-primary" style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;"><i class="fas fa-print"></i> Download Full Score Sheet (HTML)</button>
                     </div>
                 </div>
                 <h2 style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(ass.name)}</h2>
@@ -16688,8 +16996,7 @@
                 html += '<div style="text-align:center;padding:24px;color:#8b8fa3;">No students have submitted this assessment yet.</div>';
                 container.innerHTML = html;
                 document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
-                document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
-                document.getElementById('downloadFullScoreListBtn')?.addEventListener('click', () => generateFullScoreListHTML(assId));
+                document.getElementById('downloadFullScoreSheetBtn2')?.addEventListener('click', () => generateFullScoreSheetHTML(assId));
                 return;
             }
 
@@ -16733,8 +17040,7 @@
             container.innerHTML = html;
 
             document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
-            document.getElementById('downloadReportBtn')?.addEventListener('click', () => generateReportImage(assId));
-            document.getElementById('downloadFullScoreListBtn')?.addEventListener('click', () => generateFullScoreListHTML(assId));
+            document.getElementById('downloadFullScoreSheetBtn2')?.addEventListener('click', () => generateFullScoreSheetHTML(assId));
 
             container.querySelectorAll('.view-script-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -16801,182 +17107,126 @@
             showToast('Student CSV downloaded!', 'success');
         }
 
-        async function generateReportImage(assId) {
+        // ---- GENERATE FULL SCORE SHEET HTML (A4 pages) ----
+        function generateFullScoreSheetHTML(assId) {
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
             const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
-            if (responses.length === 0) { showToast('No students to generate report.', 'error'); return; }
-
-            let reportHtml = `
-                <div id="reportDiv" style="padding:40px;background:#ffffff;font-family:'Inter',sans-serif;max-width:900px;margin:0 auto;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
-                    <div style="text-align:center;margin-bottom:24px;border-bottom:3px solid #F5B042;padding-bottom:16px;">
-                        <h1 style="color:#1a1d28;font-size:28px;font-weight:900;margin:0;">UTOM</h1>
-                        <h2 style="color:#1a1d28;font-size:20px;font-weight:700;margin:4px 0;">Assessment Report</h2>
-                        <div style="color:#5f6377;font-size:14px;margin-top:4px;">
-                            ${escapeHtml(ass.name)} · ${ass.type}
-                            ${ass.isEdited ? ' ✏️ EDITED' : ''}
-                            ${ass.editedVersion ? ' 🔄 VERSION' : ''}
-                        </div>
-                        <div style="color:#8b8fa3;font-size:12px;">
-                            ${new Date().toLocaleString()}
-                        </div>
-                    </div>
-                    <table style="width:100%;border-collapse:collapse;font-size:14px;color:#1a1d28;">
-                        <thead>
-                            <tr style="background:#F5B042;color:#fff;">
-                                <th style="padding:10px 12px;text-align:left;border-radius:8px 0 0 0;">#</th>
-                                <th style="padding:10px 12px;text-align:left;">Name</th>
-                                <th style="padding:10px 12px;text-align:left;">Email</th>
-                                <th style="padding:10px 12px;text-align:left;">Phone</th>
-                                <th style="padding:10px 12px;text-align:center;">Score</th>
-                                <th style="padding:10px 12px;text-align:center;border-radius:0 8px 0 0;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+            if (responses.length === 0) { showToast('No students to export.', 'error'); return; }
 
             const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
-            sorted.forEach((r, idx) => {
-                const user = users.find(u => u.uid === r.userId);
-                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                const email = user ? user.email : '';
-                const phone = user ? user.phone : 'N/A';
-                const score = r.score || 0;
-                const total = ass.totalMarks || 0;
-                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
-                const passed = percent >= (ass.passingScore || 50);
-                reportHtml += `
-                    <tr style="border-bottom:1px solid #e5e8ed;">
-                        <td style="padding:8px 12px;font-weight:600;">${idx+1}</td>
-                        <td style="padding:8px 12px;font-weight:500;">${escapeHtml(name)}</td>
-                        <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(email)}</td>
-                        <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(phone)}</td>
-                        <td style="padding:8px 12px;text-align:center;font-weight:700;color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${percent}%)</td>
-                        <td style="padding:8px 12px;text-align:center;">
-                            <span style="background:${passed ? '#e8f5e9' : '#fde8e8'};color:${passed ? '#2e7d32' : '#c62828'};padding:2px 12px;border-radius:30px;font-size:12px;font-weight:600;">
-                                ${passed ? 'PASSED' : 'FAILED'}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            });
+            const rowsPerPage = 20;
+            const totalPages = Math.ceil(sorted.length / rowsPerPage);
 
-            reportHtml += `
-                        </tbody>
-                    </table>
-                    <div style="text-align:center;margin-top:20px;color:#8b8fa3;font-size:12px;border-top:1px solid #e5e8ed;padding-top:12px;">
-                        Generated by UTOM Admin Studio
+            let allPagesHtml = '';
+            for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+                const start = pageIdx * rowsPerPage;
+                const end = Math.min(start + rowsPerPage, sorted.length);
+                let rowsHtml = '';
+                for (let i = start; i < end; i++) {
+                    const r = sorted[i];
+                    const user = users.find(u => u.uid === r.userId);
+                    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+                    const email = user ? user.email : '';
+                    const phone = user ? user.phone : 'N/A';
+                    const score = r.score || 0;
+                    const total = ass.totalMarks || 0;
+                    const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+                    const passed = percent >= (ass.passingScore || 50);
+                    rowsHtml += `
+                        <tr style="border-bottom:1px solid #e5e8ed;">
+                            <td style="padding:8px 12px;font-weight:600;">${i+1}</td>
+                            <td style="padding:8px 12px;font-weight:500;">${escapeHtml(name)}</td>
+                            <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(email)}</td>
+                            <td style="padding:8px 12px;color:#5f6377;">${escapeHtml(phone)}</td>
+                            <td style="padding:8px 12px;text-align:center;font-weight:700;color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${percent}%)</td>
+                            <td style="padding:8px 12px;text-align:center;">
+                                <span style="background:${passed ? '#e8f5e9' : '#fde8e8'};color:${passed ? '#2e7d32' : '#c62828'};padding:2px 12px;border-radius:30px;font-size:12px;font-weight:600;">
+                                    ${passed ? 'PASSED' : 'FAILED'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                const pageNum = pageIdx + 1;
+                const totalStudents = sorted.length;
+                const registerNames = (ass.registerIds || []).map(id => registers.find(r => r.id === id)?.name || 'N/A').join(', ');
+
+                allPagesHtml += `
+                    <div class="score-page" style="page-break-after:always;break-after:page;min-height:297mm;padding:20mm 15mm;background:#fff;font-family:'Inter',Arial,sans-serif;box-sizing:border-box;">
+                        <div style="text-align:center;margin-bottom:16px;border-bottom:3px solid #F5B042;padding-bottom:14px;">
+                            <h1 style="font-size:28px;font-weight:900;color:#1a1d28;margin:0;">UTOM</h1>
+                            <h2 style="font-size:18px;font-weight:700;color:#1a1d28;margin:4px 0;">Full Score Sheet</h2>
+                            <div style="font-size:14px;color:#1a1d28;font-weight:600;">${escapeHtml(ass.name)}</div>
+                            <div style="font-size:12px;color:#5f6377;">
+                                ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0} · Passing Score: ${ass.passingScore || 0}%
+                            </div>
+                            <div style="font-size:11px;color:#8b8fa3;">
+                                Registers: ${escapeHtml(registerNames)} · Date: ${new Date().toLocaleString()} · Page ${pageNum}/${totalPages}
+                            </div>
+                            <div style="font-size:11px;color:#8b8fa3;">Total Students: ${totalStudents}</div>
+                            ${ass.isEdited ? '<span class="edited-badge edited" style="font-size:10px;padding:2px 12px;">✏️ EDITED</span>' : ''}
+                            ${ass.editedVersion ? '<span class="edited-badge edited" style="font-size:10px;padding:2px 12px;">🔄 VERSION</span>' : ''}
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1a1d28;">
+                            <thead>
+                                <tr style="background:#F5B042;color:#fff;">
+                                    <th style="padding:10px 12px;text-align:left;border-radius:4px 0 0 0;">#</th>
+                                    <th style="padding:10px 12px;text-align:left;">Name</th>
+                                    <th style="padding:10px 12px;text-align:left;">Email</th>
+                                    <th style="padding:10px 12px;text-align:left;">Phone</th>
+                                    <th style="padding:10px 12px;text-align:center;">Score</th>
+                                    <th style="padding:10px 12px;text-align:center;border-radius:0 4px 0 0;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                        <div style="text-align:center;margin-top:16px;color:#8b8fa3;font-size:10px;border-top:1px solid #e5e8ed;padding-top:8px;">
+                            Generated by UTOM Admin Studio · ${new Date().toLocaleString()}
+                        </div>
                     </div>
-                </div>
-            `;
-
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = reportHtml;
-            document.body.appendChild(tempDiv);
-            const reportEl = document.getElementById('reportDiv');
-
-            try {
-                showToast('Generating image... Please wait.', 'info');
-                const canvas = await html2canvas(reportEl, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false
-                });
-                const link = document.createElement('a');
-                link.download = `Report_${ass.name}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                showToast('Report image downloaded!', 'success');
-            } catch (err) {
-                showToast('Error generating image: ' + err.message, 'error');
-            } finally {
-                document.body.removeChild(tempDiv);
+                `;
             }
-        }
 
-        // Full score list HTML print
-        function generateFullScoreListHTML(assId) {
-            const ass = assessments.find(a => a.id === assId);
-            if (!ass) { showToast('Assessment not found.', 'error'); return; }
-            const responses = assessmentResponses.filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'));
-            if (responses.length === 0) { showToast('No students to print.', 'error'); return; }
+            const fullHtml = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Full Score Sheet - ${escapeHtml(ass.name)}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { background: #f4f5f8; padding: 0; font-family: 'Inter', Arial, sans-serif; }
+                    @page { size: A4; margin: 0; }
+                    .score-page { background: #fff; margin: 0 auto; width: 210mm; min-height: 297mm; padding: 20mm 15mm; box-sizing: border-box; }
+                    .edited-badge { display: inline-block; background: #f39c12; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 12px; border-radius: 30px; margin-left: 6px; }
+                    @media print {
+                        body { background: #fff; }
+                        .score-page { margin: 0; width: 100%; min-height: 297mm; page-break-after: always; break-after: page; }
+                    }
+                    @media screen {
+                        .score-page { margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border-radius: 4px; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${allPagesHtml}
+            </body>
+            </html>`;
 
-            const sorted = [...responses].sort((a, b) => (b.score || 0) - (a.score || 0));
-            let rowsHtml = '';
-            sorted.forEach((r, idx) => {
-                const user = users.find(u => u.uid === r.userId);
-                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                const email = user ? user.email : '';
-                const phone = user ? user.phone : 'N/A';
-                const score = r.score || 0;
-                const total = ass.totalMarks || 0;
-                const percent = total > 0 ? Math.round((score / total) * 100) : 0;
-                const passed = percent >= (ass.passingScore || 50);
-                rowsHtml += `
-                    <tr style="border-bottom:1px solid #e5e8ed;">
-                        <td style="padding:8px 12px;">${idx+1}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(name)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(email)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(phone)}</td>
-                        <td style="padding:8px 12px;text-align:center;">${score}</td>
-                        <td style="padding:8px 12px;text-align:center;">${total}</td>
-                        <td style="padding:8px 12px;text-align:center;">${percent}%</td>
-                        <td style="padding:8px 12px;text-align:center;"><span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${passed ? 'Pass' : 'Fail'}</span></td>
-                    </tr>
-                `;
-            });
-
-            const html = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Full Score List - ${escapeHtml(ass.name)}</title>
-                    <style>
-                        body { font-family: 'Inter', Arial, sans-serif; padding: 30px; }
-                        h1 { color: #1a1d28; font-size: 24px; text-align: center; margin-bottom: 4px; }
-                        h2 { color: #5f6377; font-size: 16px; text-align: center; margin-bottom: 16px; }
-                        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px; }
-                        th { background: #f5b042; color: #fff; padding: 10px; text-align: left; }
-                        td { padding: 8px; border-bottom: 1px solid #ddd; }
-                        .header-info { text-align: center; margin-bottom: 20px; }
-                        .print-btn { background: #f5b042; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
-                        @media print { .print-btn { display: none; } }
-                    </style>
-                </head>
-                <body>
-                    <button class="print-btn" onclick="window.print()">Print</button>
-                    <div class="header-info">
-                        <h1>UTOM</h1>
-                        <h2>Full Score List - ${escapeHtml(ass.name)} (${ass.type})</h2>
-                        <div>Total Students: ${responses.length} · Date: ${new Date().toLocaleString()}</div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Score</th>
-                                <th>Total</th>
-                                <th>Percentage</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                    </table>
-                </body>
-                </html>
-            `;
-
-            const win = window.open('', '_blank');
-            win.document.write(html);
-            win.document.close();
-            win.focus();
+            const blob = new Blob([fullHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Full_Score_Sheet_${ass.name}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('Full Score Sheet HTML with A4 pages downloaded!', 'success');
         }
 
         // ---- renderOngoingList ----
@@ -17047,7 +17297,7 @@
                         </div>
                         ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
                         <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
-                            Register: ${escapeHtml(registers.find(r => r.id === ass.registerId)?.name || 'N/A')}
+                            Registers: ${ass.registerIds && Array.isArray(ass.registerIds) ? ass.registerIds.map(id => escapeHtml(registers.find(r => r.id === id)?.name || 'N/A')).join(', ') : 'N/A'}
                             ${ass.type !== 'assignment' ? (ass.scheduleType === 'fixed' ? ` · Start: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : 'N/A'} · End: ${ass.endTime ? new Date(ass.endTime).toLocaleString() : 'N/A'}` : '') : ''}
                             ${ass.type !== 'assignment' && ass.scheduleType === 'self' ? ` · Available: ${ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A'} – ${ass.availableUntil ? new Date(ass.availableUntil).toLocaleString() : 'N/A'}` : ''}
                         </div>
@@ -17968,7 +18218,7 @@
                 filtered = filtered.filter(a =>
                     (a.name || '').toLowerCase().includes(search) ||
                     (a.type || '').toLowerCase().includes(search) ||
-                    (registers.find(r => r.id === a.registerId)?.name || '').toLowerCase().includes(search)
+                    (a.registerIds || []).some(id => (registers.find(r => r.id === id)?.name || '').toLowerCase().includes(search))
                 );
             }
             if (typeFilter !== 'all') {
@@ -17985,7 +18235,7 @@
             }
 
             container.innerHTML = filtered.map(ass => {
-                const registerName = registers.find(r => r.id === ass.registerId)?.name || 'N/A';
+                const registerNames = (ass.registerIds || []).map(id => registers.find(r => r.id === id)?.name || 'N/A').join(', ');
                 const statusClass = ass.status === 'published' ? 'active' : (ass.status === 'draft' ? 'pending' :
                     ass.status === 'scheduled' ? 'scheduled' : '');
                 const statusLabel = ass.status.charAt(0).toUpperCase() + ass.status.slice(1);
@@ -17998,7 +18248,7 @@
                                 ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
                                 ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                                 <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
-                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Register: ${escapeHtml(registerName)}</span>
+                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Registers: ${escapeHtml(registerNames)}</span>
                                 ${scheduledBadge}
                             </div>
                             <div style="font-size:12px;">
@@ -18009,8 +18259,7 @@
                         ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin:4px 0;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
                         <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
                             <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="previewAssessment('${ass.id}')"><i class="fas fa-eye"></i> Preview</button>
-                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;border-radius:30px;color:#fff;" onclick="editAssessment('${ass.id}')"><i class="fas fa-pen-to-square"></i> Edit</button>
-                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;" onclick="duplicateAssessment('${ass.id}')"><i class="fas fa-copy"></i> Duplicate</button>
+                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;border-radius:30px;color:#fff;" onclick="duplicateAssessment('${ass.id}')"><i class="fas fa-copy"></i> Duplicate & Edit</button>
                             <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${ass.id}">Delete</button>
                             ${ass.status === 'draft' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;" onclick="publishAssessment('${ass.id}')"><i class="fas fa-check"></i> Publish</button>` : ''}
                             ${ass.status === 'scheduled' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f39c12,#e67e22);border:none;border-radius:30px;color:#fff;" onclick="publishAssessmentNow('${ass.id}')"><i class="fas fa-clock"></i> Publish Now</button>` : ''}
@@ -18251,8 +18500,7 @@
         window.showSection = showSection;
         window.renderHistoryAssessments = renderHistoryAssessments;
         window.renderHistoryStudents = renderHistoryStudents;
-        window.generateReportImage = generateReportImage;
-        window.generateFullScoreListHTML = generateFullScoreListHTML;
+        window.generateFullScoreSheetHTML = generateFullScoreSheetHTML;
         window.downloadAssessmentHTML = downloadAssessmentHTML;
         window.exportSingleStudentCSV = exportSingleStudentCSV;
         window.duplicateAssessment = duplicateAssessment;
@@ -18265,7 +18513,7 @@
 
         setupRealtime();
 
-        console.log('✅ UTOM Admin — Fully optimized with real-time updates, edited badges, version tracking, range answers, multiple registers, and smooth navigation.');
+        console.log('✅ UTOM Admin — Fully optimized with video close button, popup user search fix, payment auto-detect, multi-register support, A4 score sheet, duplicate-on-edit, and all features.');
     </script>
 </body>
 </html>
