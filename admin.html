@@ -7705,44 +7705,63 @@
         // =================================================================
         // CONFIRMATION POPUP
         // =================================================================
-        function showConfirmPopup(options) {
-            return new Promise((resolve) => {
-                const overlay = document.getElementById('confirmationPopup');
-                const icon = document.getElementById('confirmIcon');
-                const title = document.getElementById('confirmTitle');
-                const message = document.getElementById('confirmMessage');
-                const okBtn = document.getElementById('confirmOkBtn');
-                const cancelBtn = document.getElementById('confirmCancelBtn');
-                const closeBtn = document.getElementById('confirmCloseBtn');
+       function showConfirmPopup(options) {
+  return new Promise((resolve) => {
+    // Create or get the modal element
+    let overlay = document.getElementById('confirmationPopup');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'confirmationPopup';
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML = `
+        <div class="confirm-box">
+          <span class="confirm-icon" id="confirmIcon">❓</span>
+          <h3 class="confirm-title" id="confirmTitle">Are you sure?</h3>
+          <p class="confirm-message" id="confirmMessage"></p>
+          <div class="confirm-actions">
+            <button class="btn-cancel" id="confirmCancelBtn">Cancel</button>
+            <button class="btn-confirm" id="confirmOkBtn">OK</button>
+            <button class="confirm-close" id="confirmCloseBtn">×</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+    }
 
-                icon.textContent = options.icon || '❓';
-                icon.className = 'confirm-icon ' + (options.type || 'info');
-                title.textContent = options.title || 'Are you sure?';
-                message.innerHTML = options.message || 'This action cannot be undone.';
-                okBtn.textContent = options.okText || 'OK';
-                okBtn.className = options.okClass || 'btn-confirm';
-                cancelBtn.style.display = options.hideCancel ? 'none' : 'inline-flex';
+    const icon = overlay.querySelector('#confirmIcon');
+    const title = overlay.querySelector('#confirmTitle');
+    const message = overlay.querySelector('#confirmMessage');
+    const okBtn = overlay.querySelector('#confirmOkBtn');
+    const cancelBtn = overlay.querySelector('#confirmCancelBtn');
+    const closeBtn = overlay.querySelector('#confirmCloseBtn');
 
-                overlay.classList.add('open');
+    icon.textContent = options.icon || '❓';
+    icon.className = 'confirm-icon ' + (options.type || 'info');
+    title.textContent = options.title || 'Are you sure?';
+    message.innerHTML = options.message || 'This action cannot be undone.';
+    okBtn.textContent = options.okText || 'OK';
+    okBtn.className = options.okClass || 'btn-confirm';
+    cancelBtn.style.display = options.hideCancel ? 'none' : 'inline-flex';
 
-                const cleanup = () => {
-                    overlay.classList.remove('open');
-                    okBtn.removeEventListener('click', onOk);
-                    cancelBtn.removeEventListener('click', onCancel);
-                    closeBtn.removeEventListener('click', onCancel);
-                };
+    overlay.classList.add('open');
 
-                const onOk = () => { cleanup(); resolve(true); };
-                const onCancel = () => { cleanup(); resolve(false); };
+    const cleanup = () => {
+      overlay.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      closeBtn.removeEventListener('click', onCancel);
+    };
 
-                okBtn.addEventListener('click', onOk);
-                cancelBtn.addEventListener('click', onCancel);
-                closeBtn.addEventListener('click', onCancel);
-                overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) { onCancel(); }
-                });
-            });
-        }
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    closeBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) onCancel();
+    });
+  });
+}
 
         // =================================================================
         // LOADING STATE HELPERS
