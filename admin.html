@@ -6209,6 +6209,36 @@
                                 <label>Message</label>
                                 <textarea id="popupMessage" rows="3" placeholder="Write your message here." required></textarea>
                             </div>
+                            <!-- ===== NEW: Scheduling & Repetition ===== -->
+                            <div class="form-group" style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;padding:12px 14px;margin:10px 0;">
+                                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">📅 Scheduling &amp; Repetition</label>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <div>
+                                        <label style="font-size:10px;font-weight:600;">Start Date</label>
+                                        <input type="datetime-local" id="popupStartDate" style="width:100%;padding:6px 10px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:11px;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size:10px;font-weight:600;">End Date</label>
+                                        <input type="datetime-local" id="popupEndDate" style="width:100%;padding:6px 10px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:11px;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size:10px;font-weight:600;">Repeat Every</label>
+                                        <div style="display:flex;gap:4px;">
+                                            <input type="number" id="popupRepeatInterval" value="1" min="1" style="width:60px;padding:6px 10px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:11px;" />
+                                            <select id="popupRepeatUnit" style="flex:1;padding:6px 10px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:11px;">
+                                                <option value="minutes">Minutes</option>
+                                                <option value="hours" selected>Hours</option>
+                                                <option value="days">Days</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:10px;font-weight:600;">Max Occurrences</label>
+                                        <input type="number" id="popupMaxOccurrences" value="1" min="1" style="width:100%;padding:6px 10px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:11px;" />
+                                    </div>
+                                </div>
+                                <div style="font-size:10px;color:#8b8fa3;margin-top:6px;">Leave End Date blank for indefinite, or Max Occurrences to limit repeats.</div>
+                            </div>
                             <div class="form-group media-upload-area">
                                 <label>Attach Media (optional)</label>
                                 <div class="upload-preview" id="popupMediaPreview">
@@ -7168,7 +7198,6 @@
                         <h4><i class="fas fa-history"></i> History / Final Script</h4>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                             <button id="goToAssessmentsBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;"><i class="fas fa-folder-open"></i> All Assessments</button>
-                            <!-- Download full score sheet button removed PNG, replaced with HTML A4 -->
                             <button id="downloadFullScoreSheetBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;"><i class="fas fa-print"></i> Download Full Score Sheet (HTML)</button>
                         </div>
                         <div id="historyListContainer"></div>
@@ -7225,7 +7254,6 @@
             <button class="nav-link" data-section="popup"><i class="fas fa-bell"></i> <span class="nav-label">Popups</span></button>
             <button class="nav-link" data-section="account"><i class="fas fa-wallet"></i> <span class="nav-label">Account</span></button>
             <button class="nav-link" data-section="settings"><i class="fas fa-cog"></i> <span class="nav-label">Settings</span></button>
-            <!-- ===== NEW LIVE CLASS LINK ===== -->
             <button class="nav-link" data-section="live" onclick="window.open('live.html','_blank')"><i class="fas fa-broadcast-tower" style="color:var(--gold);"></i> <span class="nav-label">Live Class</span></button>
             <div class="divider"></div>
             <button id="logoutBtnSidebar" class="btn-primary full logout-btn-sidebar" style="margin-top:18px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -10832,37 +10860,81 @@
                             parent.insertBefore(row, this);
                         });
                     } else if (e.target.value === 'multi-answer') {
+                        // ===== MODIFIED: Add range support for each part =====
                         container.innerHTML = `
                             <div class="qb-parts-container">
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:70px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:70px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:70px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
                         `;
+                        if (imageArea) imageArea.style.display = 'flex';
                         container.querySelector('.qb-add-part')?.addEventListener('click', function() {
                             const parent = this.closest('.qb-parts-container');
                             const count = parent.querySelectorAll('.qb-part-row').length;
                             const partRow = document.createElement('div');
                             partRow.className = 'qb-part-row';
+                            const letters = 'abcdefghijklmnopqrstuvwxyz';
+                            const label = count < letters.length ? letters[count] : 'part';
                             partRow.innerHTML = `
-                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                                <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                        });
+                        // Allow removal of parts
+                        container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const row = this.closest('.qb-part-row');
+                                const parent = row.closest('.qb-parts-container');
+                                if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                    row.remove();
+                                } else {
+                                    showToast('Cannot remove the last part.', 'error');
+                                }
+                            });
                         });
                     } else {
                         container.innerHTML = `
@@ -11001,7 +11073,6 @@
                     const durMinsEl = document.getElementById(`${type}DurationMinutes`);
                     const hours = durHoursEl ? parseInt(durHoursEl.value) || 0 : 0;
                     const minutes = durMinsEl ? parseInt(durMinsEl.value) || 0 : 0;
-                    // MULTI-REGISTER: get selected register IDs
                     const registerIdsInput = document.getElementById(`${type}RegisterIds`);
                     const registerIds = registerIdsInput ? registerIdsInput.value.split(',').filter(id => id.trim() !== '') : [];
                     if (!name) { showToast('Please enter a name.', 'error'); return; }
@@ -11519,12 +11590,20 @@
                                     </div>
                                 `).join('')}<button type="button" class="qb-add-order">+ Add Item</button></div>`;
                             } else if (q.type === 'multi-answer') {
+                                // ===== MODIFIED: read range fields =====
                                 optionsHtml = `<div class="qb-parts-container">
                                     ${(q.options || []).map((part, pi) => `
                                         <div class="qb-part-row">
                                             <input type="text" class="qb-part-label-input" value="${escapeHtml(part.label)}" />
                                             <input type="text" class="qb-part-correct-input" value="${escapeHtml(part.correctAnswer || '')}" />
-                                            <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" />
+                                            <div style="display:flex;gap:4px;align-items:center;">
+                                                <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                                <input type="number" class="qb-part-range-min" value="${part.rangeMin !== undefined ? part.rangeMin : ''}" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                                <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                                <input type="number" class="qb-part-range-max" value="${part.rangeMax !== undefined ? part.rangeMax : ''}" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                            </div>
+                                            <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" style="width:60px;" />
+                                            <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                         </div>
                                     `).join('')}
                                     <button type="button" class="qb-add-part">+ Add Part</button>
@@ -11584,6 +11663,10 @@
                             container.appendChild(qDiv);
                             attachQuizQuestionEventsTo(qDiv);
                             attachQuestionImageUpload(qDiv, 'quiz', 0, qi + 1);
+                            // Reattach range/part events for multi-answer
+                            if (q.type === 'multi-answer') {
+                                attachMultiAnswerPartEvents(qDiv);
+                            }
                         });
                         updateQuizQuestionNumbers();
                     }
@@ -11651,7 +11734,14 @@
                                                 <div class="qb-part-row">
                                                     <input type="text" class="qb-part-label-input" value="${escapeHtml(part.label)}" />
                                                     <input type="text" class="qb-part-correct-input" value="${escapeHtml(part.correctAnswer || '')}" />
-                                                    <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" />
+                                                    <div style="display:flex;gap:4px;align-items:center;">
+                                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                                        <input type="number" class="qb-part-range-min" value="${part.rangeMin !== undefined ? part.rangeMin : ''}" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                                        <input type="number" class="qb-part-range-max" value="${part.rangeMax !== undefined ? part.rangeMax : ''}" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                                    </div>
+                                                    <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" style="width:60px;" />
+                                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                                 </div>
                                             `).join('')}
                                             <button type="button" class="qb-add-part">+ Add Part</button>
@@ -11710,6 +11800,9 @@
                                     qContainer.appendChild(qDiv);
                                     attachTestQuestionEventsTo(qDiv, si, qi + 1);
                                     attachQuestionImageUpload(qDiv, type, si, qi + 1);
+                                    if (q.type === 'multi-answer') {
+                                        attachMultiAnswerPartEvents(qDiv);
+                                    }
                                 });
                             }
                             attachTestQuestionEvents();
@@ -11780,7 +11873,6 @@
                     editedVersion: true,
                     originalId: id
                 };
-                // Ensure registerId is set for compatibility
                 if (newAss.registerIds && newAss.registerIds.length > 0) {
                     newAss.registerId = newAss.registerIds[0];
                 } else if (newAss.registerId) {
@@ -11826,7 +11918,6 @@
             const minutes = minutesEl ? parseInt(minutesEl.value) || 0 : 0;
             const duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-            // MULTI-REGISTER: get register IDs
             const hiddenInput = document.getElementById(`${type}RegisterIds`);
             const registerIds = hiddenInput ? hiddenInput.value.split(',').filter(id => id.trim() !== '') : [];
 
@@ -11955,9 +12046,11 @@
                         q.querySelectorAll('.qb-parts-container .qb-part-row').forEach(row => {
                             const label = row.querySelector('.qb-part-label-input').value.trim();
                             const correctAnswer = row.querySelector('.qb-part-correct-input').value.trim();
+                            const rangeMinVal = parseFloat(row.querySelector('.qb-part-range-min')?.value);
+                            const rangeMaxVal = parseFloat(row.querySelector('.qb-part-range-max')?.value);
                             const partMarks = parseFloat(row.querySelector('.qb-part-marks-input').value) || 0;
                             if (label) {
-                                parts.push({ label, correctAnswer, marks: partMarks });
+                                parts.push({ label, correctAnswer, marks: partMarks, rangeMin: isNaN(rangeMinVal) ? undefined : rangeMinVal, rangeMax: isNaN(rangeMaxVal) ? undefined : rangeMaxVal });
                             }
                         });
                         opts = parts;
@@ -12025,9 +12118,11 @@
                             q.querySelectorAll('.qb-parts-container .qb-part-row').forEach(row => {
                                 const label = row.querySelector('.qb-part-label-input').value.trim();
                                 const correctAnswer = row.querySelector('.qb-part-correct-input').value.trim();
+                                const rangeMinVal = parseFloat(row.querySelector('.qb-part-range-min')?.value);
+                                const rangeMaxVal = parseFloat(row.querySelector('.qb-part-range-max')?.value);
                                 const partMarks = parseFloat(row.querySelector('.qb-part-marks-input').value) || 0;
                                 if (label) {
-                                    parts.push({ label, correctAnswer, marks: partMarks });
+                                    parts.push({ label, correctAnswer, marks: partMarks, rangeMin: isNaN(rangeMinVal) ? undefined : rangeMinVal, rangeMax: isNaN(rangeMaxVal) ? undefined : rangeMaxVal });
                                 }
                             });
                             opts = parts;
@@ -12074,7 +12169,6 @@
                 status = 'scheduled';
             }
 
-            // Check if editing an existing assessment
             const isEditing = !!editingAssessmentId;
             const originalAss = isEditing ? assessments.find(a => a.id === editingAssessmentId) : null;
 
@@ -12083,7 +12177,6 @@
                 name: coverData.name,
                 duration: coverData.duration,
                 registerIds: coverData.registerIds,
-                // ===== FIX: Add registerId for compatibility =====
                 registerId: coverData.registerIds && coverData.registerIds.length > 0 ? coverData.registerIds[0] : null,
                 scheduleType: coverData.scheduleType,
                 publishImmediately: coverData.publishImmediately,
@@ -12285,7 +12378,7 @@
                     `<div style="font-size:11px;color:#8b8fa3;">${q.type === 'essay' ? 'Essay' : q.type === 'short' ? 'Short answer' : 'Text box'} response</div>`;
             } else if (q.type === 'multi-answer' && q.options) {
                 optionsHtml = `<ul class="pq-options">${q.options.map((part, idx) => 
-                    `<li><strong>${escapeHtml(part.label)}</strong>: ${escapeHtml(part.correctAnswer || '')} ${part.marks ? ' (' + part.marks + ' marks)' : ''}</li>`
+                    `<li><strong>${escapeHtml(part.label)}</strong>: ${escapeHtml(part.correctAnswer || '')} ${part.marks ? ' (' + part.marks + ' marks)' : ''}${part.rangeMin !== undefined && part.rangeMax !== undefined ? ' [Range: '+part.rangeMin+'–'+part.rangeMax+']' : ''}</li>`
                 ).join('')}</ul>`;
             }
 
@@ -12947,7 +13040,7 @@
         }
 
         // =================================================================
-        // POPUP NOTIFICATIONS
+        // POPUP NOTIFICATIONS (with scheduling and repetition)
         // =================================================================
         function setupPopupUI() {
             document.getElementById('popupAllUsersBtn').addEventListener('click', () => {
@@ -12957,12 +13050,13 @@
                 document.getElementById('composeUserIds').value = '';
                 document.getElementById('composeRecipientBadge').innerHTML = '👥 All Users';
                 popupSelectedUsers.clear();
+                // Set default scheduling values
+                setDefaultPopupDates();
             });
 
             document.getElementById('popupSpecificUserBtn').addEventListener('click', () => {
                 document.getElementById('popupSelectionView').style.display = 'none';
                 document.getElementById('popupUserSelectView').style.display = 'block';
-                // If there's a pending user from payment, pre-select them
                 if (window._pendingPopupUser) {
                     popupSelectedUsers.clear();
                     popupSelectedUsers.add(window._pendingPopupUser);
@@ -12970,6 +13064,7 @@
                     window._pendingPopupUser = null;
                 }
                 renderPopupUserList();
+                setDefaultPopupDates();
             });
 
             document.getElementById('popupUserBackBtn').addEventListener('click', () => {
@@ -12987,6 +13082,7 @@
                 document.getElementById('composeUserIds').value = JSON.stringify(Array.from(popupSelectedUsers));
                 document.getElementById('composeRecipientBadge').innerHTML =
                     `🎯 ${popupSelectedUsers.size} user(s) selected`;
+                setDefaultPopupDates();
             });
 
             document.getElementById('composeBackBtn').addEventListener('click', () => {
@@ -13096,6 +13192,13 @@
                 const mediaUrl = document.getElementById('popupMediaUrl').value || '';
                 const mediaType = document.getElementById('popupMediaType').value || 'image';
 
+                // ===== READ SCHEDULING / REPETITION FIELDS =====
+                const startDate = document.getElementById('popupStartDate').value;
+                const endDate = document.getElementById('popupEndDate').value;
+                const repeatInterval = parseInt(document.getElementById('popupRepeatInterval').value) || 1;
+                const repeatUnit = document.getElementById('popupRepeatUnit').value;
+                const maxOccurrences = parseInt(document.getElementById('popupMaxOccurrences').value) || 1;
+
                 const progressEl = document.getElementById('popupProgress');
                 progressEl.style.display = 'block';
 
@@ -13109,11 +13212,20 @@
                         recipientType,
                         userIds,
                         createdAt: serverTimestamp(),
-                        read: false
+                        read: false,
+                        // Scheduling / repetition
+                        startDate: startDate || null,
+                        endDate: endDate || null,
+                        repeatInterval: repeatInterval,
+                        repeatUnit: repeatUnit,
+                        maxOccurrences: maxOccurrences,
+                        // Occurrence tracking (will be used by student side)
+                        occurrencesShown: 0,
+                        lastShown: null,
+                        active: true
                     });
                     const count = recipientType === 'all' ? users.length : userIds.length;
-                    showToast(`Popup sent to ${recipientType === 'all' ? 'all users' : count + ' user(s)'}!`,
-                    'success');
+                    showToast(`Popup sent to ${recipientType === 'all' ? 'all users' : count + ' user(s)'}! Scheduling & repetition applied.`, 'success');
                     document.getElementById('popupTitleInput').value = '';
                     document.getElementById('popupMessage').value = '';
                     document.getElementById('popupMediaUrl').value = '';
@@ -13134,6 +13246,21 @@
                     setLoading('sendPopup', false, '#popupNotificationForm .btn-submit');
                 }
             });
+        }
+
+        function setDefaultPopupDates() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 1);
+            const startInput = document.getElementById('popupStartDate');
+            const endInput = document.getElementById('popupEndDate');
+            if (startInput && !startInput.value) {
+                startInput.value = now.toISOString().slice(0, 16);
+            }
+            if (endInput && !endInput.value) {
+                const later = new Date(now);
+                later.setDate(later.getDate() + 30);
+                endInput.value = later.toISOString().slice(0, 16);
+            }
         }
 
         function resetPopupFlow() {
@@ -13227,11 +13354,22 @@
                     'All Users' :
                     `${n.userIds ? (Array.isArray(n.userIds) ? n.userIds.length : 0) : 0} user(s)`;
                 const date = n.createdAt ? new Date(n.createdAt).toLocaleString() : 'N/A';
+                // Show scheduling info
+                let scheduleInfo = '';
+                if (n.startDate || n.endDate || n.repeatInterval) {
+                    const parts = [];
+                    if (n.startDate) parts.push(`From ${new Date(n.startDate).toLocaleString()}`);
+                    if (n.endDate) parts.push(`Until ${new Date(n.endDate).toLocaleString()}`);
+                    if (n.repeatInterval) parts.push(`Repeats every ${n.repeatInterval} ${n.repeatUnit}`);
+                    if (n.maxOccurrences) parts.push(`Max ${n.maxOccurrences} times`);
+                    scheduleInfo = `<div style="font-size:9px;color:#8b8fa3;margin-top:2px;">${parts.join(' · ')}</div>`;
+                }
                 return `
                     <div class="notif-item" data-id="${n.id}">
                         <div class="left">
                             <div class="title">${escapeHtml(n.title)}</div>
                             <div class="recipient">to <strong>${escapeHtml(recipientLabel)}</strong></div>
+                            ${scheduleInfo}
                             <div style="font-size:9px;color:#8b8fa3;">${date}</div>
                         </div>
                         <div class="actions">
@@ -13558,7 +13696,6 @@
                     scheduleRender('testExams');
                     scheduleRender('registers');
                     updateTestExamsDropdowns();
-                    // Update multi-register dropdowns
                     ['test', 'quiz', 'exam', 'assignment'].forEach(type => {
                         const ms = window._multiRegisterSelects && window._multiRegisterSelects[type];
                         if (ms) {
@@ -13839,6 +13976,47 @@
             });
         }
 
+        // ===== HELPER: Multi-answer part events (range removal) =====
+        function attachMultiAnswerPartEvents(qDiv) {
+            const container = qDiv.querySelector('.qb-parts-container');
+            if (!container) return;
+            container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const row = this.closest('.qb-part-row');
+                    const parent = row.closest('.qb-parts-container');
+                    if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                        row.remove();
+                    } else {
+                        showToast('Cannot remove the last part.', 'error');
+                    }
+                });
+            });
+            const addBtn = container.querySelector('.qb-add-part');
+            if (addBtn) {
+                addBtn.addEventListener('click', function() {
+                    const parent = this.closest('.qb-parts-container');
+                    const count = parent.querySelectorAll('.qb-part-row').length;
+                    const partRow = document.createElement('div');
+                    partRow.className = 'qb-part-row';
+                    const letters = 'abcdefghijklmnopqrstuvwxyz';
+                    const label = count < letters.length ? letters[count] : 'part';
+                    partRow.innerHTML = `
+                        <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                        <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                        <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                            <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                            <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                            <span style="font-size:9px;color:#8b8fa3;">–</span>
+                            <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                        </div>
+                        <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                        <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
+                    `;
+                    parent.insertBefore(partRow, this);
+                });
+            }
+        }
+
         // ---- handleTestSubmit, handleQuizSubmit, handleExamSubmit, handleAssignmentSubmit ----
         async function handleTestSubmit(e) {
             e.preventDefault();
@@ -13865,7 +14043,6 @@
                     name: data.name,
                     duration: data.duration,
                     registerIds: data.registerIds || [],
-                    // ===== FIX: Add registerId for compatibility =====
                     registerId: data.registerIds && data.registerIds.length > 0 ? data.registerIds[0] : null,
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
@@ -13933,7 +14110,6 @@
                     name: data.name,
                     duration: data.duration,
                     registerIds: data.registerIds || [],
-                    // ===== FIX: Add registerId for compatibility =====
                     registerId: data.registerIds && data.registerIds.length > 0 ? data.registerIds[0] : null,
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
@@ -14001,7 +14177,6 @@
                     name: data.name,
                     duration: data.duration,
                     registerIds: data.registerIds || [],
-                    // ===== FIX: Add registerId for compatibility =====
                     registerId: data.registerIds && data.registerIds.length > 0 ? data.registerIds[0] : null,
                     scheduleType: data.scheduleType,
                     startTime: data.startTime,
@@ -14069,7 +14244,6 @@
                     name: data.name,
                     duration: data.duration,
                     registerIds: data.registerIds || [],
-                    // ===== FIX: Add registerId for compatibility =====
                     registerId: data.registerIds && data.registerIds.length > 0 ? data.registerIds[0] : null,
                     deadline: data.deadline,
                     publishImmediately: data.publishImmediately,
@@ -14141,7 +14315,6 @@
             document.getElementById('assignmentSchedulePublish').checked = false;
             document.getElementById('assignmentSchedulePublishFields').style.display = 'none';
 
-            // Reset multi-register
             const ms = window._multiRegisterSelects && window._multiRegisterSelects['assignment'];
             if (ms) {
                 ms.selectedRegisters.clear();
@@ -14340,17 +14513,38 @@
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
@@ -14361,12 +14555,32 @@
                             const count = parent.querySelectorAll('.qb-part-row').length;
                             const partRow = document.createElement('div');
                             partRow.className = 'qb-part-row';
+                            const letters = 'abcdefghijklmnopqrstuvwxyz';
+                            const label = count < letters.length ? letters[count] : 'part';
                             partRow.innerHTML = `
-                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                                <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                        });
+                        container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const row = this.closest('.qb-part-row');
+                                const parent = row.closest('.qb-parts-container');
+                                if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                    row.remove();
+                                } else {
+                                    showToast('Cannot remove the last part.', 'error');
+                                }
+                            });
                         });
                     } else if (this.value === 'range') {
                         container.innerHTML = `
@@ -14486,17 +14700,38 @@
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <button type="button" class="qb-add-part">+ Add Part</button>
                         </div>
@@ -14506,12 +14741,32 @@
                         const count = parent.querySelectorAll('.qb-part-row').length;
                         const partRow = document.createElement('div');
                         partRow.className = 'qb-part-row';
+                        const letters = 'abcdefghijklmnopqrstuvwxyz';
+                        const label = count < letters.length ? letters[count] : 'part';
                         partRow.innerHTML = `
-                            <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                            <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                            <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                            </div>
+                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                            <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                    });
+                    container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const row = this.closest('.qb-part-row');
+                            const parent = row.closest('.qb-parts-container');
+                            if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                row.remove();
+                            } else {
+                                showToast('Cannot remove the last part.', 'error');
+                            }
+                        });
                     });
                 } else if (this.value === 'range') {
                     container.innerHTML = `
@@ -14617,7 +14872,6 @@
             document.getElementById('testSchedulePublish').checked = false;
             document.getElementById('testSchedulePublishFields').style.display = 'none';
 
-            // Reset multi-register
             const ms = window._multiRegisterSelects && window._multiRegisterSelects['test'];
             if (ms) {
                 ms.selectedRegisters.clear();
@@ -14816,17 +15070,38 @@
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
@@ -14837,12 +15112,32 @@
                             const count = parent.querySelectorAll('.qb-part-row').length;
                             const partRow = document.createElement('div');
                             partRow.className = 'qb-part-row';
+                            const letters = 'abcdefghijklmnopqrstuvwxyz';
+                            const label = count < letters.length ? letters[count] : 'part';
                             partRow.innerHTML = `
-                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                                <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                        });
+                        container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const row = this.closest('.qb-part-row');
+                                const parent = row.closest('.qb-parts-container');
+                                if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                    row.remove();
+                                } else {
+                                    showToast('Cannot remove the last part.', 'error');
+                                }
+                            });
                         });
                     } else if (this.value === 'range') {
                         container.innerHTML = `
@@ -14962,17 +15257,38 @@
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <button type="button" class="qb-add-part">+ Add Part</button>
                         </div>
@@ -14982,12 +15298,32 @@
                         const count = parent.querySelectorAll('.qb-part-row').length;
                         const partRow = document.createElement('div');
                         partRow.className = 'qb-part-row';
+                        const letters = 'abcdefghijklmnopqrstuvwxyz';
+                        const label = count < letters.length ? letters[count] : 'part';
                         partRow.innerHTML = `
-                            <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                            <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                            <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                            </div>
+                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                            <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                    });
+                    container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const row = this.closest('.qb-part-row');
+                            const parent = row.closest('.qb-parts-container');
+                            if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                row.remove();
+                            } else {
+                                showToast('Cannot remove the last part.', 'error');
+                            }
+                        });
                     });
                 } else if (this.value === 'range') {
                     container.innerHTML = `
@@ -15125,7 +15461,6 @@
             document.getElementById('quizSchedulePublish').checked = false;
             document.getElementById('quizSchedulePublishFields').style.display = 'none';
 
-            // Reset multi-register
             const ms = window._multiRegisterSelects && window._multiRegisterSelects['quiz'];
             if (ms) {
                 ms.selectedRegisters.clear();
@@ -15250,17 +15585,38 @@
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
@@ -15271,12 +15627,32 @@
                             const count = parent.querySelectorAll('.qb-part-row').length;
                             const partRow = document.createElement('div');
                             partRow.className = 'qb-part-row';
+                            const letters = 'abcdefghijklmnopqrstuvwxyz';
+                            const label = count < letters.length ? letters[count] : 'part';
                             partRow.innerHTML = `
-                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                                <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                        });
+                        container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const row = this.closest('.qb-part-row');
+                                const parent = row.closest('.qb-parts-container');
+                                if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                    row.remove();
+                                } else {
+                                    showToast('Cannot remove the last part.', 'error');
+                                }
+                            });
                         });
                     } else if (this.value === 'range') {
                         container.innerHTML = `
@@ -15415,17 +15791,38 @@
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <button type="button" class="qb-add-part">+ Add Part</button>
                         </div>
@@ -15435,12 +15832,32 @@
                         const count = parent.querySelectorAll('.qb-part-row').length;
                         const partRow = document.createElement('div');
                         partRow.className = 'qb-part-row';
+                        const letters = 'abcdefghijklmnopqrstuvwxyz';
+                        const label = count < letters.length ? letters[count] : 'part';
                         partRow.innerHTML = `
-                            <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                            <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                            <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                            </div>
+                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                            <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                    });
+                    container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const row = this.closest('.qb-part-row');
+                            const parent = row.closest('.qb-parts-container');
+                            if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                row.remove();
+                            } else {
+                                showToast('Cannot remove the last part.', 'error');
+                            }
+                        });
                     });
                 } else if (this.value === 'range') {
                     container.innerHTML = `
@@ -15596,7 +16013,6 @@
             document.getElementById('examSchedulePublish').checked = false;
             document.getElementById('examSchedulePublishFields').style.display = 'none';
 
-            // Reset multi-register
             const ms = window._multiRegisterSelects && window._multiRegisterSelects['exam'];
             if (ms) {
                 ms.selectedRegisters.clear();
@@ -15811,17 +16227,38 @@
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <div class="qb-part-row">
                                     <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                     <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                        <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                        <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    </div>
+                                    <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                    <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                 </div>
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
@@ -15832,12 +16269,32 @@
                             const count = parent.querySelectorAll('.qb-part-row').length;
                             const partRow = document.createElement('div');
                             partRow.className = 'qb-part-row';
+                            const letters = 'abcdefghijklmnopqrstuvwxyz';
+                            const label = count < letters.length ? letters[count] : 'part';
                             partRow.innerHTML = `
-                                <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                                <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                                <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                        });
+                        container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const row = this.closest('.qb-part-row');
+                                const parent = row.closest('.qb-parts-container');
+                                if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                    row.remove();
+                                } else {
+                                    showToast('Cannot remove the last part.', 'error');
+                                }
+                            });
                         });
                     } else if (this.value === 'range') {
                         container.innerHTML = `
@@ -15970,17 +16427,38 @@
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. a)" value="a" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. b)" value="b" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="1" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <div class="qb-part-row">
                                 <input type="text" class="qb-part-label-input" placeholder="Label (e.g. c)" value="c" />
                                 <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                    <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                    <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                </div>
+                                <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             </div>
                             <button type="button" class="qb-add-part">+ Add Part</button>
                         </div>
@@ -15990,12 +16468,32 @@
                         const count = parent.querySelectorAll('.qb-part-row').length;
                         const partRow = document.createElement('div');
                         partRow.className = 'qb-part-row';
+                        const letters = 'abcdefghijklmnopqrstuvwxyz';
+                        const label = count < letters.length ? letters[count] : 'part';
                         partRow.innerHTML = `
-                            <input type="text" class="qb-part-label-input" placeholder="Label (e.g. ${String.fromCharCode(97 + count)})" value="${String.fromCharCode(97 + count)}" />
-                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" />
-                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" />
+                            <input type="text" class="qb-part-label-input" placeholder="Label" value="${label}" style="flex:0.5;" />
+                            <input type="text" class="qb-part-correct-input" placeholder="Correct answer (optional)" style="flex:1;" />
+                            <div style="display:flex;gap:4px;align-items:center;flex:1.5;">
+                                <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                <input type="number" class="qb-part-range-min" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                <input type="number" class="qb-part-range-max" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                            </div>
+                            <input type="number" class="qb-part-marks-input" placeholder="Marks" value="0" min="0" step="0.5" style="width:60px;" />
+                            <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                    });
+                    container.querySelectorAll('.qb-part-remove').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const row = this.closest('.qb-part-row');
+                            const parent = row.closest('.qb-parts-container');
+                            if (parent.querySelectorAll('.qb-part-row').length > 1) {
+                                row.remove();
+                            } else {
+                                showToast('Cannot remove the last part.', 'error');
+                            }
+                        });
                     });
                 } else if (this.value === 'range') {
                     container.innerHTML = `
@@ -16252,7 +16750,14 @@
                                             <div class="qb-part-row">
                                                 <input type="text" class="qb-part-label-input" value="${escapeHtml(part.label)}" />
                                                 <input type="text" class="qb-part-correct-input" value="${escapeHtml(part.correctAnswer || '')}" />
-                                                <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" />
+                                                <div style="display:flex;gap:4px;align-items:center;">
+                                                    <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                                    <input type="number" class="qb-part-range-min" value="${part.rangeMin !== undefined ? part.rangeMin : ''}" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                                    <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                                    <input type="number" class="qb-part-range-max" value="${part.rangeMax !== undefined ? part.rangeMax : ''}" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                                </div>
+                                                <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" style="width:60px;" />
+                                                <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                             </div>
                                         `).join('')}
                                         <button type="button" class="qb-add-part">+ Add Part</button>
@@ -16311,6 +16816,9 @@
                                 qContainer.appendChild(qDiv);
                                 attachTestQuestionEventsTo(qDiv, si, qi + 1);
                                 attachQuestionImageUpload(qDiv, type, si, qi + 1);
+                                if (q.type === 'multi-answer') {
+                                    attachMultiAnswerPartEvents(qDiv);
+                                }
                             });
                         }
                         attachTestQuestionEvents();
@@ -16371,7 +16879,14 @@
                                     <div class="qb-part-row">
                                         <input type="text" class="qb-part-label-input" value="${escapeHtml(part.label)}" />
                                         <input type="text" class="qb-part-correct-input" value="${escapeHtml(part.correctAnswer || '')}" />
-                                        <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" />
+                                        <div style="display:flex;gap:4px;align-items:center;">
+                                            <span style="font-size:9px;color:#8b8fa3;">Range:</span>
+                                            <input type="number" class="qb-part-range-min" value="${part.rangeMin !== undefined ? part.rangeMin : ''}" placeholder="Min" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                            <span style="font-size:9px;color:#8b8fa3;">–</span>
+                                            <input type="number" class="qb-part-range-max" value="${part.rangeMax !== undefined ? part.rangeMax : ''}" placeholder="Max" style="width:50px;padding:3px 6px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:10px;" />
+                                        </div>
+                                        <input type="number" class="qb-part-marks-input" value="${part.marks || 0}" min="0" step="0.5" style="width:60px;" />
+                                        <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                                     </div>
                                 `).join('')}
                                 <button type="button" class="qb-add-part">+ Add Part</button>
@@ -16431,6 +16946,9 @@
                         container.appendChild(qDiv);
                         attachQuizQuestionEventsTo(qDiv);
                         attachQuestionImageUpload(qDiv, 'quiz', 0, qi + 1);
+                        if (q.type === 'multi-answer') {
+                            attachMultiAnswerPartEvents(qDiv);
+                        }
                     });
                     updateQuizQuestionNumbers();
                 }
@@ -16491,7 +17009,6 @@
                 });
             });
 
-            // Download full score sheet button
             document.getElementById('downloadFullScoreSheetBtn')?.addEventListener('click', function() {
                 const assId = currentHistoryAssessmentId;
                 if (!assId) { showToast('Please select an assessment first.', 'error'); return; }
@@ -17388,7 +17905,10 @@
                     if (Array.isArray(answer)) {
                         answerDisplay = q.options.map((part, i) => {
                             const val = answer[i] || '';
-                            return `${part.label}: ${val}`;
+                            // Display range info if available
+                            const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? 
+                                ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
+                            return `${part.label}: ${val}${rangeInfo}`;
                         }).join('; ');
                     }
                 } else {
@@ -17403,12 +17923,20 @@
                         let autoMarks = 0;
                         const studentAnswers = Array.isArray(answer) ? answer : [];
                         q.options.forEach((part, i) => {
-                            if (part.correctAnswer && studentAnswers[i] !== undefined) {
-                                const studentVal = (studentAnswers[i] || '').toString().trim().toLowerCase();
-                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
-                                if (studentVal === correctVal) {
-                                    autoMarks += part.marks || 0;
+                            const studentVal = (studentAnswers[i] !== undefined ? studentAnswers[i] : '').toString().trim().toLowerCase();
+                            // Check range first
+                            let partCorrect = false;
+                            if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                const numVal = parseFloat(studentVal);
+                                if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
+                                    partCorrect = true;
                                 }
+                            } else if (part.correctAnswer) {
+                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+                                if (studentVal === correctVal) partCorrect = true;
+                            }
+                            if (partCorrect) {
+                                autoMarks += part.marks || 0;
                             }
                         });
                         mark = autoMarks;
@@ -17440,6 +17968,10 @@
                         <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
                             <strong>Answer:</strong> ${escapeHtml(answerDisplay)}
                             ${q.type === 'range' ? ` <span style="font-size:11px;color:#8b8fa3;">(Correct range: ${q.rangeMin} – ${q.rangeMax})</span>` : ''}
+                            ${q.type === 'multi-answer' ? q.options.map((part, i) => {
+                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
+                                return `<span style="font-size:11px;color:#8b8fa3;display:block;">${part.label}: ${part.correctAnswer || ''}${rangeInfo}</span>`;
+                            }).join('') : ''}
                         </div>
                         <div style="margin-top:6px;">
                             <button class="scratch-toggle-btn btn-outline" style="padding:3px 12px;font-size:9px;border-radius:30px;" data-target="scratch-${idx}">
@@ -17733,7 +18265,9 @@
                         if (Array.isArray(answer)) {
                             answerDisplay = q.options.map((part, pi) => {
                                 const val = answer[pi] || '';
-                                return `${part.label}: ${val}`;
+                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? 
+                                    ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
+                                return `${part.label}: ${val}${rangeInfo}`;
                             }).join('; ');
                         }
                     } else {
@@ -17748,10 +18282,19 @@
                             let autoMarks = 0;
                             const studentAnswers = Array.isArray(answer) ? answer : [];
                             q.options.forEach((part, pi) => {
-                                if (part.correctAnswer && studentAnswers[pi] !== undefined) {
-                                    const studentVal = (studentAnswers[pi] || '').toString().trim().toLowerCase();
+                                const studentVal = (studentAnswers[pi] !== undefined ? studentAnswers[pi] : '').toString().trim().toLowerCase();
+                                let partCorrect = false;
+                                if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                    const numVal = parseFloat(studentVal);
+                                    if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
+                                        partCorrect = true;
+                                    }
+                                } else if (part.correctAnswer) {
                                     const correctVal = part.correctAnswer.toString().trim().toLowerCase();
-                                    if (studentVal === correctVal) autoMarks += part.marks || 0;
+                                    if (studentVal === correctVal) partCorrect = true;
+                                }
+                                if (partCorrect) {
+                                    autoMarks += part.marks || 0;
                                 }
                             });
                             mark = autoMarks;
@@ -17776,6 +18319,10 @@
                             ${q.type === 'range' ? `<div class="marks" style="color:${markColor};font-weight:600;">Marks: ${mark} (Correct range: ${correctDisplay})</div>` : `<div class="marks" style="color:${markColor};">Marks: ${mark}</div>`}
                             ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                             ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                            ${q.type === 'multi-answer' ? q.options.map((part, pi) => {
+                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
+                                return `<div style="font-size:11px;color:#8b8fa3;margin-top:2px;">${part.label}: ${part.correctAnswer || ''}${rangeInfo}</div>`;
+                            }).join('') : ''}
                         </div>
                     `;
                 }
