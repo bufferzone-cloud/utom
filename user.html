@@ -5411,6 +5411,31 @@
             transform: none !important;
         }
 
+        .course-hero-body .course-action-row .btn-pending {
+            background: #f39c12;
+            border: none;
+            padding: 10px 32px;
+            border-radius: 60px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .course-hero-body .course-action-row .btn-pending:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
+        }
+
+        .course-hero-body .course-action-row .btn-pending:active {
+            transform: scale(0.96);
+        }
+
         .course-hero-body .course-action-row .status-badge-detail {
             padding: 6px 18px;
             border-radius: 30px;
@@ -5643,7 +5668,8 @@
                 padding: 4px 14px;
             }
             .course-hero-body .course-action-row .btn-buy,
-            .course-hero-body .course-action-row .btn-open {
+            .course-hero-body .course-action-row .btn-open,
+            .course-hero-body .course-action-row .btn-pending {
                 padding: 8px 20px;
                 font-size: 0.8rem;
             }
@@ -5653,6 +5679,66 @@
             .receipt-content .receipt-header h1 {
                 font-size: 22px;
             }
+        }
+
+        /* Lock overlay for pending content */
+        .content-locked {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: var(--bg);
+            border-radius: 16px;
+            border: 2px dashed var(--gold);
+            margin: 1rem 0;
+        }
+
+        .content-locked i {
+            font-size: 3rem;
+            color: var(--gold-dark);
+            opacity: 0.5;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-locked p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .content-locked .btn-pending {
+            margin-top: 0.8rem;
+        }
+
+        .video-card .lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            gap: 8px;
+            z-index: 5;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        .video-card .lock-overlay i {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+
+        .video-card .lock-overlay small {
+            font-size: 0.7rem;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -6320,7 +6406,7 @@
             loadOfflineVideoList(); };
         dbRequest.onerror = (e) => { console.warn('Offline DB error:', e); };
 
-        // ===== NEW: OFFLINE CLEANUP AND COUNT HELPERS =====
+        // ===== OFFLINE HELPERS =====
         const OFFLINE_EXPIRY_DAYS = 7;
 
         async function getOfflineVideoCount() {
@@ -6403,7 +6489,7 @@
             }
         }
 
-        // ===== REVOKE ACCESS AND DELETE OFFLINE VIDEOS WHEN APPROVED PURCHASE IS REMOVED =====
+        // ===== REVOKE ACCESS AND DELETE OFFLINE VIDEOS =====
         function listenForApprovedPurchaseRemovals(uid) {
             const approvedRef = ref(db, `approvedPurchases/${uid}`);
             let previousData = {};
@@ -6507,9 +6593,9 @@
             currentUser = user;
             try {
                 const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-                if (bannedSnap.val() === true) { /* handle banned user */ return; }
+                if (bannedSnap.val() === true) { return; }
                 const maintSnap = await get(ref(db, 'system/maintenance'));
-                if (maintSnap.val() === true) { /* handle maintenance */ return; }
+                if (maintSnap.val() === true) { return; }
                 await loadUserData(user.uid);
                 await loadShownAdminNotifs(user.uid);
                 const dataPromises = [
@@ -8028,7 +8114,7 @@
             showPage('courseDetail', { courseId: course.id });
         }
 
-        // ===== MODIFIED: renderCourseDetail with hero + buy/open button =====
+        // ===== MODIFIED: renderCourseDetail with payment verification =====
         function renderCourseDetail(course) {
             const heroContainer = document.getElementById('courseHeroContainer');
             const isApproved = approvedCourses.has(course.id);
@@ -8048,12 +8134,11 @@
             else if (isFree) statusBadgeHtml = '<span class="status-badge-detail free">🎉 Free</span>';
 
             let actionButtonHtml = '';
-            if (isApproved) {
-                actionButtonHtml = `<button class="btn-open" id="openCourseContentBtn"><i class="fas fa-play-circle"></i> Open Course</button>`;
-            } else if (isFree) {
+            if (isApproved || isFree) {
                 actionButtonHtml = `<button class="btn-open" id="openCourseContentBtn"><i class="fas fa-play-circle"></i> Open Course</button>`;
             } else if (isPending) {
-                actionButtonHtml = `<button class="btn-buy" disabled><i class="fas fa-hourglass-half"></i> Payment Pending</button>`;
+                // Show a button that triggers the pending popup
+                actionButtonHtml = `<button class="btn-pending" id="pendingCourseBtn"><i class="fas fa-hourglass-half"></i> Payment Pending</button>`;
             } else {
                 actionButtonHtml = `<button class="btn-buy" id="buyCourseBtn"><i class="fas fa-shopping-cart"></i> Buy Now</button>`;
             }
@@ -8080,35 +8165,63 @@
                 </div>
             `;
 
-            // Subfolders
+            // Subfolders - only show if canAccess, else show locked message
             const container = document.getElementById('subfoldersContainer');
-            const subfolders = allSubfolders.filter(s => s.courseId === course.id);
-            container.innerHTML = subfolders.map(sf => {
-                const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id).sort(
-                    (a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a,
-                    b) => (a.createdAt || 0) - (b.createdAt || 0));
-                return `
-                <div class="subfolder-item">
-                    <div class="subfolder-header" data-id="${sf.id}">
-                        <div style="display:flex;align-items:center;">
-                            <i class="fas fa-folder"></i> ${escapeHtml(sf.name)}
+            if (canAccess) {
+                const subfolders = allSubfolders.filter(s => s.courseId === course.id);
+                container.innerHTML = subfolders.map(sf => {
+                    const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id).sort(
+                        (a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a,
+                        b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    return `
+                    <div class="subfolder-item">
+                        <div class="subfolder-header" data-id="${sf.id}">
+                            <div style="display:flex;align-items:center;">
+                                <i class="fas fa-folder"></i> ${escapeHtml(sf.name)}
+                            </div>
+                            <div class="folder-counts">
+                                <span><i class="fas fa-video" style="font-size:0.6rem;"></i> ${videos.length}</span>
+                                <span><i class="fas fa-file-alt" style="font-size:0.6rem;"></i> ${docs.length}</span>
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
                         </div>
-                        <div class="folder-counts">
-                            <span><i class="fas fa-video" style="font-size:0.6rem;"></i> ${videos.length}</span>
-                            <span><i class="fas fa-file-alt" style="font-size:0.6rem;"></i> ${docs.length}</span>
+                        <div class="subfolder-content">
+                            ${videos.length ? '<h4 style="margin:0.4rem 0;font-size:0.75rem;">Videos</h4>' : ''}
+                            <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v, true)).join('')}</div>
+                            ${docs.length ? '<h4 style="margin:0.8rem 0 0.4rem;font-size:0.75rem;">Documents</h4>' : ''}
+                            <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
+                            ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
                         </div>
-                        <i class="fas fa-chevron-down"></i>
+                    </div>`;
+                }).join('') || '<p class="empty-state">No subfolders in this course yet.</p>';
+            } else {
+                // Locked: show message and a button to trigger pending popup if pending
+                let lockMessage = 'You need to purchase this course to access its content.';
+                let buttonHtml = '';
+                if (isPending) {
+                    lockMessage = 'Your payment is being processed. Please wait for admin approval.';
+                    buttonHtml = `<button class="btn-pending" id="pendingCourseBtnInside"><i class="fas fa-hourglass-half"></i> Payment Pending</button>`;
+                } else if (course.price > 0 && !isPending) {
+                    buttonHtml = `<button class="btn-buy" id="buyCourseBtnInside"><i class="fas fa-shopping-cart"></i> Buy Now</button>`;
+                }
+                container.innerHTML = `
+                    <div class="content-locked">
+                        <i class="fas fa-lock"></i>
+                        <p>${lockMessage}</p>
+                        ${buttonHtml}
                     </div>
-                    <div class="subfolder-content">
-                        ${videos.length ? '<h4 style="margin:0.4rem 0;font-size:0.75rem;">Videos</h4>' : ''}
-                        <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v)).join('')}</div>
-                        ${docs.length ? '<h4 style="margin:0.8rem 0 0.4rem;font-size:0.75rem;">Documents</h4>' : ''}
-                        <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
-                        ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
-                    </div>
-                </div>`;
-            }).join('') || '<p class="empty-state">No subfolders in this course yet.</p>';
+                `;
+                // Attach events for buttons inside locked area
+                const buyInside = document.getElementById('buyCourseBtnInside');
+                if (buyInside) {
+                    buyInside.addEventListener('click', () => openPaymentPage(course));
+                }
+                const pendingInside = document.getElementById('pendingCourseBtnInside');
+                if (pendingInside) {
+                    pendingInside.addEventListener('click', () => showPendingPaymentModal(course));
+                }
+            }
 
             document.querySelectorAll('.subfolder-header').forEach(header => {
                 header.addEventListener('click', () => {
@@ -8119,19 +8232,21 @@
                 });
             });
 
-            // Buy button handler
+            // Buy button handler (main)
             const buyBtn = document.getElementById('buyCourseBtn');
             if (buyBtn) {
-                buyBtn.addEventListener('click', () => {
-                    openPaymentPage(course);
-                });
+                buyBtn.addEventListener('click', () => openPaymentPage(course));
             }
-
+            // Pending button handler (main)
+            const pendingBtn = document.getElementById('pendingCourseBtn');
+            if (pendingBtn) {
+                pendingBtn.addEventListener('click', () => showPendingPaymentModal(course));
+            }
             // Open button handler
             const openBtn = document.getElementById('openCourseContentBtn');
             if (openBtn) {
                 openBtn.addEventListener('click', () => {
-                    // Scroll to the first subfolder or just show content
+                    // Scroll to first subfolder or just show content
                     const firstSubfolder = document.querySelector('.subfolder-header');
                     if (firstSubfolder) {
                         firstSubfolder.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -8141,6 +8256,9 @@
                             content.classList.add('show');
                             chevron.classList.add('open');
                         }
+                    } else {
+                        // If no subfolders, show message
+                        addNotification('info', 'No content available yet.');
                     }
                 });
             }
@@ -8157,7 +8275,8 @@
             return true;
         }
 
-        function buildVideoCard(video) {
+        // Modified buildVideoCard with access check
+        function buildVideoCard(video, hasAccess = true) {
             const isLiked = userData.likedVideos.includes(video.id);
             const canDownload = isDownloadableVideo(video);
             const thumbnail = getVideoThumbnail(video);
@@ -8166,11 +8285,22 @@
             const canComment = commentsEnabled;
             const comments = commentsCache.get(video.id) || [];
             const commentCount = comments.length;
+
+            // If no access, show lock overlay
+            const lockOverlay = !hasAccess ? `
+                <div class="lock-overlay" onclick="event.stopPropagation();">
+                    <i class="fas fa-lock"></i>
+                    <span>Locked</span>
+                    <small>Purchase to access</small>
+                </div>
+            ` : '';
+
             return `
-            <div class="video-card" data-id="${video.id}" data-offline="${isOffline}" data-courseid="${video.courseId || ''}" data-price="${video.price || 0}">
+            <div class="video-card" data-id="${video.id}" data-offline="${isOffline}" data-courseid="${video.courseId || ''}" data-price="${video.price || 0}" data-hasaccess="${hasAccess}">
                 <div class="video-thumb-wrapper">
                     <img src="${thumbnail}" alt="${escapeHtml(video.title)}" loading="lazy" class="video-thumb-img" data-video-url="${escapeHtml(video.videoUrl)}" />
                     <div class="play-overlay"><i class="fas fa-play"></i></div>
+                    ${lockOverlay}
                 </div>
                 <div class="video-info">
                     <h4>${escapeHtml(video.title)}</h4>
@@ -8498,6 +8628,7 @@
             </div>`;
         }
 
+        // MODIFIED: attachVideoEvents with access check
         function attachVideoEvents() {
             document.querySelectorAll('.video-card').forEach(card => {
                 card.addEventListener('click', (e) => {
@@ -8507,10 +8638,24 @@
                         e.target.closest('.comment-form') || e.target.closest('.comment-item')) return;
                     const videoId = card.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
-                    if (video) {
-                        playVideoInPlayer(video);
-                        watchedVideos.add(videoId);
+                    if (!video) return;
+                    // Check if access is allowed
+                    const hasAccess = card.dataset.hasaccess === 'true';
+                    if (!hasAccess) {
+                        // Show pending popup if course is pending
+                        const course = allCourses.find(c => c.id === video.courseId);
+                        if (course && pendingPurchases[course.id] !== undefined) {
+                            showPendingPaymentModal(course);
+                        } else if (course && course.price > 0 && !approvedCourses.has(course.id)) {
+                            // If not purchased at all, redirect to buy
+                            openPaymentPage(course);
+                        } else {
+                            addNotification('warning', 'You do not have access to this video.');
+                        }
+                        return;
                     }
+                    playVideoInPlayer(video);
+                    watchedVideos.add(videoId);
                 });
             });
             document.querySelectorAll('.download-video-btn').forEach(btn => {
@@ -8965,7 +9110,7 @@
         function renderMyLearn() {
             const watched = allVideos.filter(v => watchedVideos.has(v.id)).sort((a, b) => (a.createdAt || 0) - (b
                 .createdAt || 0));
-            document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v)).join('') ||
+            document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v, true)).join('') ||
                 '<p class="empty-state">No watched videos yet</p>';
             const myPaid = allCourses.filter(c => approvedCourses.has(c.id)).sort((a, b) => (a.createdAt || 0) - (b
                 .createdAt || 0));
@@ -9050,7 +9195,7 @@
             }
             document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
             container.innerHTML = offlineArray.map(v => `
-            <div class="video-card" data-id="${v.id}" data-offline="true">
+            <div class="video-card" data-id="${v.id}" data-offline="true" data-hasaccess="true">
                 <div class="video-thumb-wrapper">
                     <img src="${UTOM_THUMBNAIL}" alt="${escapeHtml(v.title)}" loading="lazy" />
                     <div class="play-overlay"><i class="fas fa-play"></i></div>
@@ -11528,7 +11673,7 @@
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        console.log('✅ UTOM User — Updated with range auto-mark, offline limit 10, 7-day expiry, and all requested features.');
+        console.log('✅ UTOM User — Updated with payment verification, pending popup, receipt download.');
     </script>
 </body>
 </html>
