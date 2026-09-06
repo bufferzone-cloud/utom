@@ -5927,8 +5927,61 @@
             loadOfflineVideoList(); };
         dbRequest.onerror = (e) => { console.warn('Offline DB error:', e); };
 
+        // ===== NEW: OFFLINE CLEANUP AND COUNT HELPERS =====
+        const OFFLINE_EXPIRY_DAYS = 7;
+
+        async function getOfflineVideoCount() {
+            if (!offlineDB) return 0;
+            try {
+                const tx = offlineDB.transaction('videos', 'readonly');
+                const store = tx.objectStore('videos');
+                const count = await new Promise((res) => {
+                    const req = store.count();
+                    req.onsuccess = () => res(req.result);
+                    req.onerror = () => res(0);
+                });
+                return count;
+            } catch (e) {
+                console.warn('Failed to get offline count:', e);
+                return 0;
+            }
+        }
+
+        async function cleanExpiredOfflineVideos() {
+            if (!offlineDB) return;
+            const expiryMs = OFFLINE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            try {
+                const tx = offlineDB.transaction('videos', 'readwrite');
+                const store = tx.objectStore('videos');
+                const allKeys = await new Promise((res) => {
+                    const req = store.getAllKeys();
+                    req.onsuccess = () => res(req.result);
+                });
+                let deleted = 0;
+                for (const key of allKeys) {
+                    const req = store.get(key);
+                    const record = await new Promise((res) => { req.onsuccess = () => res(req.result); });
+                    if (record && record.downloadedAt) {
+                        const age = now - record.downloadedAt;
+                        if (age > expiryMs) {
+                            store.delete(key);
+                            deleted++;
+                        }
+                    }
+                }
+                if (deleted > 0) {
+                    addNotification('info', `${deleted} offline video(s) expired and removed.`);
+                }
+            } catch (e) {
+                console.warn('Clean expired offline videos error:', e);
+            }
+        }
+
+        // Modified loadOfflineVideoList to also clean expired and update offlineVideos set
         async function loadOfflineVideoList() {
             if (!offlineDB) return;
+            await cleanExpiredOfflineVideos();
             try {
                 const tx = offlineDB.transaction('videos', 'readonly');
                 const store = tx.objectStore('videos');
@@ -5941,6 +5994,7 @@
             } catch (e) { console.warn('Failed to load offline videos:', e); }
         }
 
+        // Override deleteOfflineVideo to update offlineVideos set
         async function deleteOfflineVideo(videoId) {
             if (!offlineDB) return;
             try {
@@ -5958,22 +6012,21 @@
             }
         }
 
-        // ---- REVOKE ACCESS AND DELETE OFFLINE VIDEOS WHEN APPROVED PURCHASE IS REMOVED ----
+        // ===== NEW: RANGE AUTO-MARKING IN ASSESSMENT SUBMIT =====
+        // We'll modify the submitAssessment function to handle 'range' type
+
+        // ===== REVOKE ACCESS AND DELETE OFFLINE VIDEOS WHEN APPROVED PURCHASE IS REMOVED =====
         function listenForApprovedPurchaseRemovals(uid) {
             const approvedRef = ref(db, `approvedPurchases/${uid}`);
             let previousData = {};
             onValue(approvedRef, (snap) => {
                 const currentData = snap.val() || {};
-                // Find items that were removed
                 for (const [courseId, data] of Object.entries(previousData)) {
                     if (!currentData[courseId]) {
-                        // This course was removed from approved purchases
                         const course = allCourses.find(c => c.id === courseId);
                         const courseName = course ? course.name : 'a course';
-                        // Revoke access: remove from approvedCourses set and delete offline videos
                         approvedCourses.delete(courseId);
                         delete approvedCoursesData[courseId];
-                        // Delete all offline videos for this course
                         const courseVideos = allVideos.filter(v => v.courseId === courseId);
                         for (const video of courseVideos) {
                             if (offlineVideos.has(video.id)) {
@@ -5981,14 +6034,12 @@
                             }
                         }
                         addNotification('danger', `Your access to "${courseName}" has been revoked by admin. Offline videos have been deleted.`);
-                        // Refresh UI
                         renderAllCourses();
                         renderMyLearn();
                         renderOfflinePage();
                     }
                 }
                 previousData = currentData;
-                // Also update approvedCourses set and data (for new approvals)
                 approvedCourses.clear();
                 approvedCoursesData = {};
                 if (currentData) {
@@ -6086,7 +6137,6 @@
                     loadRegistersAndAssessments(user.uid)
                 ];
                 await Promise.all(dataPromises);
-                // Listen for approved purchase removals
                 listenForApprovedPurchaseRemovals(user.uid);
                 document.getElementById('appLoader').classList.add('hidden');
                 setupUI();
@@ -6202,16 +6252,12 @@
 
         function updateExamBadge() {
             const available = allAssessments.filter(a => {
-    // check registerIds array (or fallback to single registerId)
-    const userHasRegister = (a.registerIds && Array.isArray(a.registerIds))
-        ? a.registerIds.some(id => userRegisterIds.has(id))
-        : userRegisterIds.has(a.registerId);
-    if (!userHasRegister) return false;
-    if (a.status !== 'published' && a.status !== 'ongoing') return false;
-    const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
-    if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
-    return true;
-});
+                if (!userRegisterIds.has(a.registerId)) return false;
+                if (a.status !== 'published' && a.status !== 'ongoing') return false;
+                const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
+                if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
+                return true;
+            });
             const exams = available.filter(a => a.type === 'exam');
             const tests = available.filter(a => a.type === 'test');
             const quizzes = available.filter(a => a.type === 'quiz');
@@ -7295,7 +7341,6 @@
         function renderAllCourses() {
             let searchTerm = currentSearch.toLowerCase();
             let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
-            // Sort: oldest to newest (ascending createdAt)
             filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             const nameContainer = document.getElementById('allCoursesNameContainer');
             nameContainer.innerHTML = filtered.map(c => {
@@ -7431,7 +7476,6 @@
             const container = document.getElementById('subfoldersContainer');
             const subfolders = allSubfolders.filter(s => s.courseId === course.id);
             container.innerHTML = subfolders.map(sf => {
-                // Sort videos: oldest to newest (ascending createdAt)
                 const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id).sort(
                     (a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                 const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a,
@@ -7839,6 +7883,20 @@
                     const videoId = btn.dataset.id;
                     const video = allVideos.find(v => v.id === videoId);
                     if (video && isDownloadableVideo(video)) {
+                        // ===== NEW: Check offline count before download =====
+                        const count = await getOfflineVideoCount();
+                        if (count >= 10) {
+                            // Show popup
+                            const confirmed = await showGeneralConfirm({
+                                title: 'Download Limit Reached',
+                                message: 'You have exceeded the maximum of 10 offline videos. Please delete some before downloading new ones.',
+                                okText: 'OK',
+                                cancelText: '',
+                                hideCancel: true,
+                                okClass: 'btn-confirm'
+                            });
+                            return;
+                        }
                         await downloadVideoForOffline(video);
                     }
                 });
@@ -8216,6 +8274,7 @@
             update(ref(db, `docs/${doc.id}`), { reads: (doc.reads || 0) + 1 });
         }
 
+        // ===== MODIFIED: downloadVideoForOffline to include downloadedAt =====
         async function downloadVideoForOffline(video) {
             if (!isDownloadableVideo(video)) {
                 addNotification('warning', 'This video cannot be saved for offline viewing.');
@@ -8249,11 +8308,17 @@
                 const blob = new Blob(chunks);
                 const tx = offlineDB.transaction('videos', 'readwrite');
                 const store = tx.objectStore('videos');
-                store.put({ id: video.id, blob: blob, title: video.title, thumbnail: getVideoThumbnail(video) });
+                // ===== NEW: Add downloadedAt timestamp =====
+                store.put({
+                    id: video.id,
+                    blob: blob,
+                    title: video.title,
+                    thumbnail: getVideoThumbnail(video),
+                    downloadedAt: Date.now()
+                });
                 await new Promise((res, rej) => { tx.oncomplete = res;
                     tx.onerror = rej; });
                 offlineVideos.add(video.id);
-                // No download to device; only stored in IndexedDB
                 addNotification('success', `"${video.title}" saved for offline viewing.`);
                 renderOfflinePage();
                 if (selectedCourse) renderCourseDetail(selectedCourse);
@@ -8265,7 +8330,6 @@
         }
 
         function renderMyLearn() {
-            // Sort watched videos: oldest to newest
             const watched = allVideos.filter(v => watchedVideos.has(v.id)).sort((a, b) => (a.createdAt || 0) - (b
                 .createdAt || 0));
             document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v)).join('') ||
@@ -8489,6 +8553,7 @@
             }
         });
 
+        // ===== Modified showGeneralConfirm to support hideCancel =====
         function showGeneralConfirm(options) {
             return new Promise((resolve) => {
                 const modal = document.getElementById('generalConfirmModal');
@@ -8573,20 +8638,17 @@
                             return;
                         }
                         const available = allAssessments.filter(a => {
-    if (a.type !== type) return false;
-    const userHasRegister = (a.registerIds && Array.isArray(a.registerIds))
-        ? a.registerIds.some(id => userRegisterIds.has(id))
-        : userRegisterIds.has(a.registerId);
-    if (!userHasRegister) return false;
-    if (a.status !== 'published' && a.status !== 'ongoing') return false;
-    const alreadyDone = allAssessmentResponses.some(r =>
-        r.assessmentId === a.id &&
-        r.userId === currentUser?.uid &&
-        (r.status === 'completed' || r.status === 'ended')
-    );
-    if (alreadyDone) return false;
-    return true;
-});
+                            if (a.type !== type) return false;
+                            if (!userRegisterIds.has(a.registerId)) return false;
+                            if (a.status !== 'published' && a.status !== 'ongoing') return false;
+                            const alreadyDone = allAssessmentResponses.some(r =>
+                                r.assessmentId === a.id &&
+                                r.userId === currentUser?.uid &&
+                                (r.status === 'completed' || r.status === 'ended')
+                            );
+                            if (alreadyDone) return false;
+                            return true;
+                        });
                         if (available.length === 0) {
                             const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
                             addNotification('info', `No available ${label} found.`);
@@ -9099,7 +9161,7 @@
             modal.classList.add('open');
         }
 
-        // ---- MODIFIED: renderAssessmentTake (range grading in submit) ----
+        // ---- MODIFIED: renderAssessmentTake - range auto-mark support (in submit) ----
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
@@ -9517,6 +9579,11 @@
                     }
                     optionsHtml += `</div>`;
                     break;
+                case 'range':
+                    // Range: only an input field for the number
+                    inputHtml = `<input type="number" class="q-fillblank" data-key="${qKey}" value="${savedAnswer !== null && savedAnswer !== undefined ? escapeHtml(savedAnswer) : ''}" placeholder="Enter your answer (number)" step="any" />`;
+                    optionsHtml = `<div class="range-hint" style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;">Enter a number between the allowed range.</div>`;
+                    break;
                 default:
                     optionsHtml = `<p>Unsupported question type.</p>`;
             }
@@ -9748,7 +9815,7 @@
             await submitAssessment();
         }
 
-        // ---- MODIFIED: submitAssessment with range handling ----
+        // ===== MODIFIED: submitAssessment with range auto-mark =====
         async function submitAssessment() {
             if (!currentAssessmentTaking) return;
             const { assessment, responseId } = currentAssessmentTaking;
@@ -9893,7 +9960,6 @@
             }
         }
 
-        // ---- MODIFIED: renderAssessmentHistory (nothing changed, but keep) ----
         function renderAssessmentHistory() {
             const container = document.getElementById('assessmentHistoryList');
             const emptyMsg = document.getElementById('emptyHistoryMsg');
@@ -9946,7 +10012,6 @@
             });
         }
 
-        // ---- MODIFIED: viewAssessmentScriptFull, renderScriptFullPage, downloadAssessmentHTML/PNG to conditionally show correct answers ----
         window.viewAssessmentScriptFull = function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -10112,7 +10177,7 @@
             document.getElementById('downloadSpinnerOverlay').classList.remove('open');
         }
 
-        // ---- MODIFIED: downloadAssessmentHTML with correct answers condition ----
+        // ---- MODIFIED: downloadAssessmentHTML with correct answers condition (unchanged) ----
         window.downloadAssessmentHTML = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -10316,7 +10381,7 @@
             hideSpinner();
         };
 
-        // ---- MODIFIED: downloadAssessmentPNG with correct answers condition ----
+        // ---- MODIFIED: downloadAssessmentPNG with correct answers condition (unchanged) ----
         window.downloadAssessmentPNG = async function(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { addNotification('danger', 'Response not found.'); return; }
@@ -10831,7 +10896,7 @@
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        console.log('✅ UTOM User — Updated: range auto-mark, correct answers only after deadline, revoke access on transaction deletion, offline video deletion.');
+        console.log('✅ UTOM User — Updated with range auto-mark, offline limit 10, 7-day expiry, and all requested features.');
     </script>
 </body>
 </html>
