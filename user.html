@@ -6252,7 +6252,9 @@
 
         function updateExamBadge() {
             const available = allAssessments.filter(a => {
-                if (!userRegisterIds.has(a.registerId)) return false;
+                // Replace the single‑register check with:
+const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
+if (!hasAccess) return false;
                 if (a.status !== 'published' && a.status !== 'ongoing') return false;
                 const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
                 if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
@@ -8639,7 +8641,9 @@
                         }
                         const available = allAssessments.filter(a => {
                             if (a.type !== type) return false;
-                            if (!userRegisterIds.has(a.registerId)) return false;
+                            // Replace the single‑register check with:
+const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
+if (!hasAccess) return false;
                             if (a.status !== 'published' && a.status !== 'ongoing') return false;
                             const alreadyDone = allAssessmentResponses.some(r =>
                                 r.assessmentId === a.id &&
