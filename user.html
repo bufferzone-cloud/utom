@@ -6251,14 +6251,18 @@
         }
 
         function updateExamBadge() {
-            const available = allAssessments.filter(a => {
-                const assessmentRegisters = a.registerIds || (a.registerId ? [a.registerId] : []);
-if (!assessmentRegisters.some(regId => userRegisterIds.has(regId))) return false;
-                if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
-                if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
-                return true;
-            });
+    const available = allAssessments.filter(a => {
+        const assessmentRegisters = a.registerIds || (a.registerId ? [a.registerId] : []);
+        if (!assessmentRegisters.some(regId => userRegisterIds.has(regId))) return false;
+        if (a.status !== 'published' && a.status !== 'ongoing') return false;
+        const alreadyDone = allAssessmentResponses.some(r =>
+            r.assessmentId === a.id &&
+            r.userId === currentUser?.uid &&
+            (r.status === 'completed' || r.status === 'ended')
+        );
+        if (alreadyDone) return false;
+        return true;
+    });
             const exams = available.filter(a => a.type === 'exam');
             const tests = available.filter(a => a.type === 'test');
             const quizzes = available.filter(a => a.type === 'quiz');
@@ -8639,8 +8643,18 @@ if (!assessmentRegisters.some(regId => userRegisterIds.has(regId))) return false
                             return;
                         }
                         const available = allAssessments.filter(a => {
-                            if (a.type !== type) return false;
-                            if (!userRegisterIds.has(a.regisconst assessmentRegisters = a.registerIds || (a.registerId ? [a.registerId] : []);
+    if (a.type !== type) return false;
+    const assessmentRegisters = a.registerIds || (a.registerId ? [a.registerId] : []);
+    if (!assessmentRegisters.some(regId => userRegisterIds.has(regId))) return false;
+    if (a.status !== 'published' && a.status !== 'ongoing') return false;
+    const alreadyDone = allAssessmentResponses.some(r =>
+        r.assessmentId === a.id &&
+        r.userId === currentUser?.uid &&
+        (r.status === 'completed' || r.status === 'ended')
+    );
+    if (alreadyDone) return false;
+    return true;
+});
 if (!assessmentRegisters.some(regId => userRegisterIds.has(regId))) return false;terId)) return false;
                             if (a.status !== 'published' && a.status !== 'ongoing') return false;
                             const alreadyDone = allAssessmentResponses.some(r =>
