@@ -6559,7 +6559,8 @@
         let paymentScreenshotUrl = null;
         let currentSearch = '';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
-        let shownAdminNotifs = new Set();
+        // ---- NOTIFICATION SCHEDULING STATE ----
+        let shownAdminNotifs = {}; // key -> { occurrences, lastShown }
         let allRegisters = [];
         let allAssessments = [];
         let allAssessmentResponses = [];
@@ -6823,6 +6824,12 @@
                 startExpirationChecker();
                 listenForPaymentApprovals(user.uid);
                 listenForLiveClasses(user.uid);
+                // Start periodic notification checker
+                setInterval(() => {
+                    if (currentUser) checkAdminNotifications(currentUser.uid);
+                }, 60000);
+                // Initial check
+                if (currentUser) checkAdminNotifications(currentUser.uid);
             } catch (e) {
                 console.error('Auth init error:', e);
                 document.getElementById('appLoader').classList.add('hidden');
@@ -7556,64 +7563,92 @@
             renderOfflinePage();
         }
 
+        // ===== UPDATED: loadShownAdminNotifs =====
         async function loadShownAdminNotifs(uid) {
             try {
                 const shownRef = ref(db, `users/${uid}/shownAdminNotifs`);
                 const snap = await get(shownRef);
                 if (snap.val()) {
-                    shownAdminNotifs = new Set(Object.keys(snap.val()));
+                    shownAdminNotifs = snap.val(); // object: { notifKey: { occurrences, lastShown } }
                 } else {
-                    shownAdminNotifs = new Set();
+                    shownAdminNotifs = {};
                 }
             } catch (e) { console.warn('Failed to load shown notifs:', e); }
         }
 
-        async function markAdminNotifSeen(uid, notifKey) {
+        // ===== UPDATED: markAdminNotifSeen =====
+        async function markAdminNotifSeen(uid, notifKey, notifData) {
             if (!notifKey) return;
-            shownAdminNotifs.add(notifKey);
+            // Update local state
+            if (!shownAdminNotifs[notifKey]) {
+                shownAdminNotifs[notifKey] = { occurrences: 0, lastShown: 0 };
+            }
+            shownAdminNotifs[notifKey].occurrences += 1;
+            shownAdminNotifs[notifKey].lastShown = Date.now();
+
+            // Save to Firebase under user's path
             try {
                 const shownRef = ref(db, `users/${uid}/shownAdminNotifs/${notifKey}`);
-                await set(shownRef, true);
+                await set(shownRef, shownAdminNotifs[notifKey]);
             } catch (e) { console.warn('Failed to mark notif seen:', e); }
         }
 
-        async function loadInAppNotifications() {
-            return new Promise((resolve) => {
-                const notifRef = ref(db, 'inAppNotifications');
-                onValue(notifRef, (snap) => {
-                    try {
-                        const data = snap.val();
-                        if (data) {
-                            window._adminNotifs = data;
-                            checkAdminNotifications(currentUser.uid);
-                        }
-                        resolve();
-                    } catch (e) {
-                        console.warn('Notifications error:', e);
-                        resolve();
-                    }
-                });
-            });
-        }
-
+        // ===== UPDATED: checkAdminNotifications with scheduling =====
         function checkAdminNotifications(uid) {
             if (!uid) return;
             const notifs = window._adminNotifs || {};
-            const keys = Object.keys(notifs).sort((a, b) => (notifs[b].createdAt || 0) - (notifs[a].createdAt || 0));
-            for (const key of keys) {
-                const notif = notifs[key];
-                if (shownAdminNotifs.has(key)) continue;
+            const now = Date.now();
+            for (const [key, notif] of Object.entries(notifs)) {
+                // Skip if not active
+                if (notif.active === false) continue;
+
+                // Check end date
+                if (notif.endDate) {
+                    const endTime = new Date(notif.endDate).getTime();
+                    if (endTime < now) continue;
+                }
+
+                // Check start date
+                if (notif.startDate) {
+                    const startTime = new Date(notif.startDate).getTime();
+                    if (startTime > now) continue;
+                }
+
+                // Check recipient
                 const recipientType = notif.recipientType || 'all';
-                if (recipientType === 'all') {
-                    showAdminNotifPopup(key, notif);
-                    return;
-                } else if (recipientType === 'specific') {
+                if (recipientType === 'specific') {
                     const userIds = notif.userIds || [];
-                    if (Array.isArray(userIds) && userIds.includes(uid)) {
-                        showAdminNotifPopup(key, notif);
-                        return;
+                    if (!Array.isArray(userIds) || !userIds.includes(uid)) continue;
+                }
+
+                // Check occurrence limit
+                const occurrences = shownAdminNotifs[key]?.occurrences || 0;
+                const maxOcc = notif.maxOccurrences || 1;
+                if (occurrences >= maxOcc) continue;
+
+                // Check repeat interval
+                const lastShown = shownAdminNotifs[key]?.lastShown || 0;
+                const interval = notif.repeatInterval || 0;
+                const unit = notif.repeatUnit || 'hours';
+                let intervalMs = 0;
+                if (interval > 0) {
+                    switch (unit) {
+                        case 'minutes': intervalMs = interval * 60 * 1000; break;
+                        case 'hours': intervalMs = interval * 60 * 60 * 1000; break;
+                        case 'days': intervalMs = interval * 24 * 60 * 60 * 1000; break;
+                        default: intervalMs = 0;
                     }
                 }
+                if (lastShown > 0 && intervalMs > 0 && (now - lastShown) < intervalMs) {
+                    continue; // Not time yet
+                }
+
+                // Show popup
+                showAdminNotifPopup(key, notif);
+                // Mark as seen (increment occurrences)
+                markAdminNotifSeen(uid, key, notif);
+                // Only show one at a time
+                return;
             }
         }
 
@@ -7637,15 +7672,9 @@
             overlay.classList.add('open');
             const dismissBtn = document.getElementById('adminNotifDismiss');
             const newDismiss = () => {
-                const key2 = overlay.dataset.notifKey;
-                if (key2 && currentUser) {
-                    markAdminNotifSeen(currentUser.uid, key2);
-                }
                 overlay.classList.remove('open');
                 dismissBtn.removeEventListener('click', newDismiss);
-                setTimeout(() => {
-                    if (currentUser) checkAdminNotifications(currentUser.uid);
-                }, 500);
+                // Note: markAdminNotifSeen is already called in checkAdminNotifications
             };
             dismissBtn.addEventListener('click', newDismiss);
         }
