@@ -677,15 +677,73 @@
             background: #fde8e8;
             color: #c62828;
         }
-        .product-table .actions {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
+        .product-table .actions-dropdown {
+            position: relative;
+            display: inline-block;
         }
-        .product-table .actions .btn-sm {
-            width: 30px;
-            height: 30px;
+        .product-table .actions-dropdown .dropdown-btn {
+            background: rgba(245, 246, 248, 0.8);
+            backdrop-filter: blur(4px);
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 13px;
+            transition: var(--transition);
+            color: #6b6f7c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+        }
+        .product-table .actions-dropdown .dropdown-btn:hover {
+            transform: scale(1.08);
+            background: rgba(227, 240, 253, 0.9);
+        }
+        .product-table .actions-dropdown .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            min-width: 140px;
+            z-index: 100;
+            border: 1px solid rgba(229, 232, 237, 0.4);
+            padding: 6px 0;
+        }
+        .product-table .actions-dropdown .dropdown-content.show {
+            display: block;
+        }
+        .product-table .actions-dropdown .dropdown-content button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            width: 100%;
+            background: none;
+            border: none;
             font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+        }
+        .product-table .actions-dropdown .dropdown-content button:hover {
+            background: rgba(245, 176, 66, 0.08);
+            color: #d4952a;
+        }
+        .product-table .actions-dropdown .dropdown-content button.danger:hover {
+            background: rgba(231, 76, 60, 0.08);
+            color: #e74c3c;
+        }
+        .product-table .actions-dropdown .dropdown-content button i {
+            width: 16px;
+            text-align: center;
         }
         .filter-bar {
             display: flex;
@@ -1517,6 +1575,108 @@
         body.dark-mode .confirm-box .confirm-message {
             color: #aaaaaa !important;
         }
+
+        /* Custom dropdown for options */
+        .options-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .options-dropdown .dropdown-btn {
+            background: linear-gradient(135deg, #f5b042, #ff6b00);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(245, 176, 66, 0.25);
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+        }
+        .options-dropdown .dropdown-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(245, 176, 66, 0.30);
+        }
+        .options-dropdown .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            min-width: 200px;
+            z-index: 100;
+            border: 1px solid rgba(229, 232, 237, 0.4);
+            padding: 8px 0;
+            margin-top: 4px;
+        }
+        .options-dropdown .dropdown-content.show {
+            display: block;
+        }
+        .options-dropdown .dropdown-content button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            width: 100%;
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+        }
+        .options-dropdown .dropdown-content button:hover {
+            background: rgba(245, 176, 66, 0.08);
+            color: #d4952a;
+        }
+        .options-dropdown .dropdown-content button i {
+            width: 20px;
+            text-align: center;
+            color: #d4952a;
+        }
+
+        /* Autocomplete dropdown */
+        .autocomplete-items {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 200;
+            border: 1px solid rgba(229, 232, 237, 0.4);
+            display: none;
+        }
+        .autocomplete-items .item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(240, 240, 245, 0.5);
+            transition: var(--transition);
+        }
+        .autocomplete-items .item:hover {
+            background: rgba(245, 176, 66, 0.08);
+        }
+        .autocomplete-items .item:last-child {
+            border-bottom: none;
+        }
+        .pickup-search-wrapper {
+            position: relative;
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -1597,15 +1757,20 @@
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
-                <div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px 0;">
-                    <button id="addProductBtn" class="btn-primary"><i class="fas fa-plus-circle"></i> Add Product</button>
-                    <button id="manageCategoriesBtn" class="btn-outline"><i class="fas fa-tags"></i> Categories</button>
-                    <button id="managePickupBtn" class="btn-outline"><i class="fas fa-map-pin"></i> Pickup</button>
-                    <button id="viewOrdersBtn" class="btn-outline"><i class="fas fa-shopping-cart"></i> Orders</button>
-                    <button id="viewPaymentsBtn" class="btn-outline"><i class="fas fa-credit-card"></i> Payments</button>
-                    <button id="viewActivityBtn" class="btn-outline"><i class="fas fa-history"></i> Activity</button>
-                    <button id="settingsBtn" class="btn-outline"><i class="fas fa-cog"></i> Settings</button>
+                <!-- Quick Actions - replaced with dropdown -->
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px 0;align-items:center;">
+                    <div class="options-dropdown">
+                        <button class="dropdown-btn" id="optionsDropdownBtn"><i class="fas fa-bars"></i> Options <i class="fas fa-chevron-down" style="font-size:10px;margin-left:4px;"></i></button>
+                        <div class="dropdown-content" id="optionsDropdownContent">
+                            <button id="addProductBtn"><i class="fas fa-plus-circle"></i> Add Product</button>
+                            <button id="manageCategoriesBtn"><i class="fas fa-tags"></i> Categories</button>
+                            <button id="managePickupBtn"><i class="fas fa-map-pin"></i> Pickup Locations</button>
+                            <button id="viewOrdersBtn"><i class="fas fa-shopping-cart"></i> Orders</button>
+                            <button id="viewPaymentsBtn"><i class="fas fa-credit-card"></i> Payments</button>
+                            <button id="viewActivityBtn"><i class="fas fa-history"></i> Activity Log</button>
+                            <button id="settingsBtn"><i class="fas fa-cog"></i> Settings</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Products Table -->
@@ -1757,7 +1922,10 @@
                 <div class="form-card">
                     <div id="pickupMap"></div>
                     <div class="form-row">
-                        <input type="text" id="pickupLocationSearch" placeholder="Search for a location..." />
+                        <div class="pickup-search-wrapper">
+                            <input type="text" id="pickupLocationSearch" placeholder="Search for a location..." autocomplete="off" />
+                            <div class="autocomplete-items" id="pickupAutocomplete"></div>
+                        </div>
                         <button type="button" class="btn-primary" id="pickupSearchBtn" style="padding:8px 16px;font-size:11px;"><i class="fas fa-search"></i> Search</button>
                     </div>
                     <div class="form-row">
@@ -2171,29 +2339,58 @@
                             </td>
                             <td style="font-size:10px;color:#8b8fa3;">${pickupNames || 'None'}</td>
                             <td>
-                                <div class="actions">
-                                    <button class="btn-sm edit" data-id="${p.id}" title="Edit"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="btn-sm" data-id="${p.id}" title="Toggle Availability" id="toggleAvail-${p.id}">
-                                        <i class="fas ${p.available !== false ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-                                    </button>
-                                    <button class="btn-sm delete" data-id="${p.id}" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                                    <button class="btn-sm" data-id="${p.id}" title="Preview" id="previewBtn-${p.id}"><i class="fas fa-eye"></i></button>
+                                <div class="actions-dropdown">
+                                    <button class="dropdown-btn" data-id="${p.id}"><i class="fas fa-ellipsis-v"></i></button>
+                                    <div class="dropdown-content" id="actions-${p.id}">
+                                        <button class="edit" data-id="${p.id}"><i class="fas fa-pen-to-square"></i> Edit</button>
+                                        <button class="toggle-avail" data-id="${p.id}"><i class="fas ${p.available !== false ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${p.available !== false ? 'Disable' : 'Enable'}</button>
+                                        <button class="preview" data-id="${p.id}"><i class="fas fa-eye"></i> Preview</button>
+                                        <button class="delete danger" data-id="${p.id}"><i class="fas fa-trash-alt"></i> Delete</button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                     `;
             }).join('');
 
-            tbody.querySelectorAll('.edit').forEach(btn => {
+            // Attach dropdown toggles
+            document.querySelectorAll('.actions-dropdown .dropdown-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const content = this.nextElementSibling;
+                    // Close other open dropdowns
+                    document.querySelectorAll('.actions-dropdown .dropdown-content.show').forEach(el => {
+                        if (el !== content) el.classList.remove('show');
+                    });
+                    content.classList.toggle('show');
+                });
+            });
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.actions-dropdown')) {
+                    document.querySelectorAll('.actions-dropdown .dropdown-content.show').forEach(el => el.classList
+                        .remove('show'));
+                }
+            });
+
+            // Edit
+            document.querySelectorAll('.actions-dropdown .edit').forEach(btn => {
                 btn.addEventListener('click', () => openEditProduct(btn.dataset.id));
             });
-            tbody.querySelectorAll('.delete').forEach(btn => {
+
+            // Delete
+            document.querySelectorAll('.actions-dropdown .delete').forEach(btn => {
                 btn.addEventListener('click', () => deleteProduct(btn.dataset.id));
             });
-            tbody.querySelectorAll('[id^="toggleAvail-"]').forEach(btn => {
+
+            // Toggle Availability
+            document.querySelectorAll('.actions-dropdown .toggle-avail').forEach(btn => {
                 btn.addEventListener('click', () => toggleAvailability(btn.dataset.id));
             });
-            tbody.querySelectorAll('[id^="previewBtn-"]').forEach(btn => {
+
+            // Preview
+            document.querySelectorAll('.actions-dropdown .preview').forEach(btn => {
                 btn.addEventListener('click', () => openPreview(btn.dataset.id));
             });
         }
@@ -3077,7 +3274,7 @@
         });
 
         // =================================================================
-        // PICKUP LOCATIONS UI
+        // PICKUP LOCATIONS UI with Autocomplete
         // =================================================================
         document.getElementById('managePickupBtn').addEventListener('click', function() {
             document.getElementById('pickupSection').style.display = 'block';
@@ -3157,8 +3354,71 @@
                 .catch(() => {});
         }
 
+        // Autocomplete for pickup search
+        const pickupSearchInput = document.getElementById('pickupLocationSearch');
+        const autocompleteContainer = document.getElementById('pickupAutocomplete');
+
+        pickupSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                autocompleteContainer.style.display = 'none';
+                return;
+            }
+
+            fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+                    )
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        autocompleteContainer.style.display = 'none';
+                        return;
+                    }
+                    autocompleteContainer.innerHTML = data.map(item => `
+                            <div class="item" data-lat="${item.lat}" data-lon="${item.lon}" data-display="${item.display_name}">
+                                ${item.display_name}
+                            </div>
+                        `).join('');
+                    autocompleteContainer.style.display = 'block';
+
+                    autocompleteContainer.querySelectorAll('.item').forEach(el => {
+                        el.addEventListener('click', function() {
+                            const lat = parseFloat(this.dataset.lat);
+                            const lon = parseFloat(this.dataset.lon);
+                            const display = this.dataset.display;
+                            pickupSearchInput.value = display;
+                            document.getElementById('pickupAddress').value = display;
+                            document.getElementById('pickupLat').value = lat.toFixed(6);
+                            document.getElementById('pickupLng').value = lon.toFixed(6);
+                            currentLat = lat;
+                            currentLng = lon;
+                            if (map) {
+                                map.setView([lat, lon], 15);
+                                if (marker) {
+                                    marker.setLatLng([lat, lon]);
+                                } else {
+                                    marker = L.marker([lat, lon], { draggable: true }).addTo(map);
+                                    marker.on('dragend', onMarkerDragEnd);
+                                }
+                            }
+                            autocompleteContainer.style.display = 'none';
+                            showToast('Location set!', 'success');
+                        });
+                    });
+                })
+                .catch(() => {
+                    autocompleteContainer.style.display = 'none';
+                });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.pickup-search-wrapper')) {
+                autocompleteContainer.style.display = 'none';
+            }
+        });
+
         document.getElementById('pickupSearchBtn').addEventListener('click', function() {
-            const query = document.getElementById('pickupLocationSearch').value.trim();
+            const query = pickupSearchInput.value.trim();
             if (!query) return;
             fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
@@ -3227,6 +3487,7 @@
             document.getElementById('pickupLng').value = '';
             document.getElementById('editPickupId').value = '';
             document.getElementById('pickupLocationSearch').value = '';
+            autocompleteContainer.style.display = 'none';
             if (map) {
                 map.setView([-15.3875, 28.3328], 13);
                 if (marker) marker.setLatLng([-15.3875, 28.3328]);
@@ -3395,6 +3656,20 @@
         // =================================================================
         // NAVIGATION
         // =================================================================
+        // Options dropdown toggle
+        const optionsBtn = document.getElementById('optionsDropdownBtn');
+        const optionsContent = document.getElementById('optionsDropdownContent');
+        optionsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            optionsContent.classList.toggle('show');
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.options-dropdown')) {
+                optionsContent.classList.remove('show');
+            }
+        });
+
+        // Options menu items
         document.getElementById('addProductBtn').addEventListener('click', openAddProduct);
         document.getElementById('closeFormBtn').addEventListener('click', function() {
             showForm(false);
@@ -3458,7 +3733,7 @@
         window.showToast = showToast;
         window.showConfirm = showConfirm;
 
-        console.log('✅ UTOM Express Shop Admin with screenshot display and full payment workflow loaded.');
+        console.log('✅ UTOM Express Shop Admin with dropdown menus and autocomplete pickup search loaded.');
     </script>
 </body>
 </html>
