@@ -4802,8 +4802,8 @@
             bottom: 28px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 500;
-            display: flex;
+            z-index: 999;
+            display: none;
             gap: 14px;
             background: var(--card-bg);
             padding: 8px 12px;
@@ -6571,75 +6571,9 @@
         .dark-mode .cart-modal .modal-box .cart-modal-footer {
             background: #1f1f1f;
         }
-        /* Make the floating cart & orders buttons bigger, fixed, and always visible */
-.shop-floating-pills {
-    position: fixed;
-    bottom: 32px;                /* slightly higher */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999;                /* ensure they stay on top */
-    display: flex;
-    gap: 18px;
-    background: var(--card-bg);
-    padding: 12px 20px;          /* bigger padding */
-    border-radius: 60px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(245, 176, 66, 0.2);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    transition: transform 0.2s ease;
-}
-
-.shop-floating-pills .pill-btn {
-    padding: 12px 28px;          /* larger touch area */
-    border-radius: 50px;
-    border: none;
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--bg);
-    color: var(--text);
-    transition: all 0.2s ease;
-}
-
-.shop-floating-pills .pill-btn.cart-pill {
-    background: linear-gradient(135deg, var(--gold), var(--orange));
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(245, 176, 66, 0.3);
-}
-
-.shop-floating-pills .pill-btn .pill-badge {
-    background: var(--red);
-    color: #fff;
-    border-radius: 50%;
-    font-size: 0.7rem;
-    font-weight: 700;
-    min-width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 6px;
-}
-
-/* On smaller screens, adjust size */
-@media (max-width: 600px) {
-    .shop-floating-pills {
-        bottom: 20px;
-        padding: 8px 12px;
-        gap: 10px;
-    }
-    .shop-floating-pills .pill-btn {
-        padding: 8px 18px;
-        font-size: 0.8rem;
-    }
-}
         .shop-floating-pills {
-    display: none;
-}
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -7095,10 +7029,8 @@
                 <!-- Products grid -->
                 <div id="shopProductsGrid" class="shop-products-grid"></div>
 
-                <!-- Floating pills - fixed non-scrollable -->
-               
-            </div>
-             <div class="shop-floating-pills">
+                <!-- Floating pills -->
+                <div class="shop-floating-pills">
                     <button class="pill-btn cart-pill" id="shopCartPill">
                         <i class="fas fa-shopping-cart"></i> Cart
                         <span class="pill-badge" id="shopCartBadge">0</span>
@@ -7107,6 +7039,7 @@
                         <i class="fas fa-box"></i> Orders
                     </button>
                 </div>
+            </div>
 
             <!-- ===== EXPRESS SHOP DETAIL PAGE ===== -->
             <div id="shopDetailPage" class="page-container full-page-container shop-detail-page">
@@ -12048,6 +11981,19 @@
             modal.classList.add('open');
         }
 
+        // ===== FIXED: MULTI-ANSWER AUTO-GRADING =====
+        // The auto-grading logic in submitAssessment has been fixed to correctly handle:
+        // 1. Multi-answer parts with ranges
+        // 2. Parts with correctAnswer
+        // 3. Summing marks for each correct part
+
+        // ===== FIXED: CORRECT ANSWER DISPLAY FOR MULTI-ANSWER AND RANGE =====
+        // The renderScriptFullPage function now properly displays correct answers for:
+        // 1. Multi-answer: shows each part's correct answer or range
+        // 2. Range: shows the range min-max
+
+        // The following functions implement the fixes:
+
         function renderAssessmentTake(assessment) {
             const container = document.getElementById('assessmentTakeContent');
             const typeLabel = assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1);
@@ -12703,6 +12649,7 @@
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
+        // ===== FIXED: AUTO-GRADING FOR MULTI-ANSWER AND RANGE =====
         async function autoSubmitAssessment() {
             if (!currentAssessmentTaking) return;
             addNotification('info', '⏰ Auto-submitting your assessment...');
@@ -12790,26 +12737,35 @@
                             }
                         }
                     } else if (q.type === 'multi-answer') {
+                        // ===== FIXED: Multi-answer auto-grading with range support =====
                         const parts = q.options || [];
-                        const allHaveCorrect = parts.every(p => p.correctAnswer && p.correctAnswer.trim() !== '');
-                        if (allHaveCorrect) {
+                        // Check if all parts have either correctAnswer or range
+                        const allHaveCorrectOrRange = parts.every(p =>
+                            (p.correctAnswer && p.correctAnswer.trim() !== '') ||
+                            (p.rangeMin !== undefined && p.rangeMax !== undefined)
+                        );
+                        if (allHaveCorrectOrRange) {
                             isAuto = true;
                             const totalPartMarks = parts.reduce((sum, p) => sum + (p.marks || 0), 0);
                             totalAutoMarks += totalPartMarks;
                             const studentArr = Array.isArray(answer) ? answer : [];
                             let partScore = 0;
                             parts.forEach((part, pi) => {
-                                const studentVal = (studentArr[pi] || '').toString().trim().toLowerCase();
-                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+                                const studentVal = (studentArr[pi] !== undefined ? studentArr[pi] : '')
+                                    .toString().trim();
                                 let partCorrect = false;
+                                // Check range first
                                 if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
                                     const numVal = parseFloat(studentVal);
                                     if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part
                                         .rangeMax) {
                                         partCorrect = true;
                                     }
-                                } else if (correctVal !== '') {
-                                    if (studentVal === correctVal) partCorrect = true;
+                                } else if (part.correctAnswer && part.correctAnswer.trim() !== '') {
+                                    const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+                                    if (studentVal.toLowerCase() === correctVal) {
+                                        partCorrect = true;
+                                    }
                                 }
                                 if (partCorrect) {
                                     partScore += part.marks || 0;
@@ -12818,10 +12774,12 @@
                             mark = partScore;
                             autoScore += partScore;
                         } else {
+                            // Some parts have neither correctAnswer nor range - not auto-gradable
                             isAuto = false;
                             mark = 0;
                         }
                     } else if (q.type === 'range') {
+                        // ===== FIXED: Range auto-grading =====
                         isAuto = true;
                         totalAutoMarks += q.marks;
                         const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
@@ -12925,6 +12883,7 @@
             renderScriptFullPage(responseId);
         };
 
+        // ===== FIXED: CORRECT ANSWER DISPLAY FOR MULTI-ANSWER AND RANGE =====
         function renderScriptFullPage(responseId) {
             const response = allAssessmentResponses.find(r => r.id === responseId);
             if (!response) { document.getElementById('scriptFullContent').innerHTML =
@@ -13006,20 +12965,55 @@
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' ||
                     q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-                const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options
-                    .map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
+
+                // ===== FIXED: Build correct answer display for multi-answer and range =====
                 let correctDisplay = '';
-                if (canShowAnswers && correctAnswer !== null) {
-                    if (Array.isArray(correctAnswer)) {
-                        correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
-                    } else if (typeof correctAnswer === 'number') {
-                        correctDisplay = q.options[correctAnswer] || 'N/A';
-                    } else {
-                        correctDisplay = correctAnswer;
+                if (canShowAnswers) {
+                    if (q.type === 'range') {
+                        correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+                    } else if (q.type === 'multi-answer') {
+                        const parts = q.options || [];
+                        const correctParts = [];
+                        parts.forEach((part, pi) => {
+                            let correctVal = '';
+                            if (part.correctAnswer && part.correctAnswer.trim() !== '') {
+                                correctVal = part.correctAnswer;
+                            } else if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                correctVal = `${part.rangeMin} – ${part.rangeMax}`;
+                            }
+                            if (correctVal) {
+                                correctParts.push(`${part.label}: ${correctVal}`);
+                            }
+                        });
+                        if (correctParts.length > 0) {
+                            correctDisplay = correctParts.join('; ');
+                        } else {
+                            correctDisplay = 'No correct answers defined';
+                        }
+                    } else if (q.type === 'mcq' || q.type === 'tf') {
+                        if (q.correct !== undefined && q.correct !== null) {
+                            if (typeof q.correct === 'number') {
+                                correctDisplay = q.options[q.correct] || 'N/A';
+                            } else {
+                                correctDisplay = q.correct;
+                            }
+                        }
+                    } else if (q.type === 'matching') {
+                        const pairs = q.options || [];
+                        const matchStrings = pairs.map((pair, pi) => {
+                            return `${pair.left} ↔ ${pair.right}`;
+                        });
+                        if (matchStrings.length > 0) {
+                            correctDisplay = matchStrings.join('; ');
+                        }
+                    } else if (q.type === 'ordering') {
+                        const items = q.options || [];
+                        if (items.length > 0) {
+                            correctDisplay = items.map((item, oi) => `${oi+1}. ${item}`).join('; ');
+                        }
+                    } else if (q.type === 'fillblank') {
+                        correctDisplay = q.correct || 'N/A';
                     }
-                }
-                if (q.type === 'range' && canShowAnswers) {
-                    correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
                 }
 
                 html += `
@@ -13027,7 +13021,7 @@
                         <div class="q-head">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:var(--text-secondary);">${q.section}</span></div>
                         <div class="q-answer">Your answer: ${escapeHtml(answerDisplay)}</div>
                         <div class="q-mark" style="color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                        ${canShowAnswers && correctDisplay ? `<div class="q-correct show"><i class="fas fa-check-circle" style="color:var(--green);"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
+                        ${canShowAnswers && correctDisplay ? `<div class="q-correct show"><i class="fas fa-check-circle" style="color:var(--green);"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
                         ${scratch ? `<div class="q-scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                         ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--text-secondary);"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                     </div>
@@ -13246,27 +13240,46 @@
                                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
                                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-                                const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options.map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
+                                
+                                // ===== FIXED: Correct answer display for multi-answer and range =====
                                 let correctDisplay = '';
                                 if (canShowAnswers) {
                                     if (q.type === 'range') {
-                                        correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
-                                    } else if (correctAnswer !== null) {
-                                        if (Array.isArray(correctAnswer)) {
-                                            correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
-                                        } else if (typeof correctAnswer === 'number') {
-                                            correctDisplay = q.options[correctAnswer] || 'N/A';
+                                        correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+                                    } else if (q.type === 'multi-answer') {
+                                        const parts = q.options || [];
+                                        const correctParts = [];
+                                        parts.forEach((part, pi) => {
+                                            let correctVal = '';
+                                            if (part.correctAnswer && part.correctAnswer.trim() !== '') {
+                                                correctVal = part.correctAnswer;
+                                            } else if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                                correctVal = `${part.rangeMin} – ${part.rangeMax}`;
+                                            }
+                                            if (correctVal) {
+                                                correctParts.push(`${part.label}: ${correctVal}`);
+                                            }
+                                        });
+                                        if (correctParts.length > 0) {
+                                            correctDisplay = correctParts.join('; ');
                                         } else {
-                                            correctDisplay = correctAnswer;
+                                            correctDisplay = 'No correct answers defined';
+                                        }
+                                    } else if (q.correct !== undefined && q.correct !== null) {
+                                        if (typeof q.correct === 'number') {
+                                            correctDisplay = q.options[q.correct] || 'N/A';
+                                        } else {
+                                            correctDisplay = q.correct;
                                         }
                                     }
                                 }
+                                
                                 return `
                                     <div class="question-block" style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
                                         <div class="q-number">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
                                         <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtml(answerDisplay)}</div>
                                         <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                                        ${canShowAnswers && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
+                                        ${canShowAnswers && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
                                         ${scratch ? `<div class="scratch-image"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                                         ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                                     </div>
@@ -13393,27 +13406,46 @@
                                 const mark = marks[qKey] !== undefined ? marks[qKey] : (q.type === 'mcq' || q.type === 'tf' ? (answer == q.correct ? q.marks : 0) : 'Not graded');
                                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range';
                                 const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-                                const correctAnswer = q.correct !== undefined ? q.correct : (q.options && q.options.length > 0 ? q.options.map((o, i) => o.correct ? i : null).filter(v => v !== null) : null);
+                                
+                                // ===== FIXED: Correct answer display for multi-answer and range =====
                                 let correctDisplay = '';
                                 if (canShowAnswers) {
                                     if (q.type === 'range') {
-                                        correctDisplay = `${q.rangeMin} – ${q.rangeMax}`;
-                                    } else if (correctAnswer !== null) {
-                                        if (Array.isArray(correctAnswer)) {
-                                            correctDisplay = correctAnswer.map(idx => q.options[idx]?.text || q.options[idx]).join(', ');
-                                        } else if (typeof correctAnswer === 'number') {
-                                            correctDisplay = q.options[correctAnswer] || 'N/A';
+                                        correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+                                    } else if (q.type === 'multi-answer') {
+                                        const parts = q.options || [];
+                                        const correctParts = [];
+                                        parts.forEach((part, pi) => {
+                                            let correctVal = '';
+                                            if (part.correctAnswer && part.correctAnswer.trim() !== '') {
+                                                correctVal = part.correctAnswer;
+                                            } else if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                                correctVal = `${part.rangeMin} – ${part.rangeMax}`;
+                                            }
+                                            if (correctVal) {
+                                                correctParts.push(`${part.label}: ${correctVal}`);
+                                            }
+                                        });
+                                        if (correctParts.length > 0) {
+                                            correctDisplay = correctParts.join('; ');
                                         } else {
-                                            correctDisplay = correctAnswer;
+                                            correctDisplay = 'No correct answers defined';
+                                        }
+                                    } else if (q.correct !== undefined && q.correct !== null) {
+                                        if (typeof q.correct === 'number') {
+                                            correctDisplay = q.options[q.correct] || 'N/A';
+                                        } else {
+                                            correctDisplay = q.correct;
                                         }
                                     }
                                 }
+                                
                                 return `
                                     <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;">
                                         <div style="font-weight:600;font-size:0.9rem;">Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
                                         <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtml(answerDisplay)}</div>
                                         <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}${isAuto ? '' : ' (manual grading)'}</div>
-                                        ${canShowAnswers && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Correct answer: ${escapeHtml(correctDisplay)}</div>` : ''}
+                                        ${canShowAnswers && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
                                         ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:140px;object-fit:contain;" /></div>` : ''}
                                         ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
                                     </div>
@@ -13694,12 +13726,6 @@
                 renderPageContent(pageId, params);
                 return;
             }
-            function toggleShopPills(show) {
-    const pills = document.querySelector('.shop-floating-pills');
-    if (pills) {
-        pills.style.display = show ? 'flex' : 'none';
-    }
-}
             if (currentActive) {
                 currentActive.classList.add('page-leaving');
                 setTimeout(() => {
@@ -13729,10 +13755,10 @@
                     processVideoThumbnails();
                 }, 300);
             }
-             const pills = document.querySelector('.shop-floating-pills');
-    if (pills) {
-        pills.style.display = (pageId === 'expressShop') ? 'flex' : 'none';
-    }
+            const pills = document.querySelector('.shop-floating-pills');
+            if (pills) {
+                pills.style.display = (pageId === 'expressShop') ? 'flex' : 'none';
+            }
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             if (sidebar.classList.contains('open')) {
@@ -13863,7 +13889,7 @@
             document.getElementById('courseLoader').style.display = 'none';
         }
 
-        console.log('✅ UTOM Student — Full enhanced version with proper cart, map, and all features.');
+        console.log('✅ UTOM Student — Full enhanced version with multi-answer auto-grading, correct answer display, and receipt download.');
     </script>
 </body>
 </html>
