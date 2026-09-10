@@ -7658,12 +7658,13 @@
 
         // ---- Debounce and throttle helpers ----
         function debounce(fn, delay = 300) {
-            let timer;
-            return (...args) => {
-                clearTimeout(timer);
-                timer = setTimeout(() => fn(...args), delay);
-            };
-        }
+    let timer;
+    return function (...args) {
+        const ctx = this;                 // capture the element
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(ctx, args), delay);
+    };
+}
 
         function throttle(fn, limit = 100) {
             let inThrottle;
@@ -13278,17 +13279,20 @@
         }
 
         function renderPopupUserList(searchTerm = '') {
-            const container = document.getElementById('popupUserListContainer');
-            if (!container) return;
-            const search = (searchTerm || document.getElementById('popupUserSearch')?.value?.trim()?.toLowerCase() || '');
-            let filtered = users || [];
-            if (search) {
-                filtered = filtered.filter(u =>
-                    (u.firstName || '').toLowerCase().includes(search) ||
-                    (u.lastName || '').toLowerCase().includes(search) ||
-                    (u.email || '').toLowerCase().includes(search)
-                );
-            }
+    const container = document.getElementById('popupUserListContainer');
+    if (!container) return;
+
+    const raw = (searchTerm || document.getElementById('popupUserSearch')?.value || '');
+    const search = raw.trim().toLowerCase();          // ✅ always lowercase
+
+    let filtered = users || [];
+    if (search) {
+        filtered = filtered.filter(u =>
+            (u.firstName || '').toLowerCase().includes(search) ||
+            (u.lastName  || '').toLowerCase().includes(search) ||
+            (u.email     || '').toLowerCase().includes(search)
+        );
+    }
             if (filtered.length === 0) {
                 container.innerHTML = `<div style="text-align:center;padding:12px;color:#8b8fa3;">No users found.</div>`;
                 updatePopupSelectedCount();
