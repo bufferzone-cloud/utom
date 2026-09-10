@@ -11182,6 +11182,18 @@ function checkScheduledPopups() {
             showPage('courseDetail', { courseId: course.id });
         }
 
+        /* =========================================================
+   VIDEO ORDER — respects admin's manual arrangement
+   (falls back to createdAt for videos with no `order`)
+   ========================================================= */
+function sortVideosByAdminOrder(list) {
+    const withOrder = list.filter(v => typeof v.order === 'number' && !isNaN(v.order));
+    const withoutOrder = list.filter(v => typeof v.order !== 'number' || isNaN(v.order));
+    withOrder.sort((a, b) => a.order - b.order);
+    withoutOrder.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    return [...withOrder, ...withoutOrder];
+}
+
         function renderCourseDetail(course) {
             const heroContainer = document.getElementById('courseHeroContainer');
             const isApproved = approvedCourses.has(course.id);
@@ -11236,8 +11248,9 @@ function checkScheduledPopups() {
             if (canAccess) {
                 const subfolders = allSubfolders.filter(s => s.courseId === course.id);
                 container.innerHTML = subfolders.map(sf => {
-                    const videos = allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id).sort(
-                        (a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    const videos = sortVideosByAdminOrder(
+    allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id)
+);
                     const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a,
                         b) => (a.createdAt || 0) - (b.createdAt || 0));
                     return `
@@ -12139,8 +12152,9 @@ function checkScheduledPopups() {
         }
 
         function renderMyLearn() {
-            const watched = allVideos.filter(v => watchedVideos.has(v.id)).sort((a, b) => (a.createdAt || 0) - (b
-                .createdAt || 0));
+           const watched = sortVideosByAdminOrder(
+    allVideos.filter(v => watchedVideos.has(v.id))
+);
             document.getElementById('watchedVideosGrid').innerHTML = watched.map(v => buildVideoCard(v, true)).join('') ||
                 '<p class="empty-state">No watched videos yet</p>';
             const myPaid = allCourses.filter(c => approvedCourses.has(c.id)).sort((a, b) => (a.createdAt || 0) - (b
@@ -12224,7 +12238,8 @@ function checkScheduledPopups() {
                 } catch (e) { console.warn('Offline render error:', e); }
             }
             document.getElementById('emptyOfflineMsg').style.display = offlineArray.length ? 'none' : 'block';
-            container.innerHTML = offlineArray.map(v => `
+           const offlineSorted = sortVideosByAdminOrder(offlineArray);
+container.innerHTML = offlineSorted.map(v => `
             <div class="video-card" data-id="${v.id}" data-offline="true" data-hasaccess="true">
                 <div class="video-thumb-wrapper">
                     <img src="${UTOM_THUMBNAIL}" alt="${escapeHtml(v.title)}" loading="lazy" />
