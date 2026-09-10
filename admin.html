@@ -18895,6 +18895,428 @@
         window.viewRegisterDetails = viewRegisterDetails;
         window.showConfirmPopup = showConfirmPopup;
 
+    /* =========================================================
+   MANUAL VIDEO ARRANGEMENT
+   Drag-to-reorder for videos (library + subfolder views)
+   ========================================================= */
+const arrangeState = {
+    active: false,
+    context: null,          // 'library' | 'subfolder'
+    subfolderId: null,
+    dragging: null,         // { el, ghost, pointerId, offsetX, offsetY, listEl, lastClientY }
+    autoScrollRAF: null
+};
+
+/* ---------- helpers ---------- */
+function videosSortedFor(list) {
+    const withOrder = list.filter(v => typeof v.order === 'number');
+    const withoutOrder = list.filter(v => typeof v.order !== 'number');
+    withOrder.sort((a, b) => a.order - b.order);
+    withoutOrder.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    return [...withOrder, ...withoutOrder];
+}
+
+function getVideoThumb(v) {
+    let src = v.thumbnail || '';
+    const yt = getYouTubeId(v.videoUrl);
+    if (!src && yt) src = `https://img.youtube.com/vi/${yt}/mqdefault.jpg`;
+    return src || 'https://picsum.photos/160/90';
+}
+
+function getCurrentSubfolderId() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#subfolder')) return null;
+    const q = hash.split('?')[1];
+    if (!q) return null;
+    return new URLSearchParams(q).get('sfId');
+}
+
+function buildArrangeItem(video, index) {
+    const div = document.createElement('div');
+    div.className = 'arrange-item';
+    div.dataset.videoId = video.id;
+    div.innerHTML = `
+        <span class="arrange-index">${index + 1}</span>
+        <span class="arrange-handle"><i class="fas fa-grip-vertical"></i></span>
+        <img class="arrange-thumb" src="${getVideoThumb(video)}" alt="" draggable="false"
+             onerror="this.src='https://picsum.photos/160/90'">
+        <div class="arrange-info">
+            <div class="arrange-title">${escapeHtml(video.title || 'Untitled')}</div>
+            <div class="arrange-sub">${escapeHtml(video.instructor || '')}${video.courseName ? ' · ' + escapeHtml(video.courseName) : ''}</div>
+        </div>
+        <div class="arrange-move">
+            <button type="button" data-move="up" title="Move up"><i class="fas fa-chevron-up"></i></button>
+            <button type="button" data-move="down" title="Move down"><i class="fas fa-chevron-down"></i></button>
+        </div>`;
+    return div;
+}
+
+function renumberArrangeItems(listEl) {
+    [...listEl.querySelectorAll('.arrange-item')].forEach((el, i) => {
+        const badge = el.querySelector('.arrange-index');
+        if (badge) badge.textContent = i + 1;
+    });
+}
+
+/* ---------- rendering the arrange list ---------- */
+function renderArrangeList(context, subfolderId) {
+    const listEl = context === 'library'
+        ? document.getElementById('postedVideosGrid')
+        : document.getElementById('subfolderVideosContainer');
+    if (!listEl) return;
+
+    let list;
+    if (context === 'library') {
+        const search = (document.getElementById('searchVideoInput')?.value || '').toLowerCase();
+        const courseFilter = document.getElementById('filterCourseSelect')?.value || 'all';
+        const priceFilter = document.getElementById('filterPriceSelect')?.value || 'all';
+        list = videos.filter(v =>
+            ((v.title || '').toLowerCase().includes(search) ||
+             (v.instructor || '').toLowerCase().includes(search)) &&
+            (courseFilter === 'all' || v.courseId === courseFilter) &&
+            (priceFilter === 'all' || (priceFilter === 'free' ? v.price === 0 : v.price > 0))
+        );
+    } else {
+        list = videos.filter(v => v.subfolderId === subfolderId);
+    }
+    list = videosSortedFor(list);
+
+    listEl.classList.add('arrange-list');
+    listEl.innerHTML = '';
+
+    if (list.length === 0) {
+        listEl.innerHTML = '<div class="empty-state" style="padding:14px;text-align:center;color:#8b8fa3;">No videos to arrange</div>';
+        return;
+    }
+
+    list.forEach((v, i) => listEl.appendChild(buildArrangeItem(v, i)));
+
+    listEl.querySelectorAll('.arrange-move button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = btn.closest('.arrange-item');
+            const dir = btn.dataset.move;
+            if (dir === 'up' && item.previousElementSibling) {
+                listEl.insertBefore(item, item.previousElementSibling);
+            } else if (dir === 'down' && item.nextElementSibling) {
+                listEl.insertBefore(item.nextElementSibling, item);
+            }
+            renumberArrangeItems(listEl);
+            persistArrangeOrder(context, subfolderId);
+        });
+    });
+}
+
+/* ---------- persist to Firebase ---------- */
+async function persistArrangeOrder(context, subfolderId) {
+    const listEl = context === 'library'
+        ? document.getElementById('postedVideosGrid')
+        : document.getElementById('subfolderVideosContainer');
+    if (!listEl) return;
+
+    const ids = [...listEl.querySelectorAll('.arrange-item')].map(el => el.dataset.videoId);
+    if (ids.length === 0) return;
+
+    const updates = {};
+    ids.forEach((id, i) => { updates[`videos/${id}/order`] = i; });
+
+    try {
+        await update(ref(db), updates);
+        showToast('Video order saved', 'success');
+    } catch (err) {
+        showToast('Failed to save order: ' + err.message, 'error');
+    }
+}
+
+/* ---------- UI state ---------- */
+function updateArrangeButtons() {
+    const libActive = arrangeState.active && arrangeState.context === 'library';
+    const sfActive  = arrangeState.active && arrangeState.context === 'subfolder';
+
+    const libBtn   = document.getElementById('arrangeVideosBtn');
+    const libLabel = document.getElementById('arrangeVideosBtnLabel');
+    const libHint  = document.getElementById('arrangeVideosHint');
+    const sfBtn    = document.getElementById('arrangeSubfolderBtn');
+    const sfLabel  = document.getElementById('arrangeSubfolderBtnLabel');
+    const sfHint   = document.getElementById('arrangeSubfolderHint');
+
+    if (libBtn)   libBtn.classList.toggle('active', libActive);
+    if (libLabel) libLabel.textContent = libActive ? 'Done Arranging' : 'Arrange Videos';
+    if (libHint)  libHint.innerHTML = libActive
+        ? '<i class="fas fa-hand-pointer"></i> Hold &amp; drag a video to reposition it'
+        : '';
+
+    if (sfBtn)    sfBtn.classList.toggle('active', sfActive);
+    if (sfLabel)  sfLabel.textContent = sfActive ? 'Done Arranging' : 'Arrange Videos';
+    if (sfHint)   sfHint.innerHTML = sfActive
+        ? '<i class="fas fa-hand-pointer"></i> Hold &amp; drag a video to reposition it'
+        : '';
+}
+
+function enterArrange(context, subfolderId) {
+    arrangeState.active = true;
+    arrangeState.context = context;
+    arrangeState.subfolderId = subfolderId || null;
+    document.body.classList.add('arrange-mode');
+    updateArrangeButtons();
+    renderArrangeList(context, subfolderId);
+}
+
+function exitArrange() {
+    const ctx  = arrangeState.context;
+    const sfId = arrangeState.subfolderId;
+
+    stopArrangeAutoScroll();
+    cancelArrangeDrag();
+
+    arrangeState.active = false;
+    arrangeState.context = null;
+    arrangeState.subfolderId = null;
+    document.body.classList.remove('arrange-mode');
+    document.getElementById('postedVideosGrid')?.classList.remove('arrange-list');
+    document.getElementById('subfolderVideosContainer')?.classList.remove('arrange-list');
+    updateArrangeButtons();
+
+    if (ctx === 'library') {
+        renderPostedGrid();                       // will hit the original renderer
+    } else if (ctx === 'subfolder' && sfId) {
+        navigateToSection('subfolder', { sfId });
+    }
+}
+
+function toggleArrange(context, subfolderId) {
+    const sameTarget = arrangeState.active &&
+                       arrangeState.context === context &&
+                       arrangeState.subfolderId === (subfolderId || null);
+    if (sameTarget) { exitArrange(); return; }
+    if (arrangeState.active) exitArrange();
+    enterArrange(context, subfolderId);
+}
+
+/* ---------- pointer drag ---------- */
+function beginArrangeDrag(item, pointerId, startY, startX) {
+    const listEl = item.parentElement;
+    const rect = item.getBoundingClientRect();
+
+    const ghost = item.cloneNode(true);
+    ghost.classList.add('arrange-ghost');
+    ghost.classList.remove('arrange-dragging');
+    ghost.style.width  = rect.width + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.style.left   = rect.left + 'px';
+    ghost.style.top    = rect.top + 'px';
+    document.body.appendChild(ghost);
+
+    item.classList.add('arrange-dragging');
+    document.body.classList.add('arrange-dragging-active');
+
+    arrangeState.dragging = {
+        el: item,
+        ghost,
+        pointerId,
+        offsetX: startX - rect.left,
+        offsetY: startY - rect.top,
+        listEl,
+        lastClientY: startY
+    };
+
+    // block page scroll only while a drag is active
+    document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+}
+
+function preventTouchScroll(e) {
+    if (arrangeState.dragging) e.preventDefault();
+}
+
+function reorderToPointer(clientY) {
+    const d = arrangeState.dragging;
+    if (!d) return;
+
+    const items = [...d.listEl.querySelectorAll('.arrange-item')];
+    const dragged = d.el;
+    let target = null;
+
+    for (const it of items) {
+        if (it === dragged) continue;
+        const r = it.getBoundingClientRect();
+        if (clientY < r.top + r.height / 2) { target = it; break; }
+    }
+
+    const curNext = dragged.nextElementSibling;
+    if (target) {
+        if (curNext !== target) {
+            d.listEl.insertBefore(dragged, target);
+            renumberArrangeItems(d.listEl);
+        }
+    } else {
+        if (curNext !== null) {
+            d.listEl.appendChild(dragged);
+            renumberArrangeItems(d.listEl);
+        }
+    }
+}
+
+function handleArrangeAutoScroll(clientY) {
+    stopArrangeAutoScroll();
+    const d = arrangeState.dragging;
+    if (!d) return;
+
+    const scrollEl = document.querySelector('.app-content');
+    if (!scrollEl) return;
+
+    const edge = 90;
+    let delta = 0;
+    if (clientY < edge) {
+        delta = -Math.max(2, ((edge - clientY) / edge) * 16);
+    } else if (clientY > window.innerHeight - edge) {
+        delta = Math.max(2, ((clientY - (window.innerHeight - edge)) / edge) * 16);
+    }
+    if (delta === 0) return;
+
+    const step = () => {
+        if (!arrangeState.dragging) { arrangeState.autoScrollRAF = null; return; }
+        scrollEl.scrollTop += delta;
+        reorderToPointer(arrangeState.dragging.lastClientY);
+        arrangeState.autoScrollRAF = requestAnimationFrame(step);
+    };
+    arrangeState.autoScrollRAF = requestAnimationFrame(step);
+}
+
+function stopArrangeAutoScroll() {
+    if (arrangeState.autoScrollRAF) {
+        cancelAnimationFrame(arrangeState.autoScrollRAF);
+        arrangeState.autoScrollRAF = null;
+    }
+}
+
+function onArrangePointerMove(e) {
+    const d = arrangeState.dragging;
+    if (!d || e.pointerId !== d.pointerId) return;
+
+    d.lastClientY = e.clientY;
+    d.ghost.style.left = (e.clientX - d.offsetX) + 'px';
+    d.ghost.style.top  = (e.clientY - d.offsetY) + 'px';
+
+    reorderToPointer(e.clientY);
+    handleArrangeAutoScroll(e.clientY);
+}
+
+function onArrangePointerUp(e) {
+    const d = arrangeState.dragging;
+    if (!d || e.pointerId !== d.pointerId) return;
+
+    cancelArrangeDrag();
+    persistArrangeOrder(arrangeState.context, arrangeState.subfolderId);
+}
+
+function cancelArrangeDrag() {
+    const d = arrangeState.dragging;
+    if (!d) return;
+
+    stopArrangeAutoScroll();
+    document.removeEventListener('pointermove', onArrangePointerMove);
+    document.removeEventListener('pointerup', onArrangePointerUp);
+    document.removeEventListener('pointercancel', onArrangePointerUp);
+    document.removeEventListener('touchmove', preventTouchScroll);
+
+    if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    if (d.el) d.el.classList.remove('arrange-dragging');
+    document.body.classList.remove('arrange-dragging-active');
+
+    arrangeState.dragging = null;
+}
+
+/* ---------- global pointerdown delegation (attach once) ---------- */
+document.addEventListener('pointerdown', (e) => {
+    if (!arrangeState.active) return;
+
+    const listEl = arrangeState.context === 'library'
+        ? document.getElementById('postedVideosGrid')
+        : document.getElementById('subfolderVideosContainer');
+    if (!listEl || !listEl.contains(e.target)) return;
+
+    const item = e.target.closest('.arrange-item');
+    if (!item) return;
+    if (e.target.closest('.arrange-move')) return;                 // arrow buttons
+    if (e.pointerType === 'mouse' && e.button !== 0) return;       // only left click
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const pointerId = e.pointerId;
+
+    const startDrag = () => {
+        beginArrangeDrag(item, pointerId, startY, startX);
+        document.addEventListener('pointermove', onArrangePointerMove);
+        document.addEventListener('pointerup', onArrangePointerUp);
+        document.addEventListener('pointercancel', onArrangePointerUp);
+    };
+
+    if (e.pointerType === 'touch') {
+        // long-press delay so normal scrolling still works
+        let timer = setTimeout(() => { cleanup(); startDrag(); }, 220);
+
+        const onMove = (ev) => {
+            if (ev.pointerId !== pointerId) return;
+            if (Math.abs(ev.clientY - startY) > 8 || Math.abs(ev.clientX - startX) > 8) cleanup();
+        };
+        const onUp = (ev) => { if (ev.pointerId === pointerId) cleanup(); };
+        const cleanup = () => {
+            clearTimeout(timer);
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            document.removeEventListener('pointercancel', onUp);
+        };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
+    } else {
+        e.preventDefault();
+        startDrag();
+    }
+});
+
+/* ---------- button wiring ---------- */
+document.getElementById('arrangeVideosBtn')?.addEventListener('click', () => {
+    toggleArrange('library');
+});
+
+document.getElementById('arrangeSubfolderBtn')?.addEventListener('click', () => {
+    const sfId = getCurrentSubfolderId();
+    if (!sfId) { showToast('No subfolder selected.', 'error'); return; }
+    toggleArrange('subfolder', sfId);
+});
+
+/* ---------- override renderPostedGrid so live updates respect arrange mode ---------- */
+const _origRenderPostedGrid = renderPostedGrid;
+renderPostedGrid = function () {
+    if (arrangeState.active && arrangeState.context === 'library') {
+        renderArrangeList('library');
+        return;
+    }
+    document.getElementById('postedVideosGrid')?.classList.remove('arrange-list');
+    _origRenderPostedGrid();
+};
+
+/* ---------- auto-exit when navigating away ---------- */
+window.addEventListener('hashchange', () => {
+    if (!arrangeState.active) return;
+    const newSection = window.location.hash.slice(1).split('?')[0];
+    const stillValid =
+        (arrangeState.context === 'library'   && newSection === 'videos') ||
+        (arrangeState.context === 'subfolder' && newSection === 'subfolder');
+    if (stillValid) return;
+
+    stopArrangeAutoScroll();
+    cancelArrangeDrag();
+    arrangeState.active = false;
+    arrangeState.context = null;
+    arrangeState.subfolderId = null;
+    document.body.classList.remove('arrange-mode');
+    document.getElementById('postedVideosGrid')?.classList.remove('arrange-list');
+    document.getElementById('subfolderVideosContainer')?.classList.remove('arrange-list');
+    updateArrangeButtons();
+});
+
         setupRealtime();
 
         console.log('✅ UTOM Admin — Fully optimized with multi-register support, floating player, payment auto-popup, live class sidebar link, and all features.');
