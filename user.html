@@ -8519,74 +8519,103 @@
             setTimeout(checkScheduledPopups, 5000);
         }
 
-        function checkScheduledPopups() {
-            if (!currentUser) return;
-            const inAppNotifs = window._inAppNotifs || {};
-            const now = Date.now();
+function checkScheduledPopups() {
+    if (!currentUser) return;
+    const inAppNotifs = window._inAppNotifs || {};
+    const now = Date.now();
 
-            for (const [key, notif] of Object.entries(inAppNotifs)) {
-                if (notif.active === false) continue;
-                const startDate = notif.startDate ? new Date(notif.startDate).getTime() : null;
-                const endDate = notif.endDate ? new Date(notif.endDate).getTime() : null;
-                if (startDate && now < startDate) continue;
-                if (endDate && now > endDate) continue;
-                const repeatInterval = notif.repeatInterval || 0;
-                const repeatUnit = notif.repeatUnit || 'hours';
-                const maxOccurrences = notif.maxOccurrences || 1;
-                const lastShown = popupShownCounts[key]?.lastShown || 0;
-                const shownCount = popupShownCounts[key]?.count || 0;
-                if (shownCount >= maxOccurrences) continue;
-                if (repeatInterval > 0) {
-                    let intervalMs = 0;
-                    switch (repeatUnit) {
-                        case 'minutes':
-                            intervalMs = repeatInterval * 60 * 1000;
-                            break;
-                        case 'hours':
-                            intervalMs = repeatInterval * 60 * 60 * 1000;
-                            break;
-                        case 'days':
-                            intervalMs = repeatInterval * 24 * 60 * 60 * 1000;
-                            break;
-                        default:
-                            intervalMs = repeatInterval * 60 * 60 * 1000;
-                    }
-                    if (lastShown > 0 && now - lastShown < intervalMs) continue;
-                }
-                showScheduledPopup(key, notif);
-                break;
+    for (const [key, notif] of Object.entries(inAppNotifs)) {
+        if (notif.active === false) continue;
+
+        // ===== RECIPIENT TARGETING (NEW) =====
+        const recipientType = notif.recipientType || 'all';
+        if (recipientType === 'specific') {
+            const targetIds = Array.isArray(notif.userIds)
+                ? notif.userIds
+                : (typeof notif.userIds === 'string' && notif.userIds !== 'all'
+                    ? [notif.userIds]
+                    : []);
+            if (!targetIds.includes(currentUser.uid)) continue;
+        }
+        // recipientType === 'all' → fall through (everyone sees it)
+        // =====================================
+
+        const startDate = notif.startDate ? new Date(notif.startDate).getTime() : null;
+        const endDate   = notif.endDate   ? new Date(notif.endDate).getTime()   : null;
+        if (startDate && now < startDate) continue;
+        if (endDate   && now > endDate)   continue;
+
+        const repeatInterval = notif.repeatInterval || 0;
+        const repeatUnit     = notif.repeatUnit || 'hours';
+        const maxOccurrences = notif.maxOccurrences || 1;
+
+        // ===== PER-USER SHOWN COUNT (FIXED) =====
+        const userKey = `${currentUser.uid}__${key}`;
+        const lastShown  = popupShownCounts[userKey]?.lastShown || 0;
+        const shownCount = popupShownCounts[userKey]?.count || 0;
+        // ======================================
+
+        if (shownCount >= maxOccurrences) continue;
+
+        if (repeatInterval > 0) {
+            let intervalMs = 0;
+            switch (repeatUnit) {
+                case 'minutes': intervalMs = repeatInterval * 60 * 1000; break;
+                case 'hours':   intervalMs = repeatInterval * 60 * 60 * 1000; break;
+                case 'days':    intervalMs = repeatInterval * 24 * 60 * 60 * 1000; break;
+                default:        intervalMs = repeatInterval * 60 * 60 * 1000;
             }
+            if (lastShown > 0 && now - lastShown < intervalMs) continue;
         }
 
-        function showScheduledPopup(key, notif) {
-            if (document.getElementById('scheduledPopupOverlay').classList.contains('open')) return;
-            currentPopupData = { key, notif };
-            const overlay = document.getElementById('scheduledPopupOverlay');
-            document.getElementById('popupTitle').textContent = notif.title || 'Notification';
-            document.getElementById('popupMessage').textContent = notif.message || '';
-            const mediaContainer = document.getElementById('popupMediaContainer');
-            mediaContainer.style.display = 'none';
-            mediaContainer.innerHTML = '';
-            if (notif.mediaUrl) {
-                mediaContainer.style.display = 'block';
-                if (notif.mediaType === 'video') {
-                    mediaContainer.innerHTML =
-                        `<video src="${notif.mediaUrl}" controls style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;"></video>`;
-                } else {
-                    mediaContainer.innerHTML =
-                        `<img src="${notif.mediaUrl}" alt="Media" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;" />`;
-                }
-            }
-            const scheduleInfo = document.getElementById('popupScheduleInfo');
-            scheduleInfo.innerHTML = '';
-            const shownData = popupShownCounts[key] || { count: 0, lastShown: 0 };
-            shownData.count = (shownData.count || 0) + 1;
-            shownData.lastShown = Date.now();
-            popupShownCounts[key] = shownData;
-            localStorage.setItem('utom_popup_counts', JSON.stringify(popupShownCounts));
-            overlay.classList.add('open');
-            overlay.dataset.popupKey = key;
+        showScheduledPopup(userKey, notif);
+        break;
+    }
+}
+
+       function showScheduledPopup(key, notif) {
+    if (document.getElementById('scheduledPopupOverlay').classList.contains('open')) return;
+    currentPopupData = { key, notif };
+
+    const overlay = document.getElementById('scheduledPopupOverlay');
+
+    // --- Header / title ---
+    document.getElementById('popupTitle').textContent = notif.title || 'Notification';
+
+    // --- Body / message ---
+    document.getElementById('popupMessage').textContent = notif.message || '';
+
+    // --- Optional media (image or video) ---
+    const mediaContainer = document.getElementById('popupMediaContainer');
+    mediaContainer.style.display = 'none';
+    mediaContainer.innerHTML = '';
+    if (notif.mediaUrl) {
+        mediaContainer.style.display = 'block';
+        if (notif.mediaType === 'video') {
+            mediaContainer.innerHTML =
+                `<video src="${notif.mediaUrl}" controls style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;"></video>`;
+        } else {
+            mediaContainer.innerHTML =
+                `<img src="${notif.mediaUrl}" alt="Media" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;" />`;
         }
+    }
+
+    // --- Schedule info line (kept for backwards compatibility) ---
+    const scheduleInfo = document.getElementById('popupScheduleInfo');
+    scheduleInfo.innerHTML = '';
+
+    // --- Increment per-user occurrence counter ---
+    // `key` here is `${currentUser.uid}__${notifKey}` (set by checkScheduledPopups)
+    const shownData = popupShownCounts[key] || { count: 0, lastShown: 0 };
+    shownData.count = (shownData.count || 0) + 1;
+    shownData.lastShown = Date.now();
+    popupShownCounts[key] = shownData;
+    localStorage.setItem('utom_popup_counts', JSON.stringify(popupShownCounts));
+
+    // --- Show it ---
+    overlay.classList.add('open');
+    overlay.dataset.popupKey = key;
+}
 
         document.getElementById('popupUnderstoodBtn').addEventListener('click', function() {
             const overlay = document.getElementById('scheduledPopupOverlay');
