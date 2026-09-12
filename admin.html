@@ -1593,6 +1593,44 @@
             box-shadow: 0 0 0 4px rgba(245, 176, 66, 0.08);
             background: #fff;
         }
+        /* ===== BAN REASON DISPLAY ===== */
+        .ban-reason-display {
+            margin-top: 8px;
+            padding: 8px 14px;
+            background: rgba(253, 232, 232, 0.5);
+            border-radius: var(--radius-sm);
+            border-left: 4px solid #e74c3c;
+            font-size: 11px;
+            color: #c62828;
+            text-align: left;
+            width: 100%;
+            word-break: break-word;
+        }
+        .ban-reason-display strong {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
+        /* ===== SUBFOLDER PRICE BADGE ===== */
+        .subfolder-price-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 9px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .subfolder-price-badge.free {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2e7d32;
+        }
+        .subfolder-price-badge.paid {
+            background: rgba(245, 176, 66, 0.18);
+            color: #d4952a;
+        }
         /* ===== COURSES ACCORDION ===== */
         .course-folder {
             background: rgba(255, 255, 255, 0.85);
@@ -7634,6 +7672,71 @@
         </div>
     </div>
 
+    <!-- ===== SUBFOLDER EDIT MODAL (NEW — supports price + duration) ===== -->
+    <div id="subfolderEditModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-modal" id="closeSubfolderModal">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-folder"></i> <span id="subfolderModalTitle">Add Subfolder</span></h3>
+            <form id="subfolderForm">
+                <input type="hidden" id="subfolderId">
+                <input type="hidden" id="subfolderCourseId">
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Name</label>
+                    <input type="text" id="subfolderName" placeholder="Subfolder name" required>
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Price Type</label>
+                    <select id="subfolderPriceType" style="flex:1;">
+                        <option value="free">Free</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Price (ZMW)</label>
+                    <input type="number" id="subfolderPrice" placeholder="0" min="0" step="0.01" value="0" style="flex:1;">
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Duration Type</label>
+                    <select id="subfolderDurationType" style="flex:1;">
+                        <option value="lifetime">Lifetime</option>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                    </select>
+                    <input type="number" id="subfolderDurationValue" placeholder="Value" value="0" min="0" style="width:90px;">
+                </div>
+                <div style="font-size:10px;color:#8b8fa3;margin-top:2px;">Set price to 0 or Free for unpaid access. Duration applies when the subfolder is purchased.</div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                    <button type="button" id="cancelSubfolderBtn" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-confirm"><i class="fas fa-check"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== BAN USER MODAL (NEW — with reason) ===== -->
+    <div id="banUserModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-modal" id="closeBanModal">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-ban"></i> Ban User</h3>
+            <p style="font-size:12px;color:#5f6377;margin-bottom:12px;">You are about to ban <strong id="banUserName">this user</strong>. Please provide a reason for the ban — it will be shown to the user.</p>
+            <form id="banUserForm">
+                <input type="hidden" id="banUserId">
+                <div class="form-row">
+                    <textarea id="banReason" rows="3" placeholder="Reason for ban (e.g. Spamming, Inappropriate content, Violation of terms...)" required style="width:100%;border-radius:var(--radius-sm);min-height:70px;flex:1;padding:12px 18px;font-size:12px;font-family:inherit;border:1.5px solid rgba(229,232,237,0.6);"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                    <button type="button" id="cancelBanBtn" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-danger"><i class="fas fa-ban"></i> Ban User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ===== USER DETAILS MODAL ===== -->
     <div id="userDetailsModal" class="modal-overlay">
         <div class="modal-box">
@@ -7959,6 +8062,22 @@
         const assessmentsRef = ref(db, 'assessments');
         const assessmentResponsesRef = ref(db, 'assessmentResponses');
         const assessmentDraftsRef = ref(db, 'assessmentDrafts');
+
+        // =================================================================
+        // BAN HELPERS — supports both legacy `true` and new object format
+        // =================================================================
+        function isUserBanned(uid) {
+            const v = bannedUsersMap[uid];
+            if (v === true) return true;
+            if (v && typeof v === 'object' && v.banned === true) return true;
+            return false;
+        }
+        function getBanInfo(uid) {
+            const v = bannedUsersMap[uid];
+            if (v === true) return { banned: true, reason: '', bannedAt: null };
+            if (v && typeof v === 'object' && v.banned) return v;
+            return null;
+        }
 
         // =================================================================
         // CONFIRMATION POPUP
@@ -9249,7 +9368,7 @@
         function updateEditSubfolderSelect(courseId) {
             const sel = document.getElementById('editSubfolderSelect');
             const subs = subfolders.filter(s => s.courseId === courseId);
-            sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            sel.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}${s.price > 0 ? ' (ZMW '+s.price+')' : ''}</option>`).join('');
         }
 
         // =================================================================
@@ -9452,6 +9571,135 @@
         });
 
         // =================================================================
+        // SUBFOLDER EDIT MODAL (NEW)
+        // =================================================================
+        function openSubfolderModal(sfId, courseId) {
+            const modal = document.getElementById('subfolderEditModal');
+            const title = document.getElementById('subfolderModalTitle');
+            if (sfId) {
+                const sf = subfolders.find(s => s.id === sfId);
+                if (!sf) { showToast('Subfolder not found.', 'error'); return; }
+                title.textContent = 'Edit Subfolder';
+                document.getElementById('subfolderId').value = sf.id;
+                document.getElementById('subfolderCourseId').value = sf.courseId;
+                document.getElementById('subfolderName').value = sf.name || '';
+                const isPaid = (sf.price || 0) > 0;
+                document.getElementById('subfolderPriceType').value = isPaid ? 'paid' : 'free';
+                document.getElementById('subfolderPrice').value = sf.price || 0;
+                document.getElementById('subfolderPrice').style.display = isPaid ? 'inline-block' : 'none';
+                document.getElementById('subfolderDurationType').value = sf.durationType || 'lifetime';
+                document.getElementById('subfolderDurationValue').value = sf.durationValue || 0;
+            } else {
+                title.textContent = 'Add Subfolder';
+                document.getElementById('subfolderId').value = '';
+                document.getElementById('subfolderCourseId').value = courseId || '';
+                document.getElementById('subfolderName').value = '';
+                document.getElementById('subfolderPriceType').value = 'free';
+                document.getElementById('subfolderPrice').value = 0;
+                document.getElementById('subfolderPrice').style.display = 'none';
+                document.getElementById('subfolderDurationType').value = 'lifetime';
+                document.getElementById('subfolderDurationValue').value = 0;
+            }
+            modal.classList.add('open');
+        }
+
+        document.getElementById('closeSubfolderModal').addEventListener('click', () => {
+            document.getElementById('subfolderEditModal').classList.remove('open');
+        });
+        document.getElementById('cancelSubfolderBtn').addEventListener('click', () => {
+            document.getElementById('subfolderEditModal').classList.remove('open');
+        });
+        document.getElementById('subfolderPriceType').addEventListener('change', function() {
+            document.getElementById('subfolderPrice').style.display = this.value === 'paid' ? 'inline-block' : 'none';
+            if (this.value === 'free') document.getElementById('subfolderPrice').value = '0';
+        });
+        document.getElementById('subfolderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('subfolderId').value;
+            const courseId = document.getElementById('subfolderCourseId').value;
+            const name = document.getElementById('subfolderName').value.trim();
+            const priceType = document.getElementById('subfolderPriceType').value;
+            const price = priceType === 'free' ? 0 : (parseFloat(document.getElementById('subfolderPrice').value) || 0);
+            const durationType = document.getElementById('subfolderDurationType').value;
+            const durationValue = parseInt(document.getElementById('subfolderDurationValue').value) || 0;
+            if (!name) { showToast('Please enter a name.', 'error'); return; }
+            if (!courseId) { showToast('Course not specified.', 'error'); return; }
+            try {
+                if (id) {
+                    await update(ref(db, `subfolders/${id}`), { name, price, durationType, durationValue });
+                    showToast('Subfolder updated!', 'success');
+                    push(notificationsRef, { message: `✏️ Subfolder "${name}" updated`, timestamp: serverTimestamp() });
+                } else {
+                    await push(subfoldersRef, { name, courseId, price, durationType, durationValue });
+                    showToast('Subfolder created!', 'success');
+                    push(notificationsRef, { message: `📁 Subfolder "${name}" created${price > 0 ? ' (ZMW '+price+')' : ''}`, timestamp: serverTimestamp() });
+                }
+                document.getElementById('subfolderEditModal').classList.remove('open');
+            } catch (err) {
+                showToast('Error saving subfolder: ' + err.message, 'error');
+            }
+        });
+
+        // =================================================================
+        // BAN USER MODAL (NEW)
+        // =================================================================
+        function openBanModal(uid) {
+            const user = users.find(u => u.uid === uid);
+            if (!user) { showToast('User not found.', 'error'); return; }
+            const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
+            document.getElementById('banUserId').value = uid;
+            document.getElementById('banUserName').textContent = name;
+            document.getElementById('banReason').value = '';
+            document.getElementById('banUserModal').classList.add('open');
+        }
+
+        document.getElementById('closeBanModal').addEventListener('click', () => {
+            document.getElementById('banUserModal').classList.remove('open');
+        });
+        document.getElementById('cancelBanBtn').addEventListener('click', () => {
+            document.getElementById('banUserModal').classList.remove('open');
+        });
+        document.getElementById('banUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const uid = document.getElementById('banUserId').value;
+            const reason = document.getElementById('banReason').value.trim();
+            if (!reason) { showToast('Please provide a reason.', 'error'); return; }
+            try {
+                await set(ref(db, `bannedUsers/${uid}`), {
+                    banned: true,
+                    reason: reason,
+                    bannedAt: Date.now(),
+                    bannedBy: currentAdmin?.email || 'admin'
+                });
+                // Send the user a popup notification about the ban
+                try {
+                    const newRef = push(inAppNotificationsRef);
+                    await set(newRef, {
+                        title: 'Account Suspended',
+                        message: `Your account has been suspended. Reason: ${reason}`,
+                        mediaUrl: '',
+                        mediaType: 'image',
+                        recipientType: 'specific',
+                        userIds: [uid],
+                        createdAt: serverTimestamp(),
+                        read: false,
+                        repeatInterval: 1,
+                        repeatUnit: 'hours',
+                        maxOccurrences: 1,
+                        occurrencesShown: 0,
+                        active: true
+                    });
+                } catch (err) { console.warn('Could not send ban notification:', err); }
+
+                document.getElementById('banUserModal').classList.remove('open');
+                showToast('User banned.', 'success');
+                push(notificationsRef, { message: `🚫 User banned: ${reason}`, timestamp: serverTimestamp() });
+            } catch (err) {
+                showToast('Error banning user: ' + err.message, 'error');
+            }
+        });
+
+        // =================================================================
         // DOCUMENT VIEWER
         // =================================================================
         function openDocFullPage(doc) {
@@ -9595,6 +9843,14 @@
                         const course = courseSnap.val();
                         durationType = course.durationType || 'lifetime';
                         durationValue = course.durationValue || 0;
+                    }
+                } else if (itemType === 'subfolder') {
+                    // NEW: subfolder purchases
+                    const sfSnap = await get(ref(db, `subfolders/${itemId}`));
+                    if (sfSnap.val()) {
+                        const sf = sfSnap.val();
+                        durationType = sf.durationType || 'lifetime';
+                        durationValue = sf.durationValue || 0;
                     }
                 } else if (['test', 'quiz', 'exam', 'assignment'].includes(itemType)) {
                     const assSnap = await get(ref(db, `assessments/${itemId}`));
@@ -9939,12 +10195,12 @@
         }
 
         // =================================================================
-        // USERS
+        // USERS — MODIFIED to support ban reason
         // =================================================================
         function renderUsers() {
             const container = document.getElementById('usersListContainer');
             const search = (document.getElementById('usersSearchInput')?.value || '').toLowerCase();
-            const usersWithBan = users.map(u => ({ ...u, banned: bannedUsersMap[u.uid] === true }));
+            const usersWithBan = users.map(u => ({ ...u, banned: isUserBanned(u.uid), banInfo: getBanInfo(u.uid) }));
             const filtered = usersWithBan.filter(u =>
                 (u.firstName || '').toLowerCase().includes(search) ||
                 (u.lastName || '').toLowerCase().includes(search) ||
@@ -9956,6 +10212,9 @@
                 const email = u.email || 'No email';
                 const initial = (u.firstName || 'U').charAt(0).toUpperCase();
                 const isBanned = u.banned;
+                const banReasonHtml = (isBanned && u.banInfo && u.banInfo.reason)
+                    ? `<div class="ban-reason-display"><strong>Reason</strong>${escapeHtml(u.banInfo.reason)}</div>`
+                    : (isBanned ? `<div class="ban-reason-display"><strong>Reason</strong>No reason provided</div>` : '');
                 return `
                 <div class="user-card" data-uid="${u.uid}">
                     <div class="user-avatar">${initial}</div>
@@ -9963,6 +10222,7 @@
                     <div class="user-email">${escapeHtml(email)}</div>
                     <div class="user-phone">${escapeHtml(u.phone || 'No phone')}</div>
                     <span class="user-status-badge ${isBanned ? 'banned' : 'active'}">${isBanned ? 'Banned' : 'Active'}</span>
+                    ${banReasonHtml}
                     <div class="user-actions">
                         ${isBanned ? `
                             <button class="btn-unban" data-uid="${u.uid}"><i class="fas fa-check"></i> Unban</button>
@@ -9979,20 +10239,7 @@
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const uid = btn.dataset.uid;
-                    const confirmed = await showConfirmPopup({
-                        icon: '🚫',
-                        type: 'warning',
-                        title: 'Ban User?',
-                        message: 'Are you sure you want to ban this user?',
-                        okText: 'Ban',
-                        okClass: 'btn-confirm-danger'
-                    });
-                    if (confirmed) {
-                        await set(ref(db, `bannedUsers/${uid}`), true);
-                        renderUsers();
-                        updateBannedList();
-                        showToast('User banned', 'info');
-                    }
+                    openBanModal(uid);
                 });
             });
 
@@ -10000,10 +10247,24 @@
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const uid = btn.dataset.uid;
-                    await remove(ref(db, `bannedUsers/${uid}`));
-                    renderUsers();
-                    updateBannedList();
-                    showToast('User unbanned', 'info');
+                    const confirmed = await showConfirmPopup({
+                        icon: '✅',
+                        type: 'info',
+                        title: 'Unban User?',
+                        message: 'Are you sure you want to unban this user? They will regain access.',
+                        okText: 'Unban',
+                        okClass: 'btn-confirm-success'
+                    });
+                    if (!confirmed) return;
+                    try {
+                        await remove(ref(db, `bannedUsers/${uid}`));
+                        renderUsers();
+                        updateBannedList();
+                        showToast('User unbanned', 'info');
+                        push(notificationsRef, { message: `✅ User unbanned`, timestamp: serverTimestamp() });
+                    } catch (err) {
+                        showToast('Error unbanning user: ' + err.message, 'error');
+                    }
                 });
             });
 
@@ -10051,7 +10312,8 @@
 
         async function showUserDetailsModal(user) {
             const modal = document.getElementById('userDetailsModal');
-            const isBanned = bannedUsersMap[user.uid] === true;
+            const isBanned = isUserBanned(user.uid);
+            const banInfo = getBanInfo(user.uid);
             const enrolledCourses = [];
             for (const tx of allTransactions) {
                 if (tx.userId === user.uid && tx.status === 'approved') {
@@ -10065,20 +10327,31 @@
                 enrolledCourses.map(c => `<span style="background:rgba(245,176,66,0.10);padding:2px 12px;border-radius:30px;font-size:10px;display:inline-block;margin:2px;">${escapeHtml(c.name)}</span>`)
                 .join('') :
                 '<span style="color:#8b8fa3;font-size:11px;">No approved courses</span>';
+
+            const banReasonRow = isBanned
+                ? `<tr><td style="padding:6px 10px;font-weight:600;">Ban Reason</td><td style="padding:6px 10px;color:#c62828;">${escapeHtml(banInfo?.reason || 'No reason provided')}</td></tr>`
+                : '';
+
             document.getElementById('userModalTable').innerHTML = `
             <tr><td style="padding:6px 10px;font-weight:600;">Name</td><td style="padding:6px 10px;">${escapeHtml(user.firstName || '')} ${escapeHtml(user.lastName || '')}</td></tr>
             <tr><td style="padding:6px 10px;font-weight:600;">Email</td><td style="padding:6px 10px;">${escapeHtml(user.email)}</td></tr>
             <tr><td style="padding:6px 10px;font-weight:600;">Phone</td><td style="padding:6px 10px;">${escapeHtml(user.phone || 'N/A')}</td></tr>
             <tr><td style="padding:6px 10px;font-weight:600;">Status</td><td style="padding:6px 10px;">${isBanned ? 'Banned' : 'Active'}</td></tr>
+            ${banReasonRow}
             <tr><td style="padding:6px 10px;font-weight:600;">Courses Enrolled</td><td style="padding:6px 10px;">${coursesHtml}</td></tr>`;
             modal.classList.add('open');
             modal.dataset.uid = user.uid;
             document.getElementById('userModalBanBtn').onclick = async () => {
-                if (isBanned) await remove(ref(db, `bannedUsers/${user.uid}`));
-                else await set(ref(db, `bannedUsers/${user.uid}`), true);
-                modal.classList.remove('open');
-                renderUsers();
-                updateBannedList();
+                if (isBanned) {
+                    await remove(ref(db, `bannedUsers/${user.uid}`));
+                    modal.classList.remove('open');
+                    renderUsers();
+                    updateBannedList();
+                    showToast('User unbanned', 'info');
+                } else {
+                    modal.classList.remove('open');
+                    openBanModal(user.uid);
+                }
             };
         }
 
@@ -10509,8 +10782,9 @@
                 const courseId = document.getElementById('courseSelectHome').value;
                 if (name && courseId) {
                     const r = push(subfoldersRef);
-                    set(r, { name, courseId });
+                    set(r, { name, courseId, price: 0, durationType: 'lifetime', durationValue: 0 });
                     document.getElementById('newSubfolderNameHome').value = '';
+                    showToast('Subfolder added (free). Use Courses tab to set a price.', 'info');
                 }
             });
             document.getElementById('quickAddDocSubfolderBtn').addEventListener('click', () => {
@@ -10518,8 +10792,9 @@
                 const courseId = document.getElementById('docCourseSelect').value;
                 if (name && courseId) {
                     const r = push(subfoldersRef);
-                    set(r, { name, courseId });
+                    set(r, { name, courseId, price: 0, durationType: 'lifetime', durationValue: 0 });
                     document.getElementById('newDocSubfolder').value = '';
+                    showToast('Subfolder added (free). Use Courses tab to set a price.', 'info');
                 }
             });
             document.getElementById('addCourseBtn').addEventListener('click', async () => {
@@ -12867,10 +13142,11 @@
         function downloadUsersCsv() {
             if (users.length === 0) { showToast('No users to export', 'info'); return; }
             const rows = [
-                ['UID', 'First Name', 'Last Name', 'Email', 'Phone', 'Banned', 'Approved Courses']
+                ['UID', 'First Name', 'Last Name', 'Email', 'Phone', 'Banned', 'Ban Reason', 'Approved Courses']
             ];
             users.forEach(u => {
-                const isBanned = bannedUsersMap[u.uid] === true;
+                const isBanned = isUserBanned(u.uid);
+                const banInfo = getBanInfo(u.uid);
                 const approvedCourses = allTransactions
                     .filter(tx => tx.userId === u.uid && tx.status === 'approved')
                     .map(tx => tx.itemTitle || '')
@@ -12882,6 +13158,7 @@
                     escapeCsv(u.email || ''),
                     escapeCsv(u.phone || ''),
                     escapeCsv(isBanned ? 'Yes' : 'No'),
+                    escapeCsv(banInfo?.reason || ''),
                     escapeCsv(approvedCourses.join('; '))
                 ]);
             });
@@ -12935,7 +13212,7 @@
             const subDoc = document.getElementById('docSubfolderSelect');
             if (subHome) {
                 const subs = subfolders.filter(s => s.courseId === courseIdHome);
-                subHome.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+                subHome.innerHTML = subs.map(s => `<option value="${s.id}">${escapeHtml(s.name)}${s.price > 0 ? ' — ZMW '+s.price : ''}</option>`).join('');
             }
             if (subDoc) {
                 const subs = subfolders.filter(s => s.courseId === courseIdDoc);
@@ -13632,7 +13909,7 @@
         }
 
         // =================================================================
-        // COURSES ACCORDION
+        // COURSES ACCORDION — MODIFIED to use subfolder modal
         // =================================================================
         function renderCoursesAccordion() {
             const container = document.getElementById('coursesAccordionContainer');
@@ -13655,14 +13932,19 @@
                         ${courseSubfolders.map(sf => {
                             const vCount = videos.filter(v => v.subfolderId === sf.id).length;
                             const dCount = docs.filter(d => d.subfolderId === sf.id).length;
+                            const isPaid = (sf.price || 0) > 0;
+                            const priceBadge = isPaid
+                                ? `<span class="subfolder-price-badge paid"><i class="fas fa-crown"></i> ZMW ${sf.price}${sf.durationType && sf.durationType !== 'lifetime' ? ' · '+sf.durationValue+' '+sf.durationType : ''}</span>`
+                                : `<span class="subfolder-price-badge free"><i class="fas fa-gift"></i> Free</span>`;
                             return `
                             <div class="subfolder-item" data-subfolder-id="${sf.id}" data-course-id="${course.id}">
                                 <div class="subfolder-left">
                                     <i class="fas fa-folder"></i>
                                     <span>${escapeHtml(sf.name)} (${vCount} videos, ${dCount} docs)</span>
+                                    ${priceBadge}
                                 </div>
                                 <div class="subfolder-actions">
-                                    <button class="sf-edit" data-subfolder-id="${sf.id}" data-course-id="${course.id}" title="Edit name"><i class="fas fa-pen-to-square"></i></button>
+                                    <button class="sf-edit" data-subfolder-id="${sf.id}" data-course-id="${course.id}" title="Edit settings"><i class="fas fa-pen-to-square"></i></button>
                                     <button class="sf-delete" data-subfolder-id="${sf.id}" data-course-id="${course.id}" title="Delete"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>`;
@@ -13720,11 +14002,7 @@
                     const sfId = btn.dataset.subfolderId;
                     const sf = subfolders.find(s => s.id === sfId);
                     if (!sf) return;
-                    const newName = prompt('Edit subfolder name:', sf.name);
-                    if (newName && newName.trim() !== sf.name) {
-                        await update(ref(db, `subfolders/${sfId}`), { name: newName.trim() });
-                        showToast('Subfolder renamed!', 'success');
-                    }
+                    openSubfolderModal(sfId, sf.courseId);
                 });
             });
 
@@ -13753,11 +14031,7 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const courseId = btn.dataset.courseId;
-                    const name = prompt('Enter subfolder name:');
-                    if (name && name.trim()) {
-                        const r = push(subfoldersRef);
-                        set(r, { name: name.trim(), courseId });
-                    }
+                    openSubfolderModal(null, courseId);
                 });
             });
         }
@@ -13798,13 +14072,29 @@
 
         async function updateBannedList() {
             const container = document.getElementById('bannedUsersList');
-            const bannedUsers = users.filter(u => bannedUsersMap[u.uid]);
-            container.innerHTML = bannedUsers.map(u => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;align-items:center;">
-                <span>${escapeHtml(u.email)}</span>
-                <button data-uid="${u.uid}" class="btn-outline" style="padding:3px 14px;font-size:9px;">Unban</button>
-            </div>`).join('') || '<span style="color:#8b8fa3;font-size:12px;">No banned users</span>';
-            document.querySelectorAll('.btn-outline[data-uid]').forEach(b => b.addEventListener('click', async () => {
+            const bannedUsers = users.filter(u => isUserBanned(u.uid));
+            container.innerHTML = bannedUsers.map(u => {
+                const info = getBanInfo(u.uid);
+                const reason = info?.reason ? escapeHtml(info.reason) : '<em style="color:#8b8fa3;">No reason provided</em>';
+                return `
+                <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:rgba(253,232,232,0.35);margin-bottom:8px;border-left:3px solid #e74c3c;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                        <span style="font-size:12px;font-weight:600;color:#c62828;">${escapeHtml(u.email)}</span>
+                        <button data-uid="${u.uid}" class="btn-outline unban-btn" style="padding:3px 14px;font-size:9px;"><i class="fas fa-check"></i> Unban</button>
+                    </div>
+                    <div style="font-size:10px;color:#5f6377;"><strong style="color:#c62828;">Reason:</strong> ${reason}</div>
+                </div>`;
+            }).join('') || '<span style="color:#8b8fa3;font-size:12px;">No banned users</span>';
+            document.querySelectorAll('.unban-btn[data-uid]').forEach(b => b.addEventListener('click', async () => {
+                const confirmed = await showConfirmPopup({
+                    icon: '✅',
+                    type: 'info',
+                    title: 'Unban User?',
+                    message: 'Are you sure you want to unban this user?',
+                    okText: 'Unban',
+                    okClass: 'btn-confirm-success'
+                });
+                if (!confirmed) return;
                 await remove(ref(db, `bannedUsers/${b.dataset.uid}`));
                 renderUsers();
                 updateBannedList();
@@ -19319,7 +19609,7 @@ window.addEventListener('hashchange', () => {
 
         setupRealtime();
 
-        console.log('✅ UTOM Admin — Fully optimized with multi-register support, floating player, payment auto-popup, live class sidebar link, and all features.');
+        console.log('✅ UTOM Admin — Fully optimized with multi-register support, subfolder payment/duration, ban-with-reason, floating player, payment auto-popup, live class sidebar link, and all features.');
     </script>
 </body>
 </html>
