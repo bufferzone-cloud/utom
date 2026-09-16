@@ -7922,7 +7922,7 @@
     <!-- ============================================================= -->
     <!-- ===== MAIN SCRIPT ===== -->
     <!-- ============================================================= -->
-    <script type="module">
+        <script type="module">
         // =================================================================
         // FIREBASE SETUP
         // =================================================================
@@ -7986,13 +7986,13 @@
 
         // ---- Debounce and throttle helpers ----
         function debounce(fn, delay = 300) {
-    let timer;
-    return function (...args) {
-        const ctx = this;                 // capture the element
-        clearTimeout(timer);
-        timer = setTimeout(() => fn.apply(ctx, args), delay);
-    };
-}
+            let timer;
+            return function (...args) {
+                const ctx = this;
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(ctx, args), delay);
+            };
+        }
 
         function throttle(fn, limit = 100) {
             let inThrottle;
@@ -8004,6 +8004,53 @@
                 }
             };
         }
+
+        // =================================================================
+        // DECIMAL SUPPORT FOR ALL RANGE INPUTS
+        // (single "Range Answer" questions + every part of "Multiple Answers")
+        //
+        // <input type="number"> defaults to step="1" which silently rejects
+        // decimals like 2.5. This block forces step="any" on every range
+        // min/max input, whether it's in the static HTML, injected via
+        // innerHTML, or restored from a saved draft / edit form.
+        // =================================================================
+        const RANGE_INPUT_SELECTOR =
+            '.range-min, .range-max, .qb-part-range-min, .qb-part-range-max';
+
+        function applyDecimalStep(root = document) {
+            const nodes = root.matches && root.matches(RANGE_INPUT_SELECTOR)
+                ? [root]
+                : Array.from(
+                    (root.querySelectorAll && root.querySelectorAll(RANGE_INPUT_SELECTOR)) || []
+                  );
+            nodes.forEach(inp => {
+                if (inp.getAttribute('step') !== 'any')          inp.setAttribute('step', 'any');
+                if (inp.getAttribute('inputmode') !== 'decimal') inp.setAttribute('inputmode', 'decimal');
+            });
+        }
+
+        // Initial pass — catches anything already in the DOM
+        applyDecimalStep(document);
+
+        // Live pass — catches every question builder injected via innerHTML
+        const decimalStepObserver = new MutationObserver(mutations => {
+            for (const m of mutations) {
+                m.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) applyDecimalStep(node);
+                });
+            }
+        });
+        decimalStepObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+        });
+
+        // Safety net — catches values restored from drafts / edit forms
+        document.addEventListener('focusin', e => {
+            if (e.target.matches && e.target.matches(RANGE_INPUT_SELECTOR)) {
+                applyDecimalStep(e.target);
+            }
+        }, true);
 
         // ---- Render batching with requestAnimationFrame ----
         const pendingRenders = new Set();
@@ -8064,7 +8111,7 @@
         const assessmentDraftsRef = ref(db, 'assessmentDrafts');
 
         // =================================================================
-        // BAN HELPERS — supports both legacy `true` and new object format
+        // BAN HELPERS
         // =================================================================
         function isUserBanned(uid) {
             const v = bannedUsersMap[uid];
@@ -8082,63 +8129,62 @@
         // =================================================================
         // CONFIRMATION POPUP
         // =================================================================
-       function showConfirmPopup(options) {
-  return new Promise((resolve) => {
-    // Create or get the modal element
-    let overlay = document.getElementById('confirmationPopup');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'confirmationPopup';
-      overlay.className = 'confirm-overlay';
-      overlay.innerHTML = `
-        <div class="confirm-box">
-          <span class="confirm-icon" id="confirmIcon">❓</span>
-          <h3 class="confirm-title" id="confirmTitle">Are you sure?</h3>
-          <p class="confirm-message" id="confirmMessage"></p>
-          <div class="confirm-actions">
-            <button class="btn-cancel" id="confirmCancelBtn">Cancel</button>
-            <button class="btn-confirm" id="confirmOkBtn">OK</button>
-            <button class="confirm-close" id="confirmCloseBtn">×</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-    }
+        function showConfirmPopup(options) {
+            return new Promise((resolve) => {
+                let overlay = document.getElementById('confirmationPopup');
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'confirmationPopup';
+                    overlay.className = 'confirm-overlay';
+                    overlay.innerHTML = `
+                        <div class="confirm-box">
+                            <span class="confirm-icon" id="confirmIcon">❓</span>
+                            <h3 class="confirm-title" id="confirmTitle">Are you sure?</h3>
+                            <p class="confirm-message" id="confirmMessage"></p>
+                            <div class="confirm-actions">
+                                <button class="btn-cancel" id="confirmCancelBtn">Cancel</button>
+                                <button class="btn-confirm" id="confirmOkBtn">OK</button>
+                                <button class="confirm-close" id="confirmCloseBtn">×</button>
+                            </div>
+                        </div>`;
+                    document.body.appendChild(overlay);
+                }
 
-    const icon = overlay.querySelector('#confirmIcon');
-    const title = overlay.querySelector('#confirmTitle');
-    const message = overlay.querySelector('#confirmMessage');
-    const okBtn = overlay.querySelector('#confirmOkBtn');
-    const cancelBtn = overlay.querySelector('#confirmCancelBtn');
-    const closeBtn = overlay.querySelector('#confirmCloseBtn');
+                const icon = overlay.querySelector('#confirmIcon');
+                const title = overlay.querySelector('#confirmTitle');
+                const message = overlay.querySelector('#confirmMessage');
+                const okBtn = overlay.querySelector('#confirmOkBtn');
+                const cancelBtn = overlay.querySelector('#confirmCancelBtn');
+                const closeBtn = overlay.querySelector('#confirmCloseBtn');
 
-    icon.textContent = options.icon || '❓';
-    icon.className = 'confirm-icon ' + (options.type || 'info');
-    title.textContent = options.title || 'Are you sure?';
-    message.innerHTML = options.message || 'This action cannot be undone.';
-    okBtn.textContent = options.okText || 'OK';
-    okBtn.className = options.okClass || 'btn-confirm';
-    cancelBtn.style.display = options.hideCancel ? 'none' : 'inline-flex';
+                icon.textContent = options.icon || '❓';
+                icon.className = 'confirm-icon ' + (options.type || 'info');
+                title.textContent = options.title || 'Are you sure?';
+                message.innerHTML = options.message || 'This action cannot be undone.';
+                okBtn.textContent = options.okText || 'OK';
+                okBtn.className = options.okClass || 'btn-confirm';
+                cancelBtn.style.display = options.hideCancel ? 'none' : 'inline-flex';
 
-    overlay.classList.add('open');
+                overlay.classList.add('open');
 
-    const cleanup = () => {
-      overlay.classList.remove('open');
-      okBtn.removeEventListener('click', onOk);
-      cancelBtn.removeEventListener('click', onCancel);
-      closeBtn.removeEventListener('click', onCancel);
-    };
+                const cleanup = () => {
+                    overlay.classList.remove('open');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    closeBtn.removeEventListener('click', onCancel);
+                };
 
-    const onOk = () => { cleanup(); resolve(true); };
-    const onCancel = () => { cleanup(); resolve(false); };
+                const onOk = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
 
-    okBtn.addEventListener('click', onOk);
-    cancelBtn.addEventListener('click', onCancel);
-    closeBtn.addEventListener('click', onCancel);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) onCancel();
-    });
-  });
-}
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                closeBtn.addEventListener('click', onCancel);
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) onCancel();
+                });
+            });
+        }
 
         // =================================================================
         // LOADING STATE HELPERS
@@ -8400,13 +8446,6 @@
             }
             return str;
         }
-        function parseNumOrNull(value) {
-    if (value === undefined || value === null) return null;
-    const s = String(value).trim();
-    if (s === '') return null;
-    const n = parseFloat(s);
-    return Number.isNaN(n) ? null : n;
-}
 
         // =================================================================
         // PLAY VIDEO (using floating player)
@@ -9578,7 +9617,7 @@
         });
 
         // =================================================================
-        // SUBFOLDER EDIT MODAL (NEW)
+        // SUBFOLDER EDIT MODAL
         // =================================================================
         function openSubfolderModal(sfId, courseId) {
             const modal = document.getElementById('subfolderEditModal');
@@ -9648,7 +9687,7 @@
         });
 
         // =================================================================
-        // BAN USER MODAL (NEW)
+        // BAN USER MODAL
         // =================================================================
         function openBanModal(uid) {
             const user = users.find(u => u.uid === uid);
@@ -9678,7 +9717,6 @@
                     bannedAt: Date.now(),
                     bannedBy: currentAdmin?.email || 'admin'
                 });
-                // Send the user a popup notification about the ban
                 try {
                     const newRef = push(inAppNotificationsRef);
                     await set(newRef, {
@@ -9802,7 +9840,6 @@
             modal.classList.add('open');
             pendingPaymentAction = { tx, userId, txId, source };
 
-            // AUTO-DETECT USER: set flag for popup
             window._pendingPopupUser = userId;
         }
 
@@ -9852,7 +9889,6 @@
                         durationValue = course.durationValue || 0;
                     }
                 } else if (itemType === 'subfolder') {
-                    // NEW: subfolder purchases
                     const sfSnap = await get(ref(db, `subfolders/${itemId}`));
                     if (sfSnap.val()) {
                         const sf = sfSnap.val();
@@ -9941,7 +9977,6 @@
                 modal.classList.remove('open');
                 pendingPaymentAction = null;
 
-                // AUTO-DETECT USER: redirect to popup with this user selected
                 popupSelectedUsers.clear();
                 popupSelectedUsers.add(userId);
                 document.getElementById('popupSelectedCount').textContent = '1';
@@ -9989,7 +10024,6 @@
                 modal.classList.remove('open');
                 pendingPaymentAction = null;
 
-                // AUTO-DETECT USER: redirect to popup with this user selected
                 popupSelectedUsers.clear();
                 popupSelectedUsers.add(userId);
                 document.getElementById('popupSelectedCount').textContent = '1';
@@ -10202,7 +10236,7 @@
         }
 
         // =================================================================
-        // USERS — MODIFIED to support ban reason
+        // USERS
         // =================================================================
         function renderUsers() {
             const container = document.getElementById('usersListContainer');
@@ -11284,6 +11318,8 @@
                                 <span class="range-hint">Any answer between Min and Max is correct</span>
                             </div>
                         `;
+                        // Ensure the newly created inputs accept decimals
+                        applyDecimalStep(container);
                         const imageArea = qDiv?.querySelector('.qb-image-area');
                         if (imageArea) imageArea.style.display = 'flex';
                     } else if (e.target.value === 'mcq') {
@@ -11372,7 +11408,6 @@
                             parent.insertBefore(row, this);
                         });
                     } else if (e.target.value === 'multi-answer') {
-                        // ===== MODIFIED: Add range support for each part =====
                         container.innerHTML = `
                             <div class="qb-parts-container">
                                 <div class="qb-part-row">
@@ -11414,6 +11449,8 @@
                                 <button type="button" class="qb-add-part">+ Add Part</button>
                             </div>
                         `;
+                        applyDecimalStep(container);
+                        const imageArea = qDiv?.querySelector('.qb-image-area');
                         if (imageArea) imageArea.style.display = 'flex';
                         container.querySelector('.qb-add-part')?.addEventListener('click', function() {
                             const parent = this.closest('.qb-parts-container');
@@ -11435,8 +11472,8 @@
                                 <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                            applyDecimalStep(partRow);
                         });
-                        // Allow removal of parts
                         container.querySelectorAll('.qb-part-remove').forEach(btn => {
                             btn.addEventListener('click', function() {
                                 const row = this.closest('.qb-part-row');
@@ -11914,12 +11951,10 @@
                 }
             });
 
-            // Pre-populate from existing data (if editing)
             const existingIds = hiddenInput.value.split(',').filter(id => id.trim() !== '');
             existingIds.forEach(id => selectedRegisters.add(id));
             updateSelectedDisplay();
 
-            // Expose for draft loading
             window._multiRegisterSelects = window._multiRegisterSelects || {};
             window._multiRegisterSelects[type] = {
                 selectedRegisters,
@@ -11982,7 +12017,6 @@
                     document.getElementById(`${type}DurationHours`).value = parts[0] || 0;
                     document.getElementById(`${type}DurationMinutes`).value = parts[1] || 0;
                 }
-                // MULTI-REGISTER: restore register IDs
                 if (data.registerIds && Array.isArray(data.registerIds)) {
                     const hiddenInput = document.getElementById(`${type}RegisterIds`);
                     if (hiddenInput) {
@@ -12102,7 +12136,6 @@
                                     </div>
                                 `).join('')}<button type="button" class="qb-add-order">+ Add Item</button></div>`;
                             } else if (q.type === 'multi-answer') {
-                                // ===== MODIFIED: read range fields =====
                                 optionsHtml = `<div class="qb-parts-container">
                                     ${(q.options || []).map((part, pi) => `
                                         <div class="qb-part-row">
@@ -12175,7 +12208,6 @@
                             container.appendChild(qDiv);
                             attachQuizQuestionEventsTo(qDiv);
                             attachQuestionImageUpload(qDiv, 'quiz', 0, qi + 1);
-                            // Reattach range/part events for multi-answer
                             if (q.type === 'multi-answer') {
                                 attachMultiAnswerPartEvents(qDiv);
                             }
@@ -12570,8 +12602,8 @@
                     } else if (qtype === 'range') {
                         const minInp = q.querySelector('.range-min');
                         const maxInp = q.querySelector('.range-max');
-                        rangeMin = minInp ? parseNumOrNull(minInp.value) : null;
-rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
+                        rangeMin = minInp ? parseFloat(minInp.value) : null;
+                        rangeMax = maxInp ? parseFloat(maxInp.value) : null;
                         correct = null;
                         opts = [];
                     }
@@ -13564,7 +13596,6 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                 document.getElementById('composeUserIds').value = '';
                 document.getElementById('composeRecipientBadge').innerHTML = '👥 All Users';
                 popupSelectedUsers.clear();
-                // Set default scheduling values
                 setDefaultPopupDates();
             });
 
@@ -13706,7 +13737,6 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                 const mediaUrl = document.getElementById('popupMediaUrl').value || '';
                 const mediaType = document.getElementById('popupMediaType').value || 'image';
 
-                // ===== READ SCHEDULING / REPETITION FIELDS =====
                 const startDate = document.getElementById('popupStartDate').value;
                 const endDate = document.getElementById('popupEndDate').value;
                 const repeatInterval = parseInt(document.getElementById('popupRepeatInterval').value) || 1;
@@ -13727,13 +13757,11 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                         userIds,
                         createdAt: serverTimestamp(),
                         read: false,
-                        // Scheduling / repetition
                         startDate: startDate || null,
                         endDate: endDate || null,
                         repeatInterval: repeatInterval,
                         repeatUnit: repeatUnit,
                         maxOccurrences: maxOccurrences,
-                        // Occurrence tracking (will be used by student side)
                         occurrencesShown: 0,
                         lastShown: null,
                         active: true
@@ -13788,20 +13816,20 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
         }
 
         function renderPopupUserList(searchTerm = '') {
-    const container = document.getElementById('popupUserListContainer');
-    if (!container) return;
+            const container = document.getElementById('popupUserListContainer');
+            if (!container) return;
 
-    const raw = (searchTerm || document.getElementById('popupUserSearch')?.value || '');
-    const search = raw.trim().toLowerCase();          // ✅ always lowercase
+            const raw = (searchTerm || document.getElementById('popupUserSearch')?.value || '');
+            const search = raw.trim().toLowerCase();
 
-    let filtered = users || [];
-    if (search) {
-        filtered = filtered.filter(u =>
-            (u.firstName || '').toLowerCase().includes(search) ||
-            (u.lastName  || '').toLowerCase().includes(search) ||
-            (u.email     || '').toLowerCase().includes(search)
-        );
-    }
+            let filtered = users || [];
+            if (search) {
+                filtered = filtered.filter(u =>
+                    (u.firstName || '').toLowerCase().includes(search) ||
+                    (u.lastName  || '').toLowerCase().includes(search) ||
+                    (u.email     || '').toLowerCase().includes(search)
+                );
+            }
             if (filtered.length === 0) {
                 container.innerHTML = `<div style="text-align:center;padding:12px;color:#8b8fa3;">No users found.</div>`;
                 updatePopupSelectedCount();
@@ -13871,7 +13899,6 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                     'All Users' :
                     `${n.userIds ? (Array.isArray(n.userIds) ? n.userIds.length : 0) : 0} user(s)`;
                 const date = n.createdAt ? new Date(n.createdAt).toLocaleString() : 'N/A';
-                // Show scheduling info
                 let scheduleInfo = '';
                 if (n.startDate || n.endDate || n.repeatInterval) {
                     const parts = [];
@@ -13916,7 +13943,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
         }
 
         // =================================================================
-        // COURSES ACCORDION — MODIFIED to use subfolder modal
+        // COURSES ACCORDION
         // =================================================================
         function renderCoursesAccordion() {
             const container = document.getElementById('coursesAccordionContainer');
@@ -14510,6 +14537,10 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
         function attachMultiAnswerPartEvents(qDiv) {
             const container = qDiv.querySelector('.qb-parts-container');
             if (!container) return;
+
+            // Ensure any newly added range inputs accept decimals
+            applyDecimalStep(container);
+
             container.querySelectorAll('.qb-part-remove').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const row = this.closest('.qb-part-row');
@@ -14543,6 +14574,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                         <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                     `;
                     parent.insertBefore(partRow, this);
+                    applyDecimalStep(partRow);
                 });
             }
         }
@@ -15104,6 +15136,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                            applyDecimalStep(partRow);
                         });
                         container.querySelectorAll('.qb-part-remove').forEach(btn => {
                             btn.addEventListener('click', function() {
@@ -15116,6 +15149,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 }
                             });
                         });
+                        applyDecimalStep(container);
                     } else if (this.value === 'range') {
                         container.innerHTML = `
                             <div class="qb-range-answer-container">
@@ -15126,6 +15160,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <span class="range-hint">Any answer between Min and Max is correct</span>
                             </div>
                         `;
+                        applyDecimalStep(container);
                         if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
@@ -15290,6 +15325,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                        applyDecimalStep(partRow);
                     });
                     container.querySelectorAll('.qb-part-remove').forEach(btn => {
                         btn.addEventListener('click', function() {
@@ -15302,6 +15338,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             }
                         });
                     });
+                    applyDecimalStep(container);
                 } else if (this.value === 'range') {
                     container.innerHTML = `
                         <div class="qb-range-answer-container">
@@ -15312,6 +15349,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <span class="range-hint">Any answer between Min and Max is correct</span>
                         </div>
                     `;
+                    applyDecimalStep(container);
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -15661,6 +15699,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                            applyDecimalStep(partRow);
                         });
                         container.querySelectorAll('.qb-part-remove').forEach(btn => {
                             btn.addEventListener('click', function() {
@@ -15673,6 +15712,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 }
                             });
                         });
+                        applyDecimalStep(container);
                     } else if (this.value === 'range') {
                         container.innerHTML = `
                             <div class="qb-range-answer-container">
@@ -15683,6 +15723,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <span class="range-hint">Any answer between Min and Max is correct</span>
                             </div>
                         `;
+                        applyDecimalStep(container);
                         if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
@@ -15847,6 +15888,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                        applyDecimalStep(partRow);
                     });
                     container.querySelectorAll('.qb-part-remove').forEach(btn => {
                         btn.addEventListener('click', function() {
@@ -15859,6 +15901,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             }
                         });
                     });
+                    applyDecimalStep(container);
                 } else if (this.value === 'range') {
                     container.innerHTML = `
                         <div class="qb-range-answer-container">
@@ -15869,6 +15912,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <span class="range-hint">Any answer between Min and Max is correct</span>
                         </div>
                     `;
+                    applyDecimalStep(container);
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -16176,6 +16220,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                            applyDecimalStep(partRow);
                         });
                         container.querySelectorAll('.qb-part-remove').forEach(btn => {
                             btn.addEventListener('click', function() {
@@ -16188,6 +16233,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 }
                             });
                         });
+                        applyDecimalStep(container);
                     } else if (this.value === 'range') {
                         container.innerHTML = `
                             <div class="qb-range-answer-container">
@@ -16198,6 +16244,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <span class="range-hint">Any answer between Min and Max is correct</span>
                             </div>
                         `;
+                        applyDecimalStep(container);
                         if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
@@ -16381,6 +16428,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                        applyDecimalStep(partRow);
                     });
                     container.querySelectorAll('.qb-part-remove').forEach(btn => {
                         btn.addEventListener('click', function() {
@@ -16393,6 +16441,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             }
                         });
                     });
+                    applyDecimalStep(container);
                 } else if (this.value === 'range') {
                     container.innerHTML = `
                         <div class="qb-range-answer-container">
@@ -16403,6 +16452,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <span class="range-hint">Any answer between Min and Max is correct</span>
                         </div>
                     `;
+                    applyDecimalStep(container);
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -16818,6 +16868,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                             `;
                             parent.insertBefore(partRow, this);
+                            applyDecimalStep(partRow);
                         });
                         container.querySelectorAll('.qb-part-remove').forEach(btn => {
                             btn.addEventListener('click', function() {
@@ -16830,6 +16881,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 }
                             });
                         });
+                        applyDecimalStep(container);
                     } else if (this.value === 'range') {
                         container.innerHTML = `
                             <div class="qb-range-answer-container">
@@ -16840,6 +16892,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 <span class="range-hint">Any answer between Min and Max is correct</span>
                             </div>
                         `;
+                        applyDecimalStep(container);
                         if (imageArea) imageArea.style.display = 'flex';
                     } else {
                         container.innerHTML = `
@@ -17017,6 +17070,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <button type="button" class="qb-part-remove" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:11px;">×</button>
                         `;
                         parent.insertBefore(partRow, this);
+                        applyDecimalStep(partRow);
                     });
                     container.querySelectorAll('.qb-part-remove').forEach(btn => {
                         btn.addEventListener('click', function() {
@@ -17029,6 +17083,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             }
                         });
                     });
+                    applyDecimalStep(container);
                 } else if (this.value === 'range') {
                     container.innerHTML = `
                         <div class="qb-range-answer-container">
@@ -17039,6 +17094,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                             <span class="range-hint">Any answer between Min and Max is correct</span>
                         </div>
                     `;
+                    applyDecimalStep(container);
                 } else {
                     container.innerHTML = `
                         <div class="qb-options">
@@ -17109,7 +17165,6 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                 document.getElementById(type + 'DurationMinutes').value = parts[1] || 0;
             }
 
-            // MULTI-REGISTER: restore register IDs
             if (ass.registerIds && Array.isArray(ass.registerIds)) {
                 const hiddenInput = document.getElementById(`${type}RegisterIds`);
                 if (hiddenInput) {
@@ -17353,6 +17408,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                                 if (q.type === 'multi-answer') {
                                     attachMultiAnswerPartEvents(qDiv);
                                 }
+                                applyDecimalStep(qDiv);
                             });
                         }
                         attachTestQuestionEvents();
@@ -17483,6 +17539,7 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                         if (q.type === 'multi-answer') {
                             attachMultiAnswerPartEvents(qDiv);
                         }
+                        applyDecimalStep(qDiv);
                     });
                     updateQuizQuestionNumbers();
                 }
@@ -18439,7 +18496,6 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                     if (Array.isArray(answer)) {
                         answerDisplay = q.options.map((part, i) => {
                             const val = answer[i] || '';
-                            // Display range info if available
                             const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? 
                                 ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
                             return `${part.label}: ${val}${rangeInfo}`;
@@ -18458,30 +18514,31 @@ rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                         const studentAnswers = Array.isArray(answer) ? answer : [];
                         q.options.forEach((part, i) => {
                             const studentVal = (studentAnswers[i] !== undefined ? studentAnswers[i] : '').toString().trim().toLowerCase();
-                            // Check range first
                             let partCorrect = false;
-                            const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
-const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
-if (hasMin || hasMax) {
-    const numVal = parseFloat(studentVal);
-    const lo = hasMin ? part.rangeMin : -Infinity;
-    const hi = hasMax ? part.rangeMax :  Infinity;
-    if (!isNaN(numVal) && numVal >= lo && numVal <= hi) partCorrect = true;
-} else if (part.correctAnswer) {
-    const correctVal = part.correctAnswer.toString().trim().toLowerCase();
-    if (studentVal === correctVal) partCorrect = true;
-}
+                            if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                const numVal = parseFloat(studentVal);
+                                if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
+                                    partCorrect = true;
+                                }
+                            } else if (part.correctAnswer) {
+                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+                                if (studentVal === correctVal) partCorrect = true;
+                            }
                             if (partCorrect) {
                                 autoMarks += part.marks || 0;
                             }
                         });
                         mark = autoMarks;
                     } else if (q.type === 'range') {
-    const studentAnswer = parseFloat(answer);
-    const min = (q.rangeMin === undefined || q.rangeMin === null) ? -Infinity : q.rangeMin;
-    const max = (q.rangeMax === undefined || q.rangeMax === null) ?  Infinity : q.rangeMax;
-    mark = (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) ? q.marks : 0;
-}
+                        const studentAnswer = parseFloat(answer);
+                        const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
+                        const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
+                        if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
+                            mark = q.marks;
+                        } else {
+                            mark = 0;
+                        }
+                    }
                 }
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                 html += `
@@ -18810,19 +18867,17 @@ if (hasMin || hasMax) {
                     if (mark === 'Not graded') {
                         if (q.type === 'mcq' || q.type === 'tf') {
                             mark = (answer == q.correct) ? q.marks : 0;
-                                                } else if (q.type === 'multi-answer') {
+                        } else if (q.type === 'multi-answer') {
                             let autoMarks = 0;
                             const studentAnswers = Array.isArray(answer) ? answer : [];
                             q.options.forEach((part, pi) => {
                                 const studentVal = (studentAnswers[pi] !== undefined ? studentAnswers[pi] : '').toString().trim().toLowerCase();
                                 let partCorrect = false;
-                                const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
-                                const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
-                                if (hasMin || hasMax) {
+                                if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
                                     const numVal = parseFloat(studentVal);
-                                    const lo = hasMin ? part.rangeMin : -Infinity;
-                                    const hi = hasMax ? part.rangeMax :  Infinity;
-                                    if (!isNaN(numVal) && numVal >= lo && numVal <= hi) partCorrect = true;
+                                    if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
+                                        partCorrect = true;
+                                    }
                                 } else if (part.correctAnswer) {
                                     const correctVal = part.correctAnswer.toString().trim().toLowerCase();
                                     if (studentVal === correctVal) partCorrect = true;
@@ -18832,18 +18887,20 @@ if (hasMin || hasMax) {
                                 }
                             });
                             mark = autoMarks;
-                                                } else if (q.type === 'range') {
+                        } else if (q.type === 'range') {
                             const studentAnswer = parseFloat(answer);
-                            const min = (q.rangeMin === undefined || q.rangeMin === null) ? -Infinity : q.rangeMin;
-                            const max = (q.rangeMax === undefined || q.rangeMax === null) ?  Infinity : q.rangeMax;
-                            mark = (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) ? q.marks : 0;
+                            const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
+                            const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
+                            if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
+                                mark = q.marks;
+                            } else {
+                                mark = 0;
+                            }
                         }
                     }
                     const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                     const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-                                        const correctDisplay = q.type === 'range'
-                        ? `${q.rangeMin ?? '−∞'} – ${q.rangeMax ?? '+∞'}`
-                        : (q.correct !== undefined && q.correct !== null ? q.correct : '');
+                    const correctDisplay = q.type === 'range' ? `${q.rangeMin} – ${q.rangeMax}` : (q.correct !== undefined && q.correct !== null ? q.correct : '');
                     htmlContent += `
                         <div class="question">
                             <div class="q-title">Q${idx+1}: ${escapeHtml(q.text)} <span class="meta">(${q.marks} marks) · ${q.section}</span></div>
@@ -18851,12 +18908,8 @@ if (hasMin || hasMax) {
                             ${q.type === 'range' ? `<div class="marks" style="color:${markColor};font-weight:600;">Marks: ${mark} (Correct range: ${correctDisplay})</div>` : `<div class="marks" style="color:${markColor};">Marks: ${mark}</div>`}
                             ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                             ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
-                                                      ${q.type === 'multi-answer' ? q.options.map((part, pi) => {
-                                const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
-                                const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
-                                const rangeInfo = (hasMin || hasMax)
-                                    ? ` [Range: ${hasMin ? part.rangeMin : '−∞'}–${hasMax ? part.rangeMax : '+∞'}]`
-                                    : '';
+                            ${q.type === 'multi-answer' ? q.options.map((part, pi) => {
+                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
                                 return `<div style="font-size:11px;color:#8b8fa3;margin-top:2px;">${part.label}: ${part.correctAnswer || ''}${rangeInfo}</div>`;
                             }).join('') : ''}
                         </div>
@@ -19377,7 +19430,7 @@ function exitArrange() {
     updateArrangeButtons();
 
     if (ctx === 'library') {
-        renderPostedGrid();                       // will hit the original renderer
+        renderPostedGrid();
     } else if (ctx === 'subfolder' && sfId) {
         navigateToSection('subfolder', { sfId });
     }
@@ -19419,7 +19472,6 @@ function beginArrangeDrag(item, pointerId, startY, startX) {
         lastClientY: startY
     };
 
-    // block page scroll only while a drag is active
     document.addEventListener('touchmove', preventTouchScroll, { passive: false });
 }
 
@@ -19536,8 +19588,8 @@ document.addEventListener('pointerdown', (e) => {
 
     const item = e.target.closest('.arrange-item');
     if (!item) return;
-    if (e.target.closest('.arrange-move')) return;                 // arrow buttons
-    if (e.pointerType === 'mouse' && e.button !== 0) return;       // only left click
+    if (e.target.closest('.arrange-move')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
@@ -19551,7 +19603,6 @@ document.addEventListener('pointerdown', (e) => {
     };
 
     if (e.pointerType === 'touch') {
-        // long-press delay so normal scrolling still works
         let timer = setTimeout(() => { cleanup(); startDrag(); }, 220);
 
         const onMove = (ev) => {
@@ -19616,40 +19667,9 @@ window.addEventListener('hashchange', () => {
     updateArrangeButtons();
 });
 
-                            /* =====================================================================
-   DECIMAL SUPPORT FOR RANGE INPUTS
-   Range answers (single range questions AND multi-answer parts) must
-   accept decimals. Number inputs default to step="1", so we force
-   step="any" (and the decimal keypad on mobile) on every range input,
-   including ones the question builders inject later.
-   ===================================================================== */
-(function enableDecimalRangeInputs() {
-    const RANGE_SELECTOR = '.range-min, .range-max, .qb-part-range-min, .qb-part-range-max';
-
-    function patchInput(inp) {
-        if (!inp || inp.tagName !== 'INPUT') return;
-        if (inp.getAttribute('step') !== 'any') inp.setAttribute('step', 'any');
-        if (inp.getAttribute('inputmode') !== 'decimal') inp.setAttribute('inputmode', 'decimal');
-    }
-
-    function patchTree(root) {
-        if (root.nodeType === 1 && root.matches(RANGE_SELECTOR)) patchInput(root);
-        if (root.querySelectorAll) root.querySelectorAll(RANGE_SELECTOR).forEach(patchInput);
-    }
-
-    patchTree(document.body);
-
-    new MutationObserver(mutations => {
-        for (const m of mutations) {
-            for (const node of m.addedNodes) {
-                if (node.nodeType === 1) patchTree(node);
-            }
-        }
-    }).observe(document.body, { childList: true, subtree: true });
-})();
         setupRealtime();
 
-        console.log('✅ UTOM Admin — Fully optimized with multi-register support, subfolder payment/duration, ban-with-reason, floating player, payment auto-popup, live class sidebar link, and all features.');
+        console.log('✅ UTOM Admin — Fully optimized with decimal range support, multi-register support, subfolder payment/duration, ban-with-reason, floating player, payment auto-popup, live class sidebar link, and all features.');
     </script>
 </body>
 </html>
