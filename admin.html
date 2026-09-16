@@ -8400,6 +8400,13 @@
             }
             return str;
         }
+        function parseNumOrNull(value) {
+    if (value === undefined || value === null) return null;
+    const s = String(value).trim();
+    if (s === '') return null;
+    const n = parseFloat(s);
+    return Number.isNaN(n) ? null : n;
+}
 
         // =================================================================
         // PLAY VIDEO (using floating player)
@@ -12563,8 +12570,8 @@
                     } else if (qtype === 'range') {
                         const minInp = q.querySelector('.range-min');
                         const maxInp = q.querySelector('.range-max');
-                        rangeMin = minInp ? parseFloat(minInp.value) : null;
-                        rangeMax = maxInp ? parseFloat(maxInp.value) : null;
+                        rangeMin = minInp ? parseNumOrNull(minInp.value) : null;
+rangeMax = maxInp ? parseNumOrNull(maxInp.value) : null;
                         correct = null;
                         opts = [];
                     }
@@ -18453,30 +18460,28 @@
                             const studentVal = (studentAnswers[i] !== undefined ? studentAnswers[i] : '').toString().trim().toLowerCase();
                             // Check range first
                             let partCorrect = false;
-                            if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
-                                const numVal = parseFloat(studentVal);
-                                if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
-                                    partCorrect = true;
-                                }
-                            } else if (part.correctAnswer) {
-                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
-                                if (studentVal === correctVal) partCorrect = true;
-                            }
+                            const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
+const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
+if (hasMin || hasMax) {
+    const numVal = parseFloat(studentVal);
+    const lo = hasMin ? part.rangeMin : -Infinity;
+    const hi = hasMax ? part.rangeMax :  Infinity;
+    if (!isNaN(numVal) && numVal >= lo && numVal <= hi) partCorrect = true;
+} else if (part.correctAnswer) {
+    const correctVal = part.correctAnswer.toString().trim().toLowerCase();
+    if (studentVal === correctVal) partCorrect = true;
+}
                             if (partCorrect) {
                                 autoMarks += part.marks || 0;
                             }
                         });
                         mark = autoMarks;
                     } else if (q.type === 'range') {
-                        const studentAnswer = parseFloat(answer);
-                        const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
-                        const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
-                        if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
-                            mark = q.marks;
-                        } else {
-                            mark = 0;
-                        }
-                    }
+    const studentAnswer = parseFloat(answer);
+    const min = (q.rangeMin === undefined || q.rangeMin === null) ? -Infinity : q.rangeMin;
+    const max = (q.rangeMax === undefined || q.rangeMax === null) ?  Infinity : q.rangeMax;
+    mark = (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) ? q.marks : 0;
+}
                 }
                 const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                 html += `
@@ -18805,17 +18810,19 @@
                     if (mark === 'Not graded') {
                         if (q.type === 'mcq' || q.type === 'tf') {
                             mark = (answer == q.correct) ? q.marks : 0;
-                        } else if (q.type === 'multi-answer') {
+                                                } else if (q.type === 'multi-answer') {
                             let autoMarks = 0;
                             const studentAnswers = Array.isArray(answer) ? answer : [];
                             q.options.forEach((part, pi) => {
                                 const studentVal = (studentAnswers[pi] !== undefined ? studentAnswers[pi] : '').toString().trim().toLowerCase();
                                 let partCorrect = false;
-                                if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                                const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
+                                const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
+                                if (hasMin || hasMax) {
                                     const numVal = parseFloat(studentVal);
-                                    if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
-                                        partCorrect = true;
-                                    }
+                                    const lo = hasMin ? part.rangeMin : -Infinity;
+                                    const hi = hasMax ? part.rangeMax :  Infinity;
+                                    if (!isNaN(numVal) && numVal >= lo && numVal <= hi) partCorrect = true;
                                 } else if (part.correctAnswer) {
                                     const correctVal = part.correctAnswer.toString().trim().toLowerCase();
                                     if (studentVal === correctVal) partCorrect = true;
@@ -18825,20 +18832,18 @@
                                 }
                             });
                             mark = autoMarks;
-                        } else if (q.type === 'range') {
+                                                } else if (q.type === 'range') {
                             const studentAnswer = parseFloat(answer);
-                            const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
-                            const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
-                            if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
-                                mark = q.marks;
-                            } else {
-                                mark = 0;
-                            }
+                            const min = (q.rangeMin === undefined || q.rangeMin === null) ? -Infinity : q.rangeMin;
+                            const max = (q.rangeMax === undefined || q.rangeMax === null) ?  Infinity : q.rangeMax;
+                            mark = (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) ? q.marks : 0;
                         }
                     }
                     const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
                     const markColor = isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6';
-                    const correctDisplay = q.type === 'range' ? `${q.rangeMin} – ${q.rangeMax}` : (q.correct !== undefined && q.correct !== null ? q.correct : '');
+                                        const correctDisplay = q.type === 'range'
+                        ? `${q.rangeMin ?? '−∞'} – ${q.rangeMax ?? '+∞'}`
+                        : (q.correct !== undefined && q.correct !== null ? q.correct : '');
                     htmlContent += `
                         <div class="question">
                             <div class="q-title">Q${idx+1}: ${escapeHtml(q.text)} <span class="meta">(${q.marks} marks) · ${q.section}</span></div>
@@ -19607,6 +19612,37 @@ window.addEventListener('hashchange', () => {
     updateArrangeButtons();
 });
 
+                            /* =====================================================================
+   DECIMAL SUPPORT FOR RANGE INPUTS
+   Range answers (single range questions AND multi-answer parts) must
+   accept decimals. Number inputs default to step="1", so we force
+   step="any" (and the decimal keypad on mobile) on every range input,
+   including ones the question builders inject later.
+   ===================================================================== */
+(function enableDecimalRangeInputs() {
+    const RANGE_SELECTOR = '.range-min, .range-max, .qb-part-range-min, .qb-part-range-max';
+
+    function patchInput(inp) {
+        if (!inp || inp.tagName !== 'INPUT') return;
+        if (inp.getAttribute('step') !== 'any') inp.setAttribute('step', 'any');
+        if (inp.getAttribute('inputmode') !== 'decimal') inp.setAttribute('inputmode', 'decimal');
+    }
+
+    function patchTree(root) {
+        if (root.nodeType === 1 && root.matches(RANGE_SELECTOR)) patchInput(root);
+        if (root.querySelectorAll) root.querySelectorAll(RANGE_SELECTOR).forEach(patchInput);
+    }
+
+    patchTree(document.body);
+
+    new MutationObserver(mutations => {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1) patchTree(node);
+            }
+        }
+    }).observe(document.body, { childList: true, subtree: true });
+})();
         setupRealtime();
 
         console.log('✅ UTOM Admin — Fully optimized with multi-register support, subfolder payment/duration, ban-with-reason, floating player, payment auto-popup, live class sidebar link, and all features.');
