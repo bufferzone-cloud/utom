@@ -18851,8 +18851,12 @@ if (hasMin || hasMax) {
                             ${q.type === 'range' ? `<div class="marks" style="color:${markColor};font-weight:600;">Marks: ${mark} (Correct range: ${correctDisplay})</div>` : `<div class="marks" style="color:${markColor};">Marks: ${mark}</div>`}
                             ${scratch ? `<div class="scratch"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                             ${response.remarks && response.remarks[qKey] ? `<div class="remark"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
-                            ${q.type === 'multi-answer' ? q.options.map((part, pi) => {
-                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
+                                                      ${q.type === 'multi-answer' ? q.options.map((part, pi) => {
+                                const hasMin = (part.rangeMin !== undefined && part.rangeMin !== null);
+                                const hasMax = (part.rangeMax !== undefined && part.rangeMax !== null);
+                                const rangeInfo = (hasMin || hasMax)
+                                    ? ` [Range: ${hasMin ? part.rangeMin : '−∞'}–${hasMax ? part.rangeMax : '+∞'}]`
+                                    : '';
                                 return `<div style="font-size:11px;color:#8b8fa3;margin-top:2px;">${part.label}: ${part.correctAnswer || ''}${rangeInfo}</div>`;
                             }).join('') : ''}
                         </div>
