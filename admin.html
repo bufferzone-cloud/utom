@@ -8040,10 +8040,12 @@
                 });
             }
         });
-        decimalStepObserver.observe(document.documentElement, {
-            childList: true,
-            subtree: true
-        });
+       // Only watch the question builder containers that actually have range inputs
+['testSectionsContainer','quizQuestionsContainer','examSectionsContainer','assignmentSectionsContainer']
+    .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) decimalStepObserver.observe(el, { childList: true, subtree: true });
+    });
 
         // Safety net — catches values restored from drafts / edit forms
         document.addEventListener('focusin', e => {
@@ -8384,12 +8386,12 @@
         // =================================================================
         // HELPERS
         // =================================================================
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+       const _ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const _ESC_RE = /[&<>"']/g;
+function escapeHtml(text) {
+    if (text == null || text === '') return '';
+    return String(text).replace(_ESC_RE, c => _ESC[c]);
+}
 
         function showToast(msg, type = 'info') {
             const toast = document.createElement('div');
@@ -9104,20 +9106,30 @@
             </div>`;
         }
 
-        function loadCommentsForVideo(videoId, callback) {
-            const commentsRefVid = ref(db, `comments/${videoId}`);
-            onValue(commentsRefVid, (snap) => {
-                const data = snap.val();
-                if (data) {
-                    const comments = Object.entries(data).map(([id, c]) => ({ id, ...c }));
-                    comments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    commentsCache[videoId] = comments;
-                } else {
-                    commentsCache[videoId] = [];
-                }
-                if (callback) callback(commentsCache[videoId]);
-            });
+       // Track one live listener per video and never duplicate it
+const _commentUnsubs = new Map();   // videoId -> unsubscribe fn
+
+function bindComments(videoId, onChange) {
+    if (_commentUnsubs.has(videoId)) return;   // already listening
+    const unsub = onValue(ref(db, `comments/${videoId}`), snap => {
+        const data = snap.val();
+        if (data) {
+            const arr = Object.entries(data).map(([id, c]) => ({ id, ...c }));
+            arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            commentsCache[videoId] = arr;
+        } else {
+            commentsCache[videoId] = [];
         }
+        if (onChange) onChange(commentsCache[videoId]);
+    });
+    _commentUnsubs.set(videoId, unsub);
+}
+
+function unbindComments(videoId) {
+    const u = _commentUnsubs.get(videoId);
+    if (u) { u(); _commentUnsubs.delete(videoId); }
+    delete commentsCache[videoId];
+}
 
         function attachCardEvents() {
             document.querySelectorAll('.play-badge').forEach(btn => {
@@ -14141,16 +14153,24 @@
         // =================================================================
         function setupRealtime() {
             onValue(videosRef, snap => {
-                videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                scheduleRender('home');
-                scheduleRender('videos');
-                scheduleRender('courses');
-                videos.forEach(v => {
-                    loadCommentsForVideo(v.id, () => {
-                        scheduleRender('videos');
-                    });
-                });
-            });
+    const prevIds = new Set(videos.map(v => v.id));
+    videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+    const newIds = new Set(videos.map(v => v.id));
+
+    // Detach listeners for deleted videos
+    prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
+
+    // Attach listeners only for NEW videos
+    videos.forEach(v => {
+        if (!prevIds.has(v.id)) {
+            bindComments(v.id, () => scheduleRender('videos'));
+        }
+    });
+
+    scheduleRender('home');
+    scheduleRender('videos');
+    scheduleRender('courses');
+});
 
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
