@@ -20,7 +20,7 @@
     </script>
     <style>
         /* ==========================================================
-           DESIGN TOKENS — Apple-inspired, warm accent
+           DESIGN TOKENS
            ========================================================== */
         :root {
             --accent: #F5B042;
@@ -38,7 +38,6 @@
             --fill-gray-hover: #e9e9ef;
             --separator: rgba(0, 0, 0, 0.06);
 
-            --radius-card: 30px;
             --radius-input: 14px;
             --radius-btn: 14px;
             --radius-pill: 980px;
@@ -76,84 +75,21 @@
         }
 
         /* ==========================================================
-           APP CARD — layered Apple shadows, hairline border
+           APP CONTAINER — no card, everything sits on background
            ========================================================== */
         .app-container {
             width: 100%;
             max-width: 560px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             position: relative;
             z-index: 2;
         }
 
-        .app-card {
-            background: #ffffff;
-            border-radius: var(--radius-card);
-            box-shadow:
-                0 0 0 1px rgba(0, 0, 0, 0.045),
-                0 1px 2px rgba(0, 0, 0, 0.03),
-                0 10px 24px rgba(0, 0, 0, 0.05),
-                0 30px 60px -12px rgba(0, 0, 0, 0.10);
-            overflow: hidden;
-            transition: box-shadow 0.5s var(--ease-smooth);
-        }
-
-        .app-card:hover {
-            box-shadow:
-                0 0 0 1px rgba(0, 0, 0, 0.05),
-                0 1px 2px rgba(0, 0, 0, 0.03),
-                0 14px 32px rgba(0, 0, 0, 0.06),
-                0 40px 80px -16px rgba(0, 0, 0, 0.13);
-        }
-
         /* ==========================================================
-           WINDOW HEADER — clean, no traffic lights
-           ========================================================== */
-        .window-header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
-            padding: 15px 22px;
-            background: linear-gradient(180deg, #fdfdfe 0%, #fafafc 100%);
-            border-bottom: 1px solid var(--separator);
-        }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
-            animation: pulse 2.4s var(--ease-smooth) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%      { opacity: 0.55; transform: scale(0.86); }
-        }
-
-        .window-title {
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            letter-spacing: 0.35px;
-            text-transform: uppercase;
-        }
-
-        /* ==========================================================
-           WINDOW CONTENT
-           ========================================================== */
-        .window-content {
-            padding: 1.9rem 1.9rem 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: #ffffff;
-        }
-
-        /* ==========================================================
-           LOGO — 3-second reveal animation
+           LOGO — 3-second reveal, then grows +50% on complete
            ========================================================== */
         .logo-area {
             display: flex;
@@ -171,13 +107,19 @@
             display: block;
             margin: 0 auto;
             will-change: width;
-            /* Hold big briefly (0.35s) then shrink over 2.65s = 3.0s total */
+            /* Hold big 0.35s, shrink over 2.65s = 3.0s total */
             transition: width 2.65s var(--ease-out) 0.35s;
             animation: logoIn 0.7s var(--ease-out) both;
         }
 
+        /* Shrunk "settled" state during reveal */
         body.revealed .logo-img {
             width: min(150px, 38vw);
+        }
+
+        /* After the reveal completes, grow it +50% (150 → 225) */
+        body.reveal-complete .logo-img {
+            width: min(225px, 57vw);
         }
 
         @keyframes logoIn {
@@ -196,7 +138,7 @@
         }
 
         /* ==========================================================
-           REVEAL WRAP — grid-row trick for buttery height animation
+           REVEAL WRAP — grid-row trick for smooth height animation
            ========================================================== */
         .reveal-wrap {
             display: grid;
@@ -229,7 +171,7 @@
         }
 
         /* ==========================================================
-           SEGMENTED CONTROL — iOS style
+           SEGMENTED CONTROL — iOS style, no card wrapper
            ========================================================== */
         .segmented-control {
             position: relative;
@@ -238,8 +180,11 @@
             background: var(--fill-gray);
             border-radius: 12px;
             padding: 3px;
+            margin-top: 1.5rem;
             margin-bottom: 1.75rem;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+            box-shadow:
+                inset 0 1px 2px rgba(0, 0, 0, 0.04),
+                0 4px 14px -8px rgba(0, 0, 0, 0.12);
         }
 
         .segmented-control::before {
@@ -266,7 +211,7 @@
             position: relative;
             z-index: 1;
             flex: 1;
-            padding: 9px 10px;
+            padding: 10px 10px;
             border: none;
             background: transparent;
             border-radius: 9px;
@@ -324,7 +269,7 @@
         }
 
         /* ==========================================================
-           INPUTS — iOS filled style
+           INPUTS — iOS filled style (no outer card)
            ========================================================== */
         .input-icon-group {
             position: relative;
@@ -462,7 +407,7 @@
             box-shadow:
                 0 1px 1px rgba(255, 255, 255, 0.35) inset,
                 0 1px 2px rgba(0, 0, 0, 0.08),
-                0 6px 16px -4px var(--accent-glow);
+                0 8px 20px -6px var(--accent-glow);
         }
 
         .btn-primary:hover:not(:disabled) {
@@ -470,7 +415,7 @@
             box-shadow:
                 0 1px 1px rgba(255, 255, 255, 0.4) inset,
                 0 2px 4px rgba(0, 0, 0, 0.10),
-                0 14px 26px -6px var(--accent-glow);
+                0 16px 30px -8px var(--accent-glow);
         }
 
         .btn-primary:active:not(:disabled) {
@@ -486,7 +431,7 @@
             box-shadow:
                 0 0 0 1px rgba(0, 0, 0, 0.07),
                 0 1px 2px rgba(0, 0, 0, 0.04),
-                0 4px 12px -4px rgba(0, 0, 0, 0.08);
+                0 6px 16px -6px rgba(0, 0, 0, 0.12);
         }
 
         .btn-secondary:hover:not(:disabled) {
@@ -495,7 +440,7 @@
             box-shadow:
                 0 0 0 1px var(--accent-tint),
                 0 2px 4px rgba(0, 0, 0, 0.05),
-                0 12px 22px -8px rgba(0, 0, 0, 0.12);
+                0 14px 24px -10px rgba(0, 0, 0, 0.16);
         }
 
         .btn-secondary:active:not(:disabled) {
@@ -507,11 +452,6 @@
             cursor: not-allowed;
             transform: none !important;
             box-shadow: none !important;
-        }
-
-        .btn-auto {
-            width: auto;
-            padding: 11px 20px;
         }
 
         /* ==========================================================
@@ -643,7 +583,7 @@
         }
 
         /* ==========================================================
-           INSTALL BANNER — inline, Apple-notification style
+           INSTALL BANNER — inline notification style
            ========================================================== */
         .install-banner {
             width: 100%;
@@ -660,7 +600,7 @@
             font-weight: 500;
             box-shadow:
                 0 1px 2px rgba(0, 0, 0, 0.12),
-                0 10px 24px -8px rgba(0, 0, 0, 0.30);
+                0 12px 28px -10px rgba(0, 0, 0, 0.35);
             animation: bannerIn 0.5s var(--spring);
         }
 
@@ -721,11 +661,10 @@
            ========================================================== */
         @media (max-width: 560px) {
             body { padding: 1rem 0.85rem; align-items: flex-start; }
-            .window-content { padding: 1.5rem 1.25rem 1.7rem; }
-            .app-card { border-radius: 26px; }
             .form-title { font-size: 1.42rem; margin-bottom: 1.15rem; }
             .logo-img { width: min(230px, 62vw); }
             body.revealed .logo-img { width: min(126px, 34vw); }
+            body.reveal-complete .logo-img { width: min(190px, 51vw); }
             .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
             .input-icon-group > i { left: 13px; font-size: 0.9rem; }
             .btn { padding: 12px 16px; font-size: 0.9rem; }
@@ -737,7 +676,6 @@
             .flex-between { flex-direction: column; align-items: stretch; }
             .flex-between .text-link { justify-content: center; }
             .double-row { flex-direction: column; gap: 0.8rem; }
-            .btn-auto { width: 100%; }
         }
 
         /* ==========================================================
@@ -755,168 +693,158 @@
                 pointer-events: auto;
             }
             body.revealed .logo-img { width: min(150px, 38vw); }
+            body.reveal-complete .logo-img { width: min(225px, 57vw); }
         }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="app-card">
 
-        <!-- Clean header — no traffic lights -->
-        <div class="window-header">
-            <span class="status-dot"></span>
-            <span class="window-title">UTOM · Secure Access</span>
-        </div>
+    <!-- Logo: big → shrinks upward over 3s → grows +50% -->
+    <div class="logo-area">
+        <img src="logo.png" alt="UTOM official logo" class="logo-img"
+             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
+    </div>
 
-        <div class="window-content">
+    <!-- Everything below sits directly on the page background -->
+    <div class="reveal-wrap" id="revealWrap">
+        <div class="reveal-inner">
 
-            <!-- Logo: big → shrinks upward over 3s -->
-            <div class="logo-area">
-                <img src="logo.png" alt="UTOM official logo" class="logo-img"
-                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
+            <!-- Inline install banner (no floating modal) -->
+            <div id="installBanner" class="install-banner" style="display: none;">
+                <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
+                <button id="bannerInstallBtn" type="button">Install</button>
             </div>
 
-            <!-- Everything below is revealed on the page itself -->
-            <div class="reveal-wrap" id="revealWrap">
-                <div class="reveal-inner">
+            <!-- Segmented control -->
+            <div class="segmented-control" id="authSegments" data-active="login">
+                <button type="button" class="segment active" id="segLogin">Sign in</button>
+                <button type="button" class="segment" id="segSignup">Create account</button>
+            </div>
 
-                    <!-- Inline install banner (no floating modal) -->
-                    <div id="installBanner" class="install-banner" style="display: none;">
-                        <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
-                        <button id="bannerInstallBtn" type="button">Install</button>
+            <div class="form-area">
+
+                <!-- ================= LOGIN PANEL ================= -->
+                <div id="loginPanel" class="form-panel">
+                    <div class="form-title">
+                        <i class="fas fa-arrow-right-to-bracket"></i>
+                        Welcome back
                     </div>
+                    <form id="loginForm" novalidate>
+                        <div class="input-icon-group">
+                            <input type="email" id="loginEmail" class="pill-input"
+                                   placeholder="Email address" autocomplete="email" required>
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="password" id="loginPassword" class="pill-input"
+                                   placeholder="Password" autocomplete="current-password" required>
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div id="loginError" class="error-msg"></div>
+                        <button type="submit" class="btn btn-primary" id="loginBtn">
+                            <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
+                        </button>
+                        <div class="flex-between">
+                            <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                                Forgot your password?
+                            </span>
+                            <button type="button" id="forgotPwdBtn" class="text-link">
+                                <i class="fas fa-key"></i> Reset it
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
-                    <!-- Segmented control: Sign in / Create account -->
-                    <div class="segmented-control" id="authSegments" data-active="login">
-                        <button type="button" class="segment active" id="segLogin">Sign in</button>
-                        <button type="button" class="segment" id="segSignup">Create account</button>
+                <!-- ================= SIGNUP PANEL ================= -->
+                <div id="signupPanel" class="form-panel hidden-panel">
+                    <div class="form-title">
+                        <i class="fas fa-user-plus"></i>
+                        Create your account
                     </div>
-
-                    <div class="form-area">
-
-                        <!-- ================= LOGIN PANEL ================= -->
-                        <div id="loginPanel" class="form-panel">
-                            <div class="form-title">
-                                <i class="fas fa-arrow-right-to-bracket"></i>
-                                Welcome back
-                            </div>
-                            <form id="loginForm" novalidate>
-                                <div class="input-icon-group">
-                                    <input type="email" id="loginEmail" class="pill-input"
-                                           placeholder="Email address" autocomplete="email" required>
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="input-icon-group">
-                                    <input type="password" id="loginPassword" class="pill-input"
-                                           placeholder="Password" autocomplete="current-password" required>
-                                    <i class="fas fa-lock"></i>
-                                </div>
-                                <div id="loginError" class="error-msg"></div>
-                                <button type="submit" class="btn btn-primary" id="loginBtn">
-                                    <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
-                                </button>
-                                <div class="flex-between">
-                                    <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
-                                        Forgot your password?
-                                    </span>
-                                    <button type="button" id="forgotPwdBtn" class="text-link">
-                                        <i class="fas fa-key"></i> Reset it
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- ================= SIGNUP PANEL ================= -->
-                        <div id="signupPanel" class="form-panel hidden-panel">
-                            <div class="form-title">
-                                <i class="fas fa-user-plus"></i>
-                                Create your account
-                            </div>
-                            <form id="signupForm" novalidate>
-                                <div class="double-row">
-                                    <div class="input-icon-group">
-                                        <input type="text" id="firstName" class="pill-input"
-                                               placeholder="First name" autocomplete="given-name" required>
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div class="input-icon-group">
-                                        <input type="text" id="lastName" class="pill-input"
-                                               placeholder="Last name" autocomplete="family-name" required>
-                                        <i class="fas fa-user-tag"></i>
-                                    </div>
-                                </div>
-
-                                <!-- Capitalization alert -->
-                                <div class="field-hint">
-                                    <i class="fas fa-wand-magic-sparkles"></i>
-                                    <span>Heads up — the first letter of each name is capitalized automatically.</span>
-                                </div>
-
-                                <div class="input-icon-group">
-                                    <input type="tel" id="phoneNumber" class="pill-input"
-                                           placeholder="Phone number" autocomplete="tel" required>
-                                    <i class="fas fa-phone-alt"></i>
-                                </div>
-                                <div class="input-icon-group">
-                                    <input type="email" id="signupEmail" class="pill-input"
-                                           placeholder="Email address" autocomplete="email" required>
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="input-icon-group">
-                                    <input type="password" id="signupPassword" class="pill-input"
-                                           placeholder="Create password" autocomplete="new-password" required>
-                                    <i class="fas fa-lock"></i>
-                                </div>
-                                <div class="input-icon-group">
-                                    <input type="password" id="confirmPassword" class="pill-input"
-                                           placeholder="Confirm password" autocomplete="new-password" required>
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div id="signupError" class="error-msg"></div>
-                                <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
-                                <div class="terms-check">
-                                    <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
-                                    <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
-                                </div>
-                                <button type="submit" class="btn btn-primary" id="registerBtn">
-                                    <i class="fas fa-user-check"></i> REGISTER
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- ================= FORGOT PASSWORD PANEL (inline) ================= -->
-                        <div id="forgotPanel" class="form-panel hidden-panel">
-                            <div class="form-title">
-                                <i class="fas fa-paper-plane"></i>
-                                Reset password
-                            </div>
-                            <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
-                                Enter your email address and we'll send you a secure link to reset your password.
-                            </p>
+                    <form id="signupForm" novalidate>
+                        <div class="double-row">
                             <div class="input-icon-group">
-                                <input type="email" id="resetEmailInput" class="pill-input"
-                                       placeholder="Your email address" autocomplete="email">
-                                <i class="fas fa-envelope"></i>
+                                <input type="text" id="firstName" class="pill-input"
+                                       placeholder="First name" autocomplete="given-name" required>
+                                <i class="fas fa-user"></i>
                             </div>
-                            <div id="resetError" class="error-msg"></div>
-                            <div style="display:flex;gap:11px;margin-top:1.2rem;">
-                                <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
-                                    <i class="fas fa-chevron-left"></i> Cancel
-                                </button>
-                                <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane"></i> Send link
-                                </button>
+                            <div class="input-icon-group">
+                                <input type="text" id="lastName" class="pill-input"
+                                       placeholder="Last name" autocomplete="family-name" required>
+                                <i class="fas fa-user-tag"></i>
                             </div>
                         </div>
 
-                    </div>
+                        <!-- Capitalization alert -->
+                        <div class="field-hint">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span>Heads up — the first letter of each name is capitalized automatically.</span>
+                        </div>
 
-                    <div class="small-text">
-                        <i class="fas fa-shield-alt"></i> secure &amp; seamless
-                        <i class="fas fa-meteor"></i>
+                        <div class="input-icon-group">
+                            <input type="tel" id="phoneNumber" class="pill-input"
+                                   placeholder="Phone number" autocomplete="tel" required>
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="email" id="signupEmail" class="pill-input"
+                                   placeholder="Email address" autocomplete="email" required>
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="password" id="signupPassword" class="pill-input"
+                                   placeholder="Create password" autocomplete="new-password" required>
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="password" id="confirmPassword" class="pill-input"
+                                   placeholder="Confirm password" autocomplete="new-password" required>
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div id="signupError" class="error-msg"></div>
+                        <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
+                        <div class="terms-check">
+                            <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                            <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="registerBtn">
+                            <i class="fas fa-user-check"></i> REGISTER
+                        </button>
+                    </form>
+                </div>
+
+                <!-- ================= FORGOT PASSWORD PANEL ================= -->
+                <div id="forgotPanel" class="form-panel hidden-panel">
+                    <div class="form-title">
+                        <i class="fas fa-paper-plane"></i>
+                        Reset password
+                    </div>
+                    <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
+                        Enter your email address and we'll send you a secure link to reset your password.
+                    </p>
+                    <div class="input-icon-group">
+                        <input type="email" id="resetEmailInput" class="pill-input"
+                               placeholder="Your email address" autocomplete="email">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div id="resetError" class="error-msg"></div>
+                    <div style="display:flex;gap:11px;margin-top:1.2rem;">
+                        <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
+                            <i class="fas fa-chevron-left"></i> Cancel
+                        </button>
+                        <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send link
+                        </button>
                     </div>
                 </div>
+
+            </div>
+
+            <div class="small-text">
+                <i class="fas fa-shield-alt"></i> secure &amp; seamless
+                <i class="fas fa-meteor"></i>
             </div>
         </div>
     </div>
@@ -943,7 +871,8 @@
     const database = getDatabase(app);
 
     /* ============================================================
-       UI-ONLY: 3-second logo shrink → form revealed on the page
+       UI-ONLY: 3-second logo shrink → form revealed →
+       logo grows +50% once the reveal is done
        ============================================================ */
     (function initRevealAnimation() {
         const revealWrap = document.getElementById('revealWrap');
@@ -962,6 +891,8 @@
         requestAnimationFrame(() => {
             document.body.classList.add('revealed');
             if (revealWrap && 'inert' in revealWrap) revealWrap.inert = false;
+            // After the reveal motion ends, add reveal-complete which
+            // triggers the +50% logo growth (150px → 225px).
             window.setTimeout(() => document.body.classList.add('reveal-complete'), 3200);
         });
     })();
@@ -995,11 +926,11 @@
     const signupSuccessSpan = document.getElementById('signupSuccessMsg');
     const registerBtn       = document.getElementById('registerBtn');
 
-    const forgotPwdBtn            = document.getElementById('forgotPwdBtn');
+    const forgotPwdBtn             = document.getElementById('forgotPwdBtn');
     const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
-    const sendResetLinkBtn        = document.getElementById('sendResetLinkBtn');
-    const resetEmailInput         = document.getElementById('resetEmailInput');
-    const resetErrorSpan          = document.getElementById('resetError');
+    const sendResetLinkBtn         = document.getElementById('sendResetLinkBtn');
+    const resetEmailInput          = document.getElementById('resetEmailInput');
+    const resetErrorSpan           = document.getElementById('resetError');
 
     /* ============================================================
        HELPERS (UI only)
@@ -1070,13 +1001,13 @@
         signupErrorSpan.innerText = '';
         signupSuccessSpan.style.display = 'none';
 
-        const fName     = firstName.value.trim();
-        const lName     = lastName.value.trim();
-        const phone     = phoneNumber.value.trim();
-        const email     = signupEmail.value.trim();
-        const pwd       = signupPassword.value;
+        const fName      = firstName.value.trim();
+        const lName      = lastName.value.trim();
+        const phone      = phoneNumber.value.trim();
+        const email      = signupEmail.value.trim();
+        const pwd        = signupPassword.value;
         const confirmPwd = confirmPassword.value;
-        const termsOk   = termsCheckbox.checked;
+        const termsOk    = termsCheckbox.checked;
 
         if (!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
             signupErrorSpan.innerText = 'All fields are required.';
