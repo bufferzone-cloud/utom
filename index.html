@@ -4,17 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>UTOM | Secure Access</title>
-    <!-- PWA Manifest -->
     <link rel="manifest" href="/utom/manifest.json">
-    <!-- Theme color for browser -->
     <meta name="theme-color" content="#F5B042">
-    <!-- Apple touch icon -->
     <link rel="apple-touch-icon" href="/utom/logo.png">
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Fonts: Inter (fallback for SF Pro) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-    <!-- Firebase SDKs (unchanged logic) -->
     <script type="importmap">
         {
             "imports": {
@@ -25,11 +19,40 @@
         }
     </script>
     <style>
-        /* ===== RESET & BASE ===== */
+        /* ==========================================================
+           DESIGN TOKENS — Apple-inspired, warm accent
+           ========================================================== */
+        :root {
+            --accent: #F5B042;
+            --accent-light: #FFC868;
+            --accent-dark: #E39B2B;
+            --accent-glow: rgba(245, 176, 66, 0.32);
+            --accent-soft: rgba(245, 176, 66, 0.10);
+            --accent-tint: rgba(245, 176, 66, 0.18);
+
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #aeaeb2;
+
+            --fill-gray: #f2f2f7;
+            --fill-gray-hover: #e9e9ef;
+            --separator: rgba(0, 0, 0, 0.06);
+
+            --radius-card: 30px;
+            --radius-input: 14px;
+            --radius-btn: 14px;
+            --radius-pill: 980px;
+
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html {
@@ -43,227 +66,321 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 1.5rem;
+            padding: 1.75rem 1.25rem;
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            position: relative;
+            color: var(--text-primary);
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* ===== MAC WINDOW ===== */
+        /* ==========================================================
+           APP CARD — layered Apple shadows, hairline border
+           ========================================================== */
         .app-container {
             width: 100%;
-            max-width: 580px;
+            max-width: 560px;
             margin: 0 auto;
             position: relative;
             z-index: 2;
         }
 
-        .mac-window {
+        .app-card {
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e8e8ed;
+            border-radius: var(--radius-card);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.045),
+                0 1px 2px rgba(0, 0, 0, 0.03),
+                0 10px 24px rgba(0, 0, 0, 0.05),
+                0 30px 60px -12px rgba(0, 0, 0, 0.10);
             overflow: hidden;
-            transition: box-shadow 0.2s ease;
+            transition: box-shadow 0.5s var(--ease-smooth);
         }
 
-        .mac-window:hover {
-            box-shadow: 0 26px 80px rgba(0, 0, 0, 0.14), 0 10px 28px rgba(0, 0, 0, 0.08);
+        .app-card:hover {
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.05),
+                0 1px 2px rgba(0, 0, 0, 0.03),
+                0 14px 32px rgba(0, 0, 0, 0.06),
+                0 40px 80px -16px rgba(0, 0, 0, 0.13);
         }
 
-        /* ===== TITLE BAR ===== */
-        .window-titlebar {
+        /* ==========================================================
+           WINDOW HEADER — clean, no traffic lights
+           ========================================================== */
+        .window-header {
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            height: 42px;
-            background: linear-gradient(180deg, #f7f7f9 0%, #f0f0f4 100%);
-            border-bottom: 1px solid #e0e0e6;
-            user-select: none;
-            position: relative;
+            justify-content: center;
+            gap: 9px;
+            padding: 15px 22px;
+            background: linear-gradient(180deg, #fdfdfe 0%, #fafafc 100%);
+            border-bottom: 1px solid var(--separator);
         }
 
-        .traffic-lights {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            z-index: 1;
-        }
-
-        .dot {
-            width: 12px;
-            height: 12px;
+        .status-dot {
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            display: inline-block;
-            box-shadow: inset 0 0 1px rgba(0,0,0,0.15);
-            transition: opacity 0.15s;
+            background: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+            animation: pulse 2.4s var(--ease-smooth) infinite;
         }
 
-        .dot.red    { background: #ff5f56; }
-        .dot.yellow { background: #ffbd2e; }
-        .dot.green  { background: #27c93f; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.55; transform: scale(0.86); }
+        }
 
         .window-title {
-            position: absolute;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
-            color: #4a4a4f;
-            letter-spacing: -0.1px;
-            pointer-events: none;
+            color: var(--text-secondary);
+            letter-spacing: 0.35px;
+            text-transform: uppercase;
         }
 
-        /* ===== WINDOW CONTENT ===== */
+        /* ==========================================================
+           WINDOW CONTENT
+           ========================================================== */
         .window-content {
-            padding: 2rem 1.8rem 2.2rem;
-            background: #ffffff;
+            padding: 1.9rem 1.9rem 2rem;
             display: flex;
             flex-direction: column;
             align-items: center;
+            background: #ffffff;
         }
 
-        /* ===== LOGO AREA ===== */
+        /* ==========================================================
+           LOGO — 3-second reveal animation
+           ========================================================== */
         .logo-area {
-            text-align: center;
-            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0.25rem 0;
+            width: 100%;
+            padding: 0.15rem 0;
             background: transparent;
         }
 
         .logo-img {
-            width: min(260px, 65vw);
+            width: min(290px, 68vw);
             max-width: 100%;
             height: auto;
             display: block;
             margin: 0 auto;
-            transition: width 1.05s cubic-bezier(0.16, 1, 0.3, 1);
-            animation: logoIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
             will-change: width;
+            /* Hold big briefly (0.35s) then shrink over 2.65s = 3.0s total */
+            transition: width 2.65s var(--ease-out) 0.35s;
+            animation: logoIn 0.7s var(--ease-out) both;
         }
 
         body.revealed .logo-img {
-            width: min(160px, 40vw);
+            width: min(150px, 38vw);
+        }
+
+        @keyframes logoIn {
+            0%   { opacity: 0; transform: scale(0.88); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         .logo-placeholder {
             font-size: 2.6rem;
             font-weight: 800;
             letter-spacing: -1.5px;
-            background: linear-gradient(135deg, #1E1E2A 20%, #F5B042 80%);
+            background: linear-gradient(135deg, #1E1E2A 20%, var(--accent) 80%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
 
-        /* ===== REVEAL WRAPPER ===== */
+        /* ==========================================================
+           REVEAL WRAP — grid-row trick for buttery height animation
+           ========================================================== */
         .reveal-wrap {
+            display: grid;
+            grid-template-rows: 0fr;
             width: 100%;
-            max-height: 0;
             opacity: 0;
-            transform: translateY(26px);
-            overflow: hidden;
             pointer-events: none;
+            will-change: grid-template-rows;
             transition:
-                max-height 1.05s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.75s ease 0.18s,
-                transform 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+                grid-template-rows 2.65s var(--ease-out) 0.35s,
+                opacity 1.1s var(--ease-smooth) 1.15s;
         }
 
         body.revealed .reveal-wrap {
-            max-height: 1600px;
+            grid-template-rows: 1fr;
             opacity: 1;
-            transform: translateY(0);
             pointer-events: auto;
         }
 
-        body.reveal-complete .reveal-wrap {
-            max-height: none;
+        .reveal-inner {
+            overflow: hidden;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        body.reveal-complete .reveal-inner {
             overflow: visible;
         }
 
-        /* ===== FORM AREA (no floating card) ===== */
+        /* ==========================================================
+           SEGMENTED CONTROL — iOS style
+           ========================================================== */
+        .segmented-control {
+            position: relative;
+            display: flex;
+            width: 100%;
+            background: var(--fill-gray);
+            border-radius: 12px;
+            padding: 3px;
+            margin-bottom: 1.75rem;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .segmented-control::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: calc(50% - 3px);
+            height: calc(100% - 6px);
+            background: #ffffff;
+            border-radius: 9px;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.10),
+                0 3px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.45s var(--spring);
+            will-change: transform;
+        }
+
+        .segmented-control[data-active="signup"]::before {
+            transform: translateX(100%);
+        }
+
+        .segment {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding: 9px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 0.86rem;
+            font-weight: 600;
+            letter-spacing: -0.1px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.3s var(--ease-smooth);
+        }
+
+        .segment.active {
+            color: var(--text-primary);
+        }
+
+        .segment:not(.active):hover {
+            color: #4a4a50;
+        }
+
+        /* ==========================================================
+           FORM AREA
+           ========================================================== */
         .form-area {
             width: 100%;
-            margin-top: 0.5rem;
         }
 
         .form-panel {
-            transition: opacity 0.25s ease;
+            animation: panelIn 0.45s var(--ease-out);
         }
 
         .hidden-panel {
             display: none;
         }
 
-        /* ===== FORM TITLES ===== */
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(9px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
         .form-title {
-            font-size: 1.65rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            letter-spacing: -0.3px;
-            margin-bottom: 1.5rem;
-            color: #1A1A24;
+            letter-spacing: -0.5px;
+            margin-bottom: 1.4rem;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .form-title i {
-            color: #F5B042;
-            font-size: 1.6rem;
+            color: var(--accent);
+            font-size: 1.5rem;
         }
 
-        /* ===== INPUTS (Mac style) ===== */
+        /* ==========================================================
+           INPUTS — iOS filled style
+           ========================================================== */
         .input-icon-group {
             position: relative;
             width: 100%;
-            margin-bottom: 1.1rem;
+            margin-bottom: 0.85rem;
         }
 
-        .input-icon-group i {
+        .input-icon-group > i {
             position: absolute;
-            left: 14px;
+            left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #8e8e93;
-            font-size: 1rem;
+            color: var(--text-tertiary);
+            font-size: 0.95rem;
             pointer-events: none;
-            transition: color 0.2s ease;
+            transition: color 0.3s var(--ease-smooth);
             z-index: 1;
         }
 
         .pill-input {
             width: 100%;
-            padding: 12px 14px 12px 40px;
-            font-size: 0.95rem;
-            border: 1px solid #d2d2d7;
-            border-radius: 8px;
-            background: #ffffff;
-            outline: none;
-            transition: all 0.2s ease;
-            color: #1F2937;
+            padding: 13px 16px 13px 42px;
+            font-family: inherit;
+            font-size: 0.94rem;
             font-weight: 400;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-
-        .pill-input:focus {
-            border-color: #F5B042;
-            box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.04);
-            background: #ffffff;
-        }
-
-        .pill-input:focus + i {
-            color: #F5B042;
+            border: 1.5px solid transparent;
+            border-radius: var(--radius-input);
+            background: var(--fill-gray);
+            outline: none;
+            color: var(--text-primary);
+            transition:
+                background 0.3s var(--ease-smooth),
+                border-color 0.3s var(--ease-smooth),
+                box-shadow 0.3s var(--ease-smooth);
         }
 
         .pill-input::placeholder {
-            color: #aeaeb2;
+            color: var(--text-tertiary);
             font-weight: 400;
+        }
+
+        .pill-input:hover {
+            background: var(--fill-gray-hover);
+        }
+
+        .pill-input:focus {
+            background: #ffffff;
+            border-color: var(--accent);
+            box-shadow:
+                0 0 0 4px var(--accent-tint),
+                0 4px 14px -4px var(--accent-glow);
+        }
+
+        .pill-input:focus + i,
+        .input-icon-group:focus-within > i {
+            color: var(--accent);
         }
 
         /* Name fields: display with capital first letter */
@@ -277,27 +394,34 @@
             text-transform: none;
         }
 
-        /* Hint text for capitalization */
-        .hint-text {
-            font-size: 0.72rem;
-            color: #8e8e93;
-            margin-top: -0.5rem;
-            margin-bottom: 0.8rem;
-            margin-left: 4px;
+        /* ==========================================================
+           FIELD HINT — capitalization notice
+           ========================================================== */
+        .field-hint {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            font-size: 0.73rem;
+            font-weight: 500;
+            color: #a3741a;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-tint);
+            padding: 8px 12px;
+            border-radius: 11px;
+            margin: -0.2rem 0 0.95rem;
+            line-height: 1.35;
         }
 
-        .hint-text i {
-            font-size: 0.65rem;
-            color: #F5B042;
+        .field-hint i {
+            color: var(--accent-dark);
+            font-size: 0.75rem;
+            flex-shrink: 0;
         }
 
-        /* Double row inputs */
+        /* Double row */
         .double-row {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
         }
 
@@ -306,388 +430,493 @@
             min-width: 125px;
         }
 
-        /* ===== BUTTONS (Mac style) ===== */
-        .btn-yellow-black {
-            background: linear-gradient(180deg, #F5B042 0%, #e6a035 100%);
-            border: 1px solid #d18e2c;
-            color: #1a1a1a;
+        /* ==========================================================
+           BUTTONS — floating, layered shadows, spring press
+           ========================================================== */
+        .btn {
+            font-family: inherit;
+            font-size: 0.94rem;
             font-weight: 600;
-            font-size: 0.95rem;
-            padding: 11px 20px;
-            border-radius: 8px;
-            cursor: pointer;
+            letter-spacing: -0.1px;
+            border: none;
+            border-radius: var(--radius-btn);
+            padding: 13px 20px;
             width: 100%;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            letter-spacing: 0.1px;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            position: relative;
-            overflow: hidden;
+            gap: 9px;
+            transition:
+                transform 0.35s var(--spring),
+                box-shadow 0.35s var(--ease-smooth),
+                background 0.3s var(--ease-smooth),
+                color 0.3s var(--ease-smooth),
+                opacity 0.3s var(--ease-smooth);
+            will-change: transform;
         }
 
-        .btn-yellow-black:hover {
-            background: linear-gradient(180deg, #f7b84d 0%, #e8a83c 100%);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-            transform: translateY(-1px);
+        .btn-primary {
+            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
+            color: #1a1206;
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.35) inset,
+                0 1px 2px rgba(0, 0, 0, 0.08),
+                0 6px 16px -4px var(--accent-glow);
         }
 
-        .btn-yellow-black:active {
-            transform: translateY(0.5px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.4) inset,
+                0 2px 4px rgba(0, 0, 0, 0.10),
+                0 14px 26px -6px var(--accent-glow);
         }
 
-        .btn-yellow-black:disabled {
-            opacity: 0.6;
-            transform: none;
-            box-shadow: none;
-            cursor: not-allowed;
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0) scale(0.975);
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.08),
+                0 3px 8px -2px var(--accent-glow);
         }
 
-        .btn-outline-dark {
+        .btn-secondary {
             background: #ffffff;
-            border: 1px solid #d2d2d7;
-            color: #1a1a1a;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.07),
+                0 1px 2px rgba(0, 0, 0, 0.04),
+                0 4px 12px -4px rgba(0, 0, 0, 0.08);
         }
 
-        .btn-outline-dark:hover {
-            background: #f5f5f7;
-            border-color: #F5B042;
-            color: #F5B042;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-            transform: translateY(-1px);
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            color: var(--accent-dark);
+            box-shadow:
+                0 0 0 1px var(--accent-tint),
+                0 2px 4px rgba(0, 0, 0, 0.05),
+                0 12px 22px -8px rgba(0, 0, 0, 0.12);
         }
 
-        /* ===== TEXT LINKS ===== */
+        .btn-secondary:active:not(:disabled) {
+            transform: translateY(0) scale(0.975);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-auto {
+            width: auto;
+            padding: 11px 20px;
+        }
+
+        /* ==========================================================
+           TEXT LINKS
+           ========================================================== */
         .text-link {
             background: none;
             border: none;
-            color: #F5B042;
-            font-weight: 500;
+            font-family: inherit;
+            color: var(--accent-dark);
+            font-weight: 600;
             cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            padding: 6px 10px;
-            border-radius: 6px;
+            font-size: 0.84rem;
+            padding: 8px 12px;
+            border-radius: 10px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
+            transition: all 0.28s var(--ease-smooth);
         }
 
         .text-link i {
             font-size: 0.75rem;
-            transition: transform 0.1s;
+            transition: transform 0.28s var(--spring);
         }
 
         .text-link:hover {
-            color: #d18e2c;
-            background: rgba(245, 176, 66, 0.08);
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+
+        .text-link:hover i.fa-key,
+        .text-link:hover i.fa-chevron-left {
+            transform: translateX(-2px);
         }
 
         .flex-between {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 1rem;
+            margin-top: 0.9rem;
             flex-wrap: wrap;
             gap: 10px;
         }
 
-        /* ===== TERMS ===== */
+        /* ==========================================================
+           TERMS
+           ========================================================== */
         .terms-check {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin: 0.8rem 0 1.4rem;
+            gap: 11px;
+            margin: 0.9rem 0 1.3rem;
+            padding: 11px 14px;
+            background: var(--fill-gray);
+            border-radius: 14px;
             flex-wrap: wrap;
-            background: #f8f8fa;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #e8e8ed;
         }
 
         .terms-check label {
             font-size: 0.82rem;
-            color: #3a3a3c;
+            color: var(--text-secondary);
             font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .terms-check label strong {
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
         .checkbox-custom {
-            width: 18px;
-            height: 18px;
-            accent-color: #F5B042;
+            width: 19px;
+            height: 19px;
+            accent-color: var(--accent);
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 5px;
+            flex-shrink: 0;
         }
 
-        /* ===== MESSAGES ===== */
+        /* ==========================================================
+           MESSAGES
+           ========================================================== */
         .error-msg {
             color: #ff3b30;
-            font-size: 0.75rem;
-            margin-left: 4px;
-            margin-top: -0.3rem;
-            margin-bottom: 0.7rem;
+            font-size: 0.76rem;
             font-weight: 500;
+            margin: 0 0 0.75rem 4px;
+            min-height: 0;
+            line-height: 1.35;
+            animation: panelIn 0.3s var(--ease-out);
+        }
+
+        .error-msg:empty {
+            display: none;
         }
 
         .success-msg {
-            color: #34c759;
+            color: #1f8a3b;
             font-size: 0.8rem;
-            margin-left: 4px;
-            margin-top: 4px;
-            font-weight: 500;
-            background: #e9f9ef;
-            padding: 6px 12px;
-            border-radius: 8px;
+            font-weight: 600;
+            background: #e8f8ee;
+            border: 1px solid rgba(52, 199, 89, 0.25);
+            padding: 9px 14px;
+            border-radius: 12px;
             display: inline-block;
+            margin-bottom: 0.9rem;
+            animation: panelIn 0.35s var(--ease-out);
         }
 
         .small-text {
-            font-size: 0.72rem;
-            text-align: center;
-            margin-top: 1.2rem;
-            margin-bottom: 0.2rem;
-            color: #8e8e93;
-            display: flex;
+            font-size: 0.71rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background: #f8f8fa;
-            padding: 6px 14px;
-            border-radius: 20px;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-            border: 1px solid #e8e8ed;
+            background: var(--fill-gray);
+            padding: 7px 15px;
+            border-radius: var(--radius-pill);
+            margin: 1.4rem auto 0.1rem;
+            letter-spacing: 0.1px;
         }
 
-        /* ===== INSTALL BANNER (inline, no floating) ===== */
+        .small-text i {
+            color: var(--accent);
+            font-size: 0.68rem;
+        }
+
+        /* ==========================================================
+           INSTALL BANNER — inline, Apple-notification style
+           ========================================================== */
         .install-banner {
             width: 100%;
-            background: #1a1a24;
-            color: #ffffff;
-            border-radius: 8px;
-            padding: 12px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.2rem;
-            font-size: 0.85rem;
-            border: 1px solid rgba(245, 176, 66, 0.2);
-            animation: fadeSlideDown 0.3s ease;
+            gap: 12px;
+            background: linear-gradient(180deg, #23232e 0%, #1a1a24 100%);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 13px 16px;
+            margin-bottom: 1.4rem;
+            font-size: 0.83rem;
+            font-weight: 500;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.12),
+                0 10px 24px -8px rgba(0, 0, 0, 0.30);
+            animation: bannerIn 0.5s var(--spring);
         }
 
         .install-banner span {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
+            line-height: 1.3;
+        }
+
+        .install-banner span i {
+            color: var(--accent);
+            font-size: 0.95rem;
         }
 
         .install-banner button {
-            background: #F5B042;
-            color: #0e0f14;
+            font-family: inherit;
+            background: linear-gradient(180deg, var(--accent-light), var(--accent));
+            color: #1a1206;
             border: none;
-            padding: 6px 18px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.8rem;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.79rem;
             cursor: pointer;
-            transition: all 0.2s;
             white-space: nowrap;
+            box-shadow: 0 4px 12px -3px var(--accent-glow);
+            transition: transform 0.3s var(--spring), box-shadow 0.3s var(--ease-smooth);
         }
 
         .install-banner button:hover {
-            background: #ffc267;
-            transform: scale(1.02);
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 18px -4px var(--accent-glow);
         }
 
-        /* ===== ANIMATIONS ===== */
-        @keyframes logoIn {
-            0%   { opacity: 0; transform: scale(0.86); }
-            100% { opacity: 1; transform: scale(1); }
+        .install-banner button:active {
+            transform: translateY(0) scale(0.97);
         }
 
-        @keyframes fadeSlideDown {
-            0% { opacity: 0; transform: translateY(-8px); }
-            100% { opacity: 1; transform: translateY(0); }
+        @keyframes bannerIn {
+            from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
+        /* ==========================================================
+           SPINNER
+           ========================================================== */
         .fa-spinner {
-            animation: spin 1s linear infinite;
+            animation: spin 0.9s linear infinite;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 550px) {
-            body { padding: 0.8rem; }
-            .window-content { padding: 1.4rem 1.2rem 1.8rem; }
-            .form-title { font-size: 1.4rem; margin-bottom: 1.2rem; }
-            .logo-img { width: min(200px, 60vw); }
-            body.revealed .logo-img { width: min(130px, 36vw); }
-            .pill-input { padding: 11px 12px 11px 36px; font-size: 0.9rem; }
-            .input-icon-group i { left: 12px; font-size: 0.9rem; }
-            .btn-yellow-black { padding: 10px 16px; font-size: 0.88rem; }
-            .install-banner { flex-direction: column; gap: 10px; text-align: center; }
+        /* ==========================================================
+           RESPONSIVE
+           ========================================================== */
+        @media (max-width: 560px) {
+            body { padding: 1rem 0.85rem; align-items: flex-start; }
+            .window-content { padding: 1.5rem 1.25rem 1.7rem; }
+            .app-card { border-radius: 26px; }
+            .form-title { font-size: 1.42rem; margin-bottom: 1.15rem; }
+            .logo-img { width: min(230px, 62vw); }
+            body.revealed .logo-img { width: min(126px, 34vw); }
+            .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
+            .input-icon-group > i { left: 13px; font-size: 0.9rem; }
+            .btn { padding: 12px 16px; font-size: 0.9rem; }
+            .install-banner { flex-direction: column; text-align: center; gap: 11px; }
+            .install-banner span { justify-content: center; }
         }
 
         @media (max-width: 400px) {
             .flex-between { flex-direction: column; align-items: stretch; }
-            .text-link { justify-content: center; }
+            .flex-between .text-link { justify-content: center; }
             .double-row { flex-direction: column; gap: 0.8rem; }
+            .btn-auto { width: 100%; }
         }
 
-        /* ===== REDUCED MOTION ===== */
+        /* ==========================================================
+           REDUCED MOTION
+           ========================================================== */
         @media (prefers-reduced-motion: reduce) {
-            .logo-img,
-            .reveal-wrap,
-            .btn-yellow-black,
-            .install-banner {
-                transition: none !important;
-                animation: none !important;
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
             }
             .reveal-wrap {
-                max-height: none;
+                grid-template-rows: 1fr;
                 opacity: 1;
-                transform: none;
-                overflow: visible;
+                pointer-events: auto;
             }
-            body.revealed .logo-img { width: min(160px, 40vw); }
+            body.revealed .logo-img { width: min(150px, 38vw); }
         }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="mac-window">
-        <!-- Title bar with traffic lights -->
-        <div class="window-titlebar">
-            <div class="traffic-lights">
-                <span class="dot red"></span>
-                <span class="dot yellow"></span>
-                <span class="dot green"></span>
-            </div>
-            <div class="window-title">UTOM — Secure Access</div>
+    <div class="app-card">
+
+        <!-- Clean header — no traffic lights -->
+        <div class="window-header">
+            <span class="status-dot"></span>
+            <span class="window-title">UTOM · Secure Access</span>
         </div>
 
         <div class="window-content">
-            <!-- Logo splash (shrinks upward on reveal) -->
+
+            <!-- Logo: big → shrinks upward over 3s -->
             <div class="logo-area">
-                <img src="logo.png" alt="UTOM official logo" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
+                <img src="logo.png" alt="UTOM official logo" class="logo-img"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
             </div>
 
-            <!-- Reveal wrapper: expands to show the form area -->
+            <!-- Everything below is revealed on the page itself -->
             <div class="reveal-wrap" id="revealWrap">
-                <!-- Inline install banner (no floating modal) -->
-                <div id="installBanner" class="install-banner" style="display: none;">
-                    <span><i class="fas fa-mobile-alt"></i> Install UTOM App for offline access</span>
-                    <button id="bannerInstallBtn">Install</button>
-                </div>
+                <div class="reveal-inner">
 
-                <div class="form-area">
-                    <!-- LOGIN PANEL -->
-                    <div id="loginPanel" class="form-panel">
-                        <div class="form-title">
-                            <i class="fas fa-arrow-right-to-bracket"></i> 
-                            Sign in
-                        </div>
-                        <form id="loginForm">
-                            <div class="input-icon-group">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="loginEmail" class="pill-input" placeholder="Email address" autocomplete="email" required>
-                            </div>
-                            <div class="input-icon-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="loginPassword" class="pill-input" placeholder="Password" autocomplete="current-password" required>
-                            </div>
-                            <div id="loginError" class="error-msg"></div>
-                            <button type="submit" class="btn-yellow-black" id="loginBtn"><i class="fas fa-arrow-right-to-bracket"></i> LOGIN</button>
-                            <div class="flex-between">
-                                <button type="button" id="showSignupFromLoginBtn" class="btn-yellow-black btn-outline-dark" style="width: auto; padding: 9px 16px;"><i class="fas fa-user-plus"></i> CREATE ACCOUNT</button>
-                                <button type="button" id="forgotPwdBtn" class="text-link"><i class="fas fa-key"></i> Forgot password?</button>
-                            </div>
-                        </form>
+                    <!-- Inline install banner (no floating modal) -->
+                    <div id="installBanner" class="install-banner" style="display: none;">
+                        <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
+                        <button id="bannerInstallBtn" type="button">Install</button>
                     </div>
 
-                    <!-- SIGNUP PANEL -->
-                    <div id="signupPanel" class="form-panel hidden-panel">
-                        <div class="form-title">
-                            <i class="fas fa-user-plus"></i> 
-                            Join UTOM
-                        </div>
-                        <form id="signupForm">
-                            <div class="double-row">
+                    <!-- Segmented control: Sign in / Create account -->
+                    <div class="segmented-control" id="authSegments" data-active="login">
+                        <button type="button" class="segment active" id="segLogin">Sign in</button>
+                        <button type="button" class="segment" id="segSignup">Create account</button>
+                    </div>
+
+                    <div class="form-area">
+
+                        <!-- ================= LOGIN PANEL ================= -->
+                        <div id="loginPanel" class="form-panel">
+                            <div class="form-title">
+                                <i class="fas fa-arrow-right-to-bracket"></i>
+                                Welcome back
+                            </div>
+                            <form id="loginForm" novalidate>
                                 <div class="input-icon-group">
-                                    <i class="fas fa-user"></i>
-                                    <input type="text" id="firstName" class="pill-input" placeholder="First name" autocomplete="given-name" required>
+                                    <input type="email" id="loginEmail" class="pill-input"
+                                           placeholder="Email address" autocomplete="email" required>
+                                    <i class="fas fa-envelope"></i>
                                 </div>
                                 <div class="input-icon-group">
-                                    <i class="fas fa-user-tag"></i>
-                                    <input type="text" id="lastName" class="pill-input" placeholder="Last name" autocomplete="family-name" required>
+                                    <input type="password" id="loginPassword" class="pill-input"
+                                           placeholder="Password" autocomplete="current-password" required>
+                                    <i class="fas fa-lock"></i>
                                 </div>
+                                <div id="loginError" class="error-msg"></div>
+                                <button type="submit" class="btn btn-primary" id="loginBtn">
+                                    <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
+                                </button>
+                                <div class="flex-between">
+                                    <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                                        Forgot your password?
+                                    </span>
+                                    <button type="button" id="forgotPwdBtn" class="text-link">
+                                        <i class="fas fa-key"></i> Reset it
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- ================= SIGNUP PANEL ================= -->
+                        <div id="signupPanel" class="form-panel hidden-panel">
+                            <div class="form-title">
+                                <i class="fas fa-user-plus"></i>
+                                Create your account
                             </div>
-                            <!-- Capitalization hint -->
-                            <div class="hint-text">
-                                <i class="fas fa-info-circle"></i>
-                                First letter of each name will be capitalized automatically.
+                            <form id="signupForm" novalidate>
+                                <div class="double-row">
+                                    <div class="input-icon-group">
+                                        <input type="text" id="firstName" class="pill-input"
+                                               placeholder="First name" autocomplete="given-name" required>
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="input-icon-group">
+                                        <input type="text" id="lastName" class="pill-input"
+                                               placeholder="Last name" autocomplete="family-name" required>
+                                        <i class="fas fa-user-tag"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Capitalization alert -->
+                                <div class="field-hint">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                    <span>Heads up — the first letter of each name is capitalized automatically.</span>
+                                </div>
+
+                                <div class="input-icon-group">
+                                    <input type="tel" id="phoneNumber" class="pill-input"
+                                           placeholder="Phone number" autocomplete="tel" required>
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div class="input-icon-group">
+                                    <input type="email" id="signupEmail" class="pill-input"
+                                           placeholder="Email address" autocomplete="email" required>
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="input-icon-group">
+                                    <input type="password" id="signupPassword" class="pill-input"
+                                           placeholder="Create password" autocomplete="new-password" required>
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <div class="input-icon-group">
+                                    <input type="password" id="confirmPassword" class="pill-input"
+                                           placeholder="Confirm password" autocomplete="new-password" required>
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div id="signupError" class="error-msg"></div>
+                                <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
+                                <div class="terms-check">
+                                    <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                                    <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="registerBtn">
+                                    <i class="fas fa-user-check"></i> REGISTER
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- ================= FORGOT PASSWORD PANEL (inline) ================= -->
+                        <div id="forgotPanel" class="form-panel hidden-panel">
+                            <div class="form-title">
+                                <i class="fas fa-paper-plane"></i>
+                                Reset password
                             </div>
+                            <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
+                                Enter your email address and we'll send you a secure link to reset your password.
+                            </p>
                             <div class="input-icon-group">
-                                <i class="fas fa-phone-alt"></i>
-                                <input type="tel" id="phoneNumber" class="pill-input" placeholder="Phone number" required>
-                            </div>
-                            <div class="input-icon-group">
+                                <input type="email" id="resetEmailInput" class="pill-input"
+                                       placeholder="Your email address" autocomplete="email">
                                 <i class="fas fa-envelope"></i>
-                                <input type="email" id="signupEmail" class="pill-input" placeholder="Email address" required>
                             </div>
-                            <div class="input-icon-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="signupPassword" class="pill-input" placeholder="Create password" required>
+                            <div id="resetError" class="error-msg"></div>
+                            <div style="display:flex;gap:11px;margin-top:1.2rem;">
+                                <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
+                                    <i class="fas fa-chevron-left"></i> Cancel
+                                </button>
+                                <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Send link
+                                </button>
                             </div>
-                            <div class="input-icon-group">
-                                <i class="fas fa-check-circle"></i>
-                                <input type="password" id="confirmPassword" class="pill-input" placeholder="Confirm password" required>
-                            </div>
-                            <div id="signupError" class="error-msg"></div>
-                            <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
-                            <div class="terms-check">
-                                <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
-                                <label for="termsCheckbox">I agree to the <strong>Terms & Conditions</strong> and Privacy Policy.</label>
-                            </div>
-                            <button type="submit" class="btn-yellow-black" id="registerBtn"><i class="fas fa-user-check"></i> REGISTER</button>
-                            <div class="flex-between" style="margin-top: 0.6rem;">
-                                <button type="button" id="backToLoginBtn" class="text-link"><i class="fas fa-chevron-left"></i> Back to Login</button>
-                            </div>
-                        </form>
+                        </div>
+
                     </div>
 
-                    <!-- FORGOT PASSWORD PANEL (inline, no modal) -->
-                    <div id="forgotPanel" class="form-panel hidden-panel">
-                        <div class="form-title">
-                            <i class="fas fa-paper-plane"></i> 
-                            Reset password
-                        </div>
-                        <p style="font-size:0.88rem; color:#6b6b7a; margin-bottom:1.4rem; line-height:1.4;">
-                            Enter your email address and we'll send you a secure link to reset your password.
-                        </p>
-                        <div class="input-icon-group">
-                            <i class="fas fa-envelope"></i>
-                            <input type="email" id="resetEmailInput" class="pill-input" placeholder="Your email address" autocomplete="email">
-                        </div>
-                        <div id="resetError" class="error-msg"></div>
-                        <div style="display:flex; gap:12px; margin-top:1.4rem;">
-                            <button id="backToLoginFromForgotBtn" class="btn-yellow-black btn-outline-dark" style="background:transparent;"><i class="fas fa-times"></i> Cancel</button>
-                            <button id="sendResetLinkBtn" class="btn-yellow-black"><i class="fas fa-paper-plane"></i> Send reset email</button>
-                        </div>
+                    <div class="small-text">
+                        <i class="fas fa-shield-alt"></i> secure &amp; seamless
+                        <i class="fas fa-meteor"></i>
                     </div>
                 </div>
-
-                <div class="small-text"><i class="fas fa-shield-alt"></i> secure & seamless · 24/7 support <i class="fas fa-meteor"></i></div>
             </div>
         </div>
     </div>
@@ -714,7 +943,7 @@
     const database = getDatabase(app);
 
     /* ============================================================
-       UI-ONLY: splash → logo shrinks upward → form revealed
+       UI-ONLY: 3-second logo shrink → form revealed on the page
        ============================================================ */
     (function initRevealAnimation() {
         const revealWrap = document.getElementById('revealWrap');
@@ -728,46 +957,55 @@
             return;
         }
 
-        window.setTimeout(() => {
+        // Kick off immediately — CSS holds the logo big for 0.35s,
+        // then shrinks it over 2.65s (3.0s total logo animation).
+        requestAnimationFrame(() => {
             document.body.classList.add('revealed');
             if (revealWrap && 'inert' in revealWrap) revealWrap.inert = false;
-            window.setTimeout(() => document.body.classList.add('reveal-complete'), 1200);
-        }, 850);
+            window.setTimeout(() => document.body.classList.add('reveal-complete'), 3200);
+        });
     })();
 
-    // DOM elements
-    const loginPanel = document.getElementById('loginPanel');
+    /* ============================================================
+       DOM REFERENCES
+       ============================================================ */
+    const loginPanel  = document.getElementById('loginPanel');
     const signupPanel = document.getElementById('signupPanel');
     const forgotPanel = document.getElementById('forgotPanel');
-    const showSignupBtn = document.getElementById('showSignupFromLoginBtn');
-    const backToLoginBtn = document.getElementById('backToLoginBtn');
-    const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
-    
-    const loginForm = document.getElementById('loginForm');
-    const loginEmail = document.getElementById('loginEmail');
-    const loginPassword = document.getElementById('loginPassword');
+
+    const segmentsBar = document.getElementById('authSegments');
+    const segLogin    = document.getElementById('segLogin');
+    const segSignup   = document.getElementById('segSignup');
+
+    const loginForm      = document.getElementById('loginForm');
+    const loginEmail     = document.getElementById('loginEmail');
+    const loginPassword  = document.getElementById('loginPassword');
     const loginErrorSpan = document.getElementById('loginError');
-    const loginBtn = document.getElementById('loginBtn');
-    
-    const signupForm = document.getElementById('signupForm');
-    const firstName = document.getElementById('firstName');
-    const lastName = document.getElementById('lastName');
-    const phoneNumber = document.getElementById('phoneNumber');
-    const signupEmail = document.getElementById('signupEmail');
-    const signupPassword = document.getElementById('signupPassword');
-    const confirmPassword = document.getElementById('confirmPassword');
-    const termsCheckbox = document.getElementById('termsCheckbox');
-    const signupErrorSpan = document.getElementById('signupError');
+    const loginBtn       = document.getElementById('loginBtn');
+
+    const signupForm        = document.getElementById('signupForm');
+    const firstName         = document.getElementById('firstName');
+    const lastName          = document.getElementById('lastName');
+    const phoneNumber       = document.getElementById('phoneNumber');
+    const signupEmail       = document.getElementById('signupEmail');
+    const signupPassword    = document.getElementById('signupPassword');
+    const confirmPassword   = document.getElementById('confirmPassword');
+    const termsCheckbox     = document.getElementById('termsCheckbox');
+    const signupErrorSpan   = document.getElementById('signupError');
     const signupSuccessSpan = document.getElementById('signupSuccessMsg');
-    const registerBtn = document.getElementById('registerBtn');
-    
-    const forgotPwdBtn = document.getElementById('forgotPwdBtn');
-    const sendResetLinkBtn = document.getElementById('sendResetLinkBtn');
-    const resetEmailInput = document.getElementById('resetEmailInput');
-    const resetErrorSpan = document.getElementById('resetError');
-    
+    const registerBtn       = document.getElementById('registerBtn');
+
+    const forgotPwdBtn            = document.getElementById('forgotPwdBtn');
+    const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
+    const sendResetLinkBtn        = document.getElementById('sendResetLinkBtn');
+    const resetEmailInput         = document.getElementById('resetEmailInput');
+    const resetErrorSpan          = document.getElementById('resetError');
+
+    /* ============================================================
+       HELPERS (UI only)
+       ============================================================ */
     function setButtonLoading(button, isLoading, originalHtml) {
-        if(isLoading) {
+        if (isLoading) {
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         } else {
@@ -775,25 +1013,41 @@
             button.innerHTML = originalHtml;
         }
     }
-    
+
     function hideAllPanels() {
         loginPanel.classList.add('hidden-panel');
         signupPanel.classList.add('hidden-panel');
         forgotPanel.classList.add('hidden-panel');
     }
 
+    function setActiveSegment(which) {
+        if (!segmentsBar) return;
+        segmentsBar.setAttribute('data-active', which);
+        if (which === 'login') {
+            segLogin.classList.add('active');
+            segSignup.classList.remove('active');
+        } else {
+            segSignup.classList.add('active');
+            segLogin.classList.remove('active');
+        }
+    }
+
     function showLoginPanel() {
         hideAllPanels();
         loginPanel.classList.remove('hidden-panel');
+        segmentsBar.classList.remove('hidden-panel');
+        setActiveSegment('login');
         signupSuccessSpan.style.display = 'none';
         signupErrorSpan.innerText = '';
         loginErrorSpan.innerText = '';
         resetErrorSpan.innerText = '';
     }
-    
+
     function showSignupPanel() {
         hideAllPanels();
         signupPanel.classList.remove('hidden-panel');
+        segmentsBar.classList.remove('hidden-panel');
+        setActiveSegment('signup');
         loginErrorSpan.innerText = '';
         signupErrorSpan.innerText = '';
         signupSuccessSpan.style.display = 'none';
@@ -802,47 +1056,50 @@
     function showForgotPanel() {
         hideAllPanels();
         forgotPanel.classList.remove('hidden-panel');
+        segmentsBar.classList.add('hidden-panel');
         resetEmailInput.value = '';
         resetErrorSpan.innerText = '';
         resetErrorSpan.style.color = '#ff3b30';
     }
-    
-    // SIGNUP
+
+    /* ============================================================
+       SIGNUP  (logic unchanged)
+       ============================================================ */
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
         signupSuccessSpan.style.display = 'none';
-        
-        const fName = firstName.value.trim();
-        const lName = lastName.value.trim();
-        const phone = phoneNumber.value.trim();
-        const email = signupEmail.value.trim();
-        const pwd = signupPassword.value;
+
+        const fName     = firstName.value.trim();
+        const lName     = lastName.value.trim();
+        const phone     = phoneNumber.value.trim();
+        const email     = signupEmail.value.trim();
+        const pwd       = signupPassword.value;
         const confirmPwd = confirmPassword.value;
-        const termsOk = termsCheckbox.checked;
-        
-        if(!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
+        const termsOk   = termsCheckbox.checked;
+
+        if (!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
             signupErrorSpan.innerText = 'All fields are required.';
             return;
         }
         const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s\-']+$/;
-        if(!nameRegex.test(fName)) { signupErrorSpan.innerText = 'First name must contain only letters.'; return; }
-        if(!nameRegex.test(lName)) { signupErrorSpan.innerText = 'Last name must contain only letters.'; return; }
+        if (!nameRegex.test(fName)) { signupErrorSpan.innerText = 'First name must contain only letters.'; return; }
+        if (!nameRegex.test(lName)) { signupErrorSpan.innerText = 'Last name must contain only letters.'; return; }
         const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
-        if(!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number (8-20 digits).'; return; }
+        if (!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number (8-20 digits).'; return; }
         const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if(!emailRegex.test(email)) { signupErrorSpan.innerText = 'Enter a valid email address.'; return; }
-        if(pwd.length < 6) { signupErrorSpan.innerText = 'Password must be at least 6 characters.'; return; }
-        if(pwd !== confirmPwd) { signupErrorSpan.innerText = 'Passwords do not match.'; return; }
-        if(!termsOk) { signupErrorSpan.innerText = 'You must agree to the Terms & Conditions.'; return; }
-        
+        if (!emailRegex.test(email)) { signupErrorSpan.innerText = 'Enter a valid email address.'; return; }
+        if (pwd.length < 6) { signupErrorSpan.innerText = 'Password must be at least 6 characters.'; return; }
+        if (pwd !== confirmPwd) { signupErrorSpan.innerText = 'Passwords do not match.'; return; }
+        if (!termsOk) { signupErrorSpan.innerText = 'You must agree to the Terms & Conditions.'; return; }
+
         const originalText = registerBtn.innerHTML;
         setButtonLoading(registerBtn, true, originalText);
-        
+
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
             const user = userCredential.user;
-            
+
             await set(ref(database, `users/${user.uid}`), {
                 firstName: fName,
                 lastName: lName,
@@ -850,12 +1107,12 @@
                 email: email,
                 createdAt: serverTimestamp()
             });
-            
+
             signupSuccessSpan.style.display = 'block';
             signupSuccessSpan.innerText = 'Registration successful! Please login with your credentials.';
             signupForm.reset();
             termsCheckbox.checked = false;
-            
+
             setTimeout(() => {
                 showLoginPanel();
                 loginEmail.value = email;
@@ -872,20 +1129,22 @@
             setButtonLoading(registerBtn, false, originalText);
         }
     });
-    
-    // LOGIN
+
+    /* ============================================================
+       LOGIN  (logic unchanged)
+       ============================================================ */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
         const email = loginEmail.value.trim();
         const password = loginPassword.value;
-        if(!email || !password) {
+        if (!email || !password) {
             loginErrorSpan.innerText = 'Both email and password are required.';
             return;
         }
         const originalLoginHtml = loginBtn.innerHTML;
         setButtonLoading(loginBtn, true, originalLoginHtml);
-        
+
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
@@ -903,24 +1162,26 @@
             setButtonLoading(loginBtn, false, originalLoginHtml);
         }
     });
-    
-    // FORGOT PASSWORD (inline panel)
+
+    /* ============================================================
+       FORGOT PASSWORD  (inline panel, logic unchanged)
+       ============================================================ */
     forgotPwdBtn.addEventListener('click', showForgotPanel);
     backToLoginFromForgotBtn.addEventListener('click', showLoginPanel);
-    
+
     sendResetLinkBtn.addEventListener('click', async () => {
         const email = resetEmailInput.value.trim();
         resetErrorSpan.innerText = '';
-        if(!email) { resetErrorSpan.innerText = 'Please enter your email address.'; return; }
+        if (!email) { resetErrorSpan.innerText = 'Please enter your email address.'; return; }
         const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if(!emailRegex.test(email)) { resetErrorSpan.innerText = 'Enter a valid email address.'; return; }
-        
+        if (!emailRegex.test(email)) { resetErrorSpan.innerText = 'Enter a valid email address.'; return; }
+
         const originalBtnText = sendResetLinkBtn.innerHTML;
         setButtonLoading(sendResetLinkBtn, true, originalBtnText);
-        
+
         try {
             await sendPasswordResetEmail(auth, email);
-            resetErrorSpan.style.color = '#34c759';
+            resetErrorSpan.style.color = '#1f8a3b';
             resetErrorSpan.innerText = '✅ Password reset email sent!';
             setTimeout(() => {
                 showLoginPanel();
@@ -936,11 +1197,16 @@
             setButtonLoading(sendResetLinkBtn, false, originalBtnText);
         }
     });
-    
-    showSignupBtn.addEventListener('click', showSignupPanel);
-    backToLoginBtn.addEventListener('click', showLoginPanel);
 
-    // ========== PWA INSTALL (inline banner, no modal) ==========
+    /* ============================================================
+       SEGMENTED CONTROL
+       ============================================================ */
+    segLogin.addEventListener('click', showLoginPanel);
+    segSignup.addEventListener('click', showSignupPanel);
+
+    /* ============================================================
+       PWA INSTALL (inline banner only)
+       ============================================================ */
     let deferredPrompt = null;
     const installBanner = document.getElementById('installBanner');
     const bannerInstallBtn = document.getElementById('bannerInstallBtn');
@@ -954,7 +1220,7 @@
     bannerInstallBtn.addEventListener('click', async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        await deferredPrompt.userChoice;
         deferredPrompt = null;
         installBanner.style.display = 'none';
     });
@@ -965,7 +1231,7 @@
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/utom/sw.js')
-            .then(reg => console.log('SW registered'))
+            .then(() => console.log('SW registered'))
             .catch(err => console.error('SW failed', err));
     }
 </script>
