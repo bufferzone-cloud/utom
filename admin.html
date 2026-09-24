@@ -5934,6 +5934,9 @@
             color: #b0b4c0;
         }
         .register-dropdown-wrap .reg-dropdown .reg-option.selected .reg-check { color: #f5b042; }
+
+                .user-card .user-actions .btn-edit-user { background: #e3f0fd; color: #2979c1; }
+        .user-card .user-actions .btn-edit-user:hover { background: #2979c1; color: #fff; transform: scale(1.04); }
         /* ===== Floating player (extra) ===== */
         /* (already defined above) */
     </style>
@@ -7747,9 +7750,42 @@
             <div class="utom-brand">UTOM</div>
             <h3><i class="fas fa-user-circle"></i> User Profile</h3>
             <table id="userModalTable"></table>
-            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px;">
+                        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px;">
+                <button id="userModalEditBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-pen-to-square"></i> Edit Details</button>
                 <button id="userModalBanBtn" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-ban"></i> Toggle Ban</button>
             </div>
+        </div>
+    </div>
+
+        <!-- ===== USER EDIT MODAL (NEW) ===== -->
+    <div id="userEditModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-modal" id="closeUserEditModal">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-user-pen"></i> Edit User Details</h3>
+            <form id="userEditForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">First Name</label>
+                    <input type="text" id="editUserFirstName" placeholder="First name" required>
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Last Name</label>
+                    <input type="text" id="editUserLastName" placeholder="Last name">
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Email</label>
+                    <input type="email" id="editUserEmail" placeholder="Email" required>
+                </div>
+                <div class="form-row">
+                    <label style="font-weight:600;font-size:11px;min-width:80px;">Phone</label>
+                    <input type="text" id="editUserPhone" placeholder="e.g. 097...">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                    <button type="button" id="cancelUserEditBtn" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-confirm"><i class="fas fa-check"></i> Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -10279,7 +10315,8 @@ function unbindComments(videoId) {
                     <div class="user-phone">${escapeHtml(u.phone || 'No phone')}</div>
                     <span class="user-status-badge ${isBanned ? 'banned' : 'active'}">${isBanned ? 'Banned' : 'Active'}</span>
                     ${banReasonHtml}
-                    <div class="user-actions">
+                                        <div class="user-actions">
+                        <button class="btn-edit-user" data-uid="${u.uid}"><i class="fas fa-pen"></i> Edit</button>
                         ${isBanned ? `
                             <button class="btn-unban" data-uid="${u.uid}"><i class="fas fa-check"></i> Unban</button>
                         ` : `
@@ -10296,6 +10333,13 @@ function unbindComments(videoId) {
                     e.stopPropagation();
                     const uid = btn.dataset.uid;
                     openBanModal(uid);
+                });
+            });
+
+                        document.querySelectorAll('.user-card .btn-edit-user').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openUserEditModal(btn.dataset.uid);
                 });
             });
 
@@ -10409,7 +10453,88 @@ function unbindComments(videoId) {
                     openBanModal(user.uid);
                 }
             };
+                        document.getElementById('userModalEditBtn').onclick = () => {
+                modal.classList.remove('open');
+                openUserEditModal(user.uid);
+            };
         }
+
+                // =================================================================
+        // EDIT USER DETAILS
+        // =================================================================
+        function openUserEditModal(uid) {
+            const user = users.find(u => u.uid === uid);
+            if (!user) { showToast('User not found.', 'error'); return; }
+            document.getElementById('editUserId').value       = uid;
+            document.getElementById('editUserFirstName').value = user.firstName || '';
+            document.getElementById('editUserLastName').value  = user.lastName  || '';
+            document.getElementById('editUserEmail').value     = user.email     || '';
+            document.getElementById('editUserPhone').value     = user.phone     || '';
+            document.getElementById('userEditModal').classList.add('open');
+        }
+
+        document.getElementById('closeUserEditModal').addEventListener('click', () => {
+            document.getElementById('userEditModal').classList.remove('open');
+        });
+        document.getElementById('cancelUserEditBtn').addEventListener('click', () => {
+            document.getElementById('userEditModal').classList.remove('open');
+        });
+
+        document.getElementById('userEditForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const uid       = document.getElementById('editUserId').value;
+            const firstName = document.getElementById('editUserFirstName').value.trim();
+            const lastName  = document.getElementById('editUserLastName').value.trim();
+            const email     = document.getElementById('editUserEmail').value.trim();
+            const phone     = document.getElementById('editUserPhone').value.trim();
+
+            if (!uid)       { showToast('Missing user id.', 'error'); return; }
+            if (!firstName) { showToast('First name is required.', 'error'); return; }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showToast('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const original  = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                await update(ref(db, `users/${uid}`), {
+                    firstName,
+                    lastName,
+                    email,
+                    phone,
+                    updatedAt: serverTimestamp()
+                });
+
+                // Mirror the change anywhere we cache the user object locally
+                const u = users.find(x => x.uid === uid);
+                if (u) {
+                    u.firstName = firstName;
+                    u.lastName  = lastName;
+                    u.email     = email;
+                    u.phone     = phone;
+                }
+
+                showToast('User details updated successfully!', 'success');
+                push(notificationsRef, {
+                    message: `✏️ User ${email} details updated by admin`,
+                    timestamp: serverTimestamp()
+                });
+
+                document.getElementById('userEditModal').classList.remove('open');
+                renderUsers();
+                renderAccount();
+            } catch (err) {
+                console.error('Error updating user:', err);
+                showToast('Failed to update user: ' + err.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = original;
+            }
+        });
 
         // =================================================================
         // NOTIFICATIONS
@@ -19269,6 +19394,7 @@ function unbindComments(videoId) {
         window.publishAssessmentNow = publishAssessmentNow;
         window.viewRegisterDetails = viewRegisterDetails;
         window.showConfirmPopup = showConfirmPopup;
+        window.openUserEditModal = openUserEditModal;
 
     /* =========================================================
    MANUAL VIDEO ARRANGEMENT
