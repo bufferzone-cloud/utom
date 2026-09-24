@@ -9976,26 +9976,56 @@
             let str = String(answer).trim();
             if (str === '') return '';
 
+            // Lowercase
             str = str.toLowerCase();
-            str = str.replace(/(?<=\d)[,\s_]+(?=\d)/g, '');
-            str = str.replace(/[×✕✖]/g, 'x');
 
-            str = str.replace(/(\d+(?:\.\d+)?)\s*[x*]\s*10\s*\^?\s*([-+]?\d+)/g, '$1e$2');
-            str = str.replace(/(\d+(?:\.\d+)?)\s*[x*]\s*10([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, (_, base, sup) => {
-                const map = { '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-','⁺':'+' };
+            // Normalise multiplication symbols (×, ✕, ✖, ⨯, ∗, middle dot) → 'x'
+            str = str.replace(/[×✕✖⨯∗·∙⋅]/g, 'x');
+
+            // Normalise unicode minus/dash variants to '-'
+            str = str.replace(/[−–—‒]/g, '-');
+
+            // Normalise non-breaking and special spaces to normal space
+            str = str.replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, ' ');
+
+            // Superscript digit map
+            const supMap = { '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-','⁺':'+' };
+
+            // Convert "a x 10^b" / "a*10^b" / "a × 10^b" → "aeb"
+            str = str.replace(/([+-]?\d*\.?\d+)\s*[x*]\s*10\s*\^\s*([+-]?\d+)/g, '$1e$2');
+
+            // Convert "a x 10³" (superscript exponent) → "aeb"
+            str = str.replace(/([+-]?\d*\.?\d+)\s*[x*]\s*10([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, (_, base, sup) => {
                 let exp = '';
-                for (const ch of sup) exp += map[ch] || ch;
+                for (const ch of sup) exp += supMap[ch] || ch;
                 return base + 'e' + exp;
             });
-            str = str.replace(/10([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, (_, sup) => {
-                const map = { '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-','⁺':'+' };
+
+            // Bare "10^3" → "1e3"
+            str = str.replace(/^10\s*\^\s*([+-]?\d+)$/, '1e$1');
+
+            // Bare "10³" (superscript) → "1e3"
+            str = str.replace(/^10([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)$/, (_, sup) => {
                 let exp = '';
-                for (const ch of sup) exp += map[ch] || ch;
-                return 'e' + exp;
+                for (const ch of sup) exp += supMap[ch] || ch;
+                return '1e' + exp;
             });
-            if (/^10\^([-+]?\d+)$/.test(str)) {
-                str = '1e' + str.match(/^10\^([-+]?\d+)$/)[1];
-            }
+
+            // Convert any remaining superscript digits that follow a digit (e.g. "5²") to e-notation
+            str = str.replace(/(\d)([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, (_, base, sup) => {
+                let exp = '';
+                for (const ch of sup) exp += supMap[ch] || ch;
+                if (exp.match(/^[+-]?\d+$/)) return base + 'e' + exp;
+                return base + sup;
+            });
+
+            // Remove thousands separators (commas, spaces, underscores between digits)
+            str = str.replace(/(\d)[,\s_]+(?=\d)/g, '$1');
+
+            // Remove ALL remaining whitespace
+            str = str.replace(/\s+/g, '');
+
+            // Try to interpret as scientific notation "aeb"
             const sci = str.match(/^([+-]?\d*\.?\d+)e([+-]?\d+)$/);
             if (sci) {
                 const base = parseFloat(sci[1]);
@@ -10008,6 +10038,8 @@
                     }
                 }
             }
+
+            // Plain numeric
             const plain = str.match(/^([+-]?\d*\.?\d+)$/);
             if (plain) {
                 let v = parseFloat(plain[1]);
@@ -10016,14 +10048,18 @@
                     return String(v).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
                 }
             }
-            return str.replace(/\s+/g, '');
+            return str;
         }
 
         function answersMatch(userAns, correctAns) {
+            if (userAns === null || userAns === undefined) userAns = '';
+            if (correctAns === null || correctAns === undefined) correctAns = '';
             const u = normalizeAnswer(userAns);
             const c = normalizeAnswer(correctAns);
             if (u === '' && c === '') return true;
             if (u === c) return true;
+
+            // Numeric tolerance
             const un = parseFloat(u);
             const cn = parseFloat(c);
             if (!isNaN(un) && !isNaN(cn)) {
@@ -10044,6 +10080,36 @@
                 if (answersMatch(sv, part.correctAnswer)) return true;
             }
             return false;
+        }
+
+        // =================================================================
+        // ===== HELPER: get assignment deadline from multiple sources =====
+        // =================================================================
+        function getAssignmentDeadline(assessment) {
+            if (!assessment) return null;
+            const candidates = [
+                assessment.deadline,
+                assessment.dueDate,
+                assessment.endDate,
+                assessment.availabilityEnd,
+                assessment.submissionDeadline,
+                assessment.assignmentDeadline,
+                assessment.cover && assessment.cover.deadline,
+                assessment.cover && assessment.cover.dueDate,
+                assessment.assignment && assessment.assignment.deadline,
+                assessment.assignment && assessment.assignment.dueDate
+            ];
+            for (const c of candidates) {
+                if (c === undefined || c === null || c === '') continue;
+                let t;
+                if (typeof c === 'number') {
+                    t = c;
+                } else {
+                    t = new Date(c).getTime();
+                }
+                if (!isNaN(t) && t > 0) return t;
+            }
+            return null;
         }
 
         // =================================================================
@@ -14807,17 +14873,20 @@ container.innerHTML = offlineSorted.map(v => `
                 `<ol style="padding-left:16px;margin:0;font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">${instructionsLines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ol>` :
                 `<span style="font-size:0.85rem;color:var(--text-secondary);">${escapeHtml(rawInstructions)}</span>`;
             const detailsDiv = document.getElementById('examConfirmDetails');
-            // NEW: show deadline for assignments prominently
-            if (assessment.type === 'assignment' && assessment.deadline) {
-                let existingDeadlineRow = null;
-                detailsDiv.querySelectorAll('div').forEach(row => {
-                    if (row.textContent.trim().startsWith('Deadline')) existingDeadlineRow = row;
-                });
-                if (!existingDeadlineRow) {
-                    const deadlineRow = document.createElement('div');
-                    deadlineRow.style.cssText = 'display:flex;justify-content:space-between;border-bottom:1px solid var(--border-color);padding:4px 0;color:#0d47a1;font-weight:600;';
-                    deadlineRow.innerHTML = `<strong>Deadline:</strong> <span>${new Date(assessment.deadline).toLocaleString()}</span>`;
-                    detailsDiv.appendChild(deadlineRow);
+            // NEW: show deadline for assignments prominently (using helper)
+            if (assessment.type === 'assignment') {
+                const deadlineTs = getAssignmentDeadline(assessment);
+                if (deadlineTs) {
+                    let existingDeadlineRow = null;
+                    detailsDiv.querySelectorAll('div').forEach(row => {
+                        if (row.textContent.trim().startsWith('Deadline')) existingDeadlineRow = row;
+                    });
+                    if (!existingDeadlineRow) {
+                        const deadlineRow = document.createElement('div');
+                        deadlineRow.style.cssText = 'display:flex;justify-content:space-between;border-bottom:1px solid var(--border-color);padding:4px 0;color:#0d47a1;font-weight:600;';
+                        deadlineRow.innerHTML = `<strong>Deadline:</strong> <span>${new Date(deadlineTs).toLocaleString()}</span>`;
+                        detailsDiv.appendChild(deadlineRow);
+                    }
                 }
             }
             const rows = detailsDiv.querySelectorAll('div');
@@ -14889,6 +14958,9 @@ container.innerHTML = offlineSorted.map(v => `
                 onLeaveHandlers: []
             };
 
+            // Use helper for the deadline value
+            const assignmentDeadlineTs = getAssignmentDeadline(assessment);
+
             const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
             const instructionsList = coverData.instructions ? coverData.instructions.split('\n').filter(line => line
                 .trim() !== '') : ['No rules provided.'];
@@ -14907,7 +14979,7 @@ container.innerHTML = offlineSorted.map(v => `
                             <div><span style="font-weight:600;color:var(--text);">Passing Score:</span> ${assessment.passingScore || 0}%</div>
                             ${assessment.paid ? `<div><span style="font-weight:600;color:var(--text);">Price:</span> ZMW ${assessment.price} (${assessment.gateway})</div>` : '<div><span style="font-weight:600;color:var(--text);">Price:</span> Free</div>'}
                             <div><span style="font-weight:600;color:var(--text);">Total Marks:</span> ${assessment.totalMarks || 0}</div>
-                            ${isAssignment && assessment.deadline ? `<div style="grid-column:span 2;"><span style="font-weight:600;color:#0d47a1;">Deadline:</span> <span style="color:#0d47a1;font-weight:700;">${new Date(assessment.deadline).toLocaleString()}</span></div>` : ''}
+                            ${isAssignment && assignmentDeadlineTs ? `<div style="grid-column:span 2;"><span style="font-weight:600;color:#0d47a1;">Deadline:</span> <span style="color:#0d47a1;font-weight:700;">${new Date(assignmentDeadlineTs).toLocaleString()}</span></div>` : ''}
                         </div>
                         <div class="rules-section" style="margin-top:10px;padding-top:10px;border-top:2px solid var(--gold);text-align:left;">
                             <h4 style="font-size:16px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;">Instructions / Rules</h4>
@@ -14981,7 +15053,7 @@ container.innerHTML = offlineSorted.map(v => `
                 <div class="assessment-questions-wrapper" id="assessmentQuestionsWrapper" style="display:none;max-width:740px;margin:0 auto;">
                     <div class="assessment-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
                         <h2 style="font-size:1.1rem;font-weight:800;border-left:3px solid var(--gold);padding-left:12px;">${escapeHtml(assessment.name)}</h2>
-                        ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer" style="display:flex;align-items:center;gap:6px;background:var(--gold-light);padding:6px 16px;border-radius:30px;font-weight:700;font-size:0.95rem;color:var(--gold-dark);">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer assignment-timer" style="display:flex;align-items:center;gap:6px;padding:6px 16px;border-radius:30px;font-weight:700;font-size:0.95rem;"><i class="fas fa-calendar-alt"></i> Deadline: ${assessment.deadline ? new Date(assessment.deadline).toLocaleString() : 'N/A'}</div>`}
+                        ${!isAssignment ? `<div class="assessment-timer" id="assessmentTimer" style="display:flex;align-items:center;gap:6px;background:var(--gold-light);padding:6px 16px;border-radius:30px;font-weight:700;font-size:0.95rem;color:var(--gold-dark);">${formatTime(totalSeconds)}</div>` : `<div class="assessment-timer assignment-timer" style="display:flex;align-items:center;gap:6px;padding:6px 16px;border-radius:30px;font-weight:700;font-size:0.95rem;"><i class="fas fa-calendar-alt"></i> Deadline: ${assignmentDeadlineTs ? new Date(assignmentDeadlineTs).toLocaleString() : 'N/A'}</div>`}
                     </div>
                     <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:12px;">${typeLabel} · ${isAssignment ? 'No time limit' : assessment.duration || 'No time limit'}</p>
                     <div style="display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap;">
@@ -15070,8 +15142,8 @@ container.innerHTML = offlineSorted.map(v => `
                             });
                         } catch (e) {}
                     }, 30000);
-                    if (assessment.deadline) {
-                        const deadlineTime = new Date(assessment.deadline).getTime();
+                    if (assignmentDeadlineTs) {
+                        const deadlineTime = assignmentDeadlineTs;
                         currentAssessmentTaking.deadlineCheckInterval = setInterval(async () => {
                             if (Date.now() > deadlineTime && currentAssessmentTaking) {
                                 clearInterval(currentAssessmentTaking.deadlineCheckInterval);
@@ -15551,10 +15623,22 @@ container.innerHTML = offlineSorted.map(v => `
                     if (q.type === 'mcq') {
                         isAuto = true;
                         totalAutoMarks += q.marks;
-                        if (answer !== '' && answer !== null && answer !== undefined && Number(answer) === Number(q.correct)) {
-                            mark = q.marks;
-                            autoScore += q.marks;
-                            isCorrect = true;
+                        // Smart match: try numeric index first, then text-answer match
+                        if (answer !== '' && answer !== null && answer !== undefined) {
+                            let matched = false;
+                            if (Number(answer) === Number(q.correct)) {
+                                matched = true;
+                            } else {
+                                const correctIdx = Number(q.correct);
+                                const correctText = (q.options && !isNaN(correctIdx)) ? q.options[correctIdx] :
+                                    (typeof q.correct === 'string' ? q.correct : '');
+                                if (correctText && answersMatch(String(answer), correctText)) matched = true;
+                            }
+                            if (matched) {
+                                mark = q.marks;
+                                autoScore += q.marks;
+                                isCorrect = true;
+                            }
                         }
                     } else if (q.type === 'tf') {
                         isAuto = true;
@@ -15568,7 +15652,7 @@ container.innerHTML = offlineSorted.map(v => `
                     } else if (q.type === 'fillblank') {
                         isAuto = true;
                         totalAutoMarks += q.marks;
-                        // SMART matching
+                        // SMART matching (handles 4000 vs 4x10^3 vs 4,000, etc.)
                         if (answersMatch(answer, q.correct)) {
                             mark = q.marks;
                             autoScore += q.marks;
@@ -15653,7 +15737,9 @@ container.innerHTML = offlineSorted.map(v => `
                         totalAutoMarks += q.marks;
                         const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
                         const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
-                        const studentAnswer = parseFloat(answer);
+                        // Accept numeric value written in ANY format (4x10^3, 4000, 4,000, etc.)
+                        const normalized = normalizeAnswer(answer);
+                        const studentAnswer = parseFloat(normalized);
                         if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
                             mark = q.marks;
                             autoScore += q.marks;
@@ -15749,10 +15835,14 @@ container.innerHTML = offlineSorted.map(v => `
                 } else if (percent >= 50) {
                     gradeColor = '#2ecc71';
                 }
-                // NEW: show deadline for assignments
-                const deadlineHtml = (ass && ass.type === 'assignment' && ass.deadline)
-                    ? `<div class="h-deadline"><i class="fas fa-calendar-alt"></i> Deadline: ${new Date(ass.deadline).toLocaleString()}</div>`
-                    : '';
+                // NEW: show deadline for assignments (using helper)
+                let deadlineHtml = '';
+                if (ass && ass.type === 'assignment') {
+                    const dl = getAssignmentDeadline(ass);
+                    if (dl) {
+                        deadlineHtml = `<div class="h-deadline"><i class="fas fa-calendar-alt"></i> Deadline: ${new Date(dl).toLocaleString()}</div>`;
+                    }
+                }
                 return `
                 <div class="history-item" data-response-id="${r.id}">
                     <div class="h-header">
@@ -15825,7 +15915,8 @@ container.innerHTML = offlineSorted.map(v => `
                 ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
             const passed = total > 0 && percent >= passingScorePercent;
             const now = Date.now();
-            const deadline = ass.deadline ? new Date(ass.deadline).getTime() : null;
+            const assignmentDeadlineTs = getAssignmentDeadline(ass);
+            const deadline = assignmentDeadlineTs;
             const isPastDue = deadline ? now > deadline : false;
             const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
             const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
@@ -15847,8 +15938,8 @@ container.innerHTML = offlineSorted.map(v => `
                 }
             });
 
-            const deadlineBoxHtml = (ass.type === 'assignment' && ass.deadline)
-                ? `<div class="script-deadline-box"><i class="fas fa-calendar-alt"></i> Assignment Deadline: ${new Date(ass.deadline).toLocaleString()}</div>`
+            const deadlineBoxHtml = (ass.type === 'assignment' && assignmentDeadlineTs)
+                ? `<div class="script-deadline-box"><i class="fas fa-calendar-alt"></i> Assignment Deadline: ${new Date(assignmentDeadlineTs).toLocaleString()}</div>`
                 : '';
 
             let html = `
@@ -15879,7 +15970,7 @@ container.innerHTML = offlineSorted.map(v => `
                 ` : `
                     <div style="margin:12px 0;padding:10px 14px;background:#fde8e8;border-radius:12px;border-left:3px solid var(--red);font-size:0.8rem;color:#721c24;text-align:center;">
                         <i class="fas fa-lock"></i> Correct answers are available only after the due date has passed.
-                        ${ass.deadline ? ` Deadline: ${new Date(ass.deadline).toLocaleString()}` : ''}
+                        ${assignmentDeadlineTs ? ` Deadline: ${new Date(assignmentDeadlineTs).toLocaleString()}` : ''}
                         ${ass.availabilityEnd ? ` Availability ends: ${new Date(ass.availabilityEnd).toLocaleString()}` : ''}
                     </div>
                 `}
@@ -16091,7 +16182,8 @@ container.innerHTML = offlineSorted.map(v => `
             ];
 
             const now = Date.now();
-            const deadline = ass.deadline ? new Date(ass.deadline).getTime() : null;
+            const assignmentDeadlineTs = getAssignmentDeadline(ass);
+            const deadline = assignmentDeadlineTs;
             const isPastDue = deadline ? now > deadline : false;
             const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
             const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
@@ -16185,7 +16277,7 @@ container.innerHTML = offlineSorted.map(v => `
                                 <div><span class="label">Passing Score:</span> ${ass.passingScore || 0}%</div>
                                 ${ass.paid ? `<div><span class="label">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : '<div><span class="label">Price:</span> Free</div>'}
                                 <div><span class="label">Total Marks:</span> ${ass.totalMarks || 0}</div>
-                                ${ass.deadline ? `<div><span class="label">Deadline:</span> ${new Date(ass.deadline).toLocaleString()}</div>` : ''}
+                                ${assignmentDeadlineTs ? `<div><span class="label">Deadline:</span> ${new Date(assignmentDeadlineTs).toLocaleString()}</div>` : ''}
                             </div>
                             <div class="rules-section">
                                 <h4>Instructions / Rules</h4>
@@ -16332,7 +16424,8 @@ container.innerHTML = offlineSorted.map(v => `
             ];
 
             const now = Date.now();
-            const deadline = ass.deadline ? new Date(ass.deadline).getTime() : null;
+            const assignmentDeadlineTs = getAssignmentDeadline(ass);
+            const deadline = assignmentDeadlineTs;
             const isPastDue = deadline ? now > deadline : false;
             const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
             const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
@@ -16362,7 +16455,7 @@ container.innerHTML = offlineSorted.map(v => `
                                 <div><span style="font-weight:600;color:#1a1d28;">Passing Score:</span> ${ass.passingScore || 0}%</div>
                                 ${ass.paid ? `<div><span style="font-weight:600;color:#1a1d28;">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : '<div><span style="font-weight:600;color:#1a1d28;">Price:</span> Free</div>'}
                                 <div><span style="font-weight:600;color:#1a1d28;">Total Marks:</span> ${ass.totalMarks || 0}</div>
-                                ${ass.deadline ? `<div><span style="font-weight:600;color:#1a1d28;">Deadline:</span> ${new Date(ass.deadline).toLocaleString()}</div>` : ''}
+                                ${assignmentDeadlineTs ? `<div><span style="font-weight:600;color:#1a1d28;">Deadline:</span> ${new Date(assignmentDeadlineTs).toLocaleString()}</div>` : ''}
                             </div>
                             <div style="margin-top:16px;padding-top:16px;border-top:2px solid #f5b042;text-align:left;">
                                 <h4 style="font-size:16px;font-weight:700;margin-bottom:10px;color:#1a1d28;text-align:center;">Instructions / Rules</h4>
