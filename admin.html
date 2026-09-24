@@ -8145,7 +8145,8 @@ body.dark-mode .script-question .part-breakdown .part-row .part-correct {
         let assessments = [];
         let assessmentResponses = [];
         let editingAssessmentId = null;
-        let currentHistoryAssessmentId = null;
+let pendingDuplicateEditId = null;      // ← NEW
+let currentHistoryAssessmentId = null;
 
         // Carousel state
         let carouselItems = [];
@@ -12735,17 +12736,17 @@ function unbindComments(videoId) {
                 renderAssessmentsList();
                 renderTestExamsDashboard();
                 const newId = newRef.key;
-                const type = ass.type;
-                const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
-                const target = sectionMap[type];
-                if (target) {
-                    editingAssessmentId = newId;
-                    showSection(target);
-                    setTimeout(() => {
-                        populateAssessmentForm(type);
-                        showToast(`Editing copy of "${ass.name}"`, 'info');
-                    }, 300);
-                }
+const type = ass.type;
+const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
+const target = sectionMap[type];
+if (target) {
+    // Hand the ID off — the create-form renderer will pick it up.
+    // Do NOT set editingAssessmentId here, because renderCreateXForm()
+    // is about to run on the hashchange and would reset it to null.
+    pendingDuplicateEditId = newId;
+    showSection(target);
+    showToast(`Editing copy of "${ass.name}"`, 'info');
+}
             } catch (err) {
                 showToast('Error duplicating: ' + err.message, 'error');
             } finally {
@@ -15161,8 +15162,11 @@ function unbindComments(videoId) {
         }
 
         // ---- CREATE ASSIGNMENT (form render) ----
-        function renderCreateAssignmentForm() {
-            editingAssessmentId = null;
+                function renderCreateAssignmentForm() {
+            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || null;
+            pendingDuplicateEditId = null;
+
             document.getElementById('assignmentCoverStep').style.display = 'block';
             document.getElementById('assignmentDetailsStep').style.display = 'none';
             document.getElementById('assignmentQuestionsStep').style.display = 'none';
@@ -15722,7 +15726,8 @@ function unbindComments(videoId) {
 
         // ---- CREATE TEST (form render) ----
         function renderCreateTestForm() {
-            editingAssessmentId = null;
+    editingAssessmentId = pendingDuplicateEditId || null;
+    pendingDuplicateEditId = null;
             document.getElementById('testCoverStep').style.display = 'block';
             document.getElementById('testDetailsStep').style.display = 'none';
             document.getElementById('testQuestionsStep').style.display = 'none';
@@ -16284,8 +16289,11 @@ function unbindComments(videoId) {
         });
 
         // ---- CREATE QUIZ (form render) ----
-        function renderCreateQuizForm() {
-            editingAssessmentId = null;
+                function renderCreateQuizForm() {
+            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || null;
+            pendingDuplicateEditId = null;
+
             document.getElementById('quizCoverStep').style.display = 'block';
             document.getElementById('quizDetailsStep').style.display = 'none';
             document.getElementById('quizQuestionsStep').style.display = 'none';
@@ -16874,8 +16882,11 @@ function unbindComments(videoId) {
         });
 
         // ---- CREATE EXAM (form render) ----
-        function renderCreateExamForm() {
-            editingAssessmentId = null;
+               function renderCreateExamForm() {
+            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || null;
+            pendingDuplicateEditId = null;
+
             document.getElementById('examCoverStep').style.display = 'block';
             document.getElementById('examDetailsStep').style.display = 'none';
             document.getElementById('examQuestionsStep').style.display = 'none';
@@ -17467,9 +17478,24 @@ function unbindComments(videoId) {
         });
 
         // ===== Populate Assessment Form for Editing =====
-        function populateAssessmentForm(type) {
-            const ass = assessments.find(a => a.id === editingAssessmentId);
-            if (!ass) return;
+        async function populateAssessmentForm(type) {
+    const id = editingAssessmentId;
+    if (!id) return;
+
+    let ass = assessments.find(a => a.id === id);
+    if (!ass) {
+        // Fallback: the realtime listener may not have caught up yet.
+        try {
+            const snap = await get(ref(db, `assessments/${id}`));
+            if (snap.exists()) {
+                ass = { id, ...snap.val() };
+                assessments.push(ass);      // cache so we don't refetch
+            }
+        } catch (err) {
+            console.warn('Could not fetch assessment for edit:', err);
+        }
+    }
+    if (!ass) return;
             document.getElementById(type + 'Name').value = ass.name || '';
             if (ass.duration) {
                 const parts = ass.duration.split(':');
