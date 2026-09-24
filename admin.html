@@ -5937,6 +5937,141 @@
 
                 .user-card .user-actions .btn-edit-user { background: #e3f0fd; color: #2979c1; }
         .user-card .user-actions .btn-edit-user:hover { background: #2979c1; color: #fff; transform: scale(1.04); }
+
+        /* ===== SCRIPT QUESTION STATUS & ANSWER FEEDBACK ===== */
+.script-question {
+    transition: var(--transition);
+}
+
+.script-question .q-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 30px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.script-question .wrong-answer-hint {
+    margin-top: 6px;
+    padding: 6px 14px;
+    background: #fde8e8;
+    color: #c62828;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+    border-left: 3px solid #e74c3c;
+    word-break: break-word;
+}
+.script-question .wrong-answer-hint i {
+    margin-right: 4px;
+    color: #e74c3c;
+}
+
+.script-question .part-breakdown {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(248, 249, 252, 0.85);
+    border-radius: 12px;
+    border: 1px solid rgba(229, 232, 237, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.script-question .part-breakdown .part-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    flex-wrap: wrap;
+    background: #fff;
+}
+
+.script-question .part-breakdown .part-row.correct {
+    background: #e8f5e9;
+    border-left: 3px solid #2ecc71;
+}
+.script-question .part-breakdown .part-row.wrong {
+    background: #fde8e8;
+    border-left: 3px solid #e74c3c;
+}
+
+.script-question .part-breakdown .part-row .part-label {
+    font-weight: 800;
+    color: var(--text);
+    min-width: 22px;
+}
+.script-question .part-breakdown .part-row .part-user {
+    color: var(--text);
+    font-weight: 600;
+}
+.script-question .part-breakdown .part-row .part-correct {
+    color: #5f6377;
+    font-size: 10px;
+}
+.script-question .part-breakdown .part-row .part-status {
+    margin-left: auto;
+    font-weight: 800;
+    font-size: 13px;
+}
+.script-question .part-breakdown .part-row.correct .part-status { color: #2ecc71; }
+.script-question .part-breakdown .part-row.wrong .part-status  { color: #e74c3c; }
+
+.script-stats-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+}
+.script-stats-row .stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 14px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.script-stats-row .stat-chip.correct { background: #e8f5e9; color: #2e7d32; }
+.script-stats-row .stat-chip.partial { background: #fff3cd; color: #856404; }
+.script-stats-row .stat-chip.wrong   { background: #fde8e8; color: #c62828; }
+.script-stats-row .stat-chip.manual  { background: #e3f2fd; color: #0d47a1; }
+
+/* Dark mode */
+body.dark-mode .script-question .wrong-answer-hint {
+    background: rgba(231, 76, 60, 0.18);
+    color: #ff8c8c;
+    border-left-color: #e74c3c;
+}
+body.dark-mode .script-question .part-breakdown {
+    background: #1a1a1a;
+    border-color: #333;
+}
+body.dark-mode .script-question .part-breakdown .part-row {
+    background: #262626;
+}
+body.dark-mode .script-question .part-breakdown .part-row.correct {
+    background: rgba(46, 204, 113, 0.15);
+}
+body.dark-mode .script-question .part-breakdown .part-row.wrong {
+    background: rgba(231, 76, 60, 0.18);
+}
+body.dark-mode .script-question .part-breakdown .part-row .part-user,
+body.dark-mode .script-question .part-breakdown .part-row .part-label {
+    color: #f1f1f1;
+}
+body.dark-mode .script-question .part-breakdown .part-row .part-correct {
+    color: #aaaaaa;
+}
         /* ===== Floating player (extra) ===== */
         /* (already defined above) */
     </style>
@@ -18808,275 +18943,392 @@ const responses = assStillOpen
 
         // ---- STUDENT SCRIPT VIEWER (with manual marking) ----
         function renderStudentScript(responseId, manualMark = false) {
-            const response = assessmentResponses.find(r => r.id === responseId);
-            if (!response) {
-                document.getElementById('studentScriptContainer').innerHTML =
-                    '<div style="text-align:center;padding:40px;color:#8b8fa3;">Response not found.</div>';
-                return;
-            }
-            const ass = assessments.find(a => a.id === response.assessmentId);
-            if (!ass) {
-                document.getElementById('studentScriptContainer').innerHTML =
-                    '<div style="text-align:center;padding:40px;color:#8b8fa3;">Assessment not found.</div>';
-                return;
-            }
-            const user = users.find(u => u.uid === response.userId);
-            const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-            const email = user ? user.email : '';
-            const score = response.score || 0;
-            const total = ass.totalMarks || 0;
-            const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+    const response = assessmentResponses.find(r => r.id === responseId);
+    if (!response) {
+        document.getElementById('studentScriptContainer').innerHTML =
+            '<div style="text-align:center;padding:40px;color:#8b8fa3;">Response not found.</div>';
+        return;
+    }
+    const ass = assessments.find(a => a.id === response.assessmentId);
+    if (!ass) {
+        document.getElementById('studentScriptContainer').innerHTML =
+            '<div style="text-align:center;padding:40px;color:#8b8fa3;">Assessment not found.</div>';
+        return;
+    }
+    const user = users.find(u => u.uid === response.userId);
+    const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
+    const email = user ? user.email : '';
+    const score = response.score || 0;
+    const total = ass.totalMarks || 0;
+    const percent = total > 0 ? Math.round((score / total) * 100) : 0;
 
-            let allQuestions = [];
-            if (ass.sections) {
-                ass.sections.forEach(sec => {
-                    sec.questions.forEach(q => {
-                        allQuestions.push({ ...q, section: sec.name });
-                    });
-                });
-            } else if (ass.questions) {
-                allQuestions = ass.questions.map(q => ({ ...q, section: 'General' }));
-            }
-
-            const answers = response.answers || {};
-            const scratchData = response.scratchData || {};
-            const marks = response.marks || {};
-
-            let html = `
-                <div class="script-booklet">
-                    <div class="cover-header" style="background:#f5b042;padding:24px 20px;border-radius:20px 20px 0 0;text-align:center;">
-                        <h1 style="font-size:28px;font-weight:900;color:#1a1d28;">${escapeHtml(ass.name)}</h1>
-                        ${ass.isEdited ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#f39c12;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">✏️ EDITED</span>' : ''}
-                        ${ass.editedVersion ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#8e44ad;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">🔄 VERSION</span>' : ''}
-                        <p style="font-size:14px;color:#1a1d28;margin-top:4px;">${ass.type} · ${ass.duration || 'N/A'}</p>
-                        <div style="margin-top:8px;color:#1a1d28;font-size:13px;">
-                            <strong>Student:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</div>
-                        <div style="margin-top:4px;color:#1a1d28;font-size:13px;">
-                            <strong>Score:</strong> ${score}/${total} (${percent}%) 
-                            <span style="font-weight:700;color:${percent >= (ass.passingScore || 50) ? '#2ecc71' : '#e74c3c'};">${percent >= (ass.passingScore || 50) ? '✅ PASSED' : '❌ FAILED'}</span>
-                        </div>
-                        <div style="margin-top:4px;color:#1a1d28;font-size:12px;">
-                            Submitted: ${response.endedAt ? new Date(response.endedAt).toLocaleString() : (response.submittedAt ? new Date(response.submittedAt).toLocaleString() : 'N/A')}
-                        </div>
-                        ${ass.cover?.institutionName ? `<div style="margin-top:4px;color:#1a1d28;font-size:11px;">${escapeHtml(ass.cover.institutionName)}</div>` : ''}
-                    </div>
-                    <div style="padding:20px 24px;">
-            `;
-
-            allQuestions.forEach((q, idx) => {
-                const qKey = `q${idx}`;
-                let answer = answers[qKey];
-                let answerDisplay = 'Not answered';
-                if (q.type === 'multi-answer') {
-                    if (Array.isArray(answer)) {
-                        answerDisplay = q.options.map((part, i) => {
-                            const val = answer[i] || '';
-                            const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? 
-                                ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
-                            return `${part.label}: ${val}${rangeInfo}`;
-                        }).join('; ');
-                    }
-                } else {
-                    answerDisplay = answer || 'Not answered';
-                }
-                const scratch = scratchData[qKey] || null;
-                let mark = marks[qKey] !== undefined ? marks[qKey] : '';
-                if (mark === '') {
-                    if (q.type === 'mcq' || q.type === 'tf') {
-                        mark = (answer == q.correct) ? q.marks : 0;
-                    } else if (q.type === 'multi-answer') {
-                        let autoMarks = 0;
-                        const studentAnswers = Array.isArray(answer) ? answer : [];
-                        q.options.forEach((part, i) => {
-                            const studentVal = (studentAnswers[i] !== undefined ? studentAnswers[i] : '').toString().trim().toLowerCase();
-                            let partCorrect = false;
-                            if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
-                                const numVal = parseFloat(studentVal);
-                                if (!isNaN(numVal) && numVal >= part.rangeMin && numVal <= part.rangeMax) {
-                                    partCorrect = true;
-                                }
-                            } else if (part.correctAnswer) {
-                                const correctVal = part.correctAnswer.toString().trim().toLowerCase();
-                                if (studentVal === correctVal) partCorrect = true;
-                            }
-                            if (partCorrect) {
-                                autoMarks += part.marks || 0;
-                            }
-                        });
-                        mark = autoMarks;
-                    } else if (q.type === 'range') {
-                        const studentAnswer = parseFloat(answer);
-                        const min = q.rangeMin !== undefined ? q.rangeMin : -Infinity;
-                        const max = q.rangeMax !== undefined ? q.rangeMax : Infinity;
-                        if (!isNaN(studentAnswer) && studentAnswer >= min && studentAnswer <= max) {
-                            mark = q.marks;
-                        } else {
-                            mark = 0;
-                        }
-                    }
-                }
-                const isAuto = q.type === 'mcq' || q.type === 'tf' || q.type === 'multi-answer' || q.type === 'fillblank' || q.type === 'range';
-                html += `
-                    <div class="script-question" style="border-bottom:1px solid #f0f0f5;padding:14px 0;">
-                        <div class="q-head" style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--text);">
-                            <span>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:11px;font-weight:400;color:#8b8fa3;">${q.section}</span></span>
-                            <span>
-                                ${manualMark ? `
-                                    <input type="number" class="q-marks-input" data-qkey="${qKey}" data-max="${q.marks}" value="${mark}" min="0" max="${q.marks}" step="0.5" style="width:60px;padding:4px 8px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:12px;text-align:center;" />
-                                ` : `
-                                    ${isAuto ? `<span style="font-weight:700;color:${mark == q.marks ? '#2ecc71' : '#e74c3c'};">${mark}/${q.marks}</span>` :
-                                    `<span style="font-weight:600;">${mark !== '' ? mark + '/' + q.marks : 'Not graded'}</span>`}
-                                `}
-                            </span>
-                        </div>
-                        <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
-                            <strong>Answer:</strong> ${escapeHtml(answerDisplay)}
-                            ${q.type === 'range' ? ` <span style="font-size:11px;color:#8b8fa3;">(Correct range: ${q.rangeMin} – ${q.rangeMax})</span>` : ''}
-                            ${q.type === 'multi-answer' ? q.options.map((part, i) => {
-                                const rangeInfo = (part.rangeMin !== undefined && part.rangeMax !== undefined) ? ` [Range: ${part.rangeMin}–${part.rangeMax}]` : '';
-                                return `<span style="font-size:11px;color:#8b8fa3;display:block;">${part.label}: ${part.correctAnswer || ''}${rangeInfo}</span>`;
-                            }).join('') : ''}
-                        </div>
-                        <div style="margin-top:6px;">
-                            <button class="scratch-toggle-btn btn-outline" style="padding:3px 12px;font-size:9px;border-radius:30px;" data-target="scratch-${idx}">
-                                <i class="fas fa-chevron-down"></i> View Scratch Pad
-                            </button>
-                            <div id="scratch-${idx}" style="display:none;margin-top:6px;">
-                                ${scratch ? `
-                                    <div class="scratch-pad-view" style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;overflow:hidden;background:rgba(250,251,252,0.4);">
-                                        <div class="scratch-label" style="font-size:10px;font-weight:600;color:#8b8fa3;padding:4px 10px;background:rgba(240,240,245,0.4);border-bottom:1px solid rgba(229,232,237,0.5);">✏️ Student's Scratch Pad</div>
-                                        <img src="${scratch}" alt="Scratch pad drawing" style="width:100%;height:auto;display:block;max-height:200px;object-fit:contain;" />
-                                    </div>
-                                ` : `
-                                    <div style="font-size:11px;color:#8b8fa3;font-style:italic;">Student did not open the scratch pad for this question.</div>
-                                `}
-                            </div>
-                        </div>
-                        <div class="q-remark" style="margin-top:6px;">
-                            <textarea class="q-remark-text" data-qkey="${qKey}" placeholder="Admin remarks..." style="width:100%;border-radius:10px;border:1.5px solid rgba(229,232,237,0.6);padding:6px 14px;font-size:11px;resize:vertical;min-height:40px;font-family:inherit;background:rgba(250,251,252,0.8);transition:var(--transition);">${response.remarks && response.remarks[qKey] || ''}</textarea>
-                        </div>
-                    </div>
-                `;
+    let allQuestions = [];
+    if (ass.sections) {
+        ass.sections.forEach(sec => {
+            sec.questions.forEach(q => {
+                allQuestions.push({ ...q, section: sec.name });
             });
+        });
+    } else if (ass.questions) {
+        allQuestions = ass.questions.map(q => ({ ...q, section: 'General' }));
+    }
 
-            html += `
-                        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-                            ${manualMark ? `
-                                <button class="btn-primary" id="saveManualMarksBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks</button>
-                                <button class="btn-outline" id="recalcManualBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
-                            ` : `
-                                <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks & Remarks</button>
-                                <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
-                            `}
-                            <button class="btn-outline" style="padding:8px 20px;font-size:11px;" onclick="showSection('history')">Back</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+    const answers = response.answers || {};
+    const scratchData = response.scratchData || {};
+    const marks = response.marks || {};
+    const questionResults = response.questionResults || {};
 
-            document.getElementById('studentScriptContainer').innerHTML = html;
+    // ── Build computed results for every question ──
+    const computedResults = {};
+    allQuestions.forEach((q, idx) => {
+        const qKey = `q${idx}`;
+        const saved = questionResults[qKey];
+        const answer = answers[qKey];
+        const savedMark = marks[qKey] !== undefined ? marks[qKey] : 0;
+        const autoTypes = ['mcq','tf','multi-answer','fillblank','range','matching','ordering'];
+        const isAuto = autoTypes.includes(q.type);
 
-            document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const targetId = this.dataset.target;
-                    const target = document.getElementById(targetId);
-                    if (target) {
-                        const isHidden = target.style.display === 'none';
-                        target.style.display = isHidden ? 'block' : 'none';
-                        this.innerHTML = isHidden ? '<i class="fas fa-chevron-up"></i> Hide Scratch Pad' : '<i class="fas fa-chevron-down"></i> View Scratch Pad';
-                    }
-                });
-            });
+        if (saved) {
+            computedResults[qKey] = saved;
+            return;
+        }
 
-            if (manualMark) {
-                document.getElementById('saveManualMarksBtn')?.addEventListener('click', async function() {
-                    setLoading('saveMarks', true, '#saveManualMarksBtn');
-                    const newMarks = {};
-                    document.querySelectorAll('.q-marks-input').forEach(inp => {
-                        const key = inp.dataset.qkey;
-                        const val = parseFloat(inp.value) || 0;
-                        newMarks[key] = val;
-                    });
-                    const newRemarks = {};
-                    document.querySelectorAll('.q-remark-text').forEach(ta => {
-                        const key = ta.dataset.qkey;
-                        newRemarks[key] = ta.value.trim();
-                    });
-                    const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
-                    await update(ref(db, `assessmentResponses/${responseId}`), {
-                        marks: newMarks,
-                        remarks: newRemarks,
-                        score: totalScore,
-                        gradedAt: serverTimestamp()
-                    });
-                    showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                    setLoading('saveMarks', false, '#saveManualMarksBtn');
-                    renderStudentScript(responseId, true);
-                });
+        // Fallback for older responses that don't have questionResults stored
+        let isCorrect = false, isPartial = false;
+        if (isAuto) {
+            if (savedMark >= q.marks) isCorrect = true;
+            else if (savedMark > 0) isPartial = true;
+        }
 
-                document.getElementById('recalcManualBtn')?.addEventListener('click', function() {
-                    let totalScore = 0;
-                    document.querySelectorAll('.q-marks-input').forEach(inp => {
-                        totalScore += parseFloat(inp.value) || 0;
-                    });
-                    showToast(`Recalculated: ${totalScore}/${total}`, 'info');
-                });
-            } else {
-                document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
-                    setLoading('saveMarks', true, '#saveScriptBtn');
-                    const newMarks = {};
-                    document.querySelectorAll('.q-marks-input').forEach(inp => {
-                        const key = inp.dataset.qkey;
-                        const val = parseFloat(inp.value) || 0;
-                        newMarks[key] = val;
-                    });
-                    const newRemarks = {};
-                    document.querySelectorAll('.q-remark-text').forEach(ta => {
-                        const key = ta.dataset.qkey;
-                        newRemarks[key] = ta.value.trim();
-                    });
-                    const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
-                    await update(ref(db, `assessmentResponses/${responseId}`), {
-                        marks: newMarks,
-                        remarks: newRemarks,
-                        score: totalScore,
-                        gradedAt: serverTimestamp()
-                    });
-                    showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
-                    setLoading('saveMarks', false, '#saveScriptBtn');
-                    renderStudentScript(responseId);
-                });
+        let correctAnswerDisplay = '';
+        if (q.type === 'range') {
+            correctAnswerDisplay = `${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+        } else if (q.type === 'multi-answer') {
+            correctAnswerDisplay = (q.options || []).map(p => {
+                if (p.correctAnswer && p.correctAnswer.trim() !== '') return `${p.label}: ${p.correctAnswer}`;
+                if (p.rangeMin !== undefined && p.rangeMax !== undefined) return `${p.label}: ${p.rangeMin}–${p.rangeMax}`;
+                return '';
+            }).filter(Boolean).join('; ');
+        } else if (q.type === 'mcq') {
+            correctAnswerDisplay = (typeof q.correct === 'number' && q.options) ? (q.options[q.correct] || '') : String(q.correct || '');
+        } else if (q.type === 'matching') {
+            correctAnswerDisplay = (q.options || []).map(p => `${p.left} ↔ ${p.right}`).join('; ');
+        } else if (q.type === 'ordering') {
+            correctAnswerDisplay = (q.options || []).map((x, i) => `${i+1}. ${x}`).join('; ');
+        } else {
+            correctAnswerDisplay = (q.correct !== undefined && q.correct !== null) ? String(q.correct) : '';
+        }
 
-                document.getElementById('recalcScriptBtn')?.addEventListener('click', function() {
-                    let totalScore = 0;
-                    document.querySelectorAll('.q-marks-input').forEach(inp => {
-                        totalScore += parseFloat(inp.value) || 0;
-                    });
-                    showToast(`Recalculated: ${totalScore}/${total}`, 'info');
-                });
-            }
-
-            document.querySelectorAll('.q-marks-input').forEach(inp => {
-                inp.addEventListener('change', function() {
-                    const max = parseInt(this.dataset.max) || 0;
-                    let val = parseFloat(this.value) || 0;
-                    if (val > max) { val = max; this.value = max; }
-                    if (val < 0) { val = 0; this.value = 0; }
-                    let totalScore = 0;
-                    document.querySelectorAll('.q-marks-input').forEach(i => {
-                        totalScore += parseFloat(i.value) || 0;
-                    });
-                    const scoreSpan = document.querySelector('.cover-header div strong');
-                    if (scoreSpan) {
-                        const totalEl = document.querySelector('.cover-header .script-meta:last-child');
-                        if (totalEl) {
-                            totalEl.innerHTML = `Score: ${totalScore}/${total} (${Math.round((totalScore/total)*100)}%)`;
-                        }
-                    }
-                });
+        // Part breakdown for multi-answer (computed from scratch)
+        let partResults = null;
+        if (q.type === 'multi-answer' && Array.isArray(q.options)) {
+            const studentArr = Array.isArray(answer) ? answer : [];
+            partResults = q.options.map((part, pi) => {
+                const studentVal = (studentArr[pi] !== undefined ? studentArr[pi] : '').toString().trim();
+                let partCorrect = false;
+                if (part.rangeMin !== undefined && part.rangeMax !== undefined) {
+                    const num = parseFloat(studentVal);
+                    if (!isNaN(num) && num >= part.rangeMin && num <= part.rangeMax) partCorrect = true;
+                } else if (part.correctAnswer) {
+                    if (studentVal.toLowerCase() === part.correctAnswer.toString().trim().toLowerCase()) partCorrect = true;
+                }
+                const correctVal = (part.correctAnswer && part.correctAnswer.trim() !== '')
+                    ? part.correctAnswer
+                    : (part.rangeMin !== undefined && part.rangeMax !== undefined ? `${part.rangeMin}–${part.rangeMax}` : '');
+                return {
+                    label: part.label,
+                    userValue: studentVal,
+                    correctValue: correctVal,
+                    isCorrect: partCorrect,
+                    marks: part.marks || 0
+                };
             });
         }
 
+        computedResults[qKey] = {
+            isAuto, isCorrect, isPartial,
+            score: savedMark, max: q.marks,
+            userAnswer: answer,
+            correctAnswer: correctAnswerDisplay,
+            partResults
+        };
+    });
+
+    // ── Stats ──
+    let correctCount = 0, wrongCount = 0, partialCount = 0, manualCount = 0;
+    allQuestions.forEach((q, idx) => {
+        const res = computedResults[`q${idx}`];
+        if (!res) return;
+        if (res.isAuto) {
+            if (res.isCorrect) correctCount++;
+            else if (res.isPartial) partialCount++;
+            else wrongCount++;
+        } else {
+            manualCount++;
+        }
+    });
+
+    // ── Build HTML ──
+    let html = `
+        <div class="script-booklet">
+            <div class="cover-header" style="background:#f5b042;padding:24px 20px;border-radius:20px 20px 0 0;text-align:center;">
+                <h1 style="font-size:28px;font-weight:900;color:#1a1d28;">${escapeHtml(ass.name)}</h1>
+                ${ass.isEdited ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#f39c12;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">✏️ EDITED</span>' : ''}
+                ${ass.editedVersion ? '<span class="edited-badge edited" style="font-size:12px;padding:4px 16px;background:#8e44ad;color:#fff;border-radius:30px;display:inline-block;margin:4px 0;">🔄 VERSION</span>' : ''}
+                <p style="font-size:14px;color:#1a1d28;margin-top:4px;">${ass.type} · ${ass.duration || 'N/A'}</p>
+                <div style="margin-top:8px;color:#1a1d28;font-size:13px;">
+                    <strong>Student:</strong> ${escapeHtml(name)} (${escapeHtml(email)})
+                </div>
+                <div style="margin-top:4px;color:#1a1d28;font-size:13px;">
+                    <strong>Score:</strong> ${score}/${total} (${percent}%)
+                    <span style="font-weight:700;color:${percent >= (ass.passingScore || 50) ? '#2ecc71' : '#e74c3c'};">
+                        ${percent >= (ass.passingScore || 50) ? '✅ PASSED' : '❌ FAILED'}
+                    </span>
+                </div>
+                <div class="script-stats-row">
+                    <span class="stat-chip correct"><i class="fas fa-check-circle"></i> Correct: ${correctCount}</span>
+                    ${partialCount > 0 ? `<span class="stat-chip partial"><i class="fas fa-adjust"></i> Partial: ${partialCount}</span>` : ''}
+                    <span class="stat-chip wrong"><i class="fas fa-times-circle"></i> Wrong: ${wrongCount}</span>
+                    ${manualCount > 0 ? `<span class="stat-chip manual"><i class="fas fa-user-edit"></i> Manual: ${manualCount}</span>` : ''}
+                </div>
+                <div style="margin-top:4px;color:#1a1d28;font-size:12px;">
+                    Submitted: ${response.endedAt ? new Date(response.endedAt).toLocaleString() : (response.submittedAt ? new Date(response.submittedAt).toLocaleString() : 'N/A')}
+                </div>
+                ${ass.cover?.institutionName ? `<div style="margin-top:4px;color:#1a1d28;font-size:11px;">${escapeHtml(ass.cover.institutionName)}</div>` : ''}
+            </div>
+            <div style="padding:20px 24px;">
+    `;
+
+    allQuestions.forEach((q, idx) => {
+        const qKey = `q${idx}`;
+        const answer = answers[qKey];
+        let answerDisplay = 'Not answered';
+        if (q.type === 'multi-answer' && Array.isArray(answer)) {
+            answerDisplay = q.options.map((part, i) => {
+                const val = answer[i] || '';
+                return `${part.label}: ${val}`;
+            }).join('; ');
+        } else if (q.type === 'matching' && typeof answer === 'object' && answer !== null) {
+            answerDisplay = Object.entries(answer).map(([k, v]) => `${q.options[k]?.left || k} → ${q.options[v]?.right || v}`).join('; ');
+        } else if (q.type === 'ordering' && Array.isArray(answer)) {
+            answerDisplay = answer.map((i, pos) => `${pos+1}. ${q.options[i]}`).join('; ');
+        } else {
+            answerDisplay = answer || 'Not answered';
+        }
+
+        const scratch = scratchData[qKey] || null;
+        const res = computedResults[qKey];
+        let mark = res ? res.score : 0;
+
+        // Determine status
+        let statusLabel = '✎ Manual';
+        let statusColor = '#3b82f6';
+        if (res) {
+            if (res.isAuto) {
+                if (res.isCorrect)      { statusLabel = '✅ Correct';  statusColor = '#2ecc71'; }
+                else if (res.isPartial) { statusLabel = '◐ Partial';  statusColor = '#f39c12'; }
+                else                    { statusLabel = '❌ Wrong';    statusColor = '#e74c3c'; }
+            }
+        }
+
+        // Part breakdown (multi-answer)
+        let partBreakdownHtml = '';
+        if (res && res.partResults && res.partResults.length > 0) {
+            partBreakdownHtml = `<div class="part-breakdown">${res.partResults.map(p => `
+                <div class="part-row ${p.isCorrect ? 'correct' : 'wrong'}">
+                    <span class="part-label">${escapeHtml(p.label)}</span>
+                    <span class="part-user">Student: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
+                    ${!p.isCorrect && p.correctValue ? `<span class="part-correct">Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
+                    <span class="part-status">${p.isCorrect ? '✓' : '✗'}</span>
+                </div>`).join('')}</div>`;
+        }
+
+        // Inline "correct answer" hint for wrong non-multi-answer questions
+        let wrongHint = '';
+        if (res && res.isAuto && !res.isCorrect && !res.isPartial && q.type !== 'multi-answer') {
+            let cd = '';
+            if (q.type === 'range') {
+                cd = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+            } else if (q.type === 'mcq' && q.correct !== undefined && q.options) {
+                cd = `Correct answer: ${q.options[q.correct] || ''}`;
+            } else if (q.type === 'tf') {
+                cd = `Correct answer: ${String(q.correct)}`;
+            } else if (q.type === 'fillblank') {
+                cd = `Correct answer: ${q.correct || ''}`;
+            } else if (q.type === 'matching') {
+                cd = `Correct pairs: ${(q.options || []).map(p => `${p.left} ↔ ${p.right}`).join('; ')}`;
+            } else if (q.type === 'ordering') {
+                cd = `Correct order: ${(q.options || []).map((x, i) => `${i+1}. ${x}`).join('; ')}`;
+            }
+            if (cd) {
+                wrongHint = `<div class="wrong-answer-hint"><i class="fas fa-info-circle"></i> ${escapeHtml(cd)}</div>`;
+            }
+        }
+
+        // Inline "correct answer" confirmation for correct questions
+        let correctConfirm = '';
+        if (res && res.isAuto && res.isCorrect && res.correctAnswer && q.type !== 'multi-answer') {
+            correctConfirm = `<div style="margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;font-size:11px;color:#2e7d32;display:inline-block;"><i class="fas fa-check"></i> Correct answer: <strong>${escapeHtml(res.correctAnswer)}</strong></div>`;
+        }
+
+        html += `
+            <div class="script-question" style="border-bottom:1px solid #f0f0f5;padding:14px 0 14px 12px;border-left:4px solid ${statusColor};margin-bottom:4px;">
+                <div class="q-head" style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--text);flex-wrap:wrap;gap:6px;">
+                    <span>Q${idx+1}: ${escapeHtml(q.text)} (${q.marks} marks) <span style="font-size:11px;font-weight:400;color:#8b8fa3;">${q.section}</span></span>
+                    <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span class="q-status-badge" style="background:${statusColor}20;color:${statusColor};">${statusLabel}</span>
+                        ${manualMark ? `
+                            <input type="number" class="q-marks-input" data-qkey="${qKey}" data-max="${q.marks}" value="${mark}" min="0" max="${q.marks}" step="0.5" style="width:60px;padding:4px 8px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:12px;text-align:center;" />
+                        ` : `
+                            <span style="font-weight:700;color:${mark == q.marks ? '#2ecc71' : (mark > 0 ? '#f39c12' : '#e74c3c')};">${mark}/${q.marks}</span>
+                        `}
+                    </span>
+                </div>
+                <div class="q-answer" style="font-size:13px;color:var(--text-secondary);padding:4px 0;">
+                    <strong>Student Answer:</strong> ${escapeHtml(answerDisplay)}
+                </div>
+                ${partBreakdownHtml}
+                ${wrongHint}
+                ${correctConfirm}
+                <div style="margin-top:6px;">
+                    <button class="scratch-toggle-btn btn-outline" style="padding:3px 12px;font-size:9px;border-radius:30px;" data-target="scratch-${idx}">
+                        <i class="fas fa-chevron-down"></i> View Scratch Pad
+                    </button>
+                    <div id="scratch-${idx}" style="display:none;margin-top:6px;">
+                        ${scratch ? `
+                            <div class="scratch-pad-view" style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;overflow:hidden;background:rgba(250,251,252,0.4);">
+                                <div class="scratch-label" style="font-size:10px;font-weight:600;color:#8b8fa3;padding:4px 10px;background:rgba(240,240,245,0.4);border-bottom:1px solid rgba(229,232,237,0.5);">✏️ Student's Scratch Pad</div>
+                                <img src="${scratch}" alt="Scratch pad drawing" style="width:100%;height:auto;display:block;max-height:200px;object-fit:contain;" />
+                            </div>
+                        ` : `
+                            <div style="font-size:11px;color:#8b8fa3;font-style:italic;">Student did not open the scratch pad for this question.</div>
+                        `}
+                    </div>
+                </div>
+                <div class="q-remark" style="margin-top:6px;">
+                    <textarea class="q-remark-text" data-qkey="${qKey}" placeholder="Admin remarks..." style="width:100%;border-radius:10px;border:1.5px solid rgba(229,232,237,0.6);padding:6px 14px;font-size:11px;resize:vertical;min-height:40px;font-family:inherit;background:rgba(250,251,252,0.8);transition:var(--transition);">${response.remarks && response.remarks[qKey] || ''}</textarea>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                        ${manualMark ? `
+                            <button class="btn-primary" id="saveManualMarksBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks</button>
+                            <button class="btn-outline" id="recalcManualBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                        ` : `
+                            <button class="btn-primary" id="saveScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-save"></i> Save Marks &amp; Remarks</button>
+                            <button class="btn-outline" id="recalcScriptBtn" style="padding:8px 20px;font-size:11px;"><i class="fas fa-calculator"></i> Recalculate</button>
+                        `}
+                        <button class="btn-outline" style="padding:8px 20px;font-size:11px;" onclick="showSection('history')">Back</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    document.getElementById('studentScriptContainer').innerHTML = html;
+
+    document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const target = document.getElementById(targetId);
+            if (target) {
+                const isHidden = target.style.display === 'none';
+                target.style.display = isHidden ? 'block' : 'none';
+                this.innerHTML = isHidden ? '<i class="fas fa-chevron-up"></i> Hide Scratch Pad' : '<i class="fas fa-chevron-down"></i> View Scratch Pad';
+            }
+        });
+    });
+
+    if (manualMark) {
+        document.getElementById('saveManualMarksBtn')?.addEventListener('click', async function() {
+            setLoading('saveMarks', true, '#saveManualMarksBtn');
+            const newMarks = {};
+            document.querySelectorAll('.q-marks-input').forEach(inp => {
+                const key = inp.dataset.qkey;
+                const val = parseFloat(inp.value) || 0;
+                newMarks[key] = val;
+            });
+            const newRemarks = {};
+            document.querySelectorAll('.q-remark-text').forEach(ta => {
+                const key = ta.dataset.qkey;
+                newRemarks[key] = ta.value.trim();
+            });
+            const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
+            await update(ref(db, `assessmentResponses/${responseId}`), {
+                marks: newMarks,
+                remarks: newRemarks,
+                score: totalScore,
+                gradedAt: serverTimestamp()
+            });
+            showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
+            setLoading('saveMarks', false, '#saveManualMarksBtn');
+            renderStudentScript(responseId, true);
+        });
+
+        document.getElementById('recalcManualBtn')?.addEventListener('click', function() {
+            let totalScore = 0;
+            document.querySelectorAll('.q-marks-input').forEach(inp => {
+                totalScore += parseFloat(inp.value) || 0;
+            });
+            showToast(`Recalculated: ${totalScore}/${total}`, 'info');
+        });
+    } else {
+        document.getElementById('saveScriptBtn')?.addEventListener('click', async function() {
+            setLoading('saveMarks', true, '#saveScriptBtn');
+            const newMarks = {};
+            document.querySelectorAll('.q-marks-input').forEach(inp => {
+                const key = inp.dataset.qkey;
+                const val = parseFloat(inp.value) || 0;
+                newMarks[key] = val;
+            });
+            const newRemarks = {};
+            document.querySelectorAll('.q-remark-text').forEach(ta => {
+                const key = ta.dataset.qkey;
+                newRemarks[key] = ta.value.trim();
+            });
+            const totalScore = Object.values(newMarks).reduce((s, v) => s + v, 0);
+            await update(ref(db, `assessmentResponses/${responseId}`), {
+                marks: newMarks,
+                remarks: newRemarks,
+                score: totalScore,
+                gradedAt: serverTimestamp()
+            });
+            showToast(`Marks saved! Total: ${totalScore}/${total}`, 'success');
+            setLoading('saveMarks', false, '#saveScriptBtn');
+            renderStudentScript(responseId);
+        });
+
+        document.getElementById('recalcScriptBtn')?.addEventListener('click', function() {
+            let totalScore = 0;
+            document.querySelectorAll('.q-marks-input').forEach(inp => {
+                totalScore += parseFloat(inp.value) || 0;
+            });
+            showToast(`Recalculated: ${totalScore}/${total}`, 'info');
+        });
+    }
+
+    document.querySelectorAll('.q-marks-input').forEach(inp => {
+        inp.addEventListener('change', function() {
+            const max = parseInt(this.dataset.max) || 0;
+            let val = parseFloat(this.value) || 0;
+            if (val > max) { val = max; this.value = max; }
+            if (val < 0) { val = 0; this.value = 0; }
+            let totalScore = 0;
+            document.querySelectorAll('.q-marks-input').forEach(i => {
+                totalScore += parseFloat(i.value) || 0;
+            });
+            const scoreSpan = document.querySelector('.cover-header div strong');
+            if (scoreSpan) {
+                const totalEl = document.querySelector('.cover-header .script-meta:last-child');
+                if (totalEl) {
+                    totalEl.innerHTML = `Score: ${totalScore}/${total} (${Math.round((totalScore/total)*100)}%)`;
+                }
+            }
+        });
+    });
+}
         // ---- Download Assessment as colorful HTML (with cover page, A4) ----
         function downloadAssessmentHTML(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
