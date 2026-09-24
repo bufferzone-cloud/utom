@@ -17702,9 +17702,20 @@ function unbindComments(videoId) {
         // =================================================================
         // HISTORY (ASSESSMENT CARDS, THEN STUDENT CARDS)
         // =================================================================
-        function renderHistoryList() {
-            renderHistoryAssessments();
+       function renderHistoryList() {
+    // If the admin is currently viewing a specific assessment's student list,
+    // keep them there instead of bouncing back to the assessment cards.
+    if (currentHistoryAssessmentId) {
+        const ass = assessments.find(a => a.id === currentHistoryAssessmentId);
+        if (ass) {
+            renderHistoryStudents(currentHistoryAssessmentId);
+            return;
         }
+        // Assessment was deleted — fall through and reset
+        currentHistoryAssessmentId = null;
+    }
+    renderHistoryAssessments();
+}
 
         function renderHistoryAssessments() {
             const container = document.getElementById('historyListContainer');
