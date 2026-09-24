@@ -17836,12 +17836,19 @@ function unbindComments(videoId) {
 
             const container = document.getElementById('historyListContainer');
             let html = `
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-                    <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
-                    <div>
-                        <button id="downloadFullScoreSheetBtn2" class="btn-primary" style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;"><i class="fas fa-print"></i> Download Full Score Sheet (HTML)</button>
-                    </div>
-                </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <button id="backToHistoryAssessments" class="btn-outline" style="padding:8px 18px;font-size:11px;"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="bulkAdjustMarksBtn" class="btn-primary"
+                    style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;border-radius:30px;color:#fff;box-shadow:0 4px 20px rgba(245,176,66,0.25);">
+                <i class="fas fa-calculator"></i> Bulk Add / Remove Marks
+            </button>
+            <button id="downloadFullScoreSheetBtn2" class="btn-primary"
+                    style="padding:8px 18px;font-size:11px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;">
+                <i class="fas fa-print"></i> Download Full Score Sheet (HTML)
+            </button>
+        </div>
+    </div>
                 <h2 style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;">${escapeHtml(ass.name)}</h2>
                 ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
                 ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
@@ -17853,6 +17860,7 @@ function unbindComments(videoId) {
                 container.innerHTML = html;
                 document.getElementById('backToHistoryAssessments')?.addEventListener('click', renderHistoryAssessments);
                 document.getElementById('downloadFullScoreSheetBtn2')?.addEventListener('click', () => generateFullScoreSheetHTML(assId));
+                document.getElementById('bulkAdjustMarksBtn')?.addEventListener('click', () => openBulkMarksModal(assId));
                 return;
             }
 
@@ -17874,6 +17882,7 @@ function unbindComments(videoId) {
                         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
                             <div>
                                 <strong style="font-size:14px;">${escapeHtml(name)}</strong>
+                                ${r.bulkAdjustment ? `<span style="display:inline-block;background:rgba(245,176,66,0.15);color:#d4952a;font-size:9px;font-weight:700;padding:2px 10px;border-radius:30px;margin-left:8px;border:1px solid rgba(245,176,66,0.2);">🧮 ${r.bulkAdjustment.action==='add'?'+':r.bulkAdjustment.action==='remove'?'-':'='}${r.bulkAdjustment.amount}</span>` : ''}
                                 <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${escapeHtml(email)}</span>
                                 <span style="font-size:11px;color:#8b8fa3;margin-left:4px;">📞 ${escapeHtml(phone)}</span>
                             </div>
@@ -17946,6 +17955,187 @@ function unbindComments(videoId) {
                 });
             });
         }
+
+        /* =================================================================
+   BULK ADD / REMOVE MARKS — apply to every submitted script
+   ================================================================= */
+function openBulkMarksModal(assId) {
+    const ass = assessments.find(a => a.id === assId);
+    if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+    const responses = assessmentResponses.filter(r =>
+        r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed')
+    );
+    if (responses.length === 0) {
+        showToast('No submitted scripts found for this assessment.', 'error');
+        return;
+    }
+
+    const totalMarks = ass.totalMarks || 0;
+
+    // Remove any old instance
+    document.getElementById('bulkMarksModal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay open';
+    modal.id = 'bulkMarksModal';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:460px;">
+            <button class="close-modal" id="bulkMarksCloseBtn">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-calculator"></i> Bulk Adjust Marks</h3>
+            <p style="font-size:12px;color:#8b8fa3;margin-bottom:12px;line-height:1.5;">
+                Apply the same adjustment to all <strong>${responses.length}</strong> submitted script(s) for
+                "<strong>${escapeHtml(ass.name)}</strong>". Total scores will update instantly.
+            </p>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">Action</label>
+                <select id="bulkMarksAction"
+                        style="width:100%;padding:10px 14px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:13px;background:#fff;">
+                    <option value="add">➕ Add marks to each score</option>
+                    <option value="remove">➖ Remove marks from each score</option>
+                    <option value="set">🎯 Set all scores to a value</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;">
+                    Amount (out of ${totalMarks})
+                </label>
+                <input type="number" id="bulkMarksAmount" value="12" step="0.5" min="0"
+                       style="width:100%;padding:10px 14px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:16px;font-weight:700;text-align:center;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="bulkMarksCap" checked>
+                    Cap at total marks (${totalMarks}) and floor at 0
+                </label>
+            </div>
+
+            <div id="bulkMarksPreview"
+                 style="background:rgba(245,176,66,0.10);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text);margin-bottom:14px;border-left:4px solid #f5b042;">
+                <strong>Preview (first script):</strong> <span id="bulkMarksPreviewText">—</span>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" class="btn-cancel" id="bulkMarksCancelBtn">Cancel</button>
+                <button type="button" id="bulkMarksApplyBtn" class="btn-confirm">
+                    <i class="fas fa-check"></i> Apply to All
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+    modal.querySelector('#bulkMarksCloseBtn').addEventListener('click', closeModal);
+    modal.querySelector('#bulkMarksCancelBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    const actionEl   = modal.querySelector('#bulkMarksAction');
+    const amountEl   = modal.querySelector('#bulkMarksAmount');
+    const capEl      = modal.querySelector('#bulkMarksCap');
+    const previewEl  = modal.querySelector('#bulkMarksPreviewText');
+
+    function computeNewScore(currentScore) {
+        const action = actionEl.value;
+        const amount = parseFloat(amountEl.value) || 0;
+        const cap    = capEl.checked;
+
+        let s;
+        if (action === 'add')         s = currentScore + amount;
+        else if (action === 'remove') s = currentScore - amount;
+        else                          s = amount;
+
+        if (cap) {
+            if (s < 0) s = 0;
+            if (s > totalMarks) s = totalMarks;
+        }
+        return s;
+    }
+
+    function updatePreview() {
+        const first = responses[0];
+        const currentScore = first.score || 0;
+        const newScore = computeNewScore(currentScore);
+        previewEl.innerHTML = `<strong>${currentScore}</strong> → <strong style="color:#d4952a;">${newScore}</strong> / ${totalMarks}`;
+    }
+
+    actionEl.addEventListener('change', updatePreview);
+    amountEl.addEventListener('input', updatePreview);
+    capEl.addEventListener('change', updatePreview);
+    updatePreview();
+
+    modal.querySelector('#bulkMarksApplyBtn').addEventListener('click', async () => {
+        const action = actionEl.value;
+        const amount = parseFloat(amountEl.value) || 0;
+        const cap    = capEl.checked;
+
+        if (amount < 0) { showToast('Amount cannot be negative.', 'error'); return; }
+
+        const actionLabel = action === 'add' ? 'Add' : action === 'remove' ? 'Remove' : 'Set to';
+        const prep        = action === 'add' ? 'to' : action === 'remove' ? 'from' : 'for';
+
+        const confirmed = await showConfirmPopup({
+            icon: '🧮',
+            type: 'info',
+            title: 'Apply Bulk Marks Adjustment?',
+            message: `${actionLabel} <strong>${amount}</strong> marks ${prep} all <strong>${responses.length}</strong> submitted script(s) of "<strong>${escapeHtml(ass.name)}</strong>"?<br><br>This will update every student's total score immediately.`,
+            okText: 'Apply',
+            okClass: 'btn-confirm'
+        });
+        if (!confirmed) return;
+
+        const applyBtn = modal.querySelector('#bulkMarksApplyBtn');
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+
+        try {
+            const updates = {};
+            responses.forEach(r => {
+                const currentScore = r.score || 0;
+                let newScore;
+                if (action === 'add')         newScore = currentScore + amount;
+                else if (action === 'remove') newScore = currentScore - amount;
+                else                          newScore = amount;
+
+                if (cap) {
+                    if (newScore < 0) newScore = 0;
+                    if (newScore > totalMarks) newScore = totalMarks;
+                }
+
+                updates[`assessmentResponses/${r.id}/score`] = newScore;
+                updates[`assessmentResponses/${r.id}/bulkAdjustment`] = {
+                    action,
+                    amount,
+                    appliedAt: Date.now(),
+                    appliedBy: currentAdmin?.email || 'admin'
+                };
+            });
+
+            // Single atomic multi-path update — instant on every script
+            await update(ref(db), updates);
+
+            showToast(`✅ ${actionLabel} ${amount} marks applied to ${responses.length} script(s).`, 'success');
+
+            push(notificationsRef, {
+                message: `🧮 Bulk marks ${actionLabel.toLowerCase()} (${amount}) on "${ass.name}" — ${responses.length} students updated`,
+                timestamp: serverTimestamp()
+            });
+
+            closeModal();
+            renderHistoryStudents(assId);       // refresh student list with new scores
+            renderHistoryAssessments();         // refresh parent card list too
+
+        } catch (err) {
+            showToast('Error applying marks: ' + err.message, 'error');
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = '<i class="fas fa-check"></i> Apply to All';
+        }
+    });
+}
 
         function exportSingleStudentCSV(response, assessment) {
             const user = users.find(u => u.uid === response.userId);
