@@ -10070,18 +10070,20 @@
             return false;
         }
 
-        function multiAnswerPartMatches(studentVal, part) {
-            const sv = (studentVal === undefined || studentVal === null) ? '' : String(studentVal);
-            if (part && part.rangeMin !== undefined && part.rangeMax !== undefined) {
-                const num = parseFloat(sv);
-                if (!isNaN(num) && num >= part.rangeMin && num <= part.rangeMax) return true;
-            }
-            if (part && part.correctAnswer !== undefined && part.correctAnswer !== null) {
-                if (answersMatch(sv, part.correctAnswer)) return true;
-            }
-            return false;
-        }
-
+       function multiAnswerPartMatches(studentVal, part) {
+    const sv = (studentVal === undefined || studentVal === null) ? '' : String(studentVal);
+    // ✅ Normalize first so "1 x 10^3", "1×10³", "1e3", "1,000", "1000" all become "1000"
+    const normalized = normalizeAnswer(sv);
+    if (part && part.rangeMin !== undefined && part.rangeMax !== undefined) {
+        const num = parseFloat(normalized);
+        if (!isNaN(num) && num >= part.rangeMin && num <= part.rangeMax) return true;
+    }
+    if (part && part.correctAnswer !== undefined && part.correctAnswer !== null) {
+        // answersMatch already normalizes internally, so pass the raw value here (both work)
+        if (answersMatch(sv, part.correctAnswer)) return true;
+    }
+    return false;
+}
         // =================================================================
         // ===== HELPER: get assignment deadline from multiple sources =====
         // =================================================================
