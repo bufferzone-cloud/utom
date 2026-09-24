@@ -8044,6 +8044,35 @@
             };
         }
 
+        // Canonical end-of-life timestamp for any assessment type.
+// Returns null if the assessment has no natural end (e.g. published-forever).
+function computeAssessmentDeadline(a) {
+    if (!a) return null;
+
+    // Assignments always prefer their dedicated `deadline`
+    if (a.type === 'assignment') {
+        const src = a.deadline || a.endTime || a.availableUntil;
+        return src ? new Date(src).getTime() : null;
+    }
+
+    // Fixed-schedule tests / quizzes / exams
+    if (a.scheduleType === 'fixed' && a.endTime) {
+        return new Date(a.endTime).getTime();
+    }
+    // Self-paced tests / quizzes / exams
+    if (a.scheduleType === 'self' && a.availableUntil) {
+        return new Date(a.availableUntil).getTime();
+    }
+    // Any other shape — fall back through every possible field
+    const candidates = [a.deadline, a.endTime, a.availableUntil];
+    for (const c of candidates) {
+        if (!c) continue;
+        const t = new Date(c).getTime();
+        if (!isNaN(t)) return t;
+    }
+    return null;
+}
+
         // =================================================================
         // DECIMAL SUPPORT FOR ALL RANGE INPUTS
         // (single "Range Answer" questions + every part of "Multiple Answers")
@@ -14959,7 +14988,7 @@ function unbindComments(videoId) {
                     registerIds: data.registerIds || [],
                     registerId: data.registerIds && data.registerIds.length > 0 ? data.registerIds[0] : null,
                     deadline: data.deadline,
-                    deadline: data.endTime || data.availableUntil || null, 
+                    
                     publishImmediately: data.publishImmediately,
                     scheduledPublishTime: data.scheduledPublishTime || null,
                     infoEnabled: data.infoEnabled,
@@ -18296,13 +18325,10 @@ function openBulkMarksModal(assId) {
             const allPublished = assessments.filter(a => a.status === 'published');
             const now = Date.now();
             const publishedAssessments = allPublished.filter(a => {
-                if (a.type === 'assignment') {
-                    if (!a.deadline) return false;
-                    const deadline = new Date(a.deadline).getTime();
-                    return deadline > now;
-                }
-                return true;
-            });
+    const ts = computeAssessmentDeadline(a);
+    if (ts === null) return true;        // keep indefinite items
+    return ts > now;                      // else only keep unexpired
+});
 
             const filterSel = document.getElementById('ongoingFilterAssessment');
             if (filterSel) {
@@ -18329,15 +18355,14 @@ function openBulkMarksModal(assId) {
 
             let html = '';
             filteredAssessments.forEach(ass => {
-                const responses = assessmentResponses.filter(r => {
-                    if (ass.type === 'assignment') {
-                        if (!ass.deadline) return false;
-                        const deadline = new Date(ass.deadline).getTime();
-                        if (deadline <= now) return false;
-                        return r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing');
-                    }
-                    return r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing');
-                });
+                const assDeadlineTs = computeAssessmentDeadline(ass);
+const assStillOpen = assDeadlineTs === null || assDeadlineTs > now;
+const responses = assStillOpen
+    ? assessmentResponses.filter(r =>
+          r.assessmentId === ass.id &&
+          (r.status === 'started' || r.status === 'ongoing')
+      )
+    : [];
 
                 html += `
                     <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);padding:16px 18px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:12px;">
@@ -19469,64 +19494,63 @@ function openBulkMarksModal(assId) {
         // EXPIRATION CHECKER (auto-clear ongoing and move to history)
         // =================================================================
         function startExpirationChecker() {
-            setInterval(() => {
-                checkExpiredAssessments();
-            }, 60000);
-        }
+    checkExpiredAssessments();                       // fire on load
+    setInterval(checkExpiredAssessments, 60000);
+}
 
         async function checkExpiredAssessments() {
-            const now = Date.now();
-            let updated = false;
+    const now = Date.now();
+    let updated = false;
 
-            const fixedAssessments = assessments.filter(a => a.scheduleType === 'fixed' && a.endTime && a.status === 'published');
-            for (const ass of fixedAssessments) {
-                const endTime = new Date(ass.endTime).getTime();
-                if (endTime < now) {
-                    await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
-                    updated = true;
-                    const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
-                    for (const resp of ongoingResponses) {
-                        await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
-                    }
-                    showToast(`Assessment "${ass.name}" has ended and moved to history.`, 'info');
-                }
-            }
+    // Only inspect assessments still marked as live
+    const liveStatuses = ['published', 'ongoing', 'scheduled'];
+    const liveAssessments = assessments.filter(a => liveStatuses.includes(a.status));
 
-            const selfAssessments = assessments.filter(a => a.scheduleType === 'self' && a.availableUntil && a.status === 'published');
-            for (const ass of selfAssessments) {
-                const untilTime = new Date(ass.availableUntil).getTime();
-                if (untilTime < now) {
-                    await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
-                    updated = true;
-                    const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
-                    for (const resp of ongoingResponses) {
-                        await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
-                    }
-                    showToast(`Assessment "${ass.name}" has ended and moved to history.`, 'info');
-                }
-            }
+    for (const ass of liveAssessments) {
+        const deadlineTs = computeAssessmentDeadline(ass);
 
-            const assignmentAssessments = assessments.filter(a => a.type === 'assignment' && a.deadline && a.status === 'published');
-            for (const ass of assignmentAssessments) {
-                const deadline = new Date(ass.deadline).getTime();
-                if (deadline < now) {
-                    await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
-                    updated = true;
-                    const ongoingResponses = assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
-                    for (const resp of ongoingResponses) {
-                        await update(ref(db, `assessmentResponses/${resp.id}`), { status: 'ended', endedAt: serverTimestamp() });
-                    }
-                    showToast(`Assignment "${ass.name}" deadline has passed and moved to history.`, 'info');
-                }
+        // Scheduled assessments: if the publish time has arrived, publish them
+        if (ass.status === 'scheduled' && ass.scheduledPublishTime) {
+            const publishTs = new Date(ass.scheduledPublishTime).getTime();
+            if (!isNaN(publishTs) && publishTs <= now) {
+                await update(ref(db, `assessments/${ass.id}`), { status: 'published' });
+                updated = true;
+                showToast(`📢 "${ass.name}" auto-published.`, 'success');
             }
-
-            if (updated) {
-                scheduleRender('ongoing');
-                scheduleRender('history');
-                scheduleRender('assessments');
-                scheduleRender('testExams');
-            }
+            continue;
         }
+
+        // For assignments with no explicit deadline, don't force-end them
+        if (ass.type === 'assignment' && !deadlineTs) continue;
+
+        // Nothing to expire if we can't determine a deadline
+        if (!deadlineTs) continue;
+        if (deadlineTs > now) continue;
+
+        // Deadline has passed → end the assessment and every ongoing response
+        await update(ref(db, `assessments/${ass.id}`), { status: 'ended' });
+        updated = true;
+
+        const ongoingResponses = assessmentResponses.filter(
+            r => r.assessmentId === ass.id &&
+                 (r.status === 'started' || r.status === 'ongoing')
+        );
+        for (const resp of ongoingResponses) {
+            await update(ref(db, `assessmentResponses/${resp.id}`), {
+                status: 'ended',
+                endedAt: serverTimestamp()
+            });
+        }
+        showToast(`"${ass.name}" has ended and moved to history.`, 'info');
+    }
+
+    if (updated) {
+        scheduleRender('ongoing');
+        scheduleRender('history');
+        scheduleRender('assessments');
+        scheduleRender('testExams');
+    }
+}
 
         // =================================================================
         // BOOT
