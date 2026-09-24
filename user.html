@@ -10088,31 +10088,45 @@
         // ===== HELPER: get assignment deadline from multiple sources =====
         // =================================================================
         function getAssignmentDeadline(assessment) {
-            if (!assessment) return null;
-            const candidates = [
-                assessment.deadline,
-                assessment.dueDate,
-                assessment.endDate,
-                assessment.availabilityEnd,
-                assessment.submissionDeadline,
-                assessment.assignmentDeadline,
-                assessment.cover && assessment.cover.deadline,
-                assessment.cover && assessment.cover.dueDate,
-                assessment.assignment && assessment.assignment.deadline,
-                assessment.assignment && assessment.assignment.dueDate
-            ];
-            for (const c of candidates) {
-                if (c === undefined || c === null || c === '') continue;
-                let t;
-                if (typeof c === 'number') {
-                    t = c;
-                } else {
-                    t = new Date(c).getTime();
-                }
-                if (!isNaN(t) && t > 0) return t;
-            }
-            return null;
+    if (!assessment) return null;
+
+    // Assignments: prefer dedicated deadline
+    if (assessment.type === 'assignment') {
+        const src = assessment.deadline || assessment.endTime || assessment.availableUntil;
+        if (src) {
+            const t = typeof src === 'number' ? src : new Date(src).getTime();
+            if (!isNaN(t) && t > 0) return t;
         }
+        return null;
+    }
+
+    // Tests / quizzes / exams: fixed vs self-paced
+    if (assessment.scheduleType === 'fixed' && assessment.endTime) {
+        const t = new Date(assessment.endTime).getTime();
+        if (!isNaN(t) && t > 0) return t;
+    }
+    if (assessment.scheduleType === 'self' && assessment.availableUntil) {
+        const t = new Date(assessment.availableUntil).getTime();
+        if (!isNaN(t) && t > 0) return t;
+    }
+
+    // Fall back to any of the usual field names
+    const candidates = [
+        assessment.deadline, assessment.endTime, assessment.availableUntil,
+        assessment.dueDate, assessment.endDate, assessment.availabilityEnd,
+        assessment.submissionDeadline, assessment.assignmentDeadline,
+        assessment.cover && assessment.cover.deadline,
+        assessment.cover && assessment.cover.dueDate,
+        assessment.assignment && assessment.assignment.deadline,
+        assessment.assignment && assessment.assignment.dueDate
+    ];
+    for (const c of candidates) {
+        if (c === undefined || c === null || c === '') continue;
+        const t = typeof c === 'number' ? c : new Date(c).getTime();
+        if (!isNaN(t) && t > 0) return t;
+    }
+    return null;
+}
 
         // =================================================================
         // ===== SHOP / OTHER (unchanged) ==================================
@@ -11147,14 +11161,24 @@
         }
 
         function updateExamBadge() {
-            const available = allAssessments.filter(a => {
-                const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
-                if (!hasAccess) return false;
-                if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                const existing = allAssessmentResponses.find(r => r.assessmentId === a.id && r.userId === currentUser?.uid);
-                if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
-                return true;
-            });
+    const now = Date.now();
+
+    const available = allAssessments.filter(a => {
+        const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
+        if (!hasAccess) return false;
+        if (a.status !== 'published' && a.status !== 'ongoing') return false;
+
+        // NEW: local expiration check — status may lag behind real time
+        const endTs = getAssignmentDeadline(a);
+        if (endTs !== null && endTs <= now) return false;
+
+        const existing = allAssessmentResponses.find(r =>
+            r.assessmentId === a.id && r.userId === currentUser?.uid
+        );
+        if (existing && (existing.status === 'completed' || existing.status === 'ended')) return false;
+        return true;
+    });
+
             const exams = available.filter(a => a.type === 'exam');
             const tests = available.filter(a => a.type === 'test');
             const quizzes = available.filter(a => a.type === 'quiz');
@@ -14581,56 +14605,70 @@ container.innerHTML = offlineSorted.map(v => `
                 }
             });
             document.querySelectorAll('.exam-hub-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const type = this.dataset.type;
-                    const overlay = document.getElementById('examHubOverlay');
-                    overlay.classList.remove('open');
-                    if (type === 'history') {
-                        renderAssessmentHistory();
-                        showPage('assessmentHistory');
-                        return;
-                    }
-                    if (type === 'submittedAssignment') {
-                        const submittedResponses = allAssessmentResponses.filter(r =>
-                            r.userId === currentUser?.uid &&
-                            (r.status === 'completed' || r.status === 'ended')
-                        );
-                        const submittedAssignments = submittedResponses
-                            .map(r => {
-                                const ass = allAssessments.find(a => a.id === r.assessmentId);
-                                if (!ass || ass.type !== 'assignment') return null;
-                                return { ...ass, response: r };
-                            })
-                            .filter(Boolean);
-                        if (submittedAssignments.length === 0) {
-                            addNotification('info', 'No submitted assignments found.');
-                            return;
-                        }
-                        showAssessmentSelection(submittedAssignments, 'Assignment', true);
-                        return;
-                    }
-                    const available = allAssessments.filter(a => {
-                        if (a.type !== type) return false;
-                        const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
-                        if (!hasAccess) return false;
-                        if (a.status !== 'published' && a.status !== 'ongoing') return false;
-                        const alreadyDone = allAssessmentResponses.some(r =>
-                            r.assessmentId === a.id &&
-                            r.userId === currentUser?.uid &&
-                            (r.status === 'completed' || r.status === 'ended')
-                        );
-                        if (alreadyDone) return false;
-                        return true;
-                    });
-                    if (available.length === 0) {
-                        const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
-                        addNotification('info', `No available ${label} found.`);
-                        return;
-                    }
-                    showAssessmentSelection(available, type);
-                });
-            });
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const type = this.dataset.type;
+        const overlay = document.getElementById('examHubOverlay');
+        overlay.classList.remove('open');
+        if (type === 'history') {
+            renderAssessmentHistory();
+            showPage('assessmentHistory');
+            return;
+        }
+        if (type === 'submittedAssignment') {
+            const submittedResponses = allAssessmentResponses.filter(r =>
+                r.userId === currentUser?.uid &&
+                (r.status === 'completed' || r.status === 'ended')
+            );
+            const submittedAssignments = submittedResponses
+                .map(r => {
+                    const ass = allAssessments.find(a => a.id === r.assessmentId);
+                    if (!ass || ass.type !== 'assignment') return null;
+                    return { ...ass, response: r };
+                })
+                .filter(Boolean);
+            if (submittedAssignments.length === 0) {
+                addNotification('info', 'No submitted assignments found.');
+                return;
+            }
+            showAssessmentSelection(submittedAssignments, 'Assignment', true);
+            return;
+        }
+
+        // ─── UPDATED: local expiration guard ─────────────────────────
+        const now = Date.now();
+        const available = allAssessments.filter(a => {
+            if (a.type !== type) return false;
+
+            const hasAccess = (a.registerIds || []).some(id => userRegisterIds.has(id));
+            if (!hasAccess) return false;
+
+            if (a.status !== 'published' && a.status !== 'ongoing') return false;
+
+            // NEW: hide anything whose real deadline/end time has already passed,
+            // even if the admin's status hasn't caught up yet.
+            const endTs = getAssignmentDeadline(a);
+            if (endTs !== null && endTs <= now) return false;
+
+            const alreadyDone = allAssessmentResponses.some(r =>
+                r.assessmentId === a.id &&
+                r.userId === currentUser?.uid &&
+                (r.status === 'completed' || r.status === 'ended')
+            );
+            if (alreadyDone) return false;
+
+            return true;
+        });
+        // ─────────────────────────────────────────────────────────────
+
+        if (available.length === 0) {
+            const label = type.charAt(0).toUpperCase() + type.slice(1) + 's';
+            addNotification('info', `No available ${label} found.`);
+            return;
+        }
+        showAssessmentSelection(available, type);
+    });
+});
 
             document.getElementById('assessmentSelectClose').addEventListener('click', () => {
                 document.getElementById('assessmentSelectOverlay').classList.remove('open');
