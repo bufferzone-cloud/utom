@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>UTOM · Messages &amp; Testimonies</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -27,8 +27,23 @@
         --radius-md: 18px;
         --radius-lg: 24px;
         --transition: 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        /* Dynamic viewport height - fixes mobile browser chrome issues */
+        --app-height: 100dvh;
     }
-    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+    @supports not (height: 100dvh) {
+        :root { --app-height: 100vh; }
+    }
+
+    html, body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.5;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+    }
 
     /* ===== LOADER ===== */
     #appLoader {
@@ -49,19 +64,26 @@
 
     /* ===== APP ROOT ===== */
     .app-root {
-        display: flex; flex-direction: column;
-        height: 100vh; width: 100%;
-        background: var(--bg); overflow: hidden; position: relative;
+        display: flex;
+        flex-direction: column;
+        height: var(--app-height);
+        width: 100%;
+        background: var(--bg);
+        overflow: hidden;
+        position: relative;
     }
 
     /* ===== HEADER ===== */
     .header {
         display: flex; align-items: center; justify-content: space-between;
         padding: 14px 18px;
-        background: rgba(255, 255, 255, 0.7);
+        padding-top: calc(14px + env(safe-area-inset-top, 0px));
+        background: rgba(255, 255, 255, 0.78);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        flex-shrink: 0; height: 64px; z-index: 10;
+        flex-shrink: 0;
+        height: calc(64px + env(safe-area-inset-top, 0px));
+        z-index: 10;
     }
     .header-left, .header-right { display: flex; align-items: center; gap: 12px; }
     .icon-btn {
@@ -88,7 +110,8 @@
     .tabs-bar {
         display: flex; gap: 8px;
         padding: 12px 14px 6px 14px;
-        flex-shrink: 0; background: var(--bg);
+        flex-shrink: 0;
+        background: var(--bg);
     }
     .tab-btn {
         flex: 1;
@@ -119,11 +142,14 @@
     }
     .tab-btn.active .badge { background: rgba(255, 255, 255, 0.35); color: #fff; }
 
-    /* ===== CONTENT ===== */
+    /* ===== CONTENT (scrollable list area) ===== */
     .content {
-        flex: 1; min-height: 0;
-        overflow-y: auto; overflow-x: hidden;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         padding: 8px 14px 20px 14px;
         position: relative;
     }
@@ -172,7 +198,6 @@
         min-width: 20px; text-align: center; line-height: 1.4;
         box-shadow: 0 2px 10px rgba(230, 57, 70, 0.3);
     }
-    /* NEW: Delete conversation button */
     .conv-delete-btn {
         width: 34px; height: 34px;
         border-radius: 50%;
@@ -266,23 +291,34 @@
 
     /* ===== CHAT OVERLAY (WhatsApp style) ===== */
     .chat-overlay {
-        position: fixed; inset: 0;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%;
+        height: var(--app-height);
         background: var(--bg);
         z-index: 2000;
-        display: flex; flex-direction: column;
+        display: flex;
+        flex-direction: column;
         transform: translateX(100%);
         transition: transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.32s;
         visibility: hidden;
+        overflow: hidden;
     }
     .chat-overlay.open { transform: translateX(0); visibility: visible; }
 
+    /* Fixed header inside chat */
     .chat-header {
-        display: flex; align-items: center; gap: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
         padding: 10px 14px;
-        background: rgba(255, 255, 255, 0.92);
+        padding-top: calc(10px + env(safe-area-inset-top, 0px));
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
         border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        flex-shrink: 0; height: 64px; z-index: 10;
+        flex-shrink: 0;
+        height: calc(64px + env(safe-area-inset-top, 0px));
+        z-index: 10;
     }
     .chat-user-info { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
     .chat-avatar {
@@ -296,7 +332,6 @@
     .chat-user-name { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-user-status { font-size: 11px; color: #8b8fa3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* NEW: delete conversation button in chat header */
     .chat-delete-conv-btn {
         width: 40px;
         height: 40px;
@@ -320,17 +355,22 @@
     }
     .chat-delete-conv-btn:active { transform: scale(0.94); }
 
+    /* Scrollable messages area - takes all remaining space */
     .chat-body {
-        flex: 1; min-height: 0;
-        overflow-y: auto; overflow-x: hidden;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         padding: 16px 14px 20px 14px;
         background-color: #e5ddd5;
         background-image:
             radial-gradient(circle at 20% 30%, rgba(245, 176, 66, 0.06) 0%, transparent 40%),
             radial-gradient(circle at 80% 70%, rgba(255, 107, 0, 0.05) 0%, transparent 40%),
             repeating-linear-gradient(45deg, transparent 0 12px, rgba(255, 255, 255, 0.4) 12px 24px);
-        display: flex; flex-direction: column;
+        display: flex;
+        flex-direction: column;
         gap: 2px;
     }
     .chat-body::-webkit-scrollbar { width: 5px; }
@@ -415,15 +455,19 @@
         opacity: 0.85;
     }
 
-    /* ===== CHAT INPUT BAR ===== */
+    /* ===== CHAT INPUT BAR - fixed at bottom, never scrolls ===== */
     .chat-input-bar {
-        display: flex; align-items: center; gap: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         padding: 10px 12px;
-        background: rgba(255, 255, 255, 0.97);
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         border-top: 1px solid rgba(0, 0, 0, 0.05);
         flex-shrink: 0;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        flex-grow: 0;
+        z-index: 10;
     }
     .attach-btn {
         width: 42px; height: 42px; border-radius: 50%;
@@ -487,7 +531,9 @@
 
     /* ===== TOAST ===== */
     .toast-container {
-        position: fixed; top: 76px; right: 16px;
+        position: fixed;
+        top: calc(76px + env(safe-area-inset-top, 0px));
+        right: 16px;
         z-index: 9000;
         display: flex; flex-direction: column; gap: 10px;
         max-width: 340px;
@@ -620,7 +666,7 @@
     body.dark-mode { background: #0f0f0f; color: #e0e0e0; }
     body.dark-mode .app-root, body.dark-mode .content { background: #0f0f0f !important; }
     body.dark-mode .header, body.dark-mode .chat-header, body.dark-mode .tabs-bar, body.dark-mode .chat-input-bar {
-        background: rgba(20, 20, 20, 0.92) !important;
+        background: rgba(20, 20, 20, 0.95) !important;
         border-color: #2a2a2a !important;
     }
     body.dark-mode .icon-btn { background: #1e1e1e; color: #e0e0e0; border-color: #2a2a2a; }
@@ -653,7 +699,7 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 520px) {
-        .header { padding: 10px 12px; height: 60px; }
+        .header { padding: 10px 12px; height: calc(60px + env(safe-area-inset-top, 0px)); }
         .header-title { font-size: 16px; }
         .icon-btn { width: 38px; height: 38px; font-size: 14px; }
         .content { padding: 6px 10px 16px 10px; }
@@ -663,6 +709,13 @@
         .tab-btn { font-size: 12px; padding: 10px 12px; }
         .conv-delete-btn { width: 30px; height: 30px; font-size: 12px; }
         .chat-delete-conv-btn { width: 36px; height: 36px; font-size: 14px; }
+        .chat-header { height: calc(60px + env(safe-area-inset-top, 0px)); padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
+        .chat-avatar { width: 38px; height: 38px; font-size: 15px; }
+        .chat-body { padding: 14px 10px 16px 10px; }
+        .chat-input-bar { padding: 8px 10px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); gap: 6px; }
+        .attach-btn { width: 40px; height: 40px; font-size: 15px; }
+        .chat-input-bar input { padding: 11px 16px; font-size: 13px; }
+        .send-btn { width: 42px; height: 42px; font-size: 15px; }
     }
 </style>
 </head>
@@ -698,7 +751,7 @@
         </button>
     </div>
 
-    <!-- ===== CONTENT ===== -->
+    <!-- ===== CONTENT (only this area scrolls in list view) ===== -->
     <div class="content">
         <!-- Messages list view -->
         <div id="messagesListView" class="view-section active">
@@ -726,7 +779,6 @@
                     <div class="chat-user-status" id="chatUserStatus">—</div>
                 </div>
             </div>
-            <!-- NEW: Delete conversation button in chat header -->
             <button class="chat-delete-conv-btn" id="chatDeleteConvBtn" title="Delete conversation">
                 <i class="fas fa-trash-alt"></i>
             </button>
@@ -962,7 +1014,7 @@ function setupUI() {
     // Chat back
     document.getElementById('chatBackBtn').addEventListener('click', closeChat);
 
-    // NEW: Chat header delete conversation button
+    // Chat header delete conversation button
     document.getElementById('chatDeleteConvBtn').addEventListener('click', async () => {
         if (!currentChatUserId) return;
         await handleDeleteConversation(currentChatUserId);
@@ -1016,6 +1068,17 @@ function setupUI() {
             }
         }
     });
+
+    // Keyboard handling: keep chat body scrolled to bottom when input focused
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                const body = document.getElementById('chatBody');
+                if (body) body.scrollTop = body.scrollHeight;
+            }, 300);
+        });
+    }
 }
 
 /* =================================================================
@@ -1037,12 +1100,10 @@ async function handleDeleteConversation(userId) {
         await remove(ref(db, `messages/${userId}`));
         showToast('Conversation deleted', 'success');
 
-        // If we're currently viewing this chat, close it
         if (currentChatUserId === userId) {
             closeChat();
         }
 
-        // Clear local cache for this user
         delete conversations[userId];
         renderConversations();
         updateMsgBadge();
@@ -1118,7 +1179,6 @@ function renderConversations() {
         });
     });
 
-    // NEW: wire up delete buttons
     container.querySelectorAll('.conv-delete-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -1327,7 +1387,7 @@ window.addEventListener('beforeunload', () => {
     // no-op (kept for future)
 });
 
-console.log('✅ UTOM Messages & Testimonies loaded (with Delete Conversation).');
+console.log('✅ UTOM Messages & Testimonies loaded (with Delete Conversation + mobile-friendly scrollable chat).');
 </script>
 </body>
 </html>
