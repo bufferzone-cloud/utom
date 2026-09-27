@@ -37,11 +37,9 @@
 
             --fill-gray: #f2f2f7;
             --fill-gray-hover: #e9e9ef;
-            --separator: rgba(0, 0, 0, 0.06);
 
             --radius-input: 14px;
             --radius-btn: 14px;
-            --radius-pill: 980px;
 
             --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -55,233 +53,180 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        html {
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             -webkit-text-size-adjust: 100%;
         }
 
         body {
-            background: #ffffff;
-            min-height: 100vh;
-            min-height: 100dvh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 1.75rem 1.25rem;
-            margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: var(--text-primary);
-            overflow-x: hidden;
+            background: #ffffff;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 560px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* ==========================================================
-           LOGO — same reveal animation as before
-           ========================================================== */
-        .logo-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            padding: 0.15rem 0;
-            background: transparent;
-        }
-
-        .logo-img {
-            width: min(290px, 68vw);
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-            will-change: width;
-            transition: width 2.65s var(--ease-out) 0.35s;
-            animation: logoIn 0.7s var(--ease-out) both;
-        }
-
-        body.revealed .logo-img { width: min(150px, 38vw); }
-        body.reveal-complete .logo-img { width: min(225px, 57vw); }
-
-        @keyframes logoIn {
-            0%   { opacity: 0; transform: scale(0.88); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .logo-placeholder {
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            background: linear-gradient(135deg, #1E1E2A 20%, var(--accent) 80%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        /* ==========================================================
-           REVEAL WRAP
-           ========================================================== */
-        .reveal-wrap {
-            display: grid;
-            grid-template-rows: 0fr;
-            width: 100%;
-            opacity: 0;
-            pointer-events: none;
-            will-change: grid-template-rows;
-            transition:
-                grid-template-rows 2.65s var(--ease-out) 0.35s,
-                opacity 1.1s var(--ease-smooth) 1.15s;
-        }
-
-        body.revealed .reveal-wrap {
-            grid-template-rows: 1fr;
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .reveal-inner {
-            overflow: hidden;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-
-        body.reveal-complete .reveal-inner { overflow: visible; }
-
-        /* ==========================================================
-           SPLIT LANDING (Student top / Lecturer bottom)
-           ========================================================== */
-        .landing-split {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
+        }
+
+        /* ==========================================================
+           SPLIT LANDING — Windows-Phone-style full-screen halves
+           ========================================================== */
+        .split-landing {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .split-half {
             position: relative;
-            width: 100%;
-            min-height: 165px;
-            border-radius: 22px;
-            overflow: hidden;
-            cursor: pointer;
-            transition:
-                transform 0.55s var(--spring),
-                box-shadow 0.4s var(--ease-smooth),
-                background 0.35s var(--ease-smooth);
-            will-change: transform;
+            flex: 1 1 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.05),
-                0 10px 26px -14px rgba(0, 0, 0, 0.18);
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.5s var(--ease-out);
+            will-change: transform;
+            touch-action: none;
         }
 
-        .split-half:active { transition-duration: 0.1s; }
-
+        /* Top: white/student */
         .split-top {
-            background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
-            border: 1.5px solid rgba(29, 29, 31, 0.06);
+            background: #ffffff;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
 
-        .split-top .split-icon { color: #3b82f6; }
-        .split-top .split-handle { color: #3b82f6; }
-
+        /* Bottom: orange/lecturer */
         .split-bottom {
-            background: linear-gradient(0deg, #1a1a24 0%, #23232e 100%);
-            color: #ffffff;
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: #1a1206;
         }
 
-        .split-bottom .split-title { color: #ffffff; }
-        .split-bottom .split-hint { color: rgba(255, 255, 255, 0.55); }
-        .split-bottom .split-icon { color: var(--accent); }
-        .split-bottom .split-handle { color: var(--accent); }
+        /* Drag feedback (translate the whole half slightly) */
+        .split-top.drag-active    { transform: translateY(var(--drag-y, 0)); }
+        .split-bottom.drag-active { transform: translateY(var(--drag-y, 0)); }
 
-        .split-half.nudge-down { transform: translateY(14px); }
-        .split-half.nudge-up   { transform: translateY(-14px); }
-
-        .split-inner {
+        /* Content inside each half */
+        .half-content {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 1.6rem 1rem;
+            gap: 12px;
             text-align: center;
+            padding: 1rem;
             pointer-events: none;
+            z-index: 2;
         }
 
-        .split-handle {
-            font-size: 1.15rem;
-            animation: bob 1.8s var(--ease-smooth) infinite;
-            opacity: 0.9;
+        .half-chevron {
+            font-size: 1.4rem;
+            opacity: 0.8;
+            animation: bobDown 1.8s var(--ease-smooth) infinite;
         }
 
-        @keyframes bob {
-            0%, 100% { transform: translateY(0); opacity: 0.7; }
-            50%      { transform: translateY(4px); opacity: 1; }
-        }
-
-        .split-bottom .split-handle {
+        .split-bottom .half-chevron {
             animation-name: bobUp;
         }
 
+        @keyframes bobDown {
+            0%, 100% { transform: translateY(0); opacity: 0.55; }
+            50%      { transform: translateY(6px); opacity: 1; }
+        }
+
         @keyframes bobUp {
-            0%, 100% { transform: translateY(0); opacity: 0.7; }
-            50%      { transform: translateY(-4px); opacity: 1; }
+            0%, 100% { transform: translateY(0); opacity: 0.55; }
+            50%      { transform: translateY(-6px); opacity: 1; }
         }
 
-        .split-icon {
-            font-size: 2rem;
+        .half-icon {
+            font-size: 2.6rem;
             line-height: 1;
-            margin-bottom: 2px;
+            margin: 4px 0 2px;
         }
 
-        .split-title {
-            font-size: 1.25rem;
+        .split-top .half-icon { color: #3b82f6; }
+        .split-bottom .half-icon { color: #1a1206; }
+
+        .half-title {
+            font-size: 1.5rem;
             font-weight: 800;
-            letter-spacing: -0.4px;
-            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
         }
 
-        .split-hint {
-            font-size: 0.78rem;
+        .split-top .half-title { color: var(--text-primary); }
+        .split-bottom .half-title { color: #1a1206; }
+
+        .half-hint {
+            font-size: 0.82rem;
             font-weight: 500;
-            color: var(--text-tertiary);
             letter-spacing: 0.2px;
         }
 
+        .split-top .half-hint { color: var(--text-tertiary); }
+        .split-bottom .half-hint { color: rgba(26, 18, 6, 0.65); }
+
+        /* Center logo floating over both halves at the seam */
+        .center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow:
+                0 8px 24px -6px rgba(0, 0, 0, 0.18),
+                0 0 0 6px rgba(255, 255, 255, 0.9),
+                0 0 0 8px rgba(245, 176, 66, 0.22);
+        }
+
+        .center-logo img {
+            width: 62px;
+            height: 62px;
+            object-fit: contain;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .center-logo .logo-fallback {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            letter-spacing: -0.5px;
+        }
+
         /* ==========================================================
-           SLIDE PANELS (Student from top, Lecturer from bottom)
+           SLIDE PANELS
            ========================================================== */
         .slide-panel {
             position: fixed;
-            inset: 0;
-            z-index: 200;
+            left: 0;
+            right: 0;
+            height: 100%;
+            z-index: 100;
             background: #ffffff;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            transition: transform 0.5s var(--ease-out);
+            transition: transform 0.55s var(--ease-out);
             will-change: transform;
             pointer-events: none;
             visibility: hidden;
+            touch-action: auto;
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         .slide-panel.active {
@@ -290,46 +235,44 @@
         }
 
         #studentPanel {
+            top: 0;
             transform: translateY(-100%);
         }
-        #studentPanel.active {
-            transform: translateY(0);
-        }
+        #studentPanel.active { transform: translateY(0); }
 
         #lecturerPanel {
+            top: 0;
             transform: translateY(100%);
-            background: linear-gradient(180deg, #f8f9fb 0%, #ffffff 100%);
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
         }
-        #lecturerPanel.active {
-            transform: translateY(0);
-        }
+        #lecturerPanel.active { transform: translateY(0); }
 
-        .slide-panel-inner {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 1.25rem 1.25rem 3rem;
-            min-height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .slide-header {
+        /* ==========================================================
+           PANEL HEADER — logo on top of the login form
+           ========================================================== */
+        .panel-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.1rem;
-            position: sticky;
-            top: 0;
-            background: inherit;
-            padding: 0.35rem 0 0.6rem;
-            z-index: 5;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        #lecturerPanel .panel-topbar {
+            background: rgba(255, 250, 242, 0.92);
         }
 
         .back-btn {
             background: var(--fill-gray);
             border: none;
             font-family: inherit;
-            font-size: 0.82rem;
+            font-size: 0.84rem;
             font-weight: 600;
             color: var(--text-primary);
             padding: 9px 15px;
@@ -344,12 +287,67 @@
         .back-btn:hover { background: var(--fill-gray-hover); }
         .back-btn:active { transform: scale(0.96); }
 
-        .slide-label {
+        .panel-label {
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.4px;
             text-transform: uppercase;
             color: var(--text-tertiary);
+        }
+
+        /* Logo strip at top of each panel */
+        .panel-logo-strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 22px 16px 8px;
+            text-align: center;
+        }
+
+        .panel-logo-strip img {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 6px 18px rgba(245, 176, 66, 0.24));
+        }
+
+        .panel-logo-strip .logo-fallback {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+
+        .panel-brand-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            background: linear-gradient(135deg, #1d1d1f 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .panel-brand-sub {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* Panel inner container */
+        .slide-panel-inner {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 0 1.25rem 3rem;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ==========================================================
@@ -362,7 +360,7 @@
             background: var(--fill-gray);
             border-radius: 12px;
             padding: 3px;
-            margin-bottom: 1.75rem;
+            margin-bottom: 1.6rem;
             box-shadow:
                 inset 0 1px 2px rgba(0, 0, 0, 0.04),
                 0 4px 14px -8px rgba(0, 0, 0, 0.12);
@@ -392,7 +390,7 @@
             position: relative;
             z-index: 1;
             flex: 1;
-            padding: 10px 10px;
+            padding: 10px;
             border: none;
             background: transparent;
             border-radius: 9px;
@@ -422,17 +420,17 @@
         }
 
         .form-title {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: -0.5px;
-            margin-bottom: 1.4rem;
+            margin-bottom: 1.3rem;
             color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .form-title i { color: var(--accent); font-size: 1.5rem; }
+        .form-title i { color: var(--accent); font-size: 1.35rem; }
 
         .input-icon-group {
             position: relative;
@@ -467,6 +465,8 @@
                 background 0.3s var(--ease-smooth),
                 border-color 0.3s var(--ease-smooth),
                 box-shadow 0.3s var(--ease-smooth);
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         .pill-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
@@ -509,7 +509,7 @@
 
         .double-row .input-icon-group { flex: 1; min-width: 125px; }
 
-        /* Upload grid for NRC & profile */
+        /* Upload grid */
         .upload-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -533,10 +533,7 @@
             transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth);
         }
 
-        .upload-box:hover {
-            border-color: var(--accent);
-            background: #fff;
-        }
+        .upload-box:hover { border-color: var(--accent); background: #fff; }
 
         .upload-box.has-image {
             border-style: solid;
@@ -608,7 +605,6 @@
                 background 0.3s var(--ease-smooth),
                 color 0.3s var(--ease-smooth),
                 opacity 0.3s var(--ease-smooth);
-            will-change: transform;
         }
 
         .btn-primary {
@@ -628,9 +624,7 @@
                 0 16px 30px -8px var(--accent-glow);
         }
 
-        .btn-primary:active:not(:disabled) {
-            transform: translateY(0) scale(0.975);
-        }
+        .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
 
         .btn-secondary {
             background: #ffffff;
@@ -656,7 +650,7 @@
         }
 
         /* ==========================================================
-           TEXT LINKS
+           TEXT LINKS / TERMS
            ========================================================== */
         .text-link {
             background: none;
@@ -688,9 +682,6 @@
             gap: 10px;
         }
 
-        /* ==========================================================
-           TERMS
-           ========================================================== */
         .terms-check {
             display: flex;
             align-items: center;
@@ -746,38 +737,8 @@
             display: inline-block;
             margin-bottom: 0.9rem;
             animation: panelIn 0.35s var(--ease-out);
-        }
-
-        .info-msg {
-            color: #856404;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: #fff3cd;
-            border: 1px solid rgba(243, 156, 18, 0.3);
-            padding: 9px 14px;
-            border-radius: 12px;
-            display: inline-block;
-            margin-bottom: 0.9rem;
             line-height: 1.4;
-            animation: panelIn 0.35s var(--ease-out);
         }
-
-        .small-text {
-            font-size: 0.71rem;
-            font-weight: 500;
-            color: var(--text-tertiary);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: var(--fill-gray);
-            padding: 7px 15px;
-            border-radius: var(--radius-pill);
-            margin: 1.4rem auto 0.1rem;
-            letter-spacing: 0.1px;
-        }
-
-        .small-text i { color: var(--accent); font-size: 0.68rem; }
 
         /* ==========================================================
            INSTALL BANNER
@@ -792,13 +753,12 @@
             color: #ffffff;
             border-radius: 16px;
             padding: 13px 16px;
-            margin-bottom: 1.4rem;
+            margin-top: 1.2rem;
             font-size: 0.83rem;
             font-weight: 500;
             box-shadow:
                 0 1px 2px rgba(0, 0, 0, 0.12),
                 0 12px 28px -10px rgba(0, 0, 0, 0.35);
-            animation: bannerIn 0.5s var(--spring);
         }
 
         .install-banner span {
@@ -822,39 +782,26 @@
             cursor: pointer;
             white-space: nowrap;
             box-shadow: 0 4px 12px -3px var(--accent-glow);
-            transition: transform 0.3s var(--spring), box-shadow 0.3s var(--ease-smooth);
-        }
-
-        .install-banner button:hover { transform: translateY(-2px) scale(1.03); }
-        .install-banner button:active { transform: translateY(0) scale(0.97); }
-
-        @keyframes bannerIn {
-            from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* ==========================================================
            SPINNER
            ========================================================== */
         .fa-spinner { animation: spin 0.9s linear infinite; }
-
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ==========================================================
            RESPONSIVE
            ========================================================== */
         @media (max-width: 560px) {
-            body { padding: 1rem 0.85rem; align-items: flex-start; }
-            .form-title { font-size: 1.42rem; margin-bottom: 1.15rem; }
-            .logo-img { width: min(230px, 62vw); }
-            body.revealed .logo-img { width: min(126px, 34vw); }
-            body.reveal-complete .logo-img { width: min(190px, 51vw); }
+            .form-title { font-size: 1.35rem; margin-bottom: 1.1rem; }
             .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
             .input-icon-group > i { left: 13px; font-size: 0.9rem; }
             .btn { padding: 12px 16px; font-size: 0.9rem; }
-            .install-banner { flex-direction: column; text-align: center; gap: 11px; }
-            .install-banner span { justify-content: center; }
-            .split-half { min-height: 145px; }
+            .half-title { font-size: 1.25rem; }
+            .half-icon { font-size: 2.2rem; }
+            .center-logo img { width: 54px; height: 54px; }
+            .panel-logo-strip img { width: 78px; height: 78px; }
         }
 
         @media (max-width: 400px) {
@@ -869,70 +816,63 @@
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.001ms !important;
             }
-            .reveal-wrap { grid-template-rows: 1fr; opacity: 1; pointer-events: auto; }
-            body.revealed .logo-img { width: min(150px, 38vw); }
-            body.reveal-complete .logo-img { width: min(225px, 57vw); }
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<!-- ==========================================================
+     SPLIT LANDING
+     ========================================================== -->
+<div class="split-landing" id="splitLanding">
 
-    <!-- Logo -->
-    <div class="logo-area">
-        <img src="logo.png" alt="UTOM official logo" class="logo-img"
-             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
+    <!-- TOP — STUDENT (white) -->
+    <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
+        <div class="half-content">
+            <div class="half-chevron"><i class="fas fa-chevron-down"></i></div>
+            <div class="half-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="half-title">Student</div>
+            <div class="half-hint">Swipe down to continue</div>
+        </div>
     </div>
 
-    <!-- Everything below sits directly on the page background -->
-    <div class="reveal-wrap" id="revealWrap">
-        <div class="reveal-inner">
-
-            <div id="installBanner" class="install-banner" style="display: none;">
-                <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
-                <button id="bannerInstallBtn" type="button">Install</button>
-            </div>
-
-            <!-- ============ SPLIT LANDING ============ -->
-            <div class="landing-split" id="landingSplit">
-                <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
-                    <div class="split-inner">
-                        <div class="split-handle"><i class="fas fa-chevron-down"></i></div>
-                        <div class="split-icon"><i class="fas fa-user-graduate"></i></div>
-                        <div class="split-title">Student</div>
-                        <div class="split-hint">Swipe down to continue</div>
-                    </div>
-                </div>
-                <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
-                    <div class="split-inner">
-                        <div class="split-handle"><i class="fas fa-chevron-up"></i></div>
-                        <div class="split-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <div class="split-title">Lecturer</div>
-                        <div class="split-hint">Swipe up to continue</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="small-text">
-                <i class="fas fa-shield-alt"></i> secure &amp; seamless
-                <i class="fas fa-meteor"></i>
-            </div>
+    <!-- BOTTOM — LECTURER (orange) -->
+    <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
+        <div class="half-content">
+            <div class="half-chevron"><i class="fas fa-chevron-up"></i></div>
+            <div class="half-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="half-title">Lecturer</div>
+            <div class="half-hint">Swipe up to continue</div>
         </div>
+    </div>
+
+    <!-- Floating center logo -->
+    <div class="center-logo" id="centerLogo">
+        <img src="logo.png" alt="UTOM logo"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <span class="logo-fallback" style="display:none;">UTOM</span>
     </div>
 </div>
 
 <!-- ==========================================================
-     STUDENT PANEL  (slides from top)
+     STUDENT PANEL (slides down from top)
      ========================================================== -->
 <div class="slide-panel" id="studentPanel">
+    <div class="panel-topbar">
+        <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+        <span class="panel-label">Student Portal</span>
+    </div>
     <div class="slide-panel-inner">
-        <div class="slide-header">
-            <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
-            <span class="slide-label">Student Portal</span>
+
+        <!-- Logo on top of the login form -->
+        <div class="panel-logo-strip">
+            <img src="logo.png" alt="UTOM logo"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="logo-fallback" style="display:none;">UTOM</span>
+            <div class="panel-brand-name">UTOM</div>
+            <div class="panel-brand-sub">Student Portal</div>
         </div>
 
-        <!-- Segmented control -->
         <div class="segmented-control" id="authSegments" data-active="login">
             <button type="button" class="segment active" id="segLogin">Sign in</button>
             <button type="button" class="segment" id="segSignup">Create account</button>
@@ -1053,22 +993,36 @@
                 </div>
             </div>
         </div>
+
+        <div id="installBanner" class="install-banner" style="display:none;">
+            <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
+            <button id="bannerInstallBtn" type="button">Install</button>
+        </div>
     </div>
 </div>
 
 <!-- ==========================================================
-     LECTURER PANEL  (slides from bottom)
+     LECTURER PANEL (slides up from bottom)
      ========================================================== -->
 <div class="slide-panel" id="lecturerPanel">
+    <div class="panel-topbar">
+        <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+        <span class="panel-label">Lecturer Portal</span>
+    </div>
     <div class="slide-panel-inner">
-        <div class="slide-header">
-            <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
-            <span class="slide-label">Lecturer Portal</span>
+
+        <!-- Logo on top -->
+        <div class="panel-logo-strip">
+            <img src="logo.png" alt="UTOM logo"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="logo-fallback" style="display:none;">UTOM</span>
+            <div class="panel-brand-name">UTOM</div>
+            <div class="panel-brand-sub">Lecturer Portal</div>
         </div>
 
         <div class="segmented-control" id="lecSegments" data-active="login">
             <button type="button" class="segment active" id="lecSegLogin">Sign in</button>
-            <button type="button" class="segment" id="lecSegSignup">Apply as lecturer</button>
+            <button type="button" class="segment" id="lecSegSignup">Apply</button>
         </div>
 
         <div class="form-area">
@@ -1220,35 +1174,12 @@
     const database = getDatabase(app);
 
     /* ============================================================
-       LOGO REVEAL ANIMATION (unchanged)
-       ============================================================ */
-    (function initRevealAnimation() {
-        const revealWrap = document.getElementById('revealWrap');
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (revealWrap && 'inert' in revealWrap) revealWrap.inert = true;
-
-        if (reducedMotion) {
-            document.body.classList.add('revealed', 'reveal-complete');
-            if (revealWrap && 'inert' in revealWrap) revealWrap.inert = false;
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            document.body.classList.add('revealed');
-            if (revealWrap && 'inert' in revealWrap) revealWrap.inert = false;
-            window.setTimeout(() => document.body.classList.add('reveal-complete'), 3200);
-        });
-    })();
-
-    /* ============================================================
        SPLIT LANDING — gesture handling
        ============================================================ */
-    const landingSplit = document.getElementById('landingSplit');
-    const splitTop     = document.getElementById('splitTop');
-    const splitBottom  = document.getElementById('splitBottom');
-    const studentPanel = document.getElementById('studentPanel');
-    const lecturerPanel= document.getElementById('lecturerPanel');
+    const splitTop      = document.getElementById('splitTop');
+    const splitBottom   = document.getElementById('splitBottom');
+    const studentPanel  = document.getElementById('studentPanel');
+    const lecturerPanel = document.getElementById('lecturerPanel');
 
     function openStudentPanel() {
         studentPanel.classList.add('active');
@@ -1272,25 +1203,26 @@
     document.getElementById('backFromLecturer').addEventListener('click', closePanels);
 
     // Gesture state
-    let activeGesture = null;      // { el, dir: 'down'|'up', startY, lastY, moved }
-    const SWIPE_THRESHOLD = 55;
+    let activeGesture = null;
+    const SWIPE_THRESHOLD = 45;
+    const DRAG_FEEDBACK = 26;
 
     function beginGesture(el, dir, clientY) {
-        activeGesture = { el, dir, startY: clientY, lastY: clientY, moved: false };
-        el.style.transition = 'transform 0.08s linear';
+        activeGesture = { el, dir, startY: clientY, lastY: clientY };
+        el.classList.add('drag-active');
+        el.style.transition = 'none';
     }
 
     function updateGesture(clientY) {
         if (!activeGesture) return;
         const delta = clientY - activeGesture.startY;
-        const cappedDelta = Math.max(-70, Math.min(70, delta));
-        if (Math.abs(delta) > 6) activeGesture.moved = true;
-
+        let feedback = 0;
         if (activeGesture.dir === 'down' && delta > 0) {
-            activeGesture.el.style.transform = `translateY(${Math.min(cappedDelta, 30)}px)`;
+            feedback = Math.min(DRAG_FEEDBACK, delta * 0.35);
         } else if (activeGesture.dir === 'up' && delta < 0) {
-            activeGesture.el.style.transform = `translateY(${Math.max(cappedDelta, -30)}px)`;
+            feedback = Math.max(-DRAG_FEEDBACK, delta * 0.35);
         }
+        activeGesture.el.style.setProperty('--drag-y', feedback + 'px');
         activeGesture.lastY = clientY;
     }
 
@@ -1298,8 +1230,10 @@
         if (!activeGesture) return;
         const { el, dir, startY, lastY } = activeGesture;
         const delta = lastY - startY;
+
         el.style.transition = '';
-        el.style.transform = '';
+        el.style.removeProperty('--drag-y');
+        el.classList.remove('drag-active');
 
         if (dir === 'down' && delta > SWIPE_THRESHOLD) {
             openStudentPanel();
@@ -1309,7 +1243,7 @@
         activeGesture = null;
     }
 
-    // Touch events for the split landing halves
+    // Touch
     splitTop.addEventListener('touchstart', (e) => {
         beginGesture(splitTop, 'down', e.touches[0].clientY);
     }, { passive: true });
@@ -1326,7 +1260,7 @@
         if (activeGesture) endGesture();
     }, { passive: true });
 
-    // Mouse events for desktop
+    // Mouse
     let mouseDown = false;
     splitTop.addEventListener('mousedown', (e) => {
         mouseDown = true;
@@ -1346,15 +1280,15 @@
     });
 
     // Click fallback
-    splitTop.addEventListener('click', (e) => {
+    splitTop.addEventListener('click', () => {
         if (!activeGesture) openStudentPanel();
     });
-    splitBottom.addEventListener('click', (e) => {
+    splitBottom.addEventListener('click', () => {
         if (!activeGesture) openLecturerPanel();
     });
 
     /* ============================================================
-       HELPERS (UI only)
+       HELPERS
        ============================================================ */
     function setButtonLoading(button, isLoading, originalHtml) {
         if (isLoading) {
@@ -1383,7 +1317,7 @@
     }
 
     /* ============================================================
-       STUDENT PANEL — SEGMENTED CONTROL
+       STUDENT PANEL
        ============================================================ */
     const loginPanel  = document.getElementById('loginPanel');
     const signupPanel = document.getElementById('signupPanel');
@@ -1465,9 +1399,7 @@
         resetErrorSpan.style.color = '#ff3b30';
     }
 
-    /* ============================================================
-       STUDENT SIGNUP (logic unchanged)
-       ============================================================ */
+    /* STUDENT SIGNUP */
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
@@ -1533,9 +1465,7 @@
         }
     });
 
-    /* ============================================================
-       STUDENT LOGIN (logic unchanged)
-       ============================================================ */
+    /* STUDENT LOGIN */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
@@ -1566,9 +1496,7 @@
         }
     });
 
-    /* ============================================================
-       FORGOT PASSWORD (logic unchanged)
-       ============================================================ */
+    /* FORGOT PASSWORD */
     forgotPwdBtn.addEventListener('click', showForgotPanel);
     backToLoginFromForgotBtn.addEventListener('click', showLoginPanel);
 
@@ -1605,7 +1533,7 @@
     segSignup.addEventListener('click', showSignupPanel);
 
     /* ============================================================
-       LECTURER PANEL — SEGMENTED CONTROL
+       LECTURER PANEL
        ============================================================ */
     const lecSegmentsBar = document.getElementById('lecSegments');
     const lecSegLogin    = document.getElementById('lecSegLogin');
@@ -1632,9 +1560,7 @@
     lecSegSignup.addEventListener('click', () => setLecSegment('signup'));
     document.getElementById('lecGoSignupBtn').addEventListener('click', () => setLecSegment('signup'));
 
-    /* ============================================================
-       LECTURER SIGNUP
-       ============================================================ */
+    /* LECTURER SIGNUP */
     const lecName           = document.getElementById('lecName');
     const lecEmail          = document.getElementById('lecEmail');
     const lecPhone          = document.getElementById('lecPhone');
@@ -1649,7 +1575,6 @@
     const lecSignupSuccess  = document.getElementById('lecSignupSuccess');
     const lecRegisterBtn    = document.getElementById('lecRegisterBtn');
 
-    // Upload boxes
     function wireUpload(boxId, hiddenId) {
         const box = document.getElementById(boxId);
         const hid = document.getElementById(hiddenId);
@@ -1706,16 +1631,15 @@
         if (!termsOk) { lecSignupError.innerText = 'You must agree to the Lecturer Terms.'; return; }
 
         const originalText = lecRegisterBtn.innerHTML;
-        setLoading(lecRegisterBtn, true, originalText);
+        setButtonLoading(lecRegisterBtn, true, originalText);
 
         try {
-            // Check duplicate email
             const snap = await get(ref(database, 'lecturers'));
             const data = snap.val() || {};
             const duplicate = Object.values(data).find(l => (l.email || '').toLowerCase() === email);
             if (duplicate) {
                 lecSignupError.innerText = 'This email is already registered as a lecturer.';
-                setLoading(lecRegisterBtn, false, originalText);
+                setButtonLoading(lecRegisterBtn, false, originalText);
                 return;
             }
 
@@ -1755,23 +1679,11 @@
         } catch (err) {
             lecSignupError.innerText = 'Error: ' + (err.message || err);
         } finally {
-            setLoading(lecRegisterBtn, false, originalText);
+            setButtonLoading(lecRegisterBtn, false, originalText);
         }
     });
 
-    function setLoading(button, isLoading, originalHtml) {
-        if (isLoading) {
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        } else {
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-        }
-    }
-
-    /* ============================================================
-       LECTURER LOGIN
-       ============================================================ */
+    /* LECTURER LOGIN */
     const lecLoginForm     = document.getElementById('lecLoginForm');
     const lecLoginEmail    = document.getElementById('lecLoginEmail');
     const lecLoginPassword = document.getElementById('lecLoginPassword');
@@ -1790,7 +1702,7 @@
         }
 
         const originalHtml = lecLoginBtn.innerHTML;
-        setLoading(lecLoginBtn, true, originalHtml);
+        setButtonLoading(lecLoginBtn, true, originalHtml);
 
         try {
             const snap = await get(ref(database, 'lecturers'));
@@ -1825,7 +1737,6 @@
                 return;
             }
 
-            // Approved → save session & go to dashboard
             localStorage.setItem('lecturerUid', match.uid);
             localStorage.setItem('lecturerEmail', email);
             window.location.href = 'dashboard.html';
@@ -1833,12 +1744,12 @@
         } catch (err) {
             lecLoginError.innerText = 'Login error: ' + (err.message || err);
         } finally {
-            setLoading(lecLoginBtn, false, originalHtml);
+            setButtonLoading(lecLoginBtn, false, originalHtml);
         }
     });
 
     /* ============================================================
-       PWA INSTALL (inline banner only)
+       PWA INSTALL
        ============================================================ */
     let deferredPrompt = null;
     const installBanner = document.getElementById('installBanner');
