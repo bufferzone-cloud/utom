@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="/utom/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script type="importmap">
         {
             "imports": {
@@ -74,9 +75,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* ==========================================================
-           APP CONTAINER — no card, everything sits on background
-           ========================================================== */
         .app-container {
             width: 100%;
             max-width: 560px;
@@ -89,7 +87,7 @@
         }
 
         /* ==========================================================
-           LOGO — 3-second reveal, then grows +50% on complete
+           LOGO — same reveal animation as before
            ========================================================== */
         .logo-area {
             display: flex;
@@ -107,20 +105,12 @@
             display: block;
             margin: 0 auto;
             will-change: width;
-            /* Hold big 0.35s, shrink over 2.65s = 3.0s total */
             transition: width 2.65s var(--ease-out) 0.35s;
             animation: logoIn 0.7s var(--ease-out) both;
         }
 
-        /* Shrunk "settled" state during reveal */
-        body.revealed .logo-img {
-            width: min(150px, 38vw);
-        }
-
-        /* After the reveal completes, grow it +50% (150 → 225) */
-        body.reveal-complete .logo-img {
-            width: min(225px, 57vw);
-        }
+        body.revealed .logo-img { width: min(150px, 38vw); }
+        body.reveal-complete .logo-img { width: min(225px, 57vw); }
 
         @keyframes logoIn {
             0%   { opacity: 0; transform: scale(0.88); }
@@ -138,7 +128,7 @@
         }
 
         /* ==========================================================
-           REVEAL WRAP — grid-row trick for smooth height animation
+           REVEAL WRAP
            ========================================================== */
         .reveal-wrap {
             display: grid;
@@ -164,14 +154,206 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 100%;
         }
 
-        body.reveal-complete .reveal-inner {
-            overflow: visible;
+        body.reveal-complete .reveal-inner { overflow: visible; }
+
+        /* ==========================================================
+           SPLIT LANDING (Student top / Lecturer bottom)
+           ========================================================== */
+        .landing-split {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .split-half {
+            position: relative;
+            width: 100%;
+            min-height: 165px;
+            border-radius: 22px;
+            overflow: hidden;
+            cursor: pointer;
+            transition:
+                transform 0.55s var(--spring),
+                box-shadow 0.4s var(--ease-smooth),
+                background 0.35s var(--ease-smooth);
+            will-change: transform;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.05),
+                0 10px 26px -14px rgba(0, 0, 0, 0.18);
+        }
+
+        .split-half:active { transition-duration: 0.1s; }
+
+        .split-top {
+            background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+            border: 1.5px solid rgba(29, 29, 31, 0.06);
+        }
+
+        .split-top .split-icon { color: #3b82f6; }
+        .split-top .split-handle { color: #3b82f6; }
+
+        .split-bottom {
+            background: linear-gradient(0deg, #1a1a24 0%, #23232e 100%);
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .split-bottom .split-title { color: #ffffff; }
+        .split-bottom .split-hint { color: rgba(255, 255, 255, 0.55); }
+        .split-bottom .split-icon { color: var(--accent); }
+        .split-bottom .split-handle { color: var(--accent); }
+
+        .split-half.nudge-down { transform: translateY(14px); }
+        .split-half.nudge-up   { transform: translateY(-14px); }
+
+        .split-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 1.6rem 1rem;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .split-handle {
+            font-size: 1.15rem;
+            animation: bob 1.8s var(--ease-smooth) infinite;
+            opacity: 0.9;
+        }
+
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); opacity: 0.7; }
+            50%      { transform: translateY(4px); opacity: 1; }
+        }
+
+        .split-bottom .split-handle {
+            animation-name: bobUp;
+        }
+
+        @keyframes bobUp {
+            0%, 100% { transform: translateY(0); opacity: 0.7; }
+            50%      { transform: translateY(-4px); opacity: 1; }
+        }
+
+        .split-icon {
+            font-size: 2rem;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .split-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: var(--text-primary);
+        }
+
+        .split-hint {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            letter-spacing: 0.2px;
         }
 
         /* ==========================================================
-           SEGMENTED CONTROL — iOS style, no card wrapper
+           SLIDE PANELS (Student from top, Lecturer from bottom)
+           ========================================================== */
+        .slide-panel {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: #ffffff;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transition: transform 0.5s var(--ease-out);
+            will-change: transform;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .slide-panel.active {
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        #studentPanel {
+            transform: translateY(-100%);
+        }
+        #studentPanel.active {
+            transform: translateY(0);
+        }
+
+        #lecturerPanel {
+            transform: translateY(100%);
+            background: linear-gradient(180deg, #f8f9fb 0%, #ffffff 100%);
+        }
+        #lecturerPanel.active {
+            transform: translateY(0);
+        }
+
+        .slide-panel-inner {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 1.25rem 1.25rem 3rem;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.1rem;
+            position: sticky;
+            top: 0;
+            background: inherit;
+            padding: 0.35rem 0 0.6rem;
+            z-index: 5;
+        }
+
+        .back-btn {
+            background: var(--fill-gray);
+            border: none;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            padding: 9px 15px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: background 0.25s var(--ease-smooth), transform 0.35s var(--spring);
+        }
+
+        .back-btn:hover { background: var(--fill-gray-hover); }
+        .back-btn:active { transform: scale(0.96); }
+
+        .slide-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        /* ==========================================================
+           SEGMENTED CONTROL
            ========================================================== */
         .segmented-control {
             position: relative;
@@ -180,7 +362,6 @@
             background: var(--fill-gray);
             border-radius: 12px;
             padding: 3px;
-            margin-top: 1.5rem;
             margin-bottom: 1.75rem;
             box-shadow:
                 inset 0 1px 2px rgba(0, 0, 0, 0.04),
@@ -224,28 +405,16 @@
             transition: color 0.3s var(--ease-smooth);
         }
 
-        .segment.active {
-            color: var(--text-primary);
-        }
-
-        .segment:not(.active):hover {
-            color: #4a4a50;
-        }
+        .segment.active { color: var(--text-primary); }
+        .segment:not(.active):hover { color: #4a4a50; }
 
         /* ==========================================================
            FORM AREA
            ========================================================== */
-        .form-area {
-            width: 100%;
-        }
+        .form-area { width: 100%; }
 
-        .form-panel {
-            animation: panelIn 0.45s var(--ease-out);
-        }
-
-        .hidden-panel {
-            display: none;
-        }
+        .form-panel { animation: panelIn 0.45s var(--ease-out); }
+        .hidden-panel { display: none; }
 
         @keyframes panelIn {
             from { opacity: 0; transform: translateY(9px); }
@@ -263,14 +432,8 @@
             gap: 10px;
         }
 
-        .form-title i {
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
+        .form-title i { color: var(--accent); font-size: 1.5rem; }
 
-        /* ==========================================================
-           INPUTS — iOS filled style (no outer card)
-           ========================================================== */
         .input-icon-group {
             position: relative;
             width: 100%;
@@ -306,15 +469,8 @@
                 box-shadow 0.3s var(--ease-smooth);
         }
 
-        .pill-input::placeholder {
-            color: var(--text-tertiary);
-            font-weight: 400;
-        }
-
-        .pill-input:hover {
-            background: var(--fill-gray-hover);
-        }
-
+        .pill-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+        .pill-input:hover { background: var(--fill-gray-hover); }
         .pill-input:focus {
             background: #ffffff;
             border-color: var(--accent);
@@ -323,25 +479,11 @@
                 0 4px 14px -4px var(--accent-glow);
         }
 
-        .pill-input:focus + i,
-        .input-icon-group:focus-within > i {
-            color: var(--accent);
-        }
+        .input-icon-group:focus-within > i { color: var(--accent); }
 
-        /* Name fields: display with capital first letter */
-        #firstName,
-        #lastName {
-            text-transform: capitalize;
-        }
+        #firstName, #lastName { text-transform: capitalize; }
+        #firstName::placeholder, #lastName::placeholder { text-transform: none; }
 
-        #firstName::placeholder,
-        #lastName::placeholder {
-            text-transform: none;
-        }
-
-        /* ==========================================================
-           FIELD HINT — capitalization notice
-           ========================================================== */
         .field-hint {
             display: flex;
             align-items: center;
@@ -357,26 +499,94 @@
             line-height: 1.35;
         }
 
-        .field-hint i {
-            color: var(--accent-dark);
-            font-size: 0.75rem;
-            flex-shrink: 0;
-        }
+        .field-hint i { color: var(--accent-dark); font-size: 0.75rem; flex-shrink: 0; }
 
-        /* Double row */
         .double-row {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
         }
 
-        .double-row .input-icon-group {
-            flex: 1;
-            min-width: 125px;
+        .double-row .input-icon-group { flex: 1; min-width: 125px; }
+
+        /* Upload grid for NRC & profile */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+            margin-bottom: 0.95rem;
         }
 
+        .upload-box {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: var(--fill-gray);
+            border: 2px dashed rgba(0, 0, 0, 0.12);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth);
+        }
+
+        .upload-box:hover {
+            border-color: var(--accent);
+            background: #fff;
+        }
+
+        .upload-box.has-image {
+            border-style: solid;
+            border-color: var(--accent);
+        }
+
+        .upload-box img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-box .upload-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-box i.upload-icon {
+            font-size: 1.5rem;
+            color: var(--text-tertiary);
+        }
+
+        .upload-box.has-image .upload-label,
+        .upload-box.has-image i.upload-icon { display: none; }
+
+        .upload-box .upload-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+            pointer-events: none;
+            display: none;
+        }
+
+        .upload-box.has-image .upload-badge { display: inline-block; }
+
         /* ==========================================================
-           BUTTONS — floating, layered shadows, spring press
+           BUTTONS
            ========================================================== */
         .btn {
             font-family: inherit;
@@ -420,9 +630,6 @@
 
         .btn-primary:active:not(:disabled) {
             transform: translateY(0) scale(0.975);
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.08),
-                0 3px 8px -2px var(--accent-glow);
         }
 
         .btn-secondary {
@@ -437,15 +644,9 @@
         .btn-secondary:hover:not(:disabled) {
             transform: translateY(-2px);
             color: var(--accent-dark);
-            box-shadow:
-                0 0 0 1px var(--accent-tint),
-                0 2px 4px rgba(0, 0, 0, 0.05),
-                0 14px 24px -10px rgba(0, 0, 0, 0.16);
         }
 
-        .btn-secondary:active:not(:disabled) {
-            transform: translateY(0) scale(0.975);
-        }
+        .btn-secondary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
 
         .btn:disabled {
             opacity: 0.55;
@@ -473,20 +674,10 @@
             transition: all 0.28s var(--ease-smooth);
         }
 
-        .text-link i {
-            font-size: 0.75rem;
-            transition: transform 0.28s var(--spring);
-        }
-
-        .text-link:hover {
-            background: var(--accent-soft);
-            color: var(--accent-dark);
-        }
-
+        .text-link i { font-size: 0.75rem; transition: transform 0.28s var(--spring); }
+        .text-link:hover { background: var(--accent-soft); }
         .text-link:hover i.fa-key,
-        .text-link:hover i.fa-chevron-left {
-            transform: translateX(-2px);
-        }
+        .text-link:hover i.fa-chevron-left { transform: translateX(-2px); }
 
         .flex-between {
             display: flex;
@@ -518,10 +709,7 @@
             line-height: 1.4;
         }
 
-        .terms-check label strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
+        .terms-check label strong { color: var(--text-primary); font-weight: 600; }
 
         .checkbox-custom {
             width: 19px;
@@ -545,9 +733,7 @@
             animation: panelIn 0.3s var(--ease-out);
         }
 
-        .error-msg:empty {
-            display: none;
-        }
+        .error-msg:empty { display: none; }
 
         .success-msg {
             color: #1f8a3b;
@@ -559,6 +745,20 @@
             border-radius: 12px;
             display: inline-block;
             margin-bottom: 0.9rem;
+            animation: panelIn 0.35s var(--ease-out);
+        }
+
+        .info-msg {
+            color: #856404;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #fff3cd;
+            border: 1px solid rgba(243, 156, 18, 0.3);
+            padding: 9px 14px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 0.9rem;
+            line-height: 1.4;
             animation: panelIn 0.35s var(--ease-out);
         }
 
@@ -577,13 +777,10 @@
             letter-spacing: 0.1px;
         }
 
-        .small-text i {
-            color: var(--accent);
-            font-size: 0.68rem;
-        }
+        .small-text i { color: var(--accent); font-size: 0.68rem; }
 
         /* ==========================================================
-           INSTALL BANNER — inline notification style
+           INSTALL BANNER
            ========================================================== */
         .install-banner {
             width: 100%;
@@ -611,10 +808,7 @@
             line-height: 1.3;
         }
 
-        .install-banner span i {
-            color: var(--accent);
-            font-size: 0.95rem;
-        }
+        .install-banner span i { color: var(--accent); font-size: 0.95rem; }
 
         .install-banner button {
             font-family: inherit;
@@ -631,14 +825,8 @@
             transition: transform 0.3s var(--spring), box-shadow 0.3s var(--ease-smooth);
         }
 
-        .install-banner button:hover {
-            transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 8px 18px -4px var(--accent-glow);
-        }
-
-        .install-banner button:active {
-            transform: translateY(0) scale(0.97);
-        }
+        .install-banner button:hover { transform: translateY(-2px) scale(1.03); }
+        .install-banner button:active { transform: translateY(0) scale(0.97); }
 
         @keyframes bannerIn {
             from { opacity: 0; transform: translateY(-8px) scale(0.97); }
@@ -648,13 +836,9 @@
         /* ==========================================================
            SPINNER
            ========================================================== */
-        .fa-spinner {
-            animation: spin 0.9s linear infinite;
-        }
+        .fa-spinner { animation: spin 0.9s linear infinite; }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ==========================================================
            RESPONSIVE
@@ -670,6 +854,7 @@
             .btn { padding: 12px 16px; font-size: 0.9rem; }
             .install-banner { flex-direction: column; text-align: center; gap: 11px; }
             .install-banner span { justify-content: center; }
+            .split-half { min-height: 145px; }
         }
 
         @media (max-width: 400px) {
@@ -678,20 +863,13 @@
             .double-row { flex-direction: column; gap: 0.8rem; }
         }
 
-        /* ==========================================================
-           REDUCED MOTION
-           ========================================================== */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.001ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.001ms !important;
             }
-            .reveal-wrap {
-                grid-template-rows: 1fr;
-                opacity: 1;
-                pointer-events: auto;
-            }
+            .reveal-wrap { grid-template-rows: 1fr; opacity: 1; pointer-events: auto; }
             body.revealed .logo-img { width: min(150px, 38vw); }
             body.reveal-complete .logo-img { width: min(225px, 57vw); }
         }
@@ -701,7 +879,7 @@
 
 <div class="app-container">
 
-    <!-- Logo: big → shrinks upward over 3s → grows +50% -->
+    <!-- Logo -->
     <div class="logo-area">
         <img src="logo.png" alt="UTOM official logo" class="logo-img"
              onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'logo-placeholder\'><i class=\'fas fa-bolt\' style=\'margin-right:8px;\'></i>UTOM</div>';">
@@ -711,135 +889,29 @@
     <div class="reveal-wrap" id="revealWrap">
         <div class="reveal-inner">
 
-            <!-- Inline install banner (no floating modal) -->
             <div id="installBanner" class="install-banner" style="display: none;">
                 <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
                 <button id="bannerInstallBtn" type="button">Install</button>
             </div>
 
-            <!-- Segmented control -->
-            <div class="segmented-control" id="authSegments" data-active="login">
-                <button type="button" class="segment active" id="segLogin">Sign in</button>
-                <button type="button" class="segment" id="segSignup">Create account</button>
-            </div>
-
-            <div class="form-area">
-
-                <!-- ================= LOGIN PANEL ================= -->
-                <div id="loginPanel" class="form-panel">
-                    <div class="form-title">
-                        <i class="fas fa-arrow-right-to-bracket"></i>
-                        Welcome back
-                    </div>
-                    <form id="loginForm" novalidate>
-                        <div class="input-icon-group">
-                            <input type="email" id="loginEmail" class="pill-input"
-                                   placeholder="Email address" autocomplete="email" required>
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="password" id="loginPassword" class="pill-input"
-                                   placeholder="Password" autocomplete="current-password" required>
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <div id="loginError" class="error-msg"></div>
-                        <button type="submit" class="btn btn-primary" id="loginBtn">
-                            <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
-                        </button>
-                        <div class="flex-between">
-                            <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
-                                Forgot your password?
-                            </span>
-                            <button type="button" id="forgotPwdBtn" class="text-link">
-                                <i class="fas fa-key"></i> Reset it
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- ================= SIGNUP PANEL ================= -->
-                <div id="signupPanel" class="form-panel hidden-panel">
-                    <div class="form-title">
-                        <i class="fas fa-user-plus"></i>
-                        Create your account
-                    </div>
-                    <form id="signupForm" novalidate>
-                        <div class="double-row">
-                            <div class="input-icon-group">
-                                <input type="text" id="firstName" class="pill-input"
-                                       placeholder="First name" autocomplete="given-name" required>
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="input-icon-group">
-                                <input type="text" id="lastName" class="pill-input"
-                                       placeholder="Last name" autocomplete="family-name" required>
-                                <i class="fas fa-user-tag"></i>
-                            </div>
-                        </div>
-
-                        <!-- Capitalization alert -->
-                        <div class="field-hint">
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                            <span>Heads up — the first letter of each name is capitalized automatically.</span>
-                        </div>
-
-                        <div class="input-icon-group">
-                            <input type="tel" id="phoneNumber" class="pill-input"
-                                   placeholder="Phone number" autocomplete="tel" required>
-                            <i class="fas fa-phone-alt"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="email" id="signupEmail" class="pill-input"
-                                   placeholder="Email address" autocomplete="email" required>
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="password" id="signupPassword" class="pill-input"
-                                   placeholder="Create password" autocomplete="new-password" required>
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="password" id="confirmPassword" class="pill-input"
-                                   placeholder="Confirm password" autocomplete="new-password" required>
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div id="signupError" class="error-msg"></div>
-                        <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
-                        <div class="terms-check">
-                            <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
-                            <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary" id="registerBtn">
-                            <i class="fas fa-user-check"></i> REGISTER
-                        </button>
-                    </form>
-                </div>
-
-                <!-- ================= FORGOT PASSWORD PANEL ================= -->
-                <div id="forgotPanel" class="form-panel hidden-panel">
-                    <div class="form-title">
-                        <i class="fas fa-paper-plane"></i>
-                        Reset password
-                    </div>
-                    <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
-                        Enter your email address and we'll send you a secure link to reset your password.
-                    </p>
-                    <div class="input-icon-group">
-                        <input type="email" id="resetEmailInput" class="pill-input"
-                               placeholder="Your email address" autocomplete="email">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div id="resetError" class="error-msg"></div>
-                    <div style="display:flex;gap:11px;margin-top:1.2rem;">
-                        <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
-                            <i class="fas fa-chevron-left"></i> Cancel
-                        </button>
-                        <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Send link
-                        </button>
+            <!-- ============ SPLIT LANDING ============ -->
+            <div class="landing-split" id="landingSplit">
+                <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
+                    <div class="split-inner">
+                        <div class="split-handle"><i class="fas fa-chevron-down"></i></div>
+                        <div class="split-icon"><i class="fas fa-user-graduate"></i></div>
+                        <div class="split-title">Student</div>
+                        <div class="split-hint">Swipe down to continue</div>
                     </div>
                 </div>
-
+                <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
+                    <div class="split-inner">
+                        <div class="split-handle"><i class="fas fa-chevron-up"></i></div>
+                        <div class="split-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                        <div class="split-title">Lecturer</div>
+                        <div class="split-hint">Swipe up to continue</div>
+                    </div>
+                </div>
             </div>
 
             <div class="small-text">
@@ -850,10 +922,285 @@
     </div>
 </div>
 
+<!-- ==========================================================
+     STUDENT PANEL  (slides from top)
+     ========================================================== -->
+<div class="slide-panel" id="studentPanel">
+    <div class="slide-panel-inner">
+        <div class="slide-header">
+            <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+            <span class="slide-label">Student Portal</span>
+        </div>
+
+        <!-- Segmented control -->
+        <div class="segmented-control" id="authSegments" data-active="login">
+            <button type="button" class="segment active" id="segLogin">Sign in</button>
+            <button type="button" class="segment" id="segSignup">Create account</button>
+        </div>
+
+        <div class="form-area">
+            <!-- LOGIN -->
+            <div id="loginPanel" class="form-panel">
+                <div class="form-title">
+                    <i class="fas fa-arrow-right-to-bracket"></i>
+                    Welcome back
+                </div>
+                <form id="loginForm" novalidate>
+                    <div class="input-icon-group">
+                        <input type="email" id="loginEmail" class="pill-input"
+                               placeholder="Email address" autocomplete="email" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="loginPassword" class="pill-input"
+                               placeholder="Password" autocomplete="current-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div id="loginError" class="error-msg"></div>
+                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
+                    </button>
+                    <div class="flex-between">
+                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                            Forgot your password?
+                        </span>
+                        <button type="button" id="forgotPwdBtn" class="text-link">
+                            <i class="fas fa-key"></i> Reset it
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SIGNUP -->
+            <div id="signupPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-user-plus"></i>
+                    Create your account
+                </div>
+                <form id="signupForm" novalidate>
+                    <div class="double-row">
+                        <div class="input-icon-group">
+                            <input type="text" id="firstName" class="pill-input"
+                                   placeholder="First name" autocomplete="given-name" required>
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="text" id="lastName" class="pill-input"
+                                   placeholder="Last name" autocomplete="family-name" required>
+                            <i class="fas fa-user-tag"></i>
+                        </div>
+                    </div>
+
+                    <div class="field-hint">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Heads up — the first letter of each name is capitalized automatically.</span>
+                    </div>
+
+                    <div class="input-icon-group">
+                        <input type="tel" id="phoneNumber" class="pill-input"
+                               placeholder="Phone number" autocomplete="tel" required>
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="email" id="signupEmail" class="pill-input"
+                               placeholder="Email address" autocomplete="email" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="signupPassword" class="pill-input"
+                               placeholder="Create password" autocomplete="new-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="confirmPassword" class="pill-input"
+                               placeholder="Confirm password" autocomplete="new-password" required>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div id="signupError" class="error-msg"></div>
+                    <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
+                    <div class="terms-check">
+                        <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                        <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="registerBtn">
+                        <i class="fas fa-user-check"></i> REGISTER
+                    </button>
+                </form>
+            </div>
+
+            <!-- FORGOT -->
+            <div id="forgotPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-paper-plane"></i>
+                    Reset password
+                </div>
+                <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
+                    Enter your email address and we'll send you a secure link to reset your password.
+                </p>
+                <div class="input-icon-group">
+                    <input type="email" id="resetEmailInput" class="pill-input"
+                           placeholder="Your email address" autocomplete="email">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div id="resetError" class="error-msg"></div>
+                <div style="display:flex;gap:11px;margin-top:1.2rem;">
+                    <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> Cancel
+                    </button>
+                    <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================
+     LECTURER PANEL  (slides from bottom)
+     ========================================================== -->
+<div class="slide-panel" id="lecturerPanel">
+    <div class="slide-panel-inner">
+        <div class="slide-header">
+            <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+            <span class="slide-label">Lecturer Portal</span>
+        </div>
+
+        <div class="segmented-control" id="lecSegments" data-active="login">
+            <button type="button" class="segment active" id="lecSegLogin">Sign in</button>
+            <button type="button" class="segment" id="lecSegSignup">Apply as lecturer</button>
+        </div>
+
+        <div class="form-area">
+            <!-- LECTURER LOGIN -->
+            <div id="lecLoginPanel" class="form-panel">
+                <div class="form-title">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    Lecturer sign in
+                </div>
+                <form id="lecLoginForm" novalidate>
+                    <div class="input-icon-group">
+                        <input type="email" id="lecLoginEmail" class="pill-input"
+                               placeholder="Email address" autocomplete="email" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="lecLoginPassword" class="pill-input"
+                               placeholder="Password" autocomplete="current-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div id="lecLoginError" class="error-msg"></div>
+                    <button type="submit" class="btn btn-primary" id="lecLoginBtn">
+                        <i class="fas fa-arrow-right-to-bracket"></i> SIGN IN
+                    </button>
+                    <div class="flex-between">
+                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                            Not yet approved?
+                        </span>
+                        <button type="button" id="lecGoSignupBtn" class="text-link">
+                            <i class="fas fa-user-plus"></i> Apply now
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- LECTURER SIGNUP -->
+            <div id="lecSignupPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-user-plus"></i>
+                    Apply to teach
+                </div>
+                <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:1.1rem;line-height:1.5;">
+                    Submit your details and document images. An admin will review your application.
+                </p>
+                <form id="lecSignupForm" novalidate>
+                    <div class="input-icon-group">
+                        <input type="text" id="lecName" class="pill-input"
+                               placeholder="Full name" autocomplete="name" required>
+                        <i class="fas fa-user"></i>
+                    </div>
+
+                    <div class="double-row">
+                        <div class="input-icon-group">
+                            <input type="email" id="lecEmail" class="pill-input"
+                                   placeholder="Email address" autocomplete="email" required>
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="tel" id="lecPhone" class="pill-input"
+                                   placeholder="Phone number" autocomplete="tel" required>
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-icon-group">
+                        <input type="text" id="lecNrc" class="pill-input"
+                               placeholder="NRC number (e.g. 123456/78/9)" required>
+                        <i class="fas fa-id-card"></i>
+                    </div>
+
+                    <div style="font-size:0.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0.9rem 0 0.5rem;">
+                        Profile picture
+                    </div>
+                    <div class="upload-grid" style="grid-template-columns:1fr;">
+                        <div class="upload-box" id="lecProfileUpload">
+                            <i class="fas fa-user-circle upload-icon"></i>
+                            <span class="upload-label">Tap to upload</span>
+                            <span class="upload-badge">Profile</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="lecProfileUrl">
+
+                    <div style="font-size:0.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0.9rem 0 0.5rem;">
+                        NRC images (front &amp; back)
+                    </div>
+                    <div class="upload-grid">
+                        <div class="upload-box" id="lecNrcFrontUpload">
+                            <i class="fas fa-id-card upload-icon"></i>
+                            <span class="upload-label">NRC Front</span>
+                            <span class="upload-badge">Front</span>
+                        </div>
+                        <div class="upload-box" id="lecNrcBackUpload">
+                            <i class="fas fa-id-card upload-icon"></i>
+                            <span class="upload-label">NRC Back</span>
+                            <span class="upload-badge">Back</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="lecNrcFrontUrl">
+                    <input type="hidden" id="lecNrcBackUrl">
+
+                    <div class="input-icon-group" style="margin-top:0.9rem;">
+                        <input type="password" id="lecPassword" class="pill-input"
+                               placeholder="Create password" autocomplete="new-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="lecConfirmPassword" class="pill-input"
+                               placeholder="Confirm password" autocomplete="new-password" required>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+
+                    <div id="lecSignupError" class="error-msg"></div>
+                    <div id="lecSignupSuccess" class="success-msg" style="display: none;"></div>
+
+                    <div class="terms-check">
+                        <input type="checkbox" id="lecTermsCheckbox" class="checkbox-custom">
+                        <label for="lecTermsCheckbox">I confirm the documents are authentic and agree to the <strong>Lecturer Terms</strong>.</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="lecRegisterBtn">
+                        <i class="fas fa-paper-plane"></i> SUBMIT APPLICATION
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-    import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+    import { getDatabase, ref, set, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
@@ -865,14 +1212,15 @@
         appId: "1:878225874050:web:643626906bfd233eeae89b",
         measurementId: "G-STHFWDKVZN"
     };
+    const CLOUD_NAME = 'dd3lcymrk';
+    const UPLOAD_PRESET = 'h3eyhc2o';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
 
     /* ============================================================
-       UI-ONLY: 3-second logo shrink → form revealed →
-       logo grows +50% once the reveal is done
+       LOGO REVEAL ANIMATION (unchanged)
        ============================================================ */
     (function initRevealAnimation() {
         const revealWrap = document.getElementById('revealWrap');
@@ -886,19 +1234,156 @@
             return;
         }
 
-        // Kick off immediately — CSS holds the logo big for 0.35s,
-        // then shrinks it over 2.65s (3.0s total logo animation).
         requestAnimationFrame(() => {
             document.body.classList.add('revealed');
             if (revealWrap && 'inert' in revealWrap) revealWrap.inert = false;
-            // After the reveal motion ends, add reveal-complete which
-            // triggers the +50% logo growth (150px → 225px).
             window.setTimeout(() => document.body.classList.add('reveal-complete'), 3200);
         });
     })();
 
     /* ============================================================
-       DOM REFERENCES
+       SPLIT LANDING — gesture handling
+       ============================================================ */
+    const landingSplit = document.getElementById('landingSplit');
+    const splitTop     = document.getElementById('splitTop');
+    const splitBottom  = document.getElementById('splitBottom');
+    const studentPanel = document.getElementById('studentPanel');
+    const lecturerPanel= document.getElementById('lecturerPanel');
+
+    function openStudentPanel() {
+        studentPanel.classList.add('active');
+        lecturerPanel.classList.remove('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openLecturerPanel() {
+        lecturerPanel.classList.add('active');
+        studentPanel.classList.remove('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePanels() {
+        studentPanel.classList.remove('active');
+        lecturerPanel.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('backFromStudent').addEventListener('click', closePanels);
+    document.getElementById('backFromLecturer').addEventListener('click', closePanels);
+
+    // Gesture state
+    let activeGesture = null;      // { el, dir: 'down'|'up', startY, lastY, moved }
+    const SWIPE_THRESHOLD = 55;
+
+    function beginGesture(el, dir, clientY) {
+        activeGesture = { el, dir, startY: clientY, lastY: clientY, moved: false };
+        el.style.transition = 'transform 0.08s linear';
+    }
+
+    function updateGesture(clientY) {
+        if (!activeGesture) return;
+        const delta = clientY - activeGesture.startY;
+        const cappedDelta = Math.max(-70, Math.min(70, delta));
+        if (Math.abs(delta) > 6) activeGesture.moved = true;
+
+        if (activeGesture.dir === 'down' && delta > 0) {
+            activeGesture.el.style.transform = `translateY(${Math.min(cappedDelta, 30)}px)`;
+        } else if (activeGesture.dir === 'up' && delta < 0) {
+            activeGesture.el.style.transform = `translateY(${Math.max(cappedDelta, -30)}px)`;
+        }
+        activeGesture.lastY = clientY;
+    }
+
+    function endGesture() {
+        if (!activeGesture) return;
+        const { el, dir, startY, lastY } = activeGesture;
+        const delta = lastY - startY;
+        el.style.transition = '';
+        el.style.transform = '';
+
+        if (dir === 'down' && delta > SWIPE_THRESHOLD) {
+            openStudentPanel();
+        } else if (dir === 'up' && delta < -SWIPE_THRESHOLD) {
+            openLecturerPanel();
+        }
+        activeGesture = null;
+    }
+
+    // Touch events for the split landing halves
+    splitTop.addEventListener('touchstart', (e) => {
+        beginGesture(splitTop, 'down', e.touches[0].clientY);
+    }, { passive: true });
+    splitBottom.addEventListener('touchstart', (e) => {
+        beginGesture(splitBottom, 'up', e.touches[0].clientY);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!activeGesture) return;
+        updateGesture(e.touches[0].clientY);
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        if (activeGesture) endGesture();
+    }, { passive: true });
+
+    // Mouse events for desktop
+    let mouseDown = false;
+    splitTop.addEventListener('mousedown', (e) => {
+        mouseDown = true;
+        beginGesture(splitTop, 'down', e.clientY);
+    });
+    splitBottom.addEventListener('mousedown', (e) => {
+        mouseDown = true;
+        beginGesture(splitBottom, 'up', e.clientY);
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!mouseDown || !activeGesture) return;
+        updateGesture(e.clientY);
+    });
+    document.addEventListener('mouseup', () => {
+        if (mouseDown && activeGesture) endGesture();
+        mouseDown = false;
+    });
+
+    // Click fallback
+    splitTop.addEventListener('click', (e) => {
+        if (!activeGesture) openStudentPanel();
+    });
+    splitBottom.addEventListener('click', (e) => {
+        if (!activeGesture) openLecturerPanel();
+    });
+
+    /* ============================================================
+       HELPERS (UI only)
+       ============================================================ */
+    function setButtonLoading(button, isLoading, originalHtml) {
+        if (isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
+    }
+
+    function openCloudUpload(opts) {
+        return new Promise((resolve, reject) => {
+            const o = Object.assign({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url'],
+                maxFileSize: 155000000,
+                maxFiles: 1
+            }, opts || {});
+            cloudinary.openUploadWidget(o, (err, res) => {
+                if (err) return reject(err);
+                if (res.event === 'success') resolve(res.info.secure_url);
+            });
+        });
+    }
+
+    /* ============================================================
+       STUDENT PANEL — SEGMENTED CONTROL
        ============================================================ */
     const loginPanel  = document.getElementById('loginPanel');
     const signupPanel = document.getElementById('signupPanel');
@@ -931,19 +1416,6 @@
     const sendResetLinkBtn         = document.getElementById('sendResetLinkBtn');
     const resetEmailInput          = document.getElementById('resetEmailInput');
     const resetErrorSpan           = document.getElementById('resetError');
-
-    /* ============================================================
-       HELPERS (UI only)
-       ============================================================ */
-    function setButtonLoading(button, isLoading, originalHtml) {
-        if (isLoading) {
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        } else {
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-        }
-    }
 
     function hideAllPanels() {
         loginPanel.classList.add('hidden-panel');
@@ -994,7 +1466,7 @@
     }
 
     /* ============================================================
-       SIGNUP  (logic unchanged)
+       STUDENT SIGNUP (logic unchanged)
        ============================================================ */
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1062,7 +1534,7 @@
     });
 
     /* ============================================================
-       LOGIN  (logic unchanged)
+       STUDENT LOGIN (logic unchanged)
        ============================================================ */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1095,7 +1567,7 @@
     });
 
     /* ============================================================
-       FORGOT PASSWORD  (inline panel, logic unchanged)
+       FORGOT PASSWORD (logic unchanged)
        ============================================================ */
     forgotPwdBtn.addEventListener('click', showForgotPanel);
     backToLoginFromForgotBtn.addEventListener('click', showLoginPanel);
@@ -1129,11 +1601,241 @@
         }
     });
 
-    /* ============================================================
-       SEGMENTED CONTROL
-       ============================================================ */
     segLogin.addEventListener('click', showLoginPanel);
     segSignup.addEventListener('click', showSignupPanel);
+
+    /* ============================================================
+       LECTURER PANEL — SEGMENTED CONTROL
+       ============================================================ */
+    const lecSegmentsBar = document.getElementById('lecSegments');
+    const lecSegLogin    = document.getElementById('lecSegLogin');
+    const lecSegSignup   = document.getElementById('lecSegSignup');
+    const lecLoginPanel  = document.getElementById('lecLoginPanel');
+    const lecSignupPanel = document.getElementById('lecSignupPanel');
+
+    function setLecSegment(which) {
+        lecSegmentsBar.setAttribute('data-active', which);
+        if (which === 'login') {
+            lecSegLogin.classList.add('active');
+            lecSegSignup.classList.remove('active');
+            lecLoginPanel.classList.remove('hidden-panel');
+            lecSignupPanel.classList.add('hidden-panel');
+        } else {
+            lecSegSignup.classList.add('active');
+            lecSegLogin.classList.remove('active');
+            lecSignupPanel.classList.remove('hidden-panel');
+            lecLoginPanel.classList.add('hidden-panel');
+        }
+    }
+
+    lecSegLogin.addEventListener('click', () => setLecSegment('login'));
+    lecSegSignup.addEventListener('click', () => setLecSegment('signup'));
+    document.getElementById('lecGoSignupBtn').addEventListener('click', () => setLecSegment('signup'));
+
+    /* ============================================================
+       LECTURER SIGNUP
+       ============================================================ */
+    const lecName           = document.getElementById('lecName');
+    const lecEmail          = document.getElementById('lecEmail');
+    const lecPhone          = document.getElementById('lecPhone');
+    const lecNrc            = document.getElementById('lecNrc');
+    const lecPassword       = document.getElementById('lecPassword');
+    const lecConfirmPassword= document.getElementById('lecConfirmPassword');
+    const lecTermsCheckbox  = document.getElementById('lecTermsCheckbox');
+    const lecProfileUrl     = document.getElementById('lecProfileUrl');
+    const lecNrcFrontUrl    = document.getElementById('lecNrcFrontUrl');
+    const lecNrcBackUrl     = document.getElementById('lecNrcBackUrl');
+    const lecSignupError    = document.getElementById('lecSignupError');
+    const lecSignupSuccess  = document.getElementById('lecSignupSuccess');
+    const lecRegisterBtn    = document.getElementById('lecRegisterBtn');
+
+    // Upload boxes
+    function wireUpload(boxId, hiddenId) {
+        const box = document.getElementById(boxId);
+        const hid = document.getElementById(hiddenId);
+        if (!box || !hid) return;
+        box.addEventListener('click', async () => {
+            try {
+                const url = await openCloudUpload({
+                    resourceType: 'image',
+                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp']
+                });
+                hid.value = url;
+                box.querySelectorAll('img').forEach(i => i.remove());
+                const img = document.createElement('img');
+                img.src = url;
+                box.appendChild(img);
+                box.classList.add('has-image');
+            } catch (e) {
+                lecSignupError.innerText = 'Upload failed: ' + (e.message || e);
+            }
+        });
+    }
+    wireUpload('lecProfileUpload', 'lecProfileUrl');
+    wireUpload('lecNrcFrontUpload', 'lecNrcFrontUrl');
+    wireUpload('lecNrcBackUpload', 'lecNrcBackUrl');
+
+    document.getElementById('lecSignupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        lecSignupError.innerText = '';
+        lecSignupSuccess.style.display = 'none';
+
+        const name = lecName.value.trim();
+        const email = lecEmail.value.trim().toLowerCase();
+        const phone = lecPhone.value.trim();
+        const nrc = lecNrc.value.trim();
+        const pwd = lecPassword.value;
+        const confirmPwd = lecConfirmPassword.value;
+        const profileUrl = lecProfileUrl.value;
+        const nrcFront = lecNrcFrontUrl.value;
+        const nrcBack = lecNrcBackUrl.value;
+        const termsOk = lecTermsCheckbox.checked;
+
+        if (!name || !email || !phone || !nrc || !pwd || !confirmPwd) {
+            lecSignupError.innerText = 'All fields are required.';
+            return;
+        }
+        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if (!emailRegex.test(email)) { lecSignupError.innerText = 'Enter a valid email address.'; return; }
+        const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
+        if (!phoneRegex.test(phone)) { lecSignupError.innerText = 'Enter a valid phone number.'; return; }
+        if (pwd.length < 6) { lecSignupError.innerText = 'Password must be at least 6 characters.'; return; }
+        if (pwd !== confirmPwd) { lecSignupError.innerText = 'Passwords do not match.'; return; }
+        if (!profileUrl) { lecSignupError.innerText = 'Please upload your profile picture.'; return; }
+        if (!nrcFront || !nrcBack) { lecSignupError.innerText = 'Please upload both NRC images.'; return; }
+        if (!termsOk) { lecSignupError.innerText = 'You must agree to the Lecturer Terms.'; return; }
+
+        const originalText = lecRegisterBtn.innerHTML;
+        setLoading(lecRegisterBtn, true, originalText);
+
+        try {
+            // Check duplicate email
+            const snap = await get(ref(database, 'lecturers'));
+            const data = snap.val() || {};
+            const duplicate = Object.values(data).find(l => (l.email || '').toLowerCase() === email);
+            if (duplicate) {
+                lecSignupError.innerText = 'This email is already registered as a lecturer.';
+                setLoading(lecRegisterBtn, false, originalText);
+                return;
+            }
+
+            const uid = 'lec_' + email.replace(/[^a-z0-9]/g, '_');
+            await set(ref(database, `lecturers/${uid}`), {
+                name, email, phone,
+                nrcNumber: nrc,
+                password: pwd,
+                profileUrl,
+                nrcFront,
+                nrcBack,
+                status: 'pending',
+                paymentStatus: 'unpaid',
+                banned: false,
+                appliedAt: Date.now()
+            });
+
+            lecSignupSuccess.style.display = 'block';
+            lecSignupSuccess.innerText = '✅ Application submitted! Wait for admin approval before signing in.';
+            document.getElementById('lecSignupForm').reset();
+            lecTermsCheckbox.checked = false;
+            lecProfileUrl.value = '';
+            lecNrcFrontUrl.value = '';
+            lecNrcBackUrl.value = '';
+            ['lecProfileUpload', 'lecNrcFrontUpload', 'lecNrcBackUpload'].forEach(id => {
+                const box = document.getElementById(id);
+                box.querySelectorAll('img').forEach(i => i.remove());
+                box.classList.remove('has-image');
+            });
+
+            setTimeout(() => {
+                setLecSegment('login');
+                lecSignupSuccess.style.display = 'none';
+                document.getElementById('lecLoginEmail').value = email;
+            }, 1800);
+
+        } catch (err) {
+            lecSignupError.innerText = 'Error: ' + (err.message || err);
+        } finally {
+            setLoading(lecRegisterBtn, false, originalText);
+        }
+    });
+
+    function setLoading(button, isLoading, originalHtml) {
+        if (isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
+    }
+
+    /* ============================================================
+       LECTURER LOGIN
+       ============================================================ */
+    const lecLoginForm     = document.getElementById('lecLoginForm');
+    const lecLoginEmail    = document.getElementById('lecLoginEmail');
+    const lecLoginPassword = document.getElementById('lecLoginPassword');
+    const lecLoginError    = document.getElementById('lecLoginError');
+    const lecLoginBtn      = document.getElementById('lecLoginBtn');
+
+    lecLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        lecLoginError.innerText = '';
+        const email = lecLoginEmail.value.trim().toLowerCase();
+        const pwd = lecLoginPassword.value;
+
+        if (!email || !pwd) {
+            lecLoginError.innerText = 'Both email and password are required.';
+            return;
+        }
+
+        const originalHtml = lecLoginBtn.innerHTML;
+        setLoading(lecLoginBtn, true, originalHtml);
+
+        try {
+            const snap = await get(ref(database, 'lecturers'));
+            const data = snap.val() || {};
+            let match = null;
+            Object.entries(data).forEach(([uid, l]) => {
+                if ((l.email || '').toLowerCase() === email) match = { uid, ...l };
+            });
+
+            if (!match) {
+                lecLoginError.innerText = 'No lecturer account found with this email.';
+                return;
+            }
+            if (match.password !== pwd) {
+                lecLoginError.innerText = 'Incorrect password.';
+                return;
+            }
+            if (match.banned) {
+                lecLoginError.innerText = 'Your account has been banned. Reason: ' + (match.banReason || 'Contact admin.');
+                return;
+            }
+            if (match.status === 'pending') {
+                lecLoginError.innerText = '⏳ Your application is still under review. Please wait for admin approval.';
+                return;
+            }
+            if (match.status === 'rejected') {
+                lecLoginError.innerText = '❌ Your application was rejected. Reason: ' + (match.rejectionReason || 'Contact admin for details.');
+                return;
+            }
+            if (match.status !== 'approved') {
+                lecLoginError.innerText = 'Account is not active. Contact admin.';
+                return;
+            }
+
+            // Approved → save session & go to dashboard
+            localStorage.setItem('lecturerUid', match.uid);
+            localStorage.setItem('lecturerEmail', email);
+            window.location.href = 'dashboard.html';
+
+        } catch (err) {
+            lecLoginError.innerText = 'Login error: ' + (err.message || err);
+        } finally {
+            setLoading(lecLoginBtn, false, originalHtml);
+        }
+    });
 
     /* ============================================================
        PWA INSTALL (inline banner only)
