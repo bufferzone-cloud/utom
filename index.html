@@ -44,6 +44,7 @@
             --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
             --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --panel-ease: cubic-bezier(0.32, 0.72, 0, 1);
         }
 
         * {
@@ -66,13 +67,12 @@
             background: #ffffff;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
 
         /* ==========================================================
-           SPLIT LANDING — Windows-Phone-style full-screen halves
+           SPLIT LANDING
            ========================================================== */
         .split-landing {
             position: fixed;
@@ -81,6 +81,13 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: filter 0.55s var(--panel-ease), transform 0.55s var(--panel-ease);
+            will-change: filter, transform;
+        }
+
+        body.panel-open .split-landing {
+            filter: blur(10px) brightness(0.92);
+            transform: scale(1.03);
         }
 
         .split-half {
@@ -91,29 +98,28 @@
             justify-content: center;
             cursor: pointer;
             overflow: hidden;
-            transition: transform 0.5s var(--ease-out);
+            transition: transform 0.55s var(--panel-ease);
             will-change: transform;
             touch-action: none;
         }
 
-        /* Top: white/student */
+        /* TOP — STUDENT (pure white) */
         .split-top {
             background: #ffffff;
             color: var(--text-primary);
             border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
 
-        /* Bottom: orange/lecturer */
+        /* BOTTOM — LECTURER (orange) */
         .split-bottom {
             background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
             color: #1a1206;
         }
 
-        /* Drag feedback (translate the whole half slightly) */
+        /* Drag feedback */
         .split-top.drag-active    { transform: translateY(var(--drag-y, 0)); }
         .split-bottom.drag-active { transform: translateY(var(--drag-y, 0)); }
 
-        /* Content inside each half */
         .half-content {
             display: flex;
             flex-direction: column;
@@ -126,9 +132,9 @@
         }
 
         .half-chevron {
-            font-size: 1.4rem;
-            opacity: 0.8;
-            animation: bobDown 1.8s var(--ease-smooth) infinite;
+            font-size: 1.5rem;
+            opacity: 0.85;
+            animation: bobDown 1.9s var(--ease-smooth) infinite;
         }
 
         .split-bottom .half-chevron {
@@ -136,28 +142,28 @@
         }
 
         @keyframes bobDown {
-            0%, 100% { transform: translateY(0); opacity: 0.55; }
-            50%      { transform: translateY(6px); opacity: 1; }
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50%      { transform: translateY(7px); opacity: 1; }
         }
 
         @keyframes bobUp {
-            0%, 100% { transform: translateY(0); opacity: 0.55; }
-            50%      { transform: translateY(-6px); opacity: 1; }
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50%      { transform: translateY(-7px); opacity: 1; }
         }
 
         .half-icon {
-            font-size: 2.6rem;
+            font-size: 2.8rem;
             line-height: 1;
-            margin: 4px 0 2px;
+            margin: 6px 0 2px;
         }
 
         .split-top .half-icon { color: #3b82f6; }
         .split-bottom .half-icon { color: #1a1206; }
 
         .half-title {
-            font-size: 1.5rem;
+            font-size: 1.55rem;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.6px;
             text-transform: uppercase;
         }
 
@@ -171,9 +177,9 @@
         }
 
         .split-top .half-hint { color: var(--text-tertiary); }
-        .split-bottom .half-hint { color: rgba(26, 18, 6, 0.65); }
+        .split-bottom .half-hint { color: rgba(26, 18, 6, 0.62); }
 
-        /* Center logo floating over both halves at the seam */
+        /* Floating center logo — small, round pill at the seam */
         .center-logo {
             position: absolute;
             top: 50%;
@@ -184,13 +190,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 14px;
-            background: #ffffff;
+            width: 86px;
+            height: 86px;
             border-radius: 50%;
+            background: #ffffff;
             box-shadow:
-                0 8px 24px -6px rgba(0, 0, 0, 0.18),
-                0 0 0 6px rgba(255, 255, 255, 0.9),
-                0 0 0 8px rgba(245, 176, 66, 0.22);
+                0 10px 28px -8px rgba(0, 0, 0, 0.22),
+                0 0 0 5px rgba(255, 255, 255, 0.95),
+                0 0 0 7px rgba(245, 176, 66, 0.28);
+            animation: centerLogoIn 0.8s var(--spring) both;
+        }
+
+        @keyframes centerLogoIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
 
         .center-logo img {
@@ -202,28 +215,30 @@
         }
 
         .center-logo .logo-fallback {
-            font-size: 1.4rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: var(--accent-dark);
             letter-spacing: -0.5px;
         }
 
         /* ==========================================================
-           SLIDE PANELS
+           SLIDE PANELS — full-screen, iOS-style easing
            ========================================================== */
         .slide-panel {
             position: fixed;
+            top: 0;
             left: 0;
             right: 0;
-            height: 100%;
+            bottom: 0;
             z-index: 100;
             background: #ffffff;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            transition: transform 0.55s var(--ease-out);
+            transition: transform 0.62s var(--panel-ease), opacity 0.4s var(--ease-out);
             will-change: transform;
             pointer-events: none;
             visibility: hidden;
+            opacity: 0;
             touch-action: auto;
             user-select: text;
             -webkit-user-select: text;
@@ -232,23 +247,23 @@
         .slide-panel.active {
             pointer-events: auto;
             visibility: visible;
+            opacity: 1;
         }
 
         #studentPanel {
-            top: 0;
-            transform: translateY(-100%);
+            transform: translateY(-8%);
+            background: linear-gradient(180deg, #f8f9fb 0%, #ffffff 55%);
         }
         #studentPanel.active { transform: translateY(0); }
 
         #lecturerPanel {
-            top: 0;
-            transform: translateY(100%);
-            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
+            transform: translateY(8%);
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 55%);
         }
         #lecturerPanel.active { transform: translateY(0); }
 
         /* ==========================================================
-           PANEL HEADER — logo on top of the login form
+           PANEL TOPBAR
            ========================================================== */
         .panel-topbar {
             position: sticky;
@@ -258,14 +273,14 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         #lecturerPanel .panel-topbar {
-            background: rgba(255, 250, 242, 0.92);
+            background: rgba(255, 250, 242, 0.85);
         }
 
         .back-btn {
@@ -285,62 +300,77 @@
         }
 
         .back-btn:hover { background: var(--fill-gray-hover); }
-        .back-btn:active { transform: scale(0.96); }
+        .back-btn:active { transform: scale(0.94); }
+
+        .back-btn i {
+            transition: transform 0.28s var(--spring);
+        }
+        .back-btn:hover i { transform: translateX(-2px); }
 
         .panel-label {
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 700;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
             color: var(--text-tertiary);
         }
 
-        /* Logo strip at top of each panel */
+        /* ==========================================================
+           PANEL LOGO — big, flat, no circle
+           ========================================================== */
         .panel-logo-strip {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 22px 16px 8px;
+            padding: 26px 16px 12px;
             text-align: center;
         }
 
-        .panel-logo-strip img {
-            width: 96px;
-            height: 96px;
+        .panel-logo-strip .panel-logo-img {
+            width: 132px;
+            height: 132px;
             object-fit: contain;
             display: block;
-            margin-bottom: 8px;
-            filter: drop-shadow(0 6px 18px rgba(245, 176, 66, 0.24));
+            margin-bottom: 6px;
+            filter: drop-shadow(0 12px 26px rgba(245, 176, 66, 0.30));
+            animation: panelLogoIn 0.7s var(--spring) 0.08s both;
+        }
+
+        @keyframes panelLogoIn {
+            from { opacity: 0; transform: scale(0.55) translateY(-22px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .panel-logo-strip .logo-fallback {
-            font-size: 2rem;
+            font-size: 2.4rem;
             font-weight: 800;
-            color: var(--accent-dark);
-            letter-spacing: -1px;
-            margin-bottom: 6px;
-        }
-
-        .panel-brand-name {
-            font-size: 1.25rem;
-            font-weight: 800;
-            letter-spacing: -0.4px;
+            letter-spacing: -1.2px;
             background: linear-gradient(135deg, #1d1d1f 30%, var(--accent) 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .panel-brand-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
         }
 
         .panel-brand-sub {
             font-size: 0.72rem;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-tertiary);
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
-        /* Panel inner container */
+        /* ==========================================================
+           PANEL INNER
+           ========================================================== */
         .slide-panel-inner {
             max-width: 560px;
             margin: 0 auto;
@@ -349,6 +379,16 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* Staggered entrance of form elements after panel is active */
+        .slide-panel.active .form-area { animation: formEnter 0.55s var(--ease-out) 0.15s both; }
+
+        @keyframes formEnter {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-panel.active .segmented-control { animation: formEnter 0.55s var(--ease-out) 0.10s both; }
 
         /* ==========================================================
            SEGMENTED CONTROL
@@ -378,7 +418,7 @@
             box-shadow:
                 0 1px 2px rgba(0, 0, 0, 0.10),
                 0 3px 8px rgba(0, 0, 0, 0.06);
-            transition: transform 0.45s var(--spring);
+            transition: transform 0.5s var(--spring);
             will-change: transform;
         }
 
@@ -530,10 +570,10 @@
             gap: 6px;
             cursor: pointer;
             overflow: hidden;
-            transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth);
+            transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth), transform 0.35s var(--spring);
         }
 
-        .upload-box:hover { border-color: var(--accent); background: #fff; }
+        .upload-box:hover { border-color: var(--accent); background: #fff; transform: translateY(-2px); }
 
         .upload-box.has-image {
             border-style: solid;
@@ -798,10 +838,12 @@
             .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
             .input-icon-group > i { left: 13px; font-size: 0.9rem; }
             .btn { padding: 12px 16px; font-size: 0.9rem; }
-            .half-title { font-size: 1.25rem; }
-            .half-icon { font-size: 2.2rem; }
+            .half-title { font-size: 1.3rem; }
+            .half-icon { font-size: 2.4rem; }
+            .center-logo { width: 76px; height: 76px; }
             .center-logo img { width: 54px; height: 54px; }
-            .panel-logo-strip img { width: 78px; height: 78px; }
+            .panel-logo-strip .panel-logo-img { width: 118px; height: 118px; }
+            .panel-logo-strip .logo-fallback { font-size: 2rem; }
         }
 
         @media (max-width: 400px) {
@@ -822,7 +864,7 @@
 <body>
 
 <!-- ==========================================================
-     SPLIT LANDING
+     SPLIT LANDING — white top / orange bottom
      ========================================================== -->
 <div class="split-landing" id="splitLanding">
 
@@ -846,7 +888,7 @@
         </div>
     </div>
 
-    <!-- Floating center logo -->
+    <!-- Floating logo — small pill at the seam (landing only) -->
     <div class="center-logo" id="centerLogo">
         <img src="logo.png" alt="UTOM logo"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -855,7 +897,7 @@
 </div>
 
 <!-- ==========================================================
-     STUDENT PANEL (slides down from top)
+     STUDENT PANEL (slides down)
      ========================================================== -->
 <div class="slide-panel" id="studentPanel">
     <div class="panel-topbar">
@@ -864,9 +906,9 @@
     </div>
     <div class="slide-panel-inner">
 
-        <!-- Logo on top of the login form -->
+        <!-- Big flat logo on top of the login form -->
         <div class="panel-logo-strip">
-            <img src="logo.png" alt="UTOM logo"
+            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <span class="logo-fallback" style="display:none;">UTOM</span>
             <div class="panel-brand-name">UTOM</div>
@@ -1002,7 +1044,7 @@
 </div>
 
 <!-- ==========================================================
-     LECTURER PANEL (slides up from bottom)
+     LECTURER PANEL (slides up)
      ========================================================== -->
 <div class="slide-panel" id="lecturerPanel">
     <div class="panel-topbar">
@@ -1011,9 +1053,8 @@
     </div>
     <div class="slide-panel-inner">
 
-        <!-- Logo on top -->
         <div class="panel-logo-strip">
-            <img src="logo.png" alt="UTOM logo"
+            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <span class="logo-fallback" style="display:none;">UTOM</span>
             <div class="panel-brand-name">UTOM</div>
@@ -1184,28 +1225,30 @@
     function openStudentPanel() {
         studentPanel.classList.add('active');
         lecturerPanel.classList.remove('active');
+        document.body.classList.add('panel-open');
         document.body.style.overflow = 'hidden';
     }
 
     function openLecturerPanel() {
         lecturerPanel.classList.add('active');
         studentPanel.classList.remove('active');
+        document.body.classList.add('panel-open');
         document.body.style.overflow = 'hidden';
     }
 
     function closePanels() {
         studentPanel.classList.remove('active');
         lecturerPanel.classList.remove('active');
+        document.body.classList.remove('panel-open');
         document.body.style.overflow = '';
     }
 
     document.getElementById('backFromStudent').addEventListener('click', closePanels);
     document.getElementById('backFromLecturer').addEventListener('click', closePanels);
 
-    // Gesture state
     let activeGesture = null;
     const SWIPE_THRESHOLD = 45;
-    const DRAG_FEEDBACK = 26;
+    const DRAG_FEEDBACK = 28;
 
     function beginGesture(el, dir, clientY) {
         activeGesture = { el, dir, startY: clientY, lastY: clientY };
@@ -1243,7 +1286,6 @@
         activeGesture = null;
     }
 
-    // Touch
     splitTop.addEventListener('touchstart', (e) => {
         beginGesture(splitTop, 'down', e.touches[0].clientY);
     }, { passive: true });
@@ -1260,15 +1302,14 @@
         if (activeGesture) endGesture();
     }, { passive: true });
 
-    // Mouse
     let mouseDown = false;
-    splitTop.addEventListener('mousedown', (e) => {
+    splitTop.addEventListener('mousedown', () => {
         mouseDown = true;
-        beginGesture(splitTop, 'down', e.clientY);
+        beginGesture(splitTop, 'down', event.clientY);
     });
-    splitBottom.addEventListener('mousedown', (e) => {
+    splitBottom.addEventListener('mousedown', () => {
         mouseDown = true;
-        beginGesture(splitBottom, 'up', e.clientY);
+        beginGesture(splitBottom, 'up', event.clientY);
     });
     document.addEventListener('mousemove', (e) => {
         if (!mouseDown || !activeGesture) return;
@@ -1279,7 +1320,6 @@
         mouseDown = false;
     });
 
-    // Click fallback
     splitTop.addEventListener('click', () => {
         if (!activeGesture) openStudentPanel();
     });
@@ -1399,7 +1439,6 @@
         resetErrorSpan.style.color = '#ff3b30';
     }
 
-    /* STUDENT SIGNUP */
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         signupErrorSpan.innerText = '';
@@ -1465,7 +1504,6 @@
         }
     });
 
-    /* STUDENT LOGIN */
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginErrorSpan.innerText = '';
@@ -1496,7 +1534,6 @@
         }
     });
 
-    /* FORGOT PASSWORD */
     forgotPwdBtn.addEventListener('click', showForgotPanel);
     backToLoginFromForgotBtn.addEventListener('click', showLoginPanel);
 
@@ -1560,7 +1597,6 @@
     lecSegSignup.addEventListener('click', () => setLecSegment('signup'));
     document.getElementById('lecGoSignupBtn').addEventListener('click', () => setLecSegment('signup'));
 
-    /* LECTURER SIGNUP */
     const lecName           = document.getElementById('lecName');
     const lecEmail          = document.getElementById('lecEmail');
     const lecPhone          = document.getElementById('lecPhone');
@@ -1683,7 +1719,6 @@
         }
     });
 
-    /* LECTURER LOGIN */
     const lecLoginForm     = document.getElementById('lecLoginForm');
     const lecLoginEmail    = document.getElementById('lecLoginEmail');
     const lecLoginPassword = document.getElementById('lecLoginPassword');
