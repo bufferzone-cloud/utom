@@ -9311,6 +9311,11 @@
         let paymentScreenshotUrl = null;
         let currentSearch = '';
         let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
+
+        // ── NEW: Track which lecturer's payment numbers to show on the payment page ──
+        let currentPaymentLecturerUid = null;
+        let currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+
         let allRegisters = [];
         let allAssessments = [];
         let allAssessmentResponses = [];
@@ -10188,6 +10193,22 @@
     }
     return null;
 }
+
+        // =================================================================
+        // ===== NEW HELPER: get assessment cover (flat OR nested) ==========
+        // =================================================================
+        // Lecturers write flat fields (institutionName, logoUrl, coverUrl, instructions)
+        // while older code may write nested under `cover`. This helper checks both.
+        function getAssessmentCover(ass) {
+            if (!ass) return { institutionName: 'UTOM', logoUrl: '', coverImage: '', instructions: '' };
+            const c = ass.cover || {};
+            return {
+                institutionName: ass.institutionName || c.institutionName || 'UTOM',
+                logoUrl:         ass.logoUrl         || c.logoUrl         || '',
+                coverImage:      ass.coverUrl        || c.coverImage      || '',
+                instructions:    ass.instructions    || c.instructions    || ''
+            };
+        }
 
         // =================================================================
         // ===== SHOP / OTHER (unchanged) ==================================
@@ -12005,11 +12026,40 @@
             document.getElementById('headerUserName').innerText = name;
         }
 
+        // ── NEW: Prefer the owning lecturer's own numbers, fall back to global ──
         function updatePaymentNumbersDisplay() {
             const mtnDisplay = document.getElementById('mtnNumberDisplay');
             const airtelDisplay = document.getElementById('airtelNumberDisplay');
-            if (mtnDisplay) mtnDisplay.innerText = paymentSettings.mtnNumber || 'Not set';
-            if (airtelDisplay) airtelDisplay.innerText = paymentSettings.airtelNumber || 'Not set';
+
+            const mtn    = currentPaymentSettings.mtnNumber    || paymentSettings.mtnNumber    || '';
+            const airtel = currentPaymentSettings.airtelNumber || paymentSettings.airtelNumber || '';
+
+            if (mtnDisplay) mtnDisplay.innerText = mtn || 'Not set';
+            if (airtelDisplay) airtelDisplay.innerText = airtel || 'Not set';
+        }
+
+        // ── NEW: Fetch a lecturer's own payment numbers from their record ──
+        async function loadLecturerPaymentSettings(lecturerUid) {
+            if (!lecturerUid) {
+                currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+                return;
+            }
+            try {
+                const snap = await get(ref(db, `lecturers/${lecturerUid}`));
+                if (snap.exists()) {
+                    const d = snap.val();
+                    currentPaymentSettings = {
+                        mtnNumber:    d.mtnNumber    || '',
+                        airtelNumber: d.airtelNumber || '',
+                        accountName:  d.accountName  || d.name || ''
+                    };
+                } else {
+                    currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+                }
+            } catch (e) {
+                console.warn('loadLecturerPaymentSettings failed:', e);
+                currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+            }
         }
 
         function addNotification(type, msg) {
@@ -14128,9 +14178,25 @@ container.innerHTML = offlineSorted.map(v => `
         }
 
         // ===== OPEN PAYMENT PAGE =====
+        // ── UPDATED: fetch the OWNING lecturer's own payment numbers ──
         function openPaymentPage(item, itemType = 'course') {
             selectedCourse = item;
             selectedItemType = itemType;
+
+            // ── NEW: figure out the lecturer who owns this item ──
+            let lecturerUid = item.lecturerId || '';
+            if (!lecturerUid && itemType === 'subfolder' && item.courseId) {
+                const parent = allCourses.find(c => c.id === item.courseId);
+                if (parent) lecturerUid = parent.lecturerId || '';
+            }
+            currentPaymentLecturerUid = lecturerUid || null;
+
+            // Load that lecturer's numbers, then refresh the UI
+            loadLecturerPaymentSettings(currentPaymentLecturerUid).then(() => {
+                updatePaymentNumbersDisplay();
+            });
+            // ───────────────────────────────────────────────────
+
             document.getElementById('paymentCourseTitle').innerText = item.name || 'Item';
             document.getElementById('paymentAmountDisplay').innerText = `ZMW ${item.price || 0}`;
             const durationInfo = document.getElementById('paymentDurationInfo');
@@ -14200,7 +14266,8 @@ container.innerHTML = offlineSorted.map(v => `
                     userId: currentUser.uid,
                     userEmail: currentUser.email,
                     userName: `${userData.firstName} ${userData.lastName}`,
-                    userPhone: userData.phone || ''
+                    userPhone: userData.phone || '',
+                    lecturerId: currentPaymentLecturerUid || ''   // ← NEW
                 });
                 const typeLabel = selectedItemType === 'subfolder' ? 'Subfolder' : 'Course';
                 addNotification('purchase',
@@ -14211,6 +14278,7 @@ container.innerHTML = offlineSorted.map(v => `
                 selectedCourse = null;
                 paymentScreenshotUrl = null;
                 selectedItemType = 'course';
+                currentPaymentLecturerUid = null;
                 document.getElementById('paymentScreenshotPreview').innerHTML = '';
             } catch (error) {
                 addNotification('danger', 'Failed to submit payment: ' + error.message);
@@ -14421,6 +14489,8 @@ container.innerHTML = offlineSorted.map(v => `
                 selectedCourse = null;
                 paymentScreenshotUrl = null;
                 selectedItemType = 'course';
+                currentPaymentLecturerUid = null;
+                currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
                 document.getElementById('paymentScreenshotPreview').innerHTML = '';
                 showPage('home');
             });
@@ -14594,7 +14664,7 @@ container.innerHTML = offlineSorted.map(v => `
 
             document.getElementById('copyMtnBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                const num = paymentSettings.mtnNumber || '';
+                const num = currentPaymentSettings.mtnNumber || paymentSettings.mtnNumber || '';
                 if (num && num !== 'Not set') {
                     navigator.clipboard.writeText(num).then(() => {
                         addNotification('copy', 'MTN number copied to clipboard.');
@@ -14602,12 +14672,12 @@ container.innerHTML = offlineSorted.map(v => `
                         addNotification('danger', 'Failed to copy number.');
                     });
                 } else {
-                    addNotification('warning', 'No MTN number has been set by admin yet.');
+                    addNotification('warning', 'This lecturer has not set an MTN number yet.');
                 }
             });
             document.getElementById('copyAirtelBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                const num = paymentSettings.airtelNumber || '';
+                const num = currentPaymentSettings.airtelNumber || paymentSettings.airtelNumber || '';
                 if (num && num !== 'Not set') {
                     navigator.clipboard.writeText(num).then(() => {
                         addNotification('copy', 'Airtel number copied to clipboard.');
@@ -14615,7 +14685,7 @@ container.innerHTML = offlineSorted.map(v => `
                         addNotification('danger', 'Failed to copy number.');
                     });
                 } else {
-                    addNotification('warning', 'No Airtel number has been set by admin yet.');
+                    addNotification('warning', 'This lecturer has not set an Airtel number yet.');
                 }
             });
 
@@ -14980,7 +15050,8 @@ if (examBackBtn) {
             document.getElementById('examConfirmType').textContent = (assessment.type || 'N/A').toUpperCase();
             document.getElementById('examConfirmDuration').textContent = assessment.duration || 'No time limit';
             document.getElementById('examConfirmStartTime').textContent = new Date().toLocaleString();
-            const rawInstructions = assessment.cover?.instructions ||
+            // ── UPDATED: use getAssessmentCover() so it reads both flat and nested fields ──
+            const rawInstructions = getAssessmentCover(assessment).instructions ||
                 'Read each question carefully and answer to the best of your ability.';
             const instructionsLines = rawInstructions.split('\n').filter(line => line.trim() !== '');
             const instructionsHtml = instructionsLines.length > 0 ?
@@ -15075,7 +15146,8 @@ if (examBackBtn) {
             // Use helper for the deadline value
             const assignmentDeadlineTs = getAssignmentDeadline(assessment);
 
-            const coverData = assessment.cover || { instructions: '', institutionName: 'Institution', logoUrl: '' };
+            // ── UPDATED: use getAssessmentCover() so it reads both flat and nested fields ──
+            const coverData = getAssessmentCover(assessment);
             const instructionsList = coverData.instructions ? coverData.instructions.split('\n').filter(line => line
                 .trim() !== '') : ['No rules provided.'];
 
@@ -16292,10 +16364,12 @@ if (examBackBtn) {
             const passingScorePercent = (typeof ass.passingScore === 'number' && ass.passingScore > 0) ?
                 ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
             const passed = total > 0 && percent >= passingScorePercent;
-            const coverImage = ass.cover?.coverImage || '';
-            const logo = ass.cover?.logoUrl || '';
-            const institutionName = ass.cover?.institutionName || 'Institution';
-            const instructions = ass.cover?.instructions || '';
+            // ── UPDATED: use getAssessmentCover() ──
+            const _cv = getAssessmentCover(ass);
+            const coverImage = _cv.coverImage;
+            const logo = _cv.logoUrl;
+            const institutionName = _cv.institutionName;
+            const instructions = _cv.instructions;
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : [
                 'No rules provided.'
             ];
@@ -16534,10 +16608,12 @@ if (examBackBtn) {
             const passingScorePercent = (typeof ass.passingScore === 'number' && ass.passingScore > 0) ?
                 ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
             const passed = total > 0 && percent >= passingScorePercent;
-            const coverImage = ass.cover?.coverImage || '';
-            const logo = ass.cover?.logoUrl || '';
-            const institutionName = ass.cover?.institutionName || 'Institution';
-            const instructions = ass.cover?.instructions || '';
+            // ── UPDATED: use getAssessmentCover() ──
+            const _cv = getAssessmentCover(ass);
+            const coverImage = _cv.coverImage;
+            const logo = _cv.logoUrl;
+            const institutionName = _cv.institutionName;
+            const instructions = _cv.instructions;
             const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : [
                 'No rules provided.'
             ];
@@ -17110,7 +17186,7 @@ if (examBackBtn) {
             addNotification(type, msg);
         }
 
-        console.log('✅ UTOM Student — Full-page chat + collapsible testimonies + smart auto-grading across ALL question types + assignment deadline display loaded.');
+        console.log('✅ UTOM Student — Full-page chat + collapsible testimonies + smart auto-grading across ALL question types + assignment deadline display + lecturer-specific payment numbers loaded.');
     </script>
 </body>
 </html>
