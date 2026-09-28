@@ -64,7 +64,6 @@ input:focus,select:focus,textarea:focus{
   box-shadow:0 0 0 4px rgba(245,176,66,.10);
   background:#fff;
 }
-input[type="number"]{text-align:left;}
 input[type="checkbox"],input[type="radio"]{
   width:16px;height:16px;
   accent-color:var(--gold);
@@ -187,12 +186,6 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
 .form-row > textarea{flex:1;min-width:120px;}
 .form-row > label{font-weight:600;font-size:11px;min-width:80px;color:var(--text-secondary);}
 .form-row textarea{width:100%;}
-
-.form-row.tight{gap:6px;margin-bottom:6px;}
-.form-row.spaced{margin-top:14px;}
-
-.form-row input[type="number"].narrow{max-width:100px;}
-.form-row input[type="number"].tiny{max-width:70px;text-align:center;}
 
 .form-label{font-weight:600;font-size:11px;color:var(--text-secondary);display:block;margin-bottom:6px;}
 .form-help{font-size:10px;color:#8b8fa3;margin-top:4px;line-height:1.5;}
@@ -1040,7 +1033,7 @@ body.arrange-dragging-active,body.arrange-dragging-active *{cursor:grabbing!impo
             <button type="button" id="caBackToDetailsBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button type="button" id="caPreviewFullBtn" class="btn-outline" style="padding:10px 24px;font-size:12px;"><i class="fas fa-eye"></i> Preview All</button>
-              <button type="button" id="caSubmitBtn" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
+              <button type="button" id="caSubmitBtn" class="btn-primary" style="padding:10px 24px;font-size:12px;"><i class="fas fa-paper-plane"></i> Save & Publish</button>
             </div>
           </div>
         </div>
@@ -1091,7 +1084,7 @@ body.arrange-dragging-active,body.arrange-dragging-active *{cursor:grabbing!impo
     <div id="paymentsSection" class="section">
       <div class="form-card">
         <h4><i class="fas fa-money-bill-wave"></i> Student Payments</h4>
-        <p class="hint">Approve or reject student payments for your courses and assessments.</p>
+        <p class="hint">Approve or reject student payments for your courses and assessments. These are your payments — they are completely separate from the UTOM Admin Studio.</p>
         <div class="form-row">
           <select id="paymentsFilter">
             <option value="pending">Pending</option>
@@ -1121,7 +1114,7 @@ body.arrange-dragging-active,body.arrange-dragging-active *{cursor:grabbing!impo
       <div id="usersList" class="users-grid"></div>
     </div>
 
-    <!-- PAYMENT SETUP (NEW) -->
+    <!-- PAYMENT SETUP -->
     <div id="paymentSetupSection" class="section">
       <div class="form-card">
         <h4><i class="fas fa-mobile-alt"></i> My Payment Numbers</h4>
@@ -1384,6 +1377,26 @@ const HOME_PAGE = 'index.html';
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
+/* ============================================================================
+   ============================ ISOLATION NOTICE ============================
+   ============================================================================
+   All lecturer-created assessments, registers, and student payments are
+   stored under DEDICATED top-level keys that are NEVER touched by the
+   UTOM Admin Studio.  This keeps lecturer data fully isolated:
+
+     • lecturerAssessments       (instead of `assessments`)
+     • lecturerResponses         (instead of `assessmentResponses`)
+     • lecturerRegisters         (instead of `registers`)
+     • lecturerPendingPurchases  (instead of `pendingPurchases`)
+     • lecturerApprovedPurchases (instead of `approvedPurchases`)
+
+   Courses, videos, docs still flow through `pendingLecturerContent` for
+   admin approval, which then land in the shared `courses`/`videos`/`docs`
+   collections (shared by design — students need to view them).
+
+   Subscription payments live under `lecturerPayments/{lecturerUid}`.
+   ============================================================================ */
+
 /* ============ STATE ============ */
 let currentLecturer = null;
 let settings = { accessFee:150, applicationFee:0, accessDurationType:'months', accessDurationValue:1, mtnNumber:'', airtelNumber:'' };
@@ -1401,20 +1414,24 @@ let _sectionHistory = ['home'];
 let _suppressHistoryPush = false;
 
 /* ============ REFS ============ */
-const settingsRef         = ref(db, 'system/lecturerSettings');
-const coursesRef          = ref(db, 'courses');
-const subfoldersRef       = ref(db, 'subfolders');
-const registersRef        = ref(db, 'registers');
-const assessmentsRef      = ref(db, 'assessments');
-const responsesRef        = ref(db, 'assessmentResponses');
-const usersRef            = ref(db, 'users');
-const pendingContentRef   = ref(db, 'pendingLecturerContent');
-const pendingPurchasesRef = ref(db, 'pendingPurchases');
-const approvedPurchasesRef= ref(db, 'approvedPurchases');
-const lecturerPaymentsRef = ref(db, 'lecturerPayments');
-const videosRef           = ref(db, 'videos');
-const docsRef             = ref(db, 'docs');
-const notifRef            = ref(db, 'notifications');
+const settingsRef          = ref(db, 'system/lecturerSettings');
+const coursesRef           = ref(db, 'courses');
+const subfoldersRef        = ref(db, 'subfolders');
+const usersRef             = ref(db, 'users');
+const pendingContentRef    = ref(db, 'pendingLecturerContent');
+const videosRef            = ref(db, 'videos');
+const docsRef              = ref(db, 'docs');
+const notifRef             = ref(db, 'notifications');
+
+/* ---- ISOLATED LECTURER-ONLY PATHS ---- */
+const registersRef          = ref(db, 'lecturerRegisters');
+const assessmentsRef        = ref(db, 'lecturerAssessments');
+const responsesRef          = ref(db, 'lecturerResponses');
+const pendingPurchasesRef   = ref(db, 'lecturerPendingPurchases');
+const approvedPurchasesRef  = ref(db, 'lecturerApprovedPurchases');
+
+/* Subscription payments — already isolated by lecturer UID */
+const lecturerPaymentsRef   = ref(db, 'lecturerPayments');
 
 /* ============ HELPERS ============ */
 const _ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
@@ -1499,7 +1516,6 @@ async function boot(){
     if(!isSubscribed(currentLecturer)) showLockScreen();
     else showMainApp();
 
-    // Setup back navigation
     setupBackNavigation();
   }catch(err){
     console.error('Boot error:', err);
@@ -1523,7 +1539,6 @@ function isSubscribed(l){
 
 /* ============ BACK NAVIGATION ============ */
 function setupBackNavigation(){
-  // Replace initial state
   if(!history.state || !history.state.section){
     history.replaceState({ section: 'home' }, '', '#home');
   }
@@ -1603,7 +1618,7 @@ function updateSubPill(){
   else { pill.className='header-pill active'; pill.innerHTML = '<i class="fas fa-check-circle"></i> Active'; }
 }
 
-/* ============ REALTIME ============ */
+/* ============ REALTIME (ISOLATED) ============ */
 function attachRealtime(){
   onValue(ref(db, `lecturers/${currentLecturer.uid}`), snap=>{
     if(!snap.exists()){ localStorage.removeItem('lecturerUid'); window.location.href = LOGIN_PAGE; return; }
@@ -1626,7 +1641,6 @@ function attachRealtime(){
       if(document.getElementById('lockScreen').style.display === 'flex') showToast('Subscription active! Welcome back.', 'success');
       showMainApp();
     }
-    // Refresh payment preview when lecturer record changes
     renderPaymentSetupPreview();
   });
 
@@ -1664,6 +1678,7 @@ function attachRealtime(){
     renderDocsList();
   });
 
+  /* ---- ISOLATED: lecturerRegisters ---- */
   onValue(registersRef, snap=>{
     allRegisters = snap.val() || {};
     _myRegisters = Object.entries(allRegisters).map(([id,r])=>({id,...r})).filter(r => r.lecturerId === currentLecturer.uid);
@@ -1671,6 +1686,7 @@ function attachRealtime(){
     renderHome();
   });
 
+  /* ---- ISOLATED: lecturerAssessments ---- */
   onValue(assessmentsRef, snap=>{
     allAssessments = snap.val() || {};
     _myAssessments = Object.entries(allAssessments).map(([id,a])=>({id,...a})).filter(a => a.lecturerId === currentLecturer.uid);
@@ -1680,6 +1696,7 @@ function attachRealtime(){
     renderHome();
   });
 
+  /* ---- ISOLATED: lecturerResponses ---- */
   onValue(responsesRef, snap=>{
     allResponses = snap.val() || {};
     if(document.getElementById('historySection').classList.contains('active')) renderHistoryList();
@@ -1696,6 +1713,7 @@ function attachRealtime(){
     renderHome();
   });
 
+  /* ---- ISOLATED: lecturerPendingPurchases + lecturerApprovedPurchases ---- */
   const recomputePurchases = async ()=>{
     const pSnap = await get(pendingPurchasesRef);
     allPendingPurchases = pSnap.val() || {};
@@ -1793,14 +1811,13 @@ function countMyPendingPayments(){
   return n;
 }
 
-/* ============ PAYMENT SETUP (NEW) ============ */
+/* ============ PAYMENT SETUP ============ */
 function renderPaymentSetupPreview(){
   if(!currentLecturer) return;
   const mtn = currentLecturer.mtnNumber || '';
   const airtel = currentLecturer.airtelNumber || '';
   const name = currentLecturer.accountName || currentLecturer.name || '';
 
-  // Fill inputs (only if section is not actively being edited)
   const mtnInput = document.getElementById('myMtnNumber');
   const airtelInput = document.getElementById('myAirtelNumber');
   const nameInput = document.getElementById('myAccountName');
@@ -1808,7 +1825,6 @@ function renderPaymentSetupPreview(){
   if(airtelInput && document.activeElement !== airtelInput) airtelInput.value = airtel;
   if(nameInput && document.activeElement !== nameInput) nameInput.value = name;
 
-  // Preview tiles
   const mtnTile = document.getElementById('previewMtnTile');
   const airtelTile = document.getElementById('previewAirtelTile');
   if(mtnTile){
@@ -2535,24 +2551,14 @@ document.getElementById('createCourseForm').addEventListener('submit', async (e)
 
   const data = { name, price, durationType, durationValue, description, imageUrl: imageUrl||'' };
   try{
-    if(id){
-      const r = push(pendingContentRef);
-      await set(r, {
-        lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name,
-        type: 'course', status: 'pending', submittedAt: Date.now(),
-        originalId: id,
-        data: { ...data, lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name, courseName: name }
-      });
-      showToast('Edit submitted for admin approval!','success');
-    } else {
-      const r = push(pendingContentRef);
-      await set(r, {
-        lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name,
-        type: 'course', status: 'pending', submittedAt: Date.now(),
-        data: { ...data, lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name, courseName: name, createdAt: Date.now() }
-      });
-      showToast('Course submitted for approval!','success');
-    }
+    const r = push(pendingContentRef);
+    await set(r, {
+      lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name,
+      type: 'course', status: 'pending', submittedAt: Date.now(),
+      originalId: id || null,
+      data: { ...data, lecturerId: currentLecturer.uid, lecturerName: currentLecturer.name, courseName: name, ...(id ? {} : { createdAt: Date.now() }) }
+    });
+    showToast(id ? 'Edit submitted for admin approval!' : 'Course submitted for approval!', 'success');
     closeModal('createCourseModal');
   }catch(err){ showToast('Error: '+err.message,'error'); }
 });
@@ -2911,13 +2917,13 @@ window.editRegister = function(id){
   if(!r) return;
   const newName = prompt('Register Name:', r.name); if(newName===null) return;
   const newLecture = prompt('Lecture:', r.lecture||''); if(newLecture===null) return;
-  update(ref(db, `registers/${id}`), { name: newName.trim(), lecture: newLecture.trim() })
+  update(ref(db, `lecturerRegisters/${id}`), { name: newName.trim(), lecture: newLecture.trim() })
     .then(()=> showToast('Updated','success'));
 };
 
 window.deleteRegister = async function(id){
   const conf = await showConfirm('🗑️','Delete Register?','Delete this register?');
-  if(conf){ await remove(ref(db, `registers/${id}`)); showToast('Deleted','info'); }
+  if(conf){ await remove(ref(db, `lecturerRegisters/${id}`)); showToast('Deleted','info'); }
 };
 
 let _crModalSelected = new Set();
@@ -3634,6 +3640,9 @@ function renderFullPreview(){
   container.innerHTML = html;
 }
 
+/* ------------------------------------------------------------------
+   SUBMIT ASSESSMENT — writes DIRECTLY to isolated lecturerAssessments
+   ------------------------------------------------------------------ */
 document.getElementById('caSubmitBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('caName').value.trim();
   if(!name){ showToast('Enter name','error'); return; }
@@ -3651,19 +3660,17 @@ document.getElementById('caSubmitBtn').addEventListener('click', async ()=>{
   data.availableFrom = document.getElementById('caAvailableFrom').value;
   data.availableUntil = document.getElementById('caAvailableUntil').value;
   data.registerId = data.registerIds[0] || null;
+  data.status = publishNow ? 'published' : 'draft';
+  data.lecturerId = currentLecturer.uid;
+  data.lecturerName = currentLecturer.name;
+  data.createdAt = Date.now();
 
   try{
-    const r = push(pendingContentRef);
-    await set(r, {
-      lecturerId: currentLecturer.uid,
-      lecturerName: currentLecturer.name,
-      type: 'assessment',
-      status: 'pending',
-      submittedAt: Date.now(),
-      data
-    });
-    showToast('Assessment submitted for admin approval!','success');
-    push(notifRef, { message: `📝 Lecturer ${currentLecturer.name} submitted ${_caType} "${name}"`, timestamp: serverTimestamp() });
+    // ISOLATED: write to lecturerAssessments, not assessments
+    const r = push(assessmentsRef);
+    await set(r, data);
+    showToast(publishNow ? 'Assessment published!' : 'Assessment saved as draft!','success');
+    push(notifRef, { message: `📝 Lecturer ${currentLecturer.name} created ${_caType} "${name}"`, timestamp: serverTimestamp() });
     showSection('testExams');
   }catch(err){ showToast('Error: '+err.message,'error'); }
 });
@@ -3730,16 +3737,16 @@ window.previewMyAssessment = function(id){
 window.publishAssessment = async function(id){
   const conf = await showConfirm('🚀','Publish?','Publish this assessment immediately?');
   if(!conf) return;
-  await update(ref(db, `assessments/${id}`), { status: 'published' });
+  await update(ref(db, `lecturerAssessments/${id}`), { status: 'published' });
   showToast('Published!','success');
 };
 
 window.deleteAssessment = async function(id){
   const conf = await showConfirm('🗑️','Delete Assessment?','Delete this assessment?');
   if(!conf) return;
-  await remove(ref(db, `assessments/${id}`));
+  await remove(ref(db, `lecturerAssessments/${id}`));
   const responses = Object.entries(allResponses).map(([rid,r])=>({rid,...r})).filter(r=>r.assessmentId===id);
-  for(const r of responses) await remove(ref(db, `assessmentResponses/${r.rid}`));
+  for(const r of responses) await remove(ref(db, `lecturerResponses/${r.rid}`));
   showToast('Deleted','info');
 };
 
@@ -3816,7 +3823,7 @@ document.getElementById('ongoingFilterAssessment')?.addEventListener('change', r
 window.forceEnd = async function(rid){
   const conf = await showConfirm('⏹️','End?','Force end this student?');
   if(!conf) return;
-  await update(ref(db, `assessmentResponses/${rid}`), { status: 'ended', endedAt: serverTimestamp() });
+  await update(ref(db, `lecturerResponses/${rid}`), { status: 'ended', endedAt: serverTimestamp() });
   showToast('Ended','info');
 };
 
@@ -3902,7 +3909,7 @@ window.renderHistoryStudents = function(assId){
 window.deleteResponse = async function(id){
   const conf = await showConfirm('🗑️','Delete Response?','Delete this student response?');
   if(!conf) return;
-  await remove(ref(db, `assessmentResponses/${id}`));
+  await remove(ref(db, `lecturerResponses/${id}`));
   showToast('Deleted','info');
   renderHistoryStudents(currentHistoryAssessmentId);
 };
@@ -3978,7 +3985,8 @@ function renderStudentScript(responseId, manualMark){
     const newRemarks = {};
     document.querySelectorAll('.q-remark-text').forEach(t => { newRemarks[t.dataset.qkey] = t.value.trim(); });
     const newTotal = Object.values(newMarks).reduce((s,v)=>s+v, 0);
-    await update(ref(db, `assessmentResponses/${responseId}`), {
+    // ISOLATED: save to lecturerResponses
+    await update(ref(db, `lecturerResponses/${responseId}`), {
       marks: newMarks, remarks: newRemarks, score: newTotal, gradedAt: serverTimestamp()
     });
     showToast(`Saved! Total: ${newTotal}/${total}`, 'success');
@@ -4037,7 +4045,7 @@ window.approveStudentPayment = async function(userId, txId){
   const conf = await showConfirm('✅','Approve Payment?','Approve this payment?');
   if(!conf) return;
   try{
-    const txSnap = await get(ref(db, `pendingPurchases/${userId}/${txId}`));
+    const txSnap = await get(ref(db, `lecturerPendingPurchases/${userId}/${txId}`));
     if(!txSnap.exists()){ showToast('Not found','error'); return; }
     const tx = txSnap.val();
     if(!isMyItem(tx.itemId, tx.itemType)){ showToast('Not your item','error'); return; }
@@ -4060,8 +4068,9 @@ window.approveStudentPayment = async function(userId, txId){
     };
     if(expiresAt) approval.expiresAt = expiresAt;
 
-    await set(ref(db, `approvedPurchases/${userId}/${tx.itemId}`), approval);
-    await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'approved', approvedAt: Date.now(), approvedBy: currentLecturer.uid });
+    // ISOLATED: write to lecturerApprovedPurchases
+    await set(ref(db, `lecturerApprovedPurchases/${userId}/${tx.itemId}`), approval);
+    await update(ref(db, `lecturerPendingPurchases/${userId}/${txId}`), { status: 'approved', approvedAt: Date.now(), approvedBy: currentLecturer.uid });
     showToast('Payment approved!','success');
   }catch(e){ showToast('Error: '+e.message,'error'); }
 };
@@ -4069,7 +4078,7 @@ window.approveStudentPayment = async function(userId, txId){
 window.rejectStudentPayment = async function(userId, txId){
   const conf = await showConfirm('❌','Reject Payment?','Reject?');
   if(!conf) return;
-  await update(ref(db, `pendingPurchases/${userId}/${txId}`), { status: 'rejected', rejectedAt: Date.now(), rejectedBy: currentLecturer.uid });
+  await update(ref(db, `lecturerPendingPurchases/${userId}/${txId}`), { status: 'rejected', rejectedAt: Date.now(), rejectedBy: currentLecturer.uid });
   showToast('Rejected','info');
 };
 
@@ -4206,7 +4215,6 @@ darkToggle.addEventListener('click', ()=>{
 
 /* ============ NAV ============ */
 function showSection(id, params = {}, fromPopState = false){
-  // Determine target section element
   let targetId = id + 'Section';
   if(id === 'subfolder') targetId = 'subfolderViewSection';
   if(id === 'docFull') targetId = 'docFullPage';
@@ -4245,7 +4253,6 @@ function showSection(id, params = {}, fromPopState = false){
   if(nl) nl.classList.add('active');
   closeSidebar();
 
-  // Section-specific renders
   if(id === 'home') renderHome();
   if(id === 'videos') renderPostedGrid();
   if(id === 'courses') renderCoursesAccordion();
@@ -4262,7 +4269,6 @@ function showSection(id, params = {}, fromPopState = false){
   if(id === 'subscription') renderSubscription();
   if(id === 'createRegister') renderCreateRegisterForm();
 
-  // Push history state (unless triggered by popstate)
   if(!fromPopState && !_suppressHistoryPush){
     const state = { section: id, params: params || {} };
     try {
@@ -4292,7 +4298,7 @@ document.querySelectorAll('.nav-link[data-section]').forEach(n => {
   n.addEventListener('click', ()=> showSection(n.dataset.section));
 });
 
-/* LOGOUT — only place that redirects to index.html */
+/* LOGOUT */
 function doLogout(){
   localStorage.removeItem('lecturerUid');
   window.location.href = HOME_PAGE;
@@ -4315,7 +4321,7 @@ document.getElementById('backFromOngoing').addEventListener('click', ()=> showSe
 document.getElementById('backFromHistory').addEventListener('click', ()=> showSection('testExams'));
 document.getElementById('backFromAssessments').addEventListener('click', ()=> showSection('testExams'));
 
-console.log('✅ Lecturer dashboard loaded.');
+console.log('✅ Lecturer dashboard loaded — isolated assessments & payments (lecturerAssessments, lecturerResponses, lecturerRegisters, lecturerPendingPurchases, lecturerApprovedPurchases).');
 </script>
 </body>
 </html>
