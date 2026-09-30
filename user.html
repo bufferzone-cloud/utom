@@ -8396,6 +8396,55 @@
     white-space: normal;
     word-break: break-word;
 }
+        /* Small round lecturer avatar in the corner of the course image */
+.course-card-img-wrapper .lecturer-avatar-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+    background: var(--gold);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.course-card-img-wrapper .lecturer-avatar-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Lecturer name shown below the course card body */
+.course-lecturer-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.course-lecturer-name i {
+    color: var(--gold-dark);
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+.course-lecturer-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
     </style>
 </head>
 <body>
@@ -9298,6 +9347,7 @@ let allSubfolders = [];
 let allVideos = [];
 let allDocs = [];
 let allPromos = [];
+let allLecturers = {};
 let approvedCourses = new Set();
 let approvedCoursesData = {};
 let approvedSubfolders = new Set();
@@ -9815,6 +9865,7 @@ onAuthStateChanged(auth, async (user) => {
             loadDocs(),
             loadPaymentSettings(),
             loadPromos(),
+            loadLecturers(),
             loadInAppNotifications(),
             loadRegistersAndAssessments(user.uid),
             loadShopData()
@@ -12472,6 +12523,16 @@ async function loadPromos() {
     });
 }
 
+async function loadLecturers() {
+    return new Promise((resolve) => {
+        onValue(ref(db, 'lecturers'), (snap) => {
+            allLecturers = snap.val() || {};
+            renderAllCourses();
+            resolve();
+        });
+    });
+}
+
 // =================================================================
 // ===== TRANSACTION HISTORY =======================================
 // =================================================================
@@ -12925,6 +12986,9 @@ function buildCourseCard(course) {
     const imgUrl = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
     const bgColor = imgUrl ? 'transparent' : getRandomColor();
     const initial = (course.name || 'C').charAt(0).toUpperCase();
+    const lecturer = allLecturers[course.lecturerId] || {};
+const lecturerPhoto = lecturer.profileUrl || '';
+const lecturerName  = lecturer.name || '';
     let durationDisplay = 'Lifetime';
     if (course.durationType && course.durationType !== 'lifetime' && course.durationValue > 0) {
         const labels = {
@@ -12952,9 +13016,15 @@ function buildCourseCard(course) {
     return `
     <div class="course-card-wrapper ${enrolledClass}" data-id="${course.id}" data-price="${course.price}" data-approved="${isApproved}" data-pending="${isPending}" ${cardClickHandler}>
         <div class="course-card-img-wrapper" style="background-color:${bgColor}; ${imgUrl ? `background-image:url('${imgUrl}');` : ''}">
-            ${!imgUrl ? `<span style="font-size:2.2rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
-            <span class="course-badge ${course.price === 0 ? 'free' : 'paid'}">${priceDisplay}</span>
+    ${!imgUrl ? `<span style="font-size:2.2rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
+    ${lecturerPhoto ? `
+        <div class="lecturer-avatar-badge" title="${escapeHtml(lecturerName)}">
+            <img src="${lecturerPhoto}" alt="${escapeHtml(lecturerName)}" loading="lazy"
+                 onerror="this.parentNode.style.display='none'" />
         </div>
+    ` : ''}
+    <span class="course-badge ${course.price === 0 ? 'free' : 'paid'}">${priceDisplay}</span>
+</div>
         <div class="course-card-body">
             <h4>${escapeHtml(course.name)}</h4>
             <div style="display:flex;align-items:center;gap:4px;font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px;">
@@ -12966,6 +13036,12 @@ function buildCourseCard(course) {
                 <span class="course-price">${priceDisplay}</span>
                 ${isApproved ? '<span class="course-status-badge enrolled">Enrolled</span>' : isPending ? '<span class="course-status-badge pending">Pending</span>' : isFree ? '<span class="course-status-badge free">Free</span>' : ''}
             </div>
+             ${lecturerName ? `
+        <div class="course-lecturer-name">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>${escapeHtml(lecturerName)}</span>
+        </div>
+    ` : ''}
         </div>
         ${actionsHtml}
     </div>`;
