@@ -103,20 +103,17 @@
             touch-action: none;
         }
 
-        /* TOP — STUDENT (pure white) */
         .split-top {
             background: #ffffff;
             color: var(--text-primary);
             border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
 
-        /* BOTTOM — LECTURER (orange) */
         .split-bottom {
             background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
             color: #1a1206;
         }
 
-        /* Drag feedback */
         .split-top.drag-active    { transform: translateY(var(--drag-y, 0)); }
         .split-bottom.drag-active { transform: translateY(var(--drag-y, 0)); }
 
@@ -179,7 +176,6 @@
         .split-top .half-hint { color: var(--text-tertiary); }
         .split-bottom .half-hint { color: rgba(26, 18, 6, 0.62); }
 
-        /* Floating center logo — small, round pill at the seam */
         .center-logo {
             position: absolute;
             top: 50%;
@@ -222,7 +218,7 @@
         }
 
         /* ==========================================================
-           SLIDE PANELS — full-screen, iOS-style easing
+           SLIDE PANELS
            ========================================================== */
         .slide-panel {
             position: fixed;
@@ -316,7 +312,7 @@
         }
 
         /* ==========================================================
-           PANEL LOGO — big, flat, no circle
+           PANEL LOGO
            ========================================================== */
         .panel-logo-strip {
             display: flex;
@@ -380,7 +376,6 @@
             flex-direction: column;
         }
 
-        /* Staggered entrance of form elements after panel is active */
         .slide-panel.active .form-area { animation: formEnter 0.55s var(--ease-out) 0.15s both; }
 
         @keyframes formEnter {
@@ -549,6 +544,16 @@
 
         .double-row .input-icon-group { flex: 1; min-width: 125px; }
 
+        /* Section label */
+        .section-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0.9rem 0 0.5rem;
+        }
+
         /* Upload grid */
         .upload-grid {
             display: grid;
@@ -618,6 +623,7 @@
             letter-spacing: 0.3px;
             pointer-events: none;
             display: none;
+            z-index: 2;
         }
 
         .upload-box.has-image .upload-badge { display: inline-block; }
@@ -710,8 +716,6 @@
 
         .text-link i { font-size: 0.75rem; transition: transform 0.28s var(--spring); }
         .text-link:hover { background: var(--accent-soft); }
-        .text-link:hover i.fa-key,
-        .text-link:hover i.fa-chevron-left { transform: translateX(-2px); }
 
         .flex-between {
             display: flex;
@@ -738,9 +742,25 @@
             color: var(--text-secondary);
             font-weight: 400;
             line-height: 1.4;
+            cursor: pointer;
         }
 
         .terms-check label strong { color: var(--text-primary); font-weight: 600; }
+
+        .terms-open-link {
+            background: none;
+            border: none;
+            color: var(--accent-dark);
+            font-weight: 700;
+            font-family: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            margin-left: 2px;
+        }
+
+        .terms-open-link:hover { color: #b87418; }
 
         .checkbox-custom {
             width: 19px;
@@ -762,6 +782,7 @@
             min-height: 0;
             line-height: 1.35;
             animation: panelIn 0.3s var(--ease-out);
+            white-space: pre-wrap;
         }
 
         .error-msg:empty { display: none; }
@@ -781,48 +802,300 @@
         }
 
         /* ==========================================================
-           INSTALL BANNER
+           TERMS MODAL
            ========================================================== */
-        .install-banner {
-            width: 100%;
-            display: flex;
+        .terms-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: linear-gradient(180deg, #23232e 0%, #1a1a24 100%);
-            color: #ffffff;
-            border-radius: 16px;
-            padding: 13px 16px;
-            margin-top: 1.2rem;
-            font-size: 0.83rem;
-            font-weight: 500;
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.12),
-                0 12px 28px -10px rgba(0, 0, 0, 0.35);
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s var(--ease-out);
         }
 
-        .install-banner span {
+        .terms-modal-overlay.open { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .terms-modal {
+            background: #ffffff;
+            border-radius: 22px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.35s var(--spring);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.94) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .terms-modal-header {
+            padding: 20px 22px 16px;
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .terms-modal-header h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 9px;
+            gap: 10px;
             line-height: 1.3;
         }
 
-        .install-banner span i { color: var(--accent); font-size: 0.95rem; }
+        .terms-modal-header h2 i {
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
 
-        .install-banner button {
-            font-family: inherit;
-            background: linear-gradient(180deg, var(--accent-light), var(--accent));
+        .terms-modal-close {
+            background: var(--fill-gray);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            transition: all 0.25s var(--ease-smooth);
+        }
+
+        .terms-modal-close:hover {
+            background: #ffe5e5;
+            color: #e63946;
+            transform: rotate(90deg);
+        }
+
+        .terms-modal-body {
+            padding: 20px 24px 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .terms-modal-body ul,
+        .terms-modal-body ol {
+            padding-left: 1.4rem;
+            margin: 0.5rem 0;
+        }
+
+        .terms-modal-body li { margin-bottom: 0.35rem; }
+
+        .terms-modal-body h1, .terms-modal-body h2, .terms-modal-body h3, .terms-modal-body h4 {
+            margin: 1rem 0 0.5rem;
+            font-weight: 700;
+        }
+
+        .terms-modal-body p { margin-bottom: 0.85rem; }
+
+        .terms-modal-body:empty::after {
+            content: 'No terms and conditions have been published yet. You may still continue.';
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        .terms-modal-footer {
+            padding: 14px 22px 18px;
+            background: #ffffff;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .terms-accept-btn {
+            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
             color: #1a1206;
             border: none;
-            padding: 8px 18px;
-            border-radius: 10px;
+            font-family: inherit;
             font-weight: 700;
-            font-size: 0.79rem;
+            font-size: 0.88rem;
+            padding: 11px 26px;
+            border-radius: 999px;
             cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px -3px var(--accent-glow);
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.35) inset,
+                0 6px 16px -6px var(--accent-glow);
+            transition: transform 0.35s var(--spring), box-shadow 0.3s var(--ease-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .terms-accept-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -6px var(--accent-glow); }
+        .terms-accept-btn:active { transform: scale(0.96); }
+
+        .terms-decline-btn {
+            background: #ffffff;
+            color: var(--text-primary);
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 11px 22px;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s var(--ease-smooth);
+        }
+
+        .terms-decline-btn:hover { background: #f5f5f7; }
+
+        /* ==========================================================
+           COMPLETE PROFILE OVERLAY (post-login for incomplete records)
+           ========================================================== */
+        .complete-profile-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 60%);
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 0 3rem;
+        }
+
+        .complete-profile-overlay.open { display: flex; }
+
+        .complete-profile-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(255, 250, 242, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .complete-profile-topbar .brand-mini {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .complete-profile-inner {
+            max-width: 560px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
+        }
+
+        .complete-profile-hero {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .complete-profile-hero .hero-icon {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, var(--accent-light), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: #ffffff;
+            font-size: 2rem;
+            box-shadow: 0 12px 28px -10px var(--accent-glow);
+        }
+
+        .complete-profile-hero h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            margin-bottom: 6px;
+        }
+
+        .complete-profile-hero p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .missing-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .missing-chip {
+            background: #fff3cd;
+            color: #856404;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(133, 100, 4, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .complete-form-block {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 18px 18px 8px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .complete-form-block h3 {
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .complete-form-block h3 i { color: var(--accent); }
 
         /* ==========================================================
            SPINNER
@@ -844,6 +1117,11 @@
             .center-logo img { width: 54px; height: 54px; }
             .panel-logo-strip .panel-logo-img { width: 118px; height: 118px; }
             .panel-logo-strip .logo-fallback { font-size: 2rem; }
+            .terms-modal { max-height: 90vh; }
+            .terms-modal-header { padding: 16px 18px 14px; }
+            .terms-modal-body { padding: 16px 20px 20px; font-size: 0.86rem; }
+            .terms-modal-footer { padding: 12px 18px 16px; }
+            .terms-accept-btn, .terms-decline-btn { padding: 10px 20px; font-size: 0.85rem; }
         }
 
         @media (max-width: 400px) {
@@ -864,11 +1142,9 @@
 <body>
 
 <!-- ==========================================================
-     SPLIT LANDING — white top / orange bottom
+     SPLIT LANDING
      ========================================================== -->
 <div class="split-landing" id="splitLanding">
-
-    <!-- TOP — STUDENT (white) -->
     <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
         <div class="half-content">
             <div class="half-chevron"><i class="fas fa-chevron-down"></i></div>
@@ -878,7 +1154,6 @@
         </div>
     </div>
 
-    <!-- BOTTOM — LECTURER (orange) -->
     <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
         <div class="half-content">
             <div class="half-chevron"><i class="fas fa-chevron-up"></i></div>
@@ -888,7 +1163,6 @@
         </div>
     </div>
 
-    <!-- Floating logo — small pill at the seam (landing only) -->
     <div class="center-logo" id="centerLogo">
         <img src="logo.png" alt="UTOM logo"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -897,7 +1171,7 @@
 </div>
 
 <!-- ==========================================================
-     STUDENT PANEL (slides down)
+     STUDENT PANEL
      ========================================================== -->
 <div class="slide-panel" id="studentPanel">
     <div class="panel-topbar">
@@ -905,8 +1179,6 @@
         <span class="panel-label">Student Portal</span>
     </div>
     <div class="slide-panel-inner">
-
-        <!-- Big flat logo on top of the login form -->
         <div class="panel-logo-strip">
             <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -1044,7 +1316,7 @@
 </div>
 
 <!-- ==========================================================
-     LECTURER PANEL (slides up)
+     LECTURER PANEL
      ========================================================== -->
 <div class="slide-panel" id="lecturerPanel">
     <div class="panel-topbar">
@@ -1109,6 +1381,9 @@
                     Submit your details and document images. An admin will review your application.
                 </p>
                 <form id="lecSignupForm" novalidate>
+                    <!-- Personal -->
+                    <div class="section-label">Personal details</div>
+
                     <div class="input-icon-group">
                         <input type="text" id="lecName" class="pill-input"
                                placeholder="Full name" autocomplete="name" required>
@@ -1134,9 +1409,36 @@
                         <i class="fas fa-id-card"></i>
                     </div>
 
-                    <div style="font-size:0.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0.9rem 0 0.5rem;">
-                        Profile picture
+                    <!-- Location & Institution -->
+                    <div class="section-label">Location &amp; Institution</div>
+
+                    <div class="input-icon-group">
+                        <input type="text" id="lecCollege" class="pill-input"
+                               placeholder="College / University name" required>
+                        <i class="fas fa-university"></i>
                     </div>
+
+                    <div class="double-row">
+                        <div class="input-icon-group">
+                            <input type="text" id="lecCity" class="pill-input"
+                                   placeholder="City" required>
+                            <i class="fas fa-city"></i>
+                        </div>
+                        <div class="input-icon-group">
+                            <input type="text" id="lecTown" class="pill-input"
+                                   placeholder="Town / Suburb">
+                            <i class="fas fa-map-pin"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-icon-group">
+                        <input type="text" id="lecAddress" class="pill-input"
+                               placeholder="Physical address (street, plot)">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+
+                    <!-- Profile picture -->
+                    <div class="section-label">Profile picture</div>
                     <div class="upload-grid" style="grid-template-columns:1fr;">
                         <div class="upload-box" id="lecProfileUpload">
                             <i class="fas fa-user-circle upload-icon"></i>
@@ -1146,9 +1448,8 @@
                     </div>
                     <input type="hidden" id="lecProfileUrl">
 
-                    <div style="font-size:0.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:0.9rem 0 0.5rem;">
-                        NRC images (front &amp; back)
-                    </div>
+                    <!-- NRC images -->
+                    <div class="section-label">NRC images (front &amp; back)</div>
                     <div class="upload-grid">
                         <div class="upload-box" id="lecNrcFrontUpload">
                             <i class="fas fa-id-card upload-icon"></i>
@@ -1164,7 +1465,26 @@
                     <input type="hidden" id="lecNrcFrontUrl">
                     <input type="hidden" id="lecNrcBackUrl">
 
-                    <div class="input-icon-group" style="margin-top:0.9rem;">
+                    <!-- Credentials -->
+                    <div class="section-label">Teaching credentials</div>
+                    <div class="upload-grid">
+                        <div class="upload-box" id="lecCertUpload">
+                            <i class="fas fa-certificate upload-icon"></i>
+                            <span class="upload-label">Certificate</span>
+                            <span class="upload-badge">Teaching</span>
+                        </div>
+                        <div class="upload-box" id="lecDegreeUpload">
+                            <i class="fas fa-graduation-cap upload-icon"></i>
+                            <span class="upload-label">Degree / Diploma</span>
+                            <span class="upload-badge">Academic</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="lecCertUrl">
+                    <input type="hidden" id="lecDegreeUrl">
+
+                    <!-- Password -->
+                    <div class="section-label">Account security</div>
+                    <div class="input-icon-group">
                         <input type="password" id="lecPassword" class="pill-input"
                                placeholder="Create password" autocomplete="new-password" required>
                         <i class="fas fa-lock"></i>
@@ -1180,7 +1500,10 @@
 
                     <div class="terms-check">
                         <input type="checkbox" id="lecTermsCheckbox" class="checkbox-custom">
-                        <label for="lecTermsCheckbox">I confirm the documents are authentic and agree to the <strong>Lecturer Terms</strong>.</label>
+                        <label for="lecTermsCheckbox">
+                            I confirm the documents are authentic and I agree to the
+                            <button type="button" class="terms-open-link" id="openLecTermsBtn">Lecturer Terms &amp; Conditions</button>.
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="lecRegisterBtn">
@@ -1192,10 +1515,155 @@
     </div>
 </div>
 
+<!-- ==========================================================
+     TERMS & CONDITIONS MODAL
+     ========================================================== -->
+<div class="terms-modal-overlay" id="termsModalOverlay">
+    <div class="terms-modal" role="dialog" aria-modal="true">
+        <div class="terms-modal-header">
+            <h2 id="termsModalTitle"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</h2>
+            <button class="terms-modal-close" id="termsModalCloseBtn" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="terms-modal-body" id="termsModalBody"></div>
+        <div class="terms-modal-footer">
+            <button class="terms-decline-btn" id="termsDeclineBtn">Close</button>
+            <button class="terms-accept-btn" id="termsAcceptBtn">
+                <i class="fas fa-check"></i> I Agree
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================
+     COMPLETE PROFILE OVERLAY (shown after login if record is incomplete)
+     ========================================================== -->
+<div class="complete-profile-overlay" id="completeProfileOverlay">
+    <div class="complete-profile-topbar">
+        <span class="brand-mini">UTOM · Complete Your Profile</span>
+    </div>
+    <div class="complete-profile-inner">
+        <div class="complete-profile-hero">
+            <div class="hero-icon"><i class="fas fa-user-shield"></i></div>
+            <h1>Almost there!</h1>
+            <p>Please complete the missing information below before we can grant you access to your dashboard.</p>
+            <div class="missing-chips" id="missingChipsContainer"></div>
+        </div>
+
+        <form id="completeProfileForm" novalidate>
+            <!-- Personal -->
+            <div class="complete-form-block">
+                <h3><i class="fas fa-user"></i> Personal details</h3>
+                <div class="input-icon-group">
+                    <input type="text" id="cpName" class="pill-input"
+                           placeholder="Full name" required>
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="input-icon-group">
+                    <input type="tel" id="cpPhone" class="pill-input"
+                           placeholder="Phone number" required>
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <div class="input-icon-group">
+                    <input type="text" id="cpNrc" class="pill-input"
+                           placeholder="NRC number" required>
+                    <i class="fas fa-id-card"></i>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="complete-form-block">
+                <h3><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h3>
+                <div class="input-icon-group">
+                    <input type="text" id="cpCollege" class="pill-input"
+                           placeholder="College / University name" required>
+                    <i class="fas fa-university"></i>
+                </div>
+                <div class="double-row">
+                    <div class="input-icon-group">
+                        <input type="text" id="cpCity" class="pill-input"
+                               placeholder="City" required>
+                        <i class="fas fa-city"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="text" id="cpTown" class="pill-input"
+                               placeholder="Town / Suburb">
+                        <i class="fas fa-map-pin"></i>
+                    </div>
+                </div>
+                <div class="input-icon-group">
+                    <input type="text" id="cpAddress" class="pill-input"
+                           placeholder="Physical address (street, plot)">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="complete-form-block">
+                <h3><i class="fas fa-images"></i> Required documents</h3>
+
+                <div class="section-label" style="margin-top:0;">Profile picture</div>
+                <div class="upload-grid" style="grid-template-columns:1fr;">
+                    <div class="upload-box" id="cpProfileUpload">
+                        <i class="fas fa-user-circle upload-icon"></i>
+                        <span class="upload-label">Tap to upload</span>
+                        <span class="upload-badge">Profile</span>
+                    </div>
+                </div>
+                <input type="hidden" id="cpProfileUrl">
+
+                <div class="section-label">NRC images (front &amp; back)</div>
+                <div class="upload-grid">
+                    <div class="upload-box" id="cpNrcFrontUpload">
+                        <i class="fas fa-id-card upload-icon"></i>
+                        <span class="upload-label">NRC Front</span>
+                        <span class="upload-badge">Front</span>
+                    </div>
+                    <div class="upload-box" id="cpNrcBackUpload">
+                        <i class="fas fa-id-card upload-icon"></i>
+                        <span class="upload-label">NRC Back</span>
+                        <span class="upload-badge">Back</span>
+                    </div>
+                </div>
+                <input type="hidden" id="cpNrcFrontUrl">
+                <input type="hidden" id="cpNrcBackUrl">
+
+                <div class="section-label">Teaching credentials</div>
+                <div class="upload-grid">
+                    <div class="upload-box" id="cpCertUpload">
+                        <i class="fas fa-certificate upload-icon"></i>
+                        <span class="upload-label">Certificate</span>
+                        <span class="upload-badge">Teaching</span>
+                    </div>
+                    <div class="upload-box" id="cpDegreeUpload">
+                        <i class="fas fa-graduation-cap upload-icon"></i>
+                        <span class="upload-label">Degree / Diploma</span>
+                        <span class="upload-badge">Academic</span>
+                    </div>
+                </div>
+                <input type="hidden" id="cpCertUrl">
+                <input type="hidden" id="cpDegreeUrl">
+            </div>
+
+            <div id="completeProfileError" class="error-msg"></div>
+
+            <button type="submit" class="btn btn-primary" id="completeProfileBtn">
+                <i class="fas fa-check-circle"></i> SAVE &amp; CONTINUE
+            </button>
+
+            <button type="button" id="completeProfileLogoutBtn"
+                    style="background:none;border:none;color:var(--text-tertiary);font-family:inherit;font-size:0.82rem;width:100%;padding:14px 8px 0;cursor:pointer;text-decoration:underline;">
+                Sign out instead
+            </button>
+        </form>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
@@ -1213,6 +1681,70 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
+
+    /* ============================================================
+       GLOBAL TERMS STATE (loaded from Firebase on boot)
+       ============================================================ */
+    let adminTerms = { enabled: true, requireAccept: true, title: 'Terms and Conditions', content: '' };
+
+    async function loadAdminTerms() {
+        try {
+            const snap = await get(ref(database, 'system/lecturerTerms'));
+            if (snap.exists()) {
+                adminTerms = Object.assign(adminTerms, snap.val());
+            }
+        } catch (err) {
+            console.warn('Failed to load admin terms:', err);
+        }
+        // Update the terms link text to match admin's title
+        const titleText = (adminTerms.title || 'Terms and Conditions').trim();
+        const linkBtn = document.getElementById('openLecTermsBtn');
+        if (linkBtn) linkBtn.textContent = titleText;
+        const modalTitle = document.getElementById('termsModalTitle');
+        if (modalTitle) modalTitle.innerHTML = `<i class="fas fa-file-contract"></i> ${escapeHtmlClient(titleText)}`;
+    }
+
+    function escapeHtmlClient(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function openTermsModal() {
+        const overlay = document.getElementById('termsModalOverlay');
+        const body = document.getElementById('termsModalBody');
+        const raw = adminTerms.content || '';
+        // Content may contain simple HTML — allow safe subset, otherwise escape
+        const hasMarkup = /<\/?(p|br|ul|ol|li|h1|h2|h3|h4|h5|h6|strong|em|b|i|u|a|div|span)\b/i.test(raw);
+        body.innerHTML = raw
+            ? (hasMarkup ? raw : escapeHtmlClient(raw).replace(/\n/g, '<br>'))
+            : '';
+        overlay.classList.add('open');
+    }
+
+    function closeTermsModal() {
+        document.getElementById('termsModalOverlay').classList.remove('open');
+    }
+
+    document.getElementById('termsModalCloseBtn').addEventListener('click', closeTermsModal);
+    document.getElementById('termsDeclineBtn').addEventListener('click', closeTermsModal);
+    document.getElementById('termsAcceptBtn').addEventListener('click', () => {
+        // Auto-check the lecturer terms checkbox when user accepts inside the modal
+        const cb = document.getElementById('lecTermsCheckbox');
+        if (cb) cb.checked = true;
+        closeTermsModal();
+    });
+    document.getElementById('termsModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'termsModalOverlay') closeTermsModal();
+    });
+    document.getElementById('openLecTermsBtn').addEventListener('click', openTermsModal);
+
+    // Kick off load (non-blocking)
+    loadAdminTerms();
 
     /* ============================================================
        SPLIT LANDING — gesture handling
@@ -1353,6 +1885,28 @@
                 if (err) return reject(err);
                 if (res.event === 'success') resolve(res.info.secure_url);
             });
+        });
+    }
+
+    function wireUploadBox(boxId, hiddenId, errEl) {
+        const box = document.getElementById(boxId);
+        const hid = document.getElementById(hiddenId);
+        if (!box || !hid) return;
+        box.addEventListener('click', async () => {
+            try {
+                const url = await openCloudUpload({
+                    resourceType: 'image',
+                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp']
+                });
+                hid.value = url;
+                box.querySelectorAll('img').forEach(i => i.remove());
+                const img = document.createElement('img');
+                img.src = url;
+                box.appendChild(img);
+                box.classList.add('has-image');
+            } catch (e) {
+                if (errEl) errEl.innerText = 'Upload failed: ' + (e.message || e);
+            }
         });
     }
 
@@ -1601,40 +2155,28 @@
     const lecEmail          = document.getElementById('lecEmail');
     const lecPhone          = document.getElementById('lecPhone');
     const lecNrc            = document.getElementById('lecNrc');
+    const lecCollege        = document.getElementById('lecCollege');
+    const lecCity           = document.getElementById('lecCity');
+    const lecTown           = document.getElementById('lecTown');
+    const lecAddress        = document.getElementById('lecAddress');
     const lecPassword       = document.getElementById('lecPassword');
     const lecConfirmPassword= document.getElementById('lecConfirmPassword');
     const lecTermsCheckbox  = document.getElementById('lecTermsCheckbox');
     const lecProfileUrl     = document.getElementById('lecProfileUrl');
     const lecNrcFrontUrl    = document.getElementById('lecNrcFrontUrl');
     const lecNrcBackUrl     = document.getElementById('lecNrcBackUrl');
+    const lecCertUrl        = document.getElementById('lecCertUrl');
+    const lecDegreeUrl      = document.getElementById('lecDegreeUrl');
     const lecSignupError    = document.getElementById('lecSignupError');
     const lecSignupSuccess  = document.getElementById('lecSignupSuccess');
     const lecRegisterBtn    = document.getElementById('lecRegisterBtn');
 
-    function wireUpload(boxId, hiddenId) {
-        const box = document.getElementById(boxId);
-        const hid = document.getElementById(hiddenId);
-        if (!box || !hid) return;
-        box.addEventListener('click', async () => {
-            try {
-                const url = await openCloudUpload({
-                    resourceType: 'image',
-                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp']
-                });
-                hid.value = url;
-                box.querySelectorAll('img').forEach(i => i.remove());
-                const img = document.createElement('img');
-                img.src = url;
-                box.appendChild(img);
-                box.classList.add('has-image');
-            } catch (e) {
-                lecSignupError.innerText = 'Upload failed: ' + (e.message || e);
-            }
-        });
-    }
-    wireUpload('lecProfileUpload', 'lecProfileUrl');
-    wireUpload('lecNrcFrontUpload', 'lecNrcFrontUrl');
-    wireUpload('lecNrcBackUpload', 'lecNrcBackUrl');
+    // Wire all upload boxes in lecturer signup
+    wireUploadBox('lecProfileUpload', 'lecProfileUrl', lecSignupError);
+    wireUploadBox('lecNrcFrontUpload', 'lecNrcFrontUrl', lecSignupError);
+    wireUploadBox('lecNrcBackUpload', 'lecNrcBackUrl', lecSignupError);
+    wireUploadBox('lecCertUpload', 'lecCertUrl', lecSignupError);
+    wireUploadBox('lecDegreeUpload', 'lecDegreeUrl', lecSignupError);
 
     document.getElementById('lecSignupForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1645,15 +2187,21 @@
         const email = lecEmail.value.trim().toLowerCase();
         const phone = lecPhone.value.trim();
         const nrc = lecNrc.value.trim();
+        const collegeName = lecCollege.value.trim();
+        const city = lecCity.value.trim();
+        const town = lecTown.value.trim();
+        const address = lecAddress.value.trim();
         const pwd = lecPassword.value;
         const confirmPwd = lecConfirmPassword.value;
         const profileUrl = lecProfileUrl.value;
         const nrcFront = lecNrcFrontUrl.value;
         const nrcBack = lecNrcBackUrl.value;
+        const certificateUrl = lecCertUrl.value;
+        const degreeUrl = lecDegreeUrl.value;
         const termsOk = lecTermsCheckbox.checked;
 
-        if (!name || !email || !phone || !nrc || !pwd || !confirmPwd) {
-            lecSignupError.innerText = 'All fields are required.';
+        if (!name || !email || !phone || !nrc || !collegeName || !city || !pwd || !confirmPwd) {
+            lecSignupError.innerText = 'Please fill in all required fields.';
             return;
         }
         const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
@@ -1664,7 +2212,8 @@
         if (pwd !== confirmPwd) { lecSignupError.innerText = 'Passwords do not match.'; return; }
         if (!profileUrl) { lecSignupError.innerText = 'Please upload your profile picture.'; return; }
         if (!nrcFront || !nrcBack) { lecSignupError.innerText = 'Please upload both NRC images.'; return; }
-        if (!termsOk) { lecSignupError.innerText = 'You must agree to the Lecturer Terms.'; return; }
+        if (!certificateUrl || !degreeUrl) { lecSignupError.innerText = 'Please upload both your Teaching Certificate and Degree/Diploma.'; return; }
+        if (!termsOk) { lecSignupError.innerText = 'You must agree to the Lecturer Terms & Conditions.'; return; }
 
         const originalText = lecRegisterBtn.innerHTML;
         setButtonLoading(lecRegisterBtn, true, originalText);
@@ -1683,10 +2232,13 @@
             await set(ref(database, `lecturers/${uid}`), {
                 name, email, phone,
                 nrcNumber: nrc,
+                collegeName, city, town, address,
                 password: pwd,
                 profileUrl,
                 nrcFront,
                 nrcBack,
+                certificateUrl,
+                degreeUrl,
                 status: 'pending',
                 paymentStatus: 'unpaid',
                 banned: false,
@@ -1700,7 +2252,9 @@
             lecProfileUrl.value = '';
             lecNrcFrontUrl.value = '';
             lecNrcBackUrl.value = '';
-            ['lecProfileUpload', 'lecNrcFrontUpload', 'lecNrcBackUpload'].forEach(id => {
+            lecCertUrl.value = '';
+            lecDegreeUrl.value = '';
+            ['lecProfileUpload', 'lecNrcFrontUpload', 'lecNrcBackUpload', 'lecCertUpload', 'lecDegreeUpload'].forEach(id => {
                 const box = document.getElementById(id);
                 box.querySelectorAll('img').forEach(i => i.remove());
                 box.classList.remove('has-image');
@@ -1719,11 +2273,163 @@
         }
     });
 
+    /* ============================================================
+       LECTURER LOGIN + PROFILE COMPLETION GATE
+       ============================================================ */
     const lecLoginForm     = document.getElementById('lecLoginForm');
     const lecLoginEmail    = document.getElementById('lecLoginEmail');
     const lecLoginPassword = document.getElementById('lecLoginPassword');
     const lecLoginError    = document.getElementById('lecLoginError');
     const lecLoginBtn      = document.getElementById('lecLoginBtn');
+
+    // Fields required for full access on dashboard.html
+    const REQUIRED_PROFILE_FIELDS = [
+        { key: 'profileUrl',      label: 'Profile picture' },
+        { key: 'nrcFront',        label: 'NRC Front' },
+        { key: 'nrcBack',         label: 'NRC Back' },
+        { key: 'certificateUrl',  label: 'Teaching Certificate' },
+        { key: 'degreeUrl',       label: 'Degree / Diploma' },
+        { key: 'collegeName',     label: 'College / University' },
+        { key: 'city',            label: 'City' }
+    ];
+
+    function getMissingProfileFields(lecturer) {
+        if (!lecturer) return [];
+        const missing = [];
+        REQUIRED_PROFILE_FIELDS.forEach(f => {
+            const v = lecturer[f.key];
+            if (v === undefined || v === null || String(v).trim() === '') {
+                missing.push({ key: f.key, label: f.label });
+            }
+        });
+        return missing;
+    }
+
+    let pendingLecturerUid = null;
+
+    function openCompleteProfileOverlay(lecturer, missing) {
+        pendingLecturerUid = lecturer.uid;
+
+        // Render missing chips
+        const chips = document.getElementById('missingChipsContainer');
+        chips.innerHTML = missing.map(m =>
+            `<span class="missing-chip"><i class="fas fa-exclamation-circle"></i> ${escapeHtmlClient(m.label)}</span>`
+        ).join('');
+
+        // Prefill personal fields
+        document.getElementById('cpName').value = lecturer.name || '';
+        document.getElementById('cpPhone').value = lecturer.phone || '';
+        document.getElementById('cpNrc').value = lecturer.nrcNumber || '';
+        document.getElementById('cpCollege').value = lecturer.collegeName || '';
+        document.getElementById('cpCity').value = lecturer.city || '';
+        document.getElementById('cpTown').value = lecturer.town || '';
+        document.getElementById('cpAddress').value = lecturer.address || '';
+
+        // Reset uploads
+        document.getElementById('cpProfileUrl').value = '';
+        document.getElementById('cpNrcFrontUrl').value = '';
+        document.getElementById('cpNrcBackUrl').value = '';
+        document.getElementById('cpCertUrl').value = '';
+        document.getElementById('cpDegreeUrl').value = '';
+        ['cpProfileUpload','cpNrcFrontUpload','cpNrcBackUpload','cpCertUpload','cpDegreeUpload'].forEach(id => {
+            const box = document.getElementById(id);
+            if (!box) return;
+            box.querySelectorAll('img').forEach(i => i.remove());
+            box.classList.remove('has-image');
+        });
+
+        document.getElementById('completeProfileError').innerText = '';
+        document.getElementById('completeProfileOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCompleteProfileOverlay() {
+        document.getElementById('completeProfileOverlay').classList.remove('open');
+    }
+
+    // Wire upload boxes in complete-profile overlay
+    wireUploadBox('cpProfileUpload', 'cpProfileUrl', document.getElementById('completeProfileError'));
+    wireUploadBox('cpNrcFrontUpload', 'cpNrcFrontUrl', document.getElementById('completeProfileError'));
+    wireUploadBox('cpNrcBackUpload', 'cpNrcBackUrl', document.getElementById('completeProfileError'));
+    wireUploadBox('cpCertUpload', 'cpCertUrl', document.getElementById('completeProfileError'));
+    wireUploadBox('cpDegreeUpload', 'cpDegreeUrl', document.getElementById('completeProfileError'));
+
+    document.getElementById('completeProfileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = document.getElementById('completeProfileError');
+        errEl.innerText = '';
+
+        if (!pendingLecturerUid) {
+            errEl.innerText = 'Session expired. Please sign in again.';
+            return;
+        }
+
+        const name = document.getElementById('cpName').value.trim();
+        const phone = document.getElementById('cpPhone').value.trim();
+        const nrc = document.getElementById('cpNrc').value.trim();
+        const collegeName = document.getElementById('cpCollege').value.trim();
+        const city = document.getElementById('cpCity').value.trim();
+        const town = document.getElementById('cpTown').value.trim();
+        const address = document.getElementById('cpAddress').value.trim();
+        const profileUrl = document.getElementById('cpProfileUrl').value;
+        const nrcFront = document.getElementById('cpNrcFrontUrl').value;
+        const nrcBack = document.getElementById('cpNrcBackUrl').value;
+        const certUrl = document.getElementById('cpCertUrl').value;
+        const degreeUrl = document.getElementById('cpDegreeUrl').value;
+
+        if (!name || !phone || !nrc || !collegeName || !city) {
+            errEl.innerText = 'Please fill in all required fields.';
+            return;
+        }
+
+        const btn = document.getElementById('completeProfileBtn');
+        const originalText = btn.innerHTML;
+        setButtonLoading(btn, true, originalText);
+
+        try {
+            const updatePayload = {
+                name, phone, nrcNumber: nrc,
+                collegeName, city, town, address,
+                profileCompletedAt: Date.now()
+            };
+            if (profileUrl)  updatePayload.profileUrl = profileUrl;
+            if (nrcFront)    updatePayload.nrcFront = nrcFront;
+            if (nrcBack)     updatePayload.nrcBack = nrcBack;
+            if (certUrl)     updatePayload.certificateUrl = certUrl;
+            if (degreeUrl)   updatePayload.degreeUrl = degreeUrl;
+
+            await update(ref(database, `lecturers/${pendingLecturerUid}`), updatePayload);
+
+            // Verify nothing is missing now
+            const verifySnap = await get(ref(database, `lecturers/${pendingLecturerUid}`));
+            const lecturer = { uid: pendingLecturerUid, ...(verifySnap.val() || {}) };
+            const stillMissing = getMissingProfileFields(lecturer);
+
+            if (stillMissing.length > 0) {
+                errEl.innerText = 'Still missing: ' + stillMissing.map(m => m.label).join(', ');
+                setButtonLoading(btn, false, originalText);
+                return;
+            }
+
+            closeCompleteProfileOverlay();
+            localStorage.setItem('lecturerUid', pendingLecturerUid);
+            localStorage.setItem('lecturerEmail', lecturer.email || '');
+            window.location.href = 'dashboard.html';
+
+        } catch (err) {
+            errEl.innerText = 'Error saving profile: ' + (err.message || err);
+            setButtonLoading(btn, false, originalText);
+        }
+    });
+
+    document.getElementById('completeProfileLogoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('lecturerUid');
+        localStorage.removeItem('lecturerEmail');
+        pendingLecturerUid = null;
+        closeCompleteProfileOverlay();
+        document.body.style.overflow = '';
+        lecLoginForm.reset();
+    });
 
     lecLoginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1772,6 +2478,15 @@
                 return;
             }
 
+            // === PROFILE COMPLETION GATE ===
+            const missing = getMissingProfileFields(match);
+            if (missing.length > 0) {
+                // Show overlay so they can fill in what's missing before we let them in
+                openCompleteProfileOverlay(match, missing);
+                return;
+            }
+
+            // All good — proceed to dashboard
             localStorage.setItem('lecturerUid', match.uid);
             localStorage.setItem('lecturerEmail', email);
             window.location.href = 'dashboard.html';
