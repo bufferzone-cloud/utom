@@ -251,7 +251,7 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
 .modal-box h3{font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px;clear:both;}
 
 /* ============================================================
-   POPUP DELIVERY MODAL
+   POPUP DELIVERY MODAL — behaves like user-side scheduled popup
 ============================================================ */
 #popupDeliveryModal{z-index:5500;background:rgba(0,0,0,.6);}
 #popupDeliveryModal .popup-box{background:#fff;border-radius:22px;max-width:440px;width:100%;padding:0;box-shadow:0 32px 80px rgba(0,0,0,.35);overflow:hidden;animation:popupIn .35s cubic-bezier(.34,1.56,.64,1);position:relative;}
@@ -534,7 +534,6 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
     </div>
     <div class="header-right">
       <button class="header-btn" id="supportHeaderBtn" title="Message admin"><i class="fas fa-comments"></i><span class="dot hidden" id="supportDot"></span></button>
-      <button class="header-btn" id="popupsHeaderBtn" title="Notifications"><i class="fas fa-bell"></i><span class="dot hidden" id="popupDot"></span></button>
       <span class="header-pill active" id="subPill" style="background:rgba(255,255,255,.7);padding:6px 14px;border-radius:30px;font-size:11px;font-weight:600;color:var(--text);box-shadow:var(--shadow-sm);"><i class="fas fa-check-circle"></i> Active</span>
     </div>
   </div>
@@ -600,17 +599,6 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
           <button type="submit" class="chat-send" title="Send"><i class="fas fa-paper-plane"></i></button>
         </form>
       </div>
-    </div>
-
-    <!-- ================= POPUPS LIST ================= -->
-    <div id="popupsListSection" class="section">
-      <div class="page-head">
-        <div style="flex:1;min-width:0;">
-          <div class="page-title">Notifications</div>
-          <div class="page-sub">Messages from UTOM admin</div>
-        </div>
-      </div>
-      <div id="popupsListContainer"></div>
     </div>
 
     <!-- ================= PROFILE / COMPLETE REGISTRATION ================= -->
@@ -1199,7 +1187,6 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
 
     <div class="divider"></div>
     <button class="nav-link" data-section="support"><i class="fas fa-comments"></i> <span>Support / Messages</span> <span class="nav-badge" id="navSupportBadge" style="display:none;">0</span></button>
-    <button class="nav-link" data-section="popupsList"><i class="fas fa-bell"></i> <span>Notifications</span> <span class="nav-badge" id="navPopupsBadge" style="display:none;">0</span></button>
     <button class="nav-link" data-section="profileEdit"><i class="fas fa-user-edit"></i> <span>Complete Profile</span> <span class="nav-badge" id="navProfileBadge" style="display:none;">!</span></button>
     <button class="nav-link" data-section="users"><i class="fas fa-users"></i> <span>All Users</span></button>
     <button class="nav-link" data-section="subscription"><i class="fas fa-key"></i> <span>Subscription</span></button>
@@ -1234,7 +1221,7 @@ label{font-size:12px;color:var(--text);font-weight:600;display:inline-flex;align
   </div>
 </div>
 
-<!-- Popup Delivery Modal -->
+<!-- Popup Delivery Modal (scheduled popups only — matches user-side behaviour) -->
 <div id="popupDeliveryModal" class="modal-overlay">
   <div class="popup-box">
     <div class="popup-head">
@@ -1288,10 +1275,12 @@ let _caType = 'test';
 let _caRegSelected = new Set();
 let _suppressHistoryPush = false;
 
-/* Popup queue system */
-const popupQueue = [];
-let currentPopup = null;
-let popupDeferred = false;
+/* Popup tracking — persists locally like user-side */
+const POPUP_TRACK_KEY = () => `lecturer_popup_track_${currentLecturer?.uid || 'x'}`;
+let _scheduledPopupInterval = null;
+let _currentPopup = null;
+let _popupDeferred = false;
+const _recentPopupShown = new Set(); // prevent duplicate in same session
 
 /* Profile completion */
 let profileMissing = [];
@@ -1415,7 +1404,7 @@ async function boot(){
     setupBackNavigation();
     setTimeout(() => {
       checkProfileCompletion();
-      processPendingPopups();
+      startScheduledPopupChecker();
     }, 800);
   }catch(err){
     console.error('Boot error:', err);
@@ -1463,7 +1452,8 @@ function setupBackNavigation(){
 function showLockScreen(){
   document.getElementById('mainApp').classList.remove('show');
   document.getElementById('lockScreen').style.display='flex';
-  popupDeferred = true;
+  _popupDeferred = true;
+  stopScheduledPopupChecker();
   const fee = settings.accessFee ?? 150;
   document.getElementById('lockAmount').textContent = `ZMW ${fee}`;
   document.getElementById('lockMtn').textContent = settings.mtnNumber || '—';
@@ -1518,10 +1508,8 @@ function showMainApp(){
   renderHome();
   renderPaymentSetupPreview();
   renderProfileEditForm();
-  if(popupDeferred){
-    popupDeferred = false;
-    setTimeout(() => processPendingPopups(), 500);
-  }
+  _popupDeferred = false;
+  startScheduledPopupChecker();
 }
 
 function updateSubPill(){
@@ -1657,9 +1645,8 @@ function attachRealtime(){
 
   onValue(popupsRef, snap=>{
     allPopups = snap.val() || {};
-    processPendingPopups();
-    renderPopupsList();
-    updatePopupsBadge();
+    /* Popups are now handled automatically by the scheduler — no list UI. */
+    setTimeout(checkScheduledPopups, 500);
   });
 
   onValue(ref(db, `lecturerMessages/${currentLecturer.uid}`), snap=>{
@@ -1670,8 +1657,9 @@ function attachRealtime(){
   });
 }
 
-/* ============ POPUP DELIVERY SYSTEM ============ */
-const POPUP_TRACK_KEY = () => `popupTrack_${currentLecturer?.uid || 'x'}`;
+/* =================================================================
+   ============ SCHEDULED POPUP SYSTEM (auto popup only, no bell) ===
+   ================================================================= */
 
 function getPopupTracking(){
   try { return JSON.parse(localStorage.getItem(POPUP_TRACK_KEY()) || '{}'); }
@@ -1746,118 +1734,64 @@ function markPopupShown(p){
   }catch(e){ /* silent */ }
 }
 
-function processPendingPopups(){
-  if(popupDeferred) return;
+/* Scheduler — identical behaviour to the user-side popups */
+function startScheduledPopupChecker(){
+  if(_scheduledPopupInterval) clearInterval(_scheduledPopupInterval);
+  if(_popupDeferred) return;
+  _scheduledPopupInterval = setInterval(() => {
+    checkScheduledPopups();
+  }, 30000);
+  setTimeout(checkScheduledPopups, 5000);
+}
+function stopScheduledPopupChecker(){
+  if(_scheduledPopupInterval){ clearInterval(_scheduledPopupInterval); _scheduledPopupInterval = null; }
+}
+
+function checkScheduledPopups(){
+  if(_popupDeferred) return;
   if(!currentLecturer) return;
+  if(!document.getElementById('mainApp').classList.contains('show')) return;
+  if(_currentPopup) return; // already showing
+
   const eligible = Object.entries(allPopups)
     .map(([id,p]) => ({ id, ...p }))
     .filter(p =>
       isPopupMine(p) &&
       popupDueNow(p) &&
       popupWithinLimits(p) &&
-      !popupQueue.some(q => q.id === p.id) &&
-      (!currentPopup || currentPopup.id !== p.id)
+      !_recentPopupShown.has(p.id)
     )
     .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
 
-  eligible.forEach(p => popupQueue.push(p));
-  updatePopupsBadge();
-  showNextPopup();
+  if(eligible.length === 0) return;
+  showScheduledPopup(eligible[0]);
 }
 
-function showNextPopup(){
-  if(currentPopup) return;
-  if(popupQueue.length === 0) return;
-  if(!document.getElementById('mainApp').classList.contains('show')) return;
-  currentPopup = popupQueue.shift();
+function showScheduledPopup(p){
+  _currentPopup = p;
+  _recentPopupShown.add(p.id);
 
-  document.getElementById('popupDeliveryTitle').textContent = currentPopup.title || 'Notification';
-  document.getElementById('popupDeliveryMessage').textContent = currentPopup.message || '';
+  document.getElementById('popupDeliveryTitle').textContent = p.title || 'Notification';
+  document.getElementById('popupDeliveryMessage').textContent = p.message || '';
 
   const mediaBox = document.getElementById('popupDeliveryMedia');
-  if(currentPopup.mediaUrl){
+  if(p.mediaUrl){
     mediaBox.style.display = 'block';
-    mediaBox.innerHTML = `<img src="${esc(currentPopup.mediaUrl)}" alt="attachment" loading="lazy">`;
+    mediaBox.innerHTML = `<img src="${esc(p.mediaUrl)}" alt="attachment" loading="lazy">`;
   } else {
     mediaBox.style.display = 'none';
     mediaBox.innerHTML = '';
   }
-  document.getElementById('popupDeliveryTime').textContent = fmtDate(currentPopup.createdAt);
+  document.getElementById('popupDeliveryTime').textContent = fmtDate(p.createdAt);
   openModal('popupDeliveryModal');
-  markPopupShown(currentPopup);
+  markPopupShown(p);
 }
 
 document.getElementById('popupAckBtn').addEventListener('click', ()=>{
   closeModal('popupDeliveryModal');
-  currentPopup = null;
-  setTimeout(showNextPopup, 400);
+  _currentPopup = null;
+  setTimeout(checkScheduledPopups, 400);
 });
-
-function updatePopupsBadge(){
-  const tracking = getPopupTracking();
-  const count = Object.entries(allPopups)
-    .map(([id,p]) => ({id,...p}))
-    .filter(p => {
-      if(!isPopupMine(p)) return false;
-      if(!popupDueNow(p)) return false;
-      const t = tracking[p.id] || { occurrencesShown: 0 };
-      const max = Math.max(1, parseInt(p.maxOccurrences) || 1);
-      return t.occurrencesShown < max;
-    }).length;
-
-  const nav = document.getElementById('navPopupsBadge');
-  const dot = document.getElementById('popupDot');
-  if(count > 0){
-    if(nav){ nav.textContent = count; nav.style.display = 'inline-block'; }
-    if(dot) dot.classList.remove('hidden');
-  } else {
-    if(nav) nav.style.display = 'none';
-    if(dot) dot.classList.add('hidden');
-  }
-}
-
-function renderPopupsList(){
-  const container = document.getElementById('popupsListContainer');
-  if(!container) return;
-  const tracking = getPopupTracking();
-  const arr = Object.entries(allPopups).map(([id,p])=>({id,...p}))
-    .filter(p => isPopupMine(p))
-    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-
-  if(arr.length === 0){
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><h3>No notifications</h3>Popups from admin will appear here.</div>';
-    return;
-  }
-
-  container.innerHTML = arr.map(p=>{
-    const t = tracking[p.id] || { occurrencesShown: 0 };
-    const seen = t.occurrencesShown > 0;
-    return `
-      <div class="item-card" style="${seen ? 'opacity:.85;' : ''}" onclick="openPopupFromList('${p.id}')" data-popid="${p.id}">
-        <div class="ic-header">
-          <div style="flex:1;min-width:0;">
-            <div class="ic-title">${esc(p.title||'Notification')}</div>
-            <div class="ic-meta">${fmtDate(p.createdAt)}</div>
-            <div style="margin-top:6px;font-size:12px;color:#5f6377;line-height:1.5;word-break:break-word;">${esc((p.message||'').substring(0,140))}${(p.message||'').length>140?'…':''}</div>
-          </div>
-          <span class="status-pill ${seen?'approved':'pending'}">${seen?'Seen':'New'}</span>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-window.openPopupFromList = function(id){
-  const p = allPopups[id];
-  if(!p) return;
-  currentPopup = { id, ...p };
-  document.getElementById('popupDeliveryTitle').textContent = p.title || 'Notification';
-  document.getElementById('popupDeliveryMessage').textContent = p.message || '';
-  const mediaBox = document.getElementById('popupDeliveryMedia');
-  if(p.mediaUrl){ mediaBox.style.display = 'block'; mediaBox.innerHTML = `<img src="${esc(p.mediaUrl)}" alt="attachment" loading="lazy">`; }
-  else { mediaBox.style.display = 'none'; mediaBox.innerHTML = ''; }
-  document.getElementById('popupDeliveryTime').textContent = fmtDate(p.createdAt);
-  openModal('popupDeliveryModal');
-};
 
 /* ============ SUPPORT CHAT ============ */
 function updateSupportBadge(){
@@ -2004,16 +1938,19 @@ function checkProfileCompletion(){
     const sessionKey = `profileNudge_${currentLecturer.uid}_${new Date().toDateString()}`;
     if(!sessionStorage.getItem(sessionKey)){
       sessionStorage.setItem(sessionKey, '1');
-      if(!popupDeferred){
-        popupQueue.push({
-          id: '__profileNudge__',
-          title: 'Complete your registration',
-          message: 'You still need to provide: ' + profileMissing.join(', ') + '.\n\nTap "Got it" and go to Complete Profile to finish.',
-          mediaUrl: '',
-          createdAt: Date.now()
-        });
-        setTimeout(showNextPopup, 1200);
-      }
+      // Show the profile nudge as a scheduled popup (respects deferral if lock screen is up)
+      setTimeout(() => {
+        if(!_currentPopup && !_popupDeferred && document.getElementById('mainApp').classList.contains('show')){
+          showScheduledPopup({
+            id: '__profileNudge__',
+            title: 'Complete your registration',
+            message: 'You still need to provide: ' + profileMissing.join(', ') + '.\n\nTap "Got it" and go to Complete Profile to finish.',
+            mediaUrl: '',
+            createdAt: Date.now(),
+            _isNudge: true
+          });
+        }
+      }, 1500);
     }
   } else {
     if(banner) banner.innerHTML = '';
@@ -3934,7 +3871,6 @@ function showSection(id, params = {}, fromPopState = false){
   if(id === 'docCreate') targetId = 'docCreateSection';
   if(id === 'courseEdit') targetId = 'courseEditSection';
   if(id === 'subfolderEdit') targetId = 'subfolderEditSection';
-  if(id === 'popupsList') targetId = 'popupsListSection';
 
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
 
@@ -3998,7 +3934,6 @@ function showSection(id, params = {}, fromPopState = false){
   if(id === 'createRegister') renderCreateRegisterForm();
   if(id === 'videoCreate') updateCourseSelects();
   if(id === 'support'){ renderChatMessages(); markAdminMessagesRead(); }
-  if(id === 'popupsList'){ renderPopupsList(); }
 
   if(!fromPopState && !_suppressHistoryPush){
     try { history.pushState({ section: id, params: params || {} }, '', '#' + id); } catch(e){}
@@ -4022,7 +3957,6 @@ document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
 document.getElementById('closeSidebarBtn').addEventListener('click', closeSidebar);
 document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
 document.getElementById('supportHeaderBtn').addEventListener('click', ()=> showSection('support'));
-document.getElementById('popupsHeaderBtn').addEventListener('click', ()=> showSection('popupsList'));
 
 document.querySelectorAll('.nav-link[data-section]').forEach(n => {
   n.addEventListener('click', ()=> showSection(n.dataset.section));
@@ -4036,7 +3970,7 @@ document.getElementById('logoutBtn').addEventListener('click', doLogout);
 document.getElementById('logoutBtn2').addEventListener('click', doLogout);
 
 document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', (e)=>{ if(e.target === m) m.classList.remove('open'); });
+  m.addEventListener('click', (e)=>{ if(e.target === m && m.id !== 'popupDeliveryModal') m.classList.remove('open'); });
 });
 
 document.getElementById('backFromSubfolderBtn').addEventListener('click', ()=>{
@@ -4345,7 +4279,7 @@ document.addEventListener('click', async (e)=>{
   }
 });
 
-console.log('✅ Lecturer dashboard loaded — popups, support chat, profile completion with college/city, free/paid access.');
+console.log('✅ Lecturer dashboard loaded — popups are auto-only (no bell/list UI), matching user-side behaviour.');
 </script>
 </body>
 </html>
