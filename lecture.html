@@ -728,6 +728,14 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         </div>
 
         <div class="form-card">
+          <h4><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h4>
+          <div class="row one"><input type="text" id="cCollege" placeholder="College / University Name *" required></div>
+          <div class="row one"><input type="text" id="cCity" placeholder="City *" required></div>
+          <div class="row one"><input type="text" id="cTown" placeholder="Town / Suburb"></div>
+          <div class="row one"><input type="text" id="cAddress" placeholder="Physical Address (street, plot, etc.)"></div>
+        </div>
+
+        <div class="form-card">
           <h4><i class="fas fa-image"></i> Profile picture</h4>
           <div class="upload" id="upProfile">
             <div class="ph"><i class="fas fa-user-circle"></i><span>Tap to upload</span></div>
@@ -801,6 +809,13 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           <div class="row one"><input type="email" id="eEmail" placeholder="Email" required></div>
           <div class="row one"><input type="tel" id="ePhone" placeholder="Phone" required></div>
           <div class="row one"><input type="text" id="eNrc" placeholder="NRC Number"></div>
+        </div>
+        <div class="form-card">
+          <h4><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h4>
+          <div class="row one"><input type="text" id="eCollege" placeholder="College / University Name"></div>
+          <div class="row one"><input type="text" id="eCity" placeholder="City"></div>
+          <div class="row one"><input type="text" id="eTown" placeholder="Town / Suburb"></div>
+          <div class="row one"><input type="text" id="eAddress" placeholder="Physical Address (street, plot, etc.)"></div>
         </div>
         <div class="page-foot">
           <button type="button" class="btn btn-ghost" onclick="history.back()">Cancel</button>
@@ -1616,7 +1631,6 @@ function updateBadges(){
       if(m.sender === 'lecturer' && !m.read) um++;
     }
   }
-  // Active/scheduled popups count
   let activePops = 0;
   for(const p of Object.values(S.popups)){
     const st = popupStatusLabel(p);
@@ -1792,6 +1806,9 @@ function lecturerCardHTML(l, opt = {}){
       </div>`;
   }
 
+  const collegeLine = l.collegeName ? `<div class="lc-meta">🏫 ${esc(l.collegeName)}</div>` : '';
+  const locationLine = (l.city || l.town) ? `<div class="lc-meta">📍 ${esc([l.city, l.town].filter(Boolean).join(', '))}</div>` : '';
+
   return `
     <article class="lc-card ${l.banned ? 'banned' : ''}">
       <div class="lc-head">
@@ -1800,6 +1817,8 @@ function lecturerCardHTML(l, opt = {}){
           <div class="lc-name">${esc(l.name || 'Unnamed')}</div>
           <div class="lc-email">${esc(l.email || '')}</div>
           <div class="lc-meta">📞 ${esc(l.phone || 'N/A')} · NRC: ${esc(l.nrcNumber || 'N/A')}</div>
+          ${collegeLine}
+          ${locationLine}
           <div class="lc-meta">${isPending
             ? 'Applied: ' + fmt(l.appliedAt)
             : 'Expires: ' + expiryTxt}</div>
@@ -1825,7 +1844,10 @@ function renderApplications(){
     (l.name||'').toLowerCase().includes(q) ||
     (l.email||'').toLowerCase().includes(q) ||
     (l.phone||'').toLowerCase().includes(q) ||
-    (l.nrcNumber||'').toLowerCase().includes(q));
+    (l.nrcNumber||'').toLowerCase().includes(q) ||
+    (l.collegeName||'').toLowerCase().includes(q) ||
+    (l.city||'').toLowerCase().includes(q) ||
+    (l.town||'').toLowerCase().includes(q));
   arr.sort((a,b) => (b.appliedAt||0) - (a.appliedAt||0));
 
   const box = document.getElementById('appList');
@@ -1855,7 +1877,8 @@ function renderLecturers(){
 
   if(q) arr = arr.filter(l =>
     (l.name||'').toLowerCase().includes(q) ||
-    (l.email||'').toLowerCase().includes(q));
+    (l.email||'').toLowerCase().includes(q) ||
+    (l.collegeName||'').toLowerCase().includes(q));
   arr.sort((a,b) => (b.approvedAt||0) - (a.approvedAt||0));
 
   const box = document.getElementById('lectList');
@@ -1940,6 +1963,15 @@ function renderLecturerDetail(uid){
       </div>`;
   }
 
+  const collegeRow = l.collegeName
+    ? `<tr><td>College / University</td><td>${esc(l.collegeName)}</td></tr>` : '';
+  const cityRow = l.city
+    ? `<tr><td>City</td><td>${esc(l.city)}</td></tr>` : '';
+  const townRow = l.town
+    ? `<tr><td>Town / Suburb</td><td>${esc(l.town)}</td></tr>` : '';
+  const addressRow = l.address
+    ? `<tr><td>Physical Address</td><td>${esc(l.address)}</td></tr>` : '';
+
   box.innerHTML = `
     <div class="page-head">
       <button class="icon-btn" onclick="navigate('lecturers')"><i class="fas fa-arrow-left"></i></button>
@@ -1980,6 +2012,8 @@ function renderLecturerDetail(uid){
           <div class="lc-email">${esc(l.email || '')}</div>
           <div class="lc-meta">📞 ${esc(l.phone || 'N/A')}</div>
           <div class="lc-meta">NRC: ${esc(l.nrcNumber || 'N/A')}</div>
+          ${l.collegeName ? `<div class="lc-meta">🏫 ${esc(l.collegeName)}</div>` : ''}
+          ${(l.city || l.town) ? `<div class="lc-meta">📍 ${esc([l.city, l.town].filter(Boolean).join(', '))}</div>` : ''}
         </div>
       </div>
       <div class="chips">
@@ -2016,6 +2050,10 @@ function renderLecturerDetail(uid){
           <tr><td>Email</td><td>${esc(l.email || '')}</td></tr>
           <tr><td>Phone</td><td>${esc(l.phone || '')}</td></tr>
           <tr><td>NRC</td><td>${esc(l.nrcNumber || '')}</td></tr>
+          ${collegeRow}
+          ${cityRow}
+          ${townRow}
+          ${addressRow}
           <tr><td>Password</td><td>
             <span id="pwdMask">••••••••</span>
             <button class="btn btn-ghost" style="padding:3px 12px;font-size:10px;margin-left:6px"
@@ -2156,7 +2194,8 @@ function renderLecturerDetail(uid){
    FORM FILLERS
 ============================================================ */
 function resetCreateForm(){
-  ['cName','cEmail','cPhone','cNrc','cPass','cProfile','cNrcF','cNrcB','cCert','cDegree']
+  ['cName','cEmail','cPhone','cNrc','cPass','cProfile','cNrcF','cNrcB','cCert','cDegree',
+   'cCollege','cCity','cTown','cAddress']
     .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   ['upProfile','upNrcF','upNrcB','upCert','upDegree'].forEach(id => {
     const el = document.getElementById(id);
@@ -2175,6 +2214,10 @@ function fillEditForm(uid){
   document.getElementById('eEmail').value = l.email || '';
   document.getElementById('ePhone').value = l.phone || '';
   document.getElementById('eNrc').value   = l.nrcNumber || '';
+  document.getElementById('eCollege').value = l.collegeName || '';
+  document.getElementById('eCity').value    = l.city || '';
+  document.getElementById('eTown').value    = l.town || '';
+  document.getElementById('eAddress').value = l.address || '';
   document.getElementById('editSub').textContent = l.email || 'Update account information';
 }
 
@@ -2670,7 +2713,7 @@ function renderSubPayments(){
 }
 
 /* ============================================================
-   POPUPS (with full scheduling & repetition)
+   POPUPS
 ============================================================ */
 function populatePopupSpecific(){
   const sel = document.getElementById('popSpecificUid');
@@ -2686,7 +2729,6 @@ function resetPopupForm(){
   document.getElementById('popMediaUrl').value = '';
   document.getElementById('popTarget').value = 'all';
   document.getElementById('popSpecificUid').style.display = 'none';
-  // default start = now + 1 min
   const now = new Date(Date.now() + 60000);
   document.getElementById('popStartDate').value = toLocalInput(now);
   document.getElementById('popEndDate').value = '';
@@ -2708,7 +2750,6 @@ function renderPopups(){
   let arr = Object.entries(S.popups).map(([id,d]) => ({ id, ...d }))
     .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
 
-  // Filters
   if(popupFilter !== 'all'){
     arr = arr.filter(p => {
       const st = popupStatusLabel(p);
@@ -2784,7 +2825,6 @@ async function sendPopup(){
   if(repeatInterval < 1){ toast('Repeat interval must be ≥ 1', 'error'); return; }
   if(maxOccurrences < 1){ toast('Max occurrences must be ≥ 1', 'error'); return; }
 
-  // Compute recipients
   let userIds = [];
   const now = Date.now();
   if(target === 'all') userIds = 'all';
@@ -2873,7 +2913,6 @@ async function editPopupSchedule(id){
         <input type="number" id="editPopShown" value="${p.occurrencesShown || 0}" min="0">
       </div>
     </div>`;
-  // Reuse the confirm modal body for the editor
   document.getElementById('cfIcon').textContent = '⏰';
   document.getElementById('cfTitle').textContent = 'Edit Popup Schedule';
   document.getElementById('cfMsg').innerHTML = html;
@@ -3218,6 +3257,8 @@ async function approveLecturer(uid){
       <div class="r"><span class="l">Email</span><span class="v">${esc(l.email)}</span></div>
       <div class="r"><span class="l">Phone</span><span class="v">${esc(l.phone||'—')}</span></div>
       <div class="r"><span class="l">NRC</span><span class="v">${esc(l.nrcNumber||'—')}</span></div>
+      ${l.collegeName ? `<div class="r"><span class="l">College</span><span class="v">${esc(l.collegeName)}</span></div>` : ''}
+      ${l.city ? `<div class="r"><span class="l">City</span><span class="v">${esc(l.city)}</span></div>` : ''}
       <div class="r"><span class="l">Applied</span><span class="v">${fmt(l.appliedAt)}</span></div>
       <div class="r"><span class="l">Earnings</span><span class="v">ZMW ${e.total} (${e.count} sales)</span></div>
     </div>
@@ -3350,11 +3391,12 @@ window.rejectSub = rejectSub;
    CSV
 ============================================================ */
 function exportLecturersCSV(){
-  const rows = [['Name','Email','Phone','NRC','Status','Payment','Expires','Banned','Earnings','Sales']];
+  const rows = [['Name','Email','Phone','NRC','College / University','City','Town','Address','Status','Payment','Expires','Banned','Earnings','Sales']];
   for(const [uid, l] of Object.entries(S.lecturers)){
     const e = earningsOf(uid);
     rows.push([
       l.name||'', l.email||'', l.phone||'', l.nrcNumber||'',
+      l.collegeName||'', l.city||'', l.town||'', l.address||'',
       l.status||'', l.paymentStatus||'',
       l.accessExpiresAt ? new Date(l.accessExpiresAt).toISOString() : 'Never',
       l.banned ? 'Yes' : 'No',
@@ -3569,11 +3611,18 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
   const phone = document.getElementById('cPhone').value.trim();
   const nrc = document.getElementById('cNrc').value.trim();
   const pass = document.getElementById('cPass').value;
+  const collegeName = document.getElementById('cCollege').value.trim();
+  const city = document.getElementById('cCity').value.trim();
+  const town = document.getElementById('cTown').value.trim();
+  const address = document.getElementById('cAddress').value.trim();
   const certUrl = document.getElementById('cCert').value || '';
   const degreeUrl = document.getElementById('cDegree').value || '';
 
   if(!name || !email || !phone || !nrc || !pass){
-    toast('Fill all required fields', 'error'); return;
+    toast('Fill all required personal fields', 'error'); return;
+  }
+  if(!collegeName || !city){
+    toast('College / University name and City are required', 'error'); return;
   }
   if(!certUrl || !degreeUrl){
     toast('Please upload both the certificate and the degree/diploma', 'error'); return;
@@ -3585,6 +3634,7 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
     const uid = 'lec_' + email.replace(/[^a-z0-9]/g,'_');
     await set(ref(db, `lecturers/${uid}`), {
       name, email, phone, nrcNumber: nrc, password: pass,
+      collegeName, city, town, address,
       profileUrl: document.getElementById('cProfile').value || '',
       nrcFront: document.getElementById('cNrcF').value || '',
       nrcBack: document.getElementById('cNrcB').value || '',
@@ -3609,6 +3659,10 @@ document.getElementById('fEdit').addEventListener('submit', async e => {
       email: document.getElementById('eEmail').value.trim().toLowerCase(),
       phone: document.getElementById('ePhone').value.trim(),
       nrcNumber: document.getElementById('eNrc').value.trim(),
+      collegeName: document.getElementById('eCollege').value.trim(),
+      city: document.getElementById('eCity').value.trim(),
+      town: document.getElementById('eTown').value.trim(),
+      address: document.getElementById('eAddress').value.trim(),
       updatedAt: Date.now()
     });
     toast('Profile updated', 'success');
@@ -3771,7 +3825,6 @@ onAuthStateChanged(auth, user => {
 
   attachRealtime();
 
-  // Set default popup start date
   const startD = new Date(Date.now() + 60000);
   document.getElementById('popStartDate').value = toLocalInput(startD);
 
@@ -3779,7 +3832,7 @@ onAuthStateChanged(auth, user => {
   navigate(start, {}, false);
 });
 
-console.log('✅ UTOM Lectures Admin — popups now support scheduling, repetition and max occurrences.');
+console.log('✅ UTOM Lectures Admin — added city, town, address and college/university fields.');
 </script>
 </body>
 </html>
