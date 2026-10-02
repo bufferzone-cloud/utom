@@ -4,12 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Student Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js">
     <style>
         /* ===== RESET & BASE ===== */
         * {
@@ -9340,6 +9338,25 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+function loadCssOnce(href) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`link[href="${href}"]`)) return resolve();
+        const l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = href;
+        l.onload = resolve; l.onerror = reject;
+        document.head.appendChild(l);
+    });
+}
+
 let currentUser = null;
 let userData = { firstName: '', lastName: '', email: '', phone: '', likedVideos: [], likedDocs: [] };
 let allCourses = [];
@@ -9834,45 +9851,46 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     hideBannedAndMaintenance();
     try {
-        // CHECK BAN
-        const bannedSnap = await get(ref(db, `bannedUsers/${user.uid}`));
-        const bannedVal = bannedSnap.val();
-        if (bannedVal) {
-            let reason = '';
-            if (typeof bannedVal === 'object' && bannedVal.reason) {
-                reason = bannedVal.reason;
-            }
-            showBannedPage(reason);
-            document.getElementById('appLoader').classList.add('hidden');
-            return;
-        }
+    const [bannedSnap, maintSnap] = await Promise.all([
+        get(ref(db, `bannedUsers/${user.uid}`)),
+        get(ref(db, 'system/maintenance')),
+        loadUserData(user.uid)
+    ]);
 
-        // CHECK MAINTENANCE
-        const maintSnap = await get(ref(db, 'system/maintenance'));
-        if (maintSnap.val() === true) {
-            showMaintenancePage();
-            document.getElementById('appLoader').classList.add('hidden');
-            return;
+    const bannedVal = bannedSnap.val();
+    if (bannedVal) {
+        let reason = '';
+        if (typeof bannedVal === 'object' && bannedVal.reason) {
+            reason = bannedVal.reason;
         }
-
-        await loadUserData(user.uid);
-        const dataPromises = [
-            loadApprovedCourses(user.uid),
-            loadPendingPurchases(user.uid),
-            loadCourses(),
-            loadSubfolders(),
-            loadVideos(),
-            loadDocs(),
-            loadPaymentSettings(),
-            loadPromos(),
-            loadLecturers(),
-            loadInAppNotifications(),
-            loadRegistersAndAssessments(user.uid),
-            loadShopData()
-        ];
-        await Promise.all(dataPromises);
-        listenForApprovedPurchaseRemovals(user.uid);
+        showBannedPage(reason);
         document.getElementById('appLoader').classList.add('hidden');
+        return;
+    }
+
+    if (maintSnap.val() === true) {
+        showMaintenancePage();
+        document.getElementById('appLoader').classList.add('hidden');
+        return;
+    }
+        const dataPromises = [
+    loadApprovedCourses(user.uid),
+    loadPendingPurchases(user.uid),
+    loadCourses(),
+    loadSubfolders(),
+    loadVideos(),
+    loadDocs(),
+    loadPaymentSettings(),
+    loadPromos(),
+    loadLecturers(),
+    loadInAppNotifications(),
+    loadRegistersAndAssessments(user.uid),
+    loadShopData()
+];
+const failsafe = new Promise(r => setTimeout(r, 8000));
+await Promise.race([Promise.all(dataPromises), failsafe]);
+listenForApprovedPurchaseRemovals(user.uid);
+document.getElementById('appLoader').classList.add('hidden');
         setupUI();
         handleHashChange();
         startExpirationChecker();
@@ -10719,7 +10737,8 @@ document.getElementById('shopCopyAirtelBtn').addEventListener('click', function(
     }
 });
 
-document.getElementById('shopPaymentUploadBox').addEventListener('click', function() {
+document.getElementById('shopPaymentUploadBox').addEventListener('click', async function() {
+    await loadScriptOnce('https://upload-widget.cloudinary.com/global/all.js');
     cloudinary.openUploadWidget({
         cloudName: CLOUD_NAME,
         uploadPreset: UPLOAD_PRESET,
@@ -11044,7 +11063,7 @@ let userMarker = null;
 let pickupWatchId = null;
 let pickupMapInterval = null;
 
-function openPickupMap(pickupLoc, order) {
+async function openPickupMap(pickupLoc, order) {
     const modal = document.getElementById('pickupMapModal');
     document.getElementById('pickupMapTitle').textContent = `Pickup: ${pickupLoc.name}`;
     document.getElementById('pickupDetailName').textContent = pickupLoc.name;
@@ -11067,6 +11086,9 @@ function openPickupMap(pickupLoc, order) {
         pickupMap.remove();
         pickupMap = null;
     }
+
+    await loadCssOnce('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    await loadScriptOnce('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
 
     pickupMap = L.map(container).setView([lat, lng], 15);
 
@@ -11490,8 +11512,9 @@ async function connectToLiveKitRoom(roomName) {
             })
         });
         const tokenData = await response.json();
-        if (!tokenData.success) throw new Error(tokenData.error || 'Failed to get token');
-        const room = new LivekitClient.Room({
+if (!tokenData.success) throw new Error(tokenData.error || 'Failed to get token');
+await loadScriptOnce('https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js');
+const room = new LivekitClient.Room({
             adaptiveStream: true,
             dynacast: true,
             ...iceServers
@@ -14733,8 +14756,9 @@ function setupUI() {
             addNotification('danger', 'Failed to send: ' + err.message);
         }
     });
-    document.getElementById('supportAttachBtn').addEventListener('click', () => {
-        cloudinary.openUploadWidget({
+    document.getElementById('supportAttachBtn').addEventListener('click', async () => {
+    await loadScriptOnce('https://upload-widget.cloudinary.com/global/all.js');
+    cloudinary.openUploadWidget({
             cloudName: CLOUD_NAME,
             uploadPreset: UPLOAD_PRESET,
             sources: ['local', 'url', 'camera'],
@@ -14884,8 +14908,9 @@ function setupUI() {
     });
 
     const uploadBox = document.getElementById('paymentUploadBox');
-    uploadBox.addEventListener('click', () => {
-        cloudinary.openUploadWidget({
+uploadBox.addEventListener('click', async () => {
+    await loadScriptOnce('https://upload-widget.cloudinary.com/global/all.js');
+    cloudinary.openUploadWidget({
             cloudName: CLOUD_NAME,
             uploadPreset: UPLOAD_PRESET,
             sources: ['local', 'url', 'camera'],
@@ -15485,28 +15510,33 @@ function renderAssessmentTake(assessment) {
         document.getElementById('assessmentInfoSection').style.display = 'none';
         startBtn.style.display = 'none';
         document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
-        document.querySelectorAll('.scratchpad-wrapper canvas').forEach(canvas => {
-            const key = canvas.id.replace('scratch-', '');
-            if (savedScratch[key]) {
-                const img = new Image();
-                img.onload = function() {
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                };
-                img.src = savedScratch[key];
-            }
-            initScratchpad(canvas);
-        });
         document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const wrapper = this.nextElementSibling;
-                if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
-                    wrapper.classList.toggle('open');
-                    this.classList.toggle('open');
+    btn.addEventListener('click', function() {
+        const wrapper = this.nextElementSibling;
+        if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
+            const isOpening = !wrapper.classList.contains('open');
+            wrapper.classList.toggle('open');
+            this.classList.toggle('open');
+            if (isOpening) {
+                const canvas = wrapper.querySelector('canvas');
+                if (canvas && !canvas.dataset.scratchInited) {
+                    canvas.dataset.scratchInited = '1';
+                    initScratchpad(canvas);
+                    const key = canvas.id.replace('scratch-', '');
+                    if (savedScratch[key]) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        };
+                        img.src = savedScratch[key];
+                    }
                 }
-            });
-        });
+            }
+        }
+    });
+});
         if (isAssignment) {
             currentAssessmentTaking.autoSaveInterval = setInterval(async () => {
                 const answers = collectAnswers();
@@ -15767,8 +15797,7 @@ function initScratchpad(canvas) {
     let color = '#000000';
     let lineWidth = 4;
     let isEraser = false;
-    const rect = canvas.parentElement.getBoundingClientRect();
-    const dpr = 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = canvas.parentElement.clientWidth || 600;
     const h = 160;
     canvas.width = w * dpr;
@@ -16924,9 +16953,10 @@ window.downloadAssessmentPNG = async function(responseId) {
     document.body.appendChild(tempDiv);
     const reportEl = document.getElementById('scriptReport');
 
-    try {
-        addNotification('info', 'Generating PNG... Please wait.');
-        const canvas = await html2canvas(reportEl, {
+   try {
+    addNotification('info', 'Generating PNG... Please wait.');
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    const canvas = await html2canvas(reportEl, {
             scale: 1.5,
             useCORS: true,
             backgroundColor: '#ffffff',
