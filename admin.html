@@ -6567,17 +6567,27 @@ body.dark-mode .script-question .part-breakdown .part-row .part-correct {
                         <h2><i class="fas fa-bell"></i> Send Pop-up Notification</h2>
                         <p>Choose who you want to send a notification to:</p>
                         <div class="popup-choice-buttons">
-                            <button id="popupAllUsersBtn" class="popup-choice-btn">
-                                <i class="fas fa-users"></i>
-                                <span class="choice-title">All Users</span>
-                                <span class="choice-desc">Send to everyone</span>
-                            </button>
-                            <button id="popupSpecificUserBtn" class="popup-choice-btn">
-                                <i class="fas fa-user-check"></i>
-                                <span class="choice-title">Specific User</span>
-                                <span class="choice-desc">Select individual users</span>
-                            </button>
-                        </div>
+    <button id="popupAllUsersBtn" class="popup-choice-btn">
+        <i class="fas fa-users"></i>
+        <span class="choice-title">All Users</span>
+        <span class="choice-desc">Send to everyone</span>
+    </button>
+    <button id="popupAllRegistersBtn" class="popup-choice-btn">
+        <i class="fas fa-address-book"></i>
+        <span class="choice-title">All Registers</span>
+        <span class="choice-desc">Send to all registered students</span>
+    </button>
+    <button id="popupSpecificUserBtn" class="popup-choice-btn">
+        <i class="fas fa-user-check"></i>
+        <span class="choice-title">Specific User</span>
+        <span class="choice-desc">Select individual users</span>
+    </button>
+    <button id="popupSpecificRegisterBtn" class="popup-choice-btn">
+        <i class="fas fa-users-cog"></i>
+        <span class="choice-title">Specific Register</span>
+        <span class="choice-desc">Choose one or more registers</span>
+    </button>
+</div>
                     </div>
                     <div id="popupUserSelectView" class="popup-user-select-view card" style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
                         <div class="user-select-header">
@@ -6591,6 +6601,20 @@ body.dark-mode .script-question .part-breakdown .part-row .part-correct {
                         <div class="user-select-actions">
                             <button id="popupUserBackBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
                             <button id="popupUserNextBtn" class="btn-next" disabled><i class="fas fa-arrow-right"></i> Next</button>
+                        </div>
+                    </div>
+                                        <div id="popupRegisterSelectView" class="popup-user-select-view card" style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
+                        <div class="user-select-header">
+                            <h3><i class="fas fa-users-cog"></i> Select Registers</h3>
+                            <span class="selected-count"><strong id="popupSelectedRegCount">0</strong> register(s) · <strong id="popupSelectedRegStudents">0</strong> student(s)</span>
+                        </div>
+                        <div class="user-search-area">
+                            <input type="text" id="popupRegisterSearch" placeholder="Search registers by name, lecture, or member..." />
+                        </div>
+                        <div class="popup-user-list" id="popupRegisterListContainer"></div>
+                        <div class="user-select-actions">
+                            <button id="popupRegisterBackBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
+                            <button id="popupRegisterNextBtn" class="btn-next" disabled><i class="fas fa-arrow-right"></i> Next</button>
                         </div>
                     </div>
                     <div id="popupComposeView" class="popup-compose-view card" style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
@@ -13928,6 +13952,89 @@ if (target) {
                 setDefaultPopupDates();
             });
 
+            // ===== ALL REGISTERS =====
+document.getElementById('popupAllRegistersBtn').addEventListener('click', () => {
+    if (!registers || registers.length === 0) {
+        showToast('No registers available. Create a register first.', 'error');
+        return;
+    }
+    const allUids = new Set();
+    registers.forEach(reg => {
+        (reg.members || []).forEach(uid => allUids.add(uid));
+    });
+    if (allUids.size === 0) {
+        showToast('No students found in any register.', 'error');
+        return;
+    }
+    document.getElementById('popupSelectionView').style.display = 'none';
+    document.getElementById('popupUserSelectView').style.display = 'none';
+    document.getElementById('popupRegisterSelectView').style.display = 'none';
+    document.getElementById('popupComposeView').style.display = 'block';
+    document.getElementById('composeRecipientType').value = 'specific';
+    document.getElementById('composeUserIds').value = JSON.stringify(Array.from(allUids));
+    document.getElementById('composeRecipientBadge').innerHTML =
+        `📚 All Registers (${registers.length} reg · ${allUids.size} students)`;
+    popupSelectedUsers = new Set(allUids);
+    setDefaultPopupDates();
+});
+
+// ===== SPECIFIC REGISTER(S) =====
+document.getElementById('popupSpecificRegisterBtn').addEventListener('click', () => {
+    if (!registers || registers.length === 0) {
+        showToast('No registers available. Create a register first.', 'error');
+        return;
+    }
+    document.getElementById('popupSelectionView').style.display = 'none';
+    document.getElementById('popupUserSelectView').style.display = 'none';
+    document.getElementById('popupRegisterSelectView').style.display = 'block';
+    popupSelectedRegisters.clear();
+    document.getElementById('popupRegisterSearch').value = '';
+    renderPopupRegisterList();
+    updatePopupSelectedRegCount();
+    setDefaultPopupDates();
+});
+
+document.getElementById('popupRegisterBackBtn').addEventListener('click', () => {
+    resetPopupFlow();
+});
+
+document.getElementById('popupRegisterNextBtn').addEventListener('click', () => {
+    if (popupSelectedRegisters.size === 0) {
+        showToast('Please select at least one register.', 'error');
+        return;
+    }
+    // Resolve every selected register into a unique set of student UIDs
+    const allUids = new Set();
+    popupSelectedRegisters.forEach(regId => {
+        const reg = registers.find(r => r.id === regId);
+        if (reg) {
+            (reg.members || []).forEach(uid => allUids.add(uid));
+        }
+    });
+    if (allUids.size === 0) {
+        showToast('Selected register(s) have no members.', 'error');
+        return;
+    }
+    popupSelectedUsers = new Set(allUids);
+    document.getElementById('popupRegisterSelectView').style.display = 'none';
+    document.getElementById('popupComposeView').style.display = 'block';
+    document.getElementById('composeRecipientType').value = 'specific';
+    document.getElementById('composeUserIds').value = JSON.stringify(Array.from(allUids));
+
+    const regNames = Array.from(popupSelectedRegisters).map(rid => {
+        const r = registers.find(x => x.id === rid);
+        return r ? r.name : '';
+    }).filter(Boolean);
+    const label = regNames.length > 2 ? `${regNames.length} registers` : regNames.join(', ');
+    document.getElementById('composeRecipientBadge').innerHTML =
+        `📚 ${label} (${allUids.size} students)`;
+    setDefaultPopupDates();
+});
+
+document.getElementById('popupRegisterSearch').addEventListener('input', debounce(function() {
+    renderPopupRegisterList(this.value);
+}, 300));
+
             document.getElementById('popupUserBackBtn').addEventListener('click', () => {
                 resetPopupFlow();
             });
@@ -14122,14 +14229,20 @@ if (target) {
         }
 
         function resetPopupFlow() {
-            document.getElementById('popupSelectionView').style.display = 'block';
-            document.getElementById('popupUserSelectView').style.display = 'none';
-            document.getElementById('popupComposeView').style.display = 'none';
-            popupSelectedUsers.clear();
-            document.getElementById('popupSelectedCount').textContent = '0';
-            document.getElementById('popupUserSearch').value = '';
-            renderPopupUserList();
-        }
+    document.getElementById('popupSelectionView').style.display = 'block';
+    document.getElementById('popupUserSelectView').style.display = 'none';
+    document.getElementById('popupRegisterSelectView').style.display = 'none';
+    document.getElementById('popupComposeView').style.display = 'none';
+    popupSelectedUsers.clear();
+    popupSelectedRegisters.clear();
+    document.getElementById('popupSelectedCount').textContent = '0';
+    document.getElementById('popupSelectedRegCount').textContent = '0';
+    document.getElementById('popupSelectedRegStudents').textContent = '0';
+    document.getElementById('popupUserSearch').value = '';
+    document.getElementById('popupRegisterSearch').value = '';
+    renderPopupUserList();
+    renderPopupRegisterList();
+}
 
         function renderPopupUserList(searchTerm = '') {
             const container = document.getElementById('popupUserListContainer');
@@ -14197,6 +14310,83 @@ if (target) {
                 nextBtn.disabled = count === 0;
             }
         }
+
+        function updatePopupSelectedRegCount() {
+    const regCount = popupSelectedRegisters.size;
+    const regCountEl = document.getElementById('popupSelectedRegCount');
+    if (regCountEl) regCountEl.textContent = regCount;
+
+    // Count unique students across all selected registers
+    const allUids = new Set();
+    popupSelectedRegisters.forEach(regId => {
+        const reg = registers.find(r => r.id === regId);
+        if (reg) (reg.members || []).forEach(uid => allUids.add(uid));
+    });
+    const studentCountEl = document.getElementById('popupSelectedRegStudents');
+    if (studentCountEl) studentCountEl.textContent = allUids.size;
+
+    const nextBtn = document.getElementById('popupRegisterNextBtn');
+    if (nextBtn) nextBtn.disabled = regCount === 0;
+}
+
+function renderPopupRegisterList(searchTerm = '') {
+    const container = document.getElementById('popupRegisterListContainer');
+    if (!container) return;
+
+    const raw = (searchTerm || document.getElementById('popupRegisterSearch')?.value || '');
+    const search = raw.trim().toLowerCase();
+
+    let filtered = registers || [];
+    if (search) {
+        filtered = filtered.filter(r =>
+            (r.name || '').toLowerCase().includes(search) ||
+            (r.lecture || '').toLowerCase().includes(search) ||
+            (r.memberDetails || []).some(m =>
+                (m.name || '').toLowerCase().includes(search) ||
+                (m.email || '').toLowerCase().includes(search)
+            )
+        );
+    }
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:12px;color:#8b8fa3;">No registers found.</div>`;
+        updatePopupSelectedRegCount();
+        return;
+    }
+    container.innerHTML = filtered.map(r => {
+        const selected = popupSelectedRegisters.has(r.id) ? 'selected' : '';
+        const memberCount = (r.members || []).length;
+        const initial = (r.name || 'R').charAt(0).toUpperCase();
+        return `
+            <div class="popup-user-item ${selected}" data-regid="${r.id}">
+                <div class="pu-avatar">${initial}</div>
+                <div class="pu-info">
+                    <div class="pu-name">${escapeHtml(r.name || 'Register')}</div>
+                    <div class="pu-email">${escapeHtml(r.lecture || '')} · ${memberCount} student${memberCount !== 1 ? 's' : ''}</div>
+                </div>
+                <div class="pu-check"><i class="fas ${selected ? 'fa-check-circle' : 'fa-circle'}"></i></div>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.popup-user-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const regId = this.dataset.regid;
+            if (popupSelectedRegisters.has(regId)) {
+                popupSelectedRegisters.delete(regId);
+                this.classList.remove('selected');
+                this.querySelector('.pu-check i').className = 'fas fa-circle';
+            } else {
+                popupSelectedRegisters.add(regId);
+                this.classList.add('selected');
+                this.querySelector('.pu-check i').className = 'fas fa-check-circle';
+            }
+            updatePopupSelectedRegCount();
+        });
+    });
+
+    updatePopupSelectedRegCount();
+}
 
         function renderSentPopups() {
             const container = document.getElementById('sentPopupList');
