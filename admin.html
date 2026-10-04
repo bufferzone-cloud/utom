@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>UTOM · Admin Studio</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />f
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript">
     </script>
@@ -8406,17 +8406,16 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
         let popupSelectedUsers = new Set();
 let popupSelectedRegisters = new Set();
 
-        // ---- Test/Exams state ----
+                // ---- Test/Exams state ----
         let registers = [];
         let assessments = [];
         let assessmentFolders = [];
-let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
+        let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
         let assessmentResponses = [];
         let editingAssessmentId = null;
-let pendingDuplicateEditId = null;      // ← NEW
-let currentHistoryAssessmentId = null;
-        let assessmentFolders = [];              // ← NEW
-        let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
+        let pendingDuplicateEditId = null;   // for Duplicate & Edit
+        let pendingEditId = null;            // ← for Edit Ongoing
+        let currentHistoryAssessmentId = null;
 
         // Carousel state
         let carouselItems = [];
@@ -14910,35 +14909,26 @@ function renderPopupRegisterList(searchTerm = '') {
         // =================================================================
         // REALTIME
         // =================================================================
-        function setupRealtime() {
+               function setupRealtime() {
             onValue(videosRef, snap => {
-    const prevIds = new Set(videos.map(v => v.id));
-    videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-    const newIds = new Set(videos.map(v => v.id));
-            onValue(assessmentFoldersRef, (snap) => {
-    try {
-        const data = snap.val();
-        assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-        scheduleRender('assessments');
-    } catch (err) {
-        console.error('Error in assessmentFolders listener:', err);
-    }
-}, (err) => console.error('assessmentFolders listener error:', err));
+                const prevIds = new Set(videos.map(v => v.id));
+                videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                const newIds = new Set(videos.map(v => v.id));
 
-    // Detach listeners for deleted videos
-    prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
+                // Detach listeners for deleted videos
+                prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
 
-    // Attach listeners only for NEW videos
-    videos.forEach(v => {
-        if (!prevIds.has(v.id)) {
-            bindComments(v.id, () => scheduleRender('videos'));
-        }
-    });
+                // Attach listeners only for NEW videos
+                videos.forEach(v => {
+                    if (!prevIds.has(v.id)) {
+                        bindComments(v.id, () => scheduleRender('videos'));
+                    }
+                });
 
-    scheduleRender('home');
-    scheduleRender('videos');
-    scheduleRender('courses');
-});
+                scheduleRender('home');
+                scheduleRender('videos');
+                scheduleRender('courses');
+            });
 
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
@@ -15081,6 +15071,19 @@ function renderPopupRegisterList(searchTerm = '') {
                 }
             }, (err) => {
                 console.error('AssessmentResponses listener error:', err);
+            });
+
+            // ← MOVED OUT — now a proper sibling listener, not nested inside videos
+            onValue(assessmentFoldersRef, (snap) => {
+                try {
+                    const data = snap.val();
+                    assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    scheduleRender('assessments');
+                } catch (err) {
+                    console.error('Error in assessmentFolders listener:', err);
+                }
+            }, (err) => {
+                console.error('assessmentFolders listener error:', err);
             });
         }
 
