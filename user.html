@@ -13079,7 +13079,7 @@ function getRandomColor() {
 window.openCourseViewModal = function(courseId) {
     const course = typeof courseId === 'string' ? allCourses.find(c => c.id === courseId) : courseId;
     if (!course) return;
-    openCourseViewModalWithCourse(course);
+    openCourseDetail(course);   // ← full white page instead of modal
 };
 
 function openCourseViewModalWithCourse(course) {
@@ -13259,110 +13259,86 @@ function renderCourseDetail(course) {
 
     const container = document.getElementById('subfoldersContainer');
 
-    if (!canAccess) {
-        let lockMessage = 'You need to purchase this course to access its content.';
-        let buttonHtml = '';
-        if (isPending) {
-            lockMessage = 'Your payment is being processed. Please wait for admin approval.';
-            buttonHtml = `<button class="btn-pending" id="pendingCourseBtnInside"><i class="fas fa-hourglass-half"></i> Payment Pending</button>`;
-        } else if (course.price > 0 && !isPending) {
-            buttonHtml = `<button class="btn-buy" id="buyCourseBtnInside"><i class="fas fa-shopping-cart"></i> Buy Now</button>`;
-        }
-        container.innerHTML = `
-            <div class="content-locked">
-                <i class="fas fa-lock"></i>
-                <p>${lockMessage}</p>
-                ${buttonHtml}
-            </div>
-        `;
-        const buyInside = document.getElementById('buyCourseBtnInside');
-        if (buyInside) {
-            buyInside.addEventListener('click', () => openPaymentPage(course, 'course'));
-        }
-        const pendingInside = document.getElementById('pendingCourseBtnInside');
-        if (pendingInside) {
-            pendingInside.addEventListener('click', () => showPendingPaymentModal(course));
-        }
-    } else {
         const subfolders = allSubfolders.filter(s => s.courseId === course.id);
-        if (subfolders.length === 0) {
-            container.innerHTML = '<p class="empty-state">No subfolders in this course yet.</p>';
-        } else {
-            container.innerHTML = subfolders.map(sf => {
-                const videos = sortVideosByAdminOrder(
-                    allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id)
-                );
-                const docs = allDocs.filter(d => d.subfolderId === sf.id && d.courseId === course.id).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-                const sfPrice = sf.price || 0;
-                const sfIsPaid = sfPrice > 0;
-                const sfApproved = approvedSubfolders.has(sf.id);
-                const sfPending = pendingSubfolders[sf.id] !== undefined;
-                const sfCanAccess = !sfIsPaid || sfApproved;
+    if (subfolders.length === 0) {
+        container.innerHTML = '<p class="empty-state">No subfolders in this course yet.</p>';
+    } else {
+        const courseUnlocked = isFree || isApproved;
 
-                let priceBadge = '';
-                if (sfApproved) {
-                    priceBadge = `<span class="subfolder-price-badge enrolled"><i class="fas fa-check-circle"></i> Purchased</span>`;
-                } else if (sfPending) {
-                    priceBadge = `<span class="subfolder-price-badge pending"><i class="fas fa-hourglass-half"></i> Pending</span>`;
-                } else if (sfIsPaid) {
-                    priceBadge = `<span class="subfolder-price-badge paid"><i class="fas fa-crown"></i> ZMW ${sfPrice}${sf.durationType && sf.durationType !== 'lifetime' ? ' · '+sf.durationValue+' '+sf.durationType : ''}</span>`;
-                } else {
-                    priceBadge = `<span class="subfolder-price-badge free"><i class="fas fa-gift"></i> Free</span>`;
-                }
+        container.innerHTML = subfolders.map(sf => {
+            const videos = sortVideosByAdminOrder(
+                allVideos.filter(v => v.subfolderId === sf.id && v.courseId === course.id)
+            );
+            const docs = allDocs
+                .filter(d => d.subfolderId === sf.id && d.courseId === course.id)
+                .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-                let subfolderContent = '';
-                if (sfCanAccess) {
-                    subfolderContent = `
-                        ${videos.length ? '<h4 style="margin:0.4rem 0;font-size:0.75rem;">Videos</h4>' : ''}
-                        <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v, true)).join('')}</div>
-                        ${docs.length ? '<h4 style="margin:0.8rem 0 0.4rem;font-size:0.75rem;">Documents</h4>' : ''}
-                        <div class="docs-list">${docs.map(d => buildDocCard(d)).join('')}</div>
-                        ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
-                    `;
-                } else if (sfPending) {
-                    subfolderContent = `
-                        <div class="subfolder-lock-overlay">
-                            <div class="lock-icon"><i class="fas fa-hourglass-half"></i></div>
-                            <h4>Payment Pending</h4>
-                            <p>Your payment of ZMW ${sfPrice} for this subfolder is awaiting admin approval. You'll be notified once it's approved.</p>
-                            <button class="subfolder-pending-btn" data-sfid="${sf.id}">
-                                <i class="fas fa-info-circle"></i> View Status
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    subfolderContent = `
-                        <div class="subfolder-lock-overlay">
-                            <div class="lock-icon"><i class="fas fa-lock"></i></div>
-                            <h4>Premium Subfolder</h4>
-                            <p>Unlock this subfolder for ZMW ${sfPrice} ${sf.durationType && sf.durationType !== 'lifetime' ? ` (${sf.durationValue} ${sf.durationType} access)` : ' (Lifetime access)'}. You'll get access to all videos and documents inside.</p>
-                            <button class="subfolder-buy-btn" data-sfid="${sf.id}">
-                                <i class="fas fa-shopping-cart"></i> Buy Subfolder — ZMW ${sfPrice}
-                            </button>
-                        </div>
-                    `;
-                }
+            const sfPrice = sf.price || 0;
+            const sfIsPaid = sfPrice > 0;
+            const sfApproved = approvedSubfolders.has(sf.id);
+            const sfPending = pendingSubfolders[sf.id] !== undefined;
 
-                return `
-                <div class="subfolder-item" data-sfid="${sf.id}">
-                    <div class="subfolder-header" data-id="${sf.id}">
-                        <div style="display:flex;align-items:center;flex-wrap:wrap;">
-                            <i class="fas fa-folder"></i> ${escapeHtml(sf.name)}
-                            ${priceBadge}
-                        </div>
-                        <div class="folder-counts">
-                            <span><i class="fas fa-video" style="font-size:0.6rem;"></i> ${videos.length}</span>
-                            <span><i class="fas fa-file-alt" style="font-size:0.6rem;"></i> ${docs.length}</span>
-                        </div>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="subfolder-content">
-                        ${subfolderContent}
-                    </div>
+            // Content is playable only if the course is unlocked AND the subfolder is free/purchased
+            const sfContentUnlocked = courseUnlocked && (!sfIsPaid || sfApproved);
+
+            // Price / status badge
+            let priceBadge = '';
+            if (sfApproved) {
+                priceBadge = `<span class="subfolder-price-badge enrolled"><i class="fas fa-check-circle"></i> Purchased</span>`;
+            } else if (sfPending) {
+                priceBadge = `<span class="subfolder-price-badge pending"><i class="fas fa-hourglass-half"></i> Pending</span>`;
+            } else if (sfIsPaid) {
+                priceBadge = `<span class="subfolder-price-badge paid"><i class="fas fa-crown"></i> ZMW ${sfPrice}${sf.durationType && sf.durationType !== 'lifetime' ? ' · '+sf.durationValue+' '+sf.durationType : ''}</span>`;
+            } else {
+                priceBadge = `<span class="subfolder-price-badge free"><i class="fas fa-gift"></i> Free</span>`;
+            }
+
+            // Videos + Docs — shown either way, but locked when not unlocked
+            const videosHtml = videos.length
+                ? `<h4 style="margin:0.4rem 0;font-size:0.75rem;">Videos</h4>
+                   <div class="videos-scroll-container">${videos.map(v => buildVideoCard(v, sfContentUnlocked)).join('')}</div>`
+                : '';
+            const docsHtml = docs.length
+                ? `<h4 style="margin:0.8rem 0 0.4rem;font-size:0.75rem;">Documents</h4>
+                   <div class="docs-list">${docs.map(d => buildDocCard(d, sfContentUnlocked)).join('')}</div>`
+                : '';
+
+            // Bottom action: buy subfolder or show pending
+            let actionHtml = '';
+            if (sfPending) {
+                actionHtml = `<div style="text-align:center;padding:12px 0 4px 0;color:#e65100;font-weight:600;font-size:0.85rem;">
+                    <i class="fas fa-hourglass-half"></i> Payment pending — Awaiting approval
                 </div>`;
-            }).join('');
-        }
+            } else if (!sfContentUnlocked && sfIsPaid) {
+                actionHtml = `<div style="text-align:center;padding:12px 0 4px 0;">
+                    <button class="subfolder-buy-btn" data-sfid="${sf.id}">
+                        <i class="fas fa-shopping-cart"></i> Buy Subfolder — ZMW ${sfPrice}
+                    </button>
+                </div>`;
+            }
+
+            return `
+            <div class="subfolder-item" data-sfid="${sf.id}">
+                <div class="subfolder-header" data-id="${sf.id}">
+                    <div style="display:flex;align-items:center;flex-wrap:wrap;">
+                        <i class="fas fa-folder"></i> ${escapeHtml(sf.name)}
+                        ${priceBadge}
+                    </div>
+                    <div class="folder-counts">
+                        <span><i class="fas fa-video" style="font-size:0.6rem;"></i> ${videos.length}</span>
+                        <span><i class="fas fa-file-alt" style="font-size:0.6rem;"></i> ${docs.length}</span>
+                    </div>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="subfolder-content">
+                    ${videosHtml}
+                    ${docsHtml}
+                    ${!videos.length && !docs.length ? '<p class="empty-state">No content in this subfolder yet.</p>' : ''}
+                    ${actionHtml}
+                </div>
+            </div>`;
+        }).join('');
     }
 
     document.querySelectorAll('.subfolder-header').forEach(header => {
@@ -13712,22 +13688,27 @@ function setupCommentToggle() {
     });
 }
 
-function buildDocCard(doc) {
+function buildDocCard(doc, hasAccess = true) {
     const isLiked = userData.likedDocs.includes(doc.id);
     const hasUrl = doc.docUrl && doc.docUrl.trim() !== '';
+
+    const actionsHtml = hasAccess
+        ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button class="like-doc-btn ${isLiked?'liked':''}" data-id="${doc.id}" title="Like"><i class="far fa-heart"></i></button>
+                <button class="read-btn" data-id="${doc.id}">Read</button>
+                ${hasUrl ? `<button class="download-doc-btn" data-id="${doc.id}" data-url="${escapeHtml(doc.docUrl)}" title="Download document"><i class="fas fa-download"></i> Download</button>` : ''}
+           </div>`
+        : `<div style="display:flex;align-items:center;gap:6px;color:#e74c3c;font-weight:700;font-size:0.75rem;">
+                <i class="fas fa-lock"></i> Purchase to access
+           </div>`;
+
     return `
     <div class="doc-card">
         <img src="${UTOM_THUMBNAIL}" alt="document thumbnail" style="width:100%; height:90px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:0.6rem; background:var(--bg);" />
         <h3>${escapeHtml(doc.title)}</h3>
         <div class="doc-instructor">by ${escapeHtml(doc.instructor)}</div>
         <div class="doc-preview">${escapeHtml(doc.description || 'No description')}</div>
-        <div class="doc-footer">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <button class="like-doc-btn ${isLiked?'liked':''}" data-id="${doc.id}" title="Like"><i class="far fa-heart"></i></button>
-                <button class="read-btn" data-id="${doc.id}">Read</button>
-                ${hasUrl ? `<button class="download-doc-btn" data-id="${doc.id}" data-url="${escapeHtml(doc.docUrl)}" title="Download document"><i class="fas fa-download"></i> Download</button>` : ''}
-            </div>
-        </div>
+        <div class="doc-footer">${actionsHtml}</div>
     </div>`;
 }
 
