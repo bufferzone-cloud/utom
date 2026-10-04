@@ -8415,6 +8415,8 @@ let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
         let editingAssessmentId = null;
 let pendingDuplicateEditId = null;      // ← NEW
 let currentHistoryAssessmentId = null;
+        let assessmentFolders = [];              // ← NEW
+        let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
 
         // Carousel state
         let carouselItems = [];
@@ -13305,15 +13307,19 @@ function loadCommentsForVideo(videoId, onChange) {
                 return null;
             }
 
-            let status = 'draft';
-            if (coverData.publishImmediately) {
+                       let status = 'draft';
+            const isEditing = !!editingAssessmentId;
+            const originalAss = isEditing ? assessments.find(a => a.id === editingAssessmentId) : null;
+
+            // If we're editing an already-published / ongoing assessment, keep its status
+            // even if the "Publish Immediately" checkbox is not ticked.
+            if (originalAss && (originalAss.status === 'published' || originalAss.status === 'ongoing')) {
+                status = originalAss.status;
+            } else if (coverData.publishImmediately) {
                 status = 'published';
             } else if (coverData.scheduledPublishTime) {
                 status = 'scheduled';
             }
-
-            const isEditing = !!editingAssessmentId;
-            const originalAss = isEditing ? assessments.find(a => a.id === editingAssessmentId) : null;
 
             return {
                 type: type,
@@ -15631,10 +15637,12 @@ function renderPopupRegisterList(searchTerm = '') {
         }
 
         // ---- CREATE ASSIGNMENT (form render) ----
-                function renderCreateAssignmentForm() {
-            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
-            editingAssessmentId = pendingDuplicateEditId || null;
+                       // ---- CREATE ASSIGNMENT (form render) ----
+        function renderCreateAssignmentForm() {
+            // Pick up any pending "Duplicate & Edit" OR "Edit Ongoing" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || pendingEditId || null;
             pendingDuplicateEditId = null;
+            pendingEditId = null;
 
             document.getElementById('assignmentCoverStep').style.display = 'block';
             document.getElementById('assignmentDetailsStep').style.display = 'none';
@@ -15680,7 +15688,6 @@ function renderPopupRegisterList(searchTerm = '') {
             const m = parseInt(document.getElementById('assignmentDurationMinutes').value) || 0;
             document.getElementById('assignmentDurationDisplay').textContent = `${h}h ${m}m`;
         }
-
         function attachAssignmentQuestionEvents() {
             document.querySelectorAll('#assignmentSectionsContainer .add-question-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -16194,9 +16201,13 @@ function renderPopupRegisterList(searchTerm = '') {
         });
 
         // ---- CREATE TEST (form render) ----
+               // ---- CREATE TEST (form render) ----
         function renderCreateTestForm() {
-    editingAssessmentId = pendingDuplicateEditId || null;
-    pendingDuplicateEditId = null;
+            // Pick up any pending "Duplicate & Edit" OR "Edit Ongoing" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || pendingEditId || null;
+            pendingDuplicateEditId = null;
+            pendingEditId = null;
+
             document.getElementById('testCoverStep').style.display = 'block';
             document.getElementById('testDetailsStep').style.display = 'none';
             document.getElementById('testQuestionsStep').style.display = 'none';
@@ -16758,10 +16769,12 @@ function renderPopupRegisterList(searchTerm = '') {
         });
 
         // ---- CREATE QUIZ (form render) ----
-                function renderCreateQuizForm() {
-            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
-            editingAssessmentId = pendingDuplicateEditId || null;
+                       // ---- CREATE QUIZ (form render) ----
+        function renderCreateQuizForm() {
+            // Pick up any pending "Duplicate & Edit" OR "Edit Ongoing" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || pendingEditId || null;
             pendingDuplicateEditId = null;
+            pendingEditId = null;
 
             document.getElementById('quizCoverStep').style.display = 'block';
             document.getElementById('quizDetailsStep').style.display = 'none';
@@ -17351,10 +17364,12 @@ function renderPopupRegisterList(searchTerm = '') {
         });
 
         // ---- CREATE EXAM (form render) ----
-               function renderCreateExamForm() {
-            // Pick up a pending "Duplicate & Edit" hand-off, then clear it.
-            editingAssessmentId = pendingDuplicateEditId || null;
+                       // ---- CREATE EXAM (form render) ----
+        function renderCreateExamForm() {
+            // Pick up any pending "Duplicate & Edit" OR "Edit Ongoing" hand-off, then clear it.
+            editingAssessmentId = pendingDuplicateEditId || pendingEditId || null;
             pendingDuplicateEditId = null;
+            pendingEditId = null;
 
             document.getElementById('examCoverStep').style.display = 'block';
             document.getElementById('examDetailsStep').style.display = 'none';
@@ -19013,18 +19028,19 @@ function openBulkMarksModal(assId) {
         }
 
         // ---- renderOngoingList ----
+                // ---- renderOngoingList (with Edit button) ----
         function renderOngoingList() {
             const container = document.getElementById('ongoingListContainer');
             const search = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
             const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
 
-            const allPublished = assessments.filter(a => a.status === 'published');
+            const allPublished = assessments.filter(a => a.status === 'published' || a.status === 'ongoing');
             const now = Date.now();
             const publishedAssessments = allPublished.filter(a => {
-    const ts = computeAssessmentDeadline(a);
-    if (ts === null) return true;        // keep indefinite items
-    return ts > now;                      // else only keep unexpired
-});
+                const ts = computeAssessmentDeadline(a);
+                if (ts === null) return true;
+                return ts > now;
+            });
 
             const filterSel = document.getElementById('ongoingFilterAssessment');
             if (filterSel) {
@@ -19052,13 +19068,13 @@ function openBulkMarksModal(assId) {
             let html = '';
             filteredAssessments.forEach(ass => {
                 const assDeadlineTs = computeAssessmentDeadline(ass);
-const assStillOpen = assDeadlineTs === null || assDeadlineTs > now;
-const responses = assStillOpen
-    ? assessmentResponses.filter(r =>
-          r.assessmentId === ass.id &&
-          (r.status === 'started' || r.status === 'ongoing')
-      )
-    : [];
+                const assStillOpen = assDeadlineTs === null || assDeadlineTs > now;
+                const responses = assStillOpen
+                    ? assessmentResponses.filter(r =>
+                          r.assessmentId === ass.id &&
+                          (r.status === 'started' || r.status === 'ongoing')
+                      )
+                    : [];
 
                 html += `
                     <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);padding:16px 18px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:12px;">
@@ -19069,9 +19085,16 @@ const responses = assStillOpen
                                 ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
                                 <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
                             </div>
-                            <div style="font-size:12px;color:#8b8fa3;">
-                                Duration: ${ass.duration || 'N/A'} · Passing: ${ass.passingScore || 0}% · Total Marks: ${ass.totalMarks || 0}
-                                ${ass.type === 'assignment' && ass.deadline ? ` · Deadline: ${new Date(ass.deadline).toLocaleString()}` : ''}
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <div style="font-size:12px;color:#8b8fa3;">
+                                    Duration: ${ass.duration || 'N/A'} · Passing: ${ass.passingScore || 0}% · Total Marks: ${ass.totalMarks || 0}
+                                    ${ass.type === 'assignment' && ass.deadline ? ` · Deadline: ${new Date(ass.deadline).toLocaleString()}` : ''}
+                                </div>
+                                <button class="btn-outline edit-ongoing-ass-btn"
+                                        data-assid="${ass.id}"
+                                        style="padding:5px 14px;font-size:10px;background:rgba(245,176,66,0.12);color:#d4952a;border-color:rgba(245,176,66,0.3);border-radius:30px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                                    <i class="fas fa-pen-to-square"></i> Edit Assessment
+                                </button>
                             </div>
                         </div>
                         ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
@@ -19109,15 +19132,23 @@ const responses = assStillOpen
 
             container.innerHTML = html;
 
-            container.querySelectorAll('.btn-view-scratch').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const responseId = this.dataset.responseid;
-                    showStudentScratchView(responseId);
+            // ---------- Edit ongoing assessment ----------
+            container.querySelectorAll('.edit-ongoing-ass-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    openEditOngoingAssessment(this.dataset.assid);
                 });
             });
 
+            // ---------- Scratch view ----------
+            container.querySelectorAll('.btn-view-scratch').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    showStudentScratchView(this.dataset.responseid);
+                });
+            });
+
+            // ---------- Force-end ----------
             container.querySelectorAll('.btn-force-end').forEach(btn => {
-                btn.addEventListener('click', async function() {
+                btn.addEventListener('click', async function () {
                     const confirmed = await showConfirmPopup({
                         icon: '⏹️',
                         type: 'warning',
@@ -19127,8 +19158,10 @@ const responses = assStillOpen
                         okClass: 'btn-confirm-danger'
                     });
                     if (confirmed) {
-                        await update(ref(db, `assessmentResponses/${this.dataset.responseid}`), { status: 'ended',
-                            endedAt: serverTimestamp() });
+                        await update(ref(db, `assessmentResponses/${this.dataset.responseid}`), {
+                            status: 'ended',
+                            endedAt: serverTimestamp()
+                        });
                         showToast('Assessment ended.', 'info');
                         renderOngoingList();
                     }
@@ -19138,6 +19171,53 @@ const responses = assStillOpen
 
         document.getElementById('ongoingSearch')?.addEventListener('input', debounce(renderOngoingList, 300));
         document.getElementById('ongoingFilterAssessment')?.addEventListener('change', debounce(renderOngoingList, 200));
+
+                /* =================================================================
+           EDIT AN ONGOING ASSESSMENT
+           Opens the same 3-step create form, but pre-populated with the
+           original assessment and wired to update it in place.
+           ================================================================= */
+        async function openEditOngoingAssessment(assId) {
+            const ass = assessments.find(a => a.id === assId);
+            if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+            const ongoingCount = assessmentResponses.filter(r =>
+                r.assessmentId === assId &&
+                (r.status === 'started' || r.status === 'ongoing')
+            ).length;
+
+            const message = ongoingCount > 0
+                ? `<strong>${ongoingCount}</strong> student(s) are currently taking this assessment.<br><br>
+                   Editing questions, marks, or timing now will affect them. Their existing answers and scratch work will be preserved.<br><br>
+                   Continue?`
+                : `Edit this ongoing assessment? The original record will be modified in place.`;
+
+            const confirmed = await showConfirmPopup({
+                icon: '✏️',
+                type: 'warning',
+                title: 'Edit Ongoing Assessment?',
+                message,
+                okText: 'Edit Now',
+                okClass: 'btn-confirm'
+            });
+            if (!confirmed) return;
+
+            const sectionMap = {
+                test:       'createTest',
+                quiz:       'createQuiz',
+                exam:       'createExam',
+                assignment: 'createAssignment'
+            };
+            const target = sectionMap[ass.type];
+            if (!target) { showToast('Unknown assessment type.', 'error'); return; }
+
+            // Hand off to the create-form renderer
+            pendingEditId = assId;
+            showSection(target);
+            showToast(`Editing "${ass.name}"`, 'info');
+        }
+
+        window.openEditOngoingAssessment = openEditOngoingAssessment;
 
         function showStudentScratchView(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
