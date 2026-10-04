@@ -11372,11 +11372,12 @@ async function loadRegistersAndAssessments(uid) {
 
         // ---- Responses: admin + lecturer ----
         const rebuildResponses = () => {
-            allAssessmentResponses = [..._adminResponses, ..._lecturerResponses];
-            if (document.getElementById('assessmentHistoryPage').classList.contains('active-page')) {
-                renderAssessmentHistory();
-            }
-        };
+    allAssessmentResponses = [..._adminResponses, ..._lecturerResponses];
+    updateExamBadge();                              // ← NEW
+    if (document.getElementById('assessmentHistoryPage').classList.contains('active-page')) {
+        renderAssessmentHistory();
+    }
+};
         onValue(ref(db, 'assessmentResponses'), (snap) => {
             const data = snap.val();
             _adminResponses = data ? Object.entries(data).map(([id, r]) => ({ id, ...r, _source: 'admin' })) : [];
@@ -14726,6 +14727,7 @@ function setupUI() {
         if (currentAssessmentTaking) {
             clearInterval(currentAssessmentTaking.timerInterval);
             currentAssessmentTaking = null;
+            scratchpads = {};   // clear for next time
         }
         showPage('home');
     });
@@ -15323,16 +15325,26 @@ function renderAssessmentTake(assessment) {
     // Determine the correct responses path based on the assessment's source
     const responsesPath = responsesPathForAssessment(assessment);
 
-    const existingResponse = allAssessmentResponses.find(r =>
-        r.assessmentId === assessment.id &&
-        r.userId === currentUser?.uid &&
-        (r.status === 'started' || r.status === 'ongoing')
-    );
-    const responseRef = existingResponse
-        ? ref(db, `${responsesPath}/${existingResponse.id}`)
-        : push(ref(db, responsesPath));
-    const responseId = existingResponse ? existingResponse.id : responseRef.key;
-    if (!existingResponse) {
+    const anyResponse = allAssessmentResponses.find(r =>
+    r.assessmentId === assessment.id &&
+    r.userId === currentUser?.uid
+);
+
+// If they already completed it, don't let them start a second script —
+// send them straight to history instead.
+if (anyResponse && (anyResponse.status === 'completed' || anyResponse.status === 'ended')) {
+    addNotification('info', 'You have already submitted this assessment. Opening your history…');
+    showPage('assessmentHistory');
+    setTimeout(() => renderAssessmentHistory(), 100);
+    return;
+}
+
+const existingResponse = anyResponse;   // might be started/ongoing → resume it
+const responseRef = existingResponse
+    ? ref(db, `${responsesPath}/${existingResponse.id}`)
+    : push(ref(db, responsesPath));
+const responseId = existingResponse ? existingResponse.id : responseRef.key;
+if (!existingResponse) {
         const data = {
             assessmentId: assessment.id,
             userId: currentUser.uid,
@@ -15989,6 +16001,14 @@ async function autoSubmitAssessment() {
 async function submitAssessment() {
     if (!currentAssessmentTaking) return;
     const { assessment, responseId, responsesPath } = currentAssessmentTaking;
+    // Only send scratchpad data for questions that belong to THIS assessment.
+const currentKeys = new Set();
+if (assessment.sections) {
+    assessment.sections.forEach(sec => sec.questions.forEach((_, qi) => currentKeys.add(`q${qi}`)));
+} else if (assessment.questions) {
+    assessment.questions.forEach((_, qi) => currentKeys.add(`q${qi}`));
+}
+Object.keys(scratchpads).forEach(k => { if (!currentKeys.has(k)) delete scratchpads[k]; });
     if (currentAssessmentTaking.onLeaveHandlers && currentAssessmentTaking.onLeaveHandlers.length) {
         document.removeEventListener('visibilitychange', currentAssessmentTaking.onLeaveHandlers[0]);
         window.removeEventListener('pagehide', currentAssessmentTaking.onLeaveHandlers[1]);
@@ -17303,8 +17323,28 @@ function renderPageContent(pageId, params) {
         case 'assessmentTake':
             break;
         case 'assessmentHistory':
-            renderAssessmentHistory();
-            break;
+    // First paint from what we already have in memory…
+    renderAssessmentHistory();
+    // …then refresh from the DB directly, in case the realtime
+    // listener hasn't finished loading yet on a fresh reload.
+    (async () => {
+        try {
+            const snap = await get(ref(db, 'assessmentResponses'));
+            const data = snap.val();
+            if (data) {
+                _adminResponses = Object.entries(data).map(([id, r]) => ({ id, ...r, _source: 'admin' }));
+                const lsnap = await get(ref(db, 'lecturerResponses'));
+                const ldata = lsnap.val();
+                _lecturerResponses = ldata
+                    ? Object.entries(ldata).map(([id, r]) => ({ id, ...r, _source: 'lecturer' }))
+                    : [];
+                allAssessmentResponses = [..._adminResponses, ..._lecturerResponses];
+                renderAssessmentHistory();
+                updateExamBadge();
+            }
+        } catch (e) { /* silent — realtime listener will still catch up */ }
+    })();
+    break;
         case 'liveClass':
             renderLiveClassPage();
             break;
