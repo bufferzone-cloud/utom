@@ -8475,6 +8475,40 @@
 .subfolder-buy-btn i {
     font-size: 0.9rem;
 }
+
+/* ===== START ASSESSMENT BUTTON SPINNER ===== */
+.cover-start-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.cover-start-btn .btn-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+/* Loading state */
+.cover-start-btn.loading {
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+.cover-start-btn.loading .btn-spinner {
+    display: inline-block;
+}
+
+.cover-start-btn.loading .btn-icon,
+.cover-start-btn.loading .btn-text {
+    display: none;
+}
     </style>
 </head>
 <body>
@@ -15466,7 +15500,11 @@ function renderAssessmentTake(assessment) {
     container.innerHTML = `
         ${coverHtml}
         ${infoHtml}
-        <button class="cover-start-btn" id="startAssessmentBtn" style="width:100%;max-width:260px;margin:0 auto;display:block;padding:14px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:50px;font-weight:700;color:#fff;font-size:0.95rem;cursor:pointer;box-shadow:0 3px 12px rgba(245,176,66,0.25);">
+        <button class="cover-start-btn" id="startAssessmentBtn" style="width:100%;max-width:260px;margin:0 auto;display:flex;padding:14px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:50px;font-weight:700;color:#fff;font-size:0.95rem;cursor:pointer;box-shadow:0 3px 12px rgba(245,176,66,0.25);">
+    <span class="btn-spinner"></span>
+    <i class="fas fa-play-circle btn-icon"></i>
+    <span class="btn-text">${existingResponse ? 'Resume Assessment' : 'Start Assessment'}</span>
+</button>
             <i class="fas fa-play-circle"></i> ${existingResponse ? 'Resume Assessment' : 'Start Assessment'}
         </button>
         <div class="assessment-questions-wrapper" id="assessmentQuestionsWrapper" style="display:none;max-width:740px;margin:0 auto;">
@@ -15491,7 +15529,11 @@ function renderAssessmentTake(assessment) {
     `;
 
     const startBtn = document.getElementById('startAssessmentBtn');
-    startBtn.addEventListener('click', async () => {
+startBtn.addEventListener('click', async () => {
+    // Show spinner immediately
+    startBtn.classList.add('loading');
+
+    try {
         if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0 && !existingResponse) {
             let valid = true;
             const studentInfo = {};
@@ -15506,6 +15548,7 @@ function renderAssessmentTake(assessment) {
             });
             if (!valid) {
                 addNotification('warning', 'Please fill in all required student information fields.');
+                startBtn.classList.remove('loading');
                 return;
             }
             await update(ref(db, `${responsesPath}/${responseId}`), {
@@ -15521,6 +15564,10 @@ function renderAssessmentTake(assessment) {
                 studentInfo: studentInfo
             });
         }
+
+        // Small delay so the spinner is visible before switching screens
+        await new Promise(r => setTimeout(r, 250));
+
         document.getElementById('assessmentCoverInfo').style.display = 'none';
         document.getElementById('assessmentInfoSection').style.display = 'none';
         startBtn.style.display = 'none';
