@@ -7851,8 +7851,7 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                 </div>
             </div>
 
-            <!-- ===== HISTORY / FINAL SCRIPT ===== -->
-            <div id="historySection" class="section">
+                        <div id="historySection" class="section">
                 <div style="padding:0 0 4px 0;">
                     <button id="backFromHistory" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;"><i class="fas fa-arrow-left"></i> Back</button>
                     <div class="form-card">
@@ -7861,6 +7860,15 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                             <button id="goToAssessmentsBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;"><i class="fas fa-folder-open"></i> All Assessments</button>
                             <button id="downloadFullScoreSheetBtn" class="btn-primary" style="padding:6px 16px;font-size:10px;background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;border-radius:30px;color:#fff;"><i class="fas fa-print"></i> Download Full Score Sheet (HTML)</button>
                         </div>
+
+                        <!-- ===== HISTORY FOLDERS BAR (NEW) ===== -->
+                        <div class="assessments-folders-bar" id="historyFoldersBarWrap" style="display:none;">
+                            <div id="historyFoldersList" class="assessment-folders-list"></div>
+                            <button id="historyAddFolderBtn" class="add-folder-btn" type="button">
+                                <i class="fas fa-plus"></i> New Folder
+                            </button>
+                        </div>
+
                         <div id="historyListContainer"></div>
                     </div>
                 </div>
@@ -8411,6 +8419,7 @@ let popupSelectedRegisters = new Set();
         let assessments = [];
         let assessmentFolders = [];
 let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
+let currentHistoryFolderView = 'all';    // NEW — folder view for History/Script
         let assessmentResponses = [];
         let editingAssessmentId = null;
 let pendingDuplicateEditId = null;      // ← NEW
@@ -18376,45 +18385,109 @@ function renderPopupRegisterList(searchTerm = '') {
     renderHistoryAssessments();
 }
 
-        function renderHistoryAssessments() {
+               function renderHistoryAssessments() {
             const container = document.getElementById('historyListContainer');
-            const completedAssIds = [...new Set(assessmentResponses.filter(r => r.status === 'ended' || r.status === 'completed').map(r => r.assessmentId))];
-            const availableAssessments = assessments.filter(a => completedAssIds.includes(a.id));
+            const foldersWrap = document.getElementById('historyFoldersBarWrap');
+            if (foldersWrap) foldersWrap.style.display = '';
+
+            const completedAssIds = [...new Set(assessmentResponses
+                .filter(r => r.status === 'ended' || r.status === 'completed')
+                .map(r => r.assessmentId))];
+            const allCompleted = assessments.filter(a => completedAssIds.includes(a.id));
+
+            // Folder bar (counts reflect only assessments with submitted scripts)
+            renderHistoryFoldersBar();
+
+            // Apply the active folder view
+            let availableAssessments = allCompleted;
+            const view = currentHistoryFolderView;
+            if (view === 'unfiled') {
+                availableAssessments = availableAssessments.filter(a => !a.folderId);
+            } else if (view !== 'all') {
+                availableAssessments = availableAssessments.filter(a => a.folderId === view);
+            }
 
             if (availableAssessments.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments with completed scripts found.</div>';
+                container.innerHTML =
+                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments with completed scripts found in this folder.</div>';
                 return;
             }
 
-            container.innerHTML = availableAssessments.map(ass => `
-                <div class="history-assessment-card" data-assid="${ass.id}" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:12px;cursor:pointer;transition:var(--transition);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                            <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);">${escapeHtml(ass.name)}</h3>
-                            ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
-                            ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
-                            <div style="font-size:12px;color:#8b8fa3;margin-top:4px;">
-                                ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}
-                                <br>Registers: ${ass.registerIds && Array.isArray(ass.registerIds) ? ass.registerIds.map(id => escapeHtml(registers.find(r => r.id === id)?.name || 'N/A')).join(', ') : 'N/A'}
+            // -------- Card builder --------
+            const buildHistoryCard = (ass) => {
+                const studentCount = assessmentResponses.filter(r =>
+                    r.assessmentId === ass.id && (r.status === 'ended' || r.status === 'completed')
+                ).length;
+                const registerNames = (ass.registerIds && Array.isArray(ass.registerIds))
+                    ? ass.registerIds.map(id => escapeHtml(registers.find(r => r.id === id)?.name || 'N/A')).join(', ')
+                    : 'N/A';
+                return `
+                    <div class="history-assessment-card" data-assid="${ass.id}" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:12px;cursor:pointer;transition:var(--transition);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);">${escapeHtml(ass.name)}</h3>
+                                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
+                                <div style="font-size:12px;color:#8b8fa3;margin-top:4px;">
+                                    ${ass.type} · Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}
+                                    <br>Registers: ${registerNames}
+                                </div>
+                            </div>
+                            <div style="font-size:12px;background:rgba(245,176,66,0.10);padding:4px 14px;border-radius:30px;color:#d4952a;font-weight:600;">
+                                ${studentCount} Students
                             </div>
                         </div>
-                        <div style="font-size:12px;background:rgba(245,176,66,0.10);padding:4px 14px;border-radius:30px;color:#d4952a;font-weight:600;">
-                            ${completedAssIds.filter(id => id === ass.id).length > 0 ? assessmentResponses.filter(r => r.assessmentId === ass.id && (r.status === 'ended' || r.status === 'completed')).length : 0} Students
+                        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="btn-outline" onclick="viewRegisterDetails('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-address-book"></i> View Register</button>
+                            <button class="btn-outline" onclick="renderHistoryStudents('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-users"></i> View Students</button>
+                            <button class="btn-outline" onclick="duplicateAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-copy"></i> Duplicate & Edit</button>
+                            <button class="btn-outline move-history-assessment-btn" data-assid="${ass.id}" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-folder-tree"></i> Move to Folder</button>
                         </div>
                     </div>
-                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-outline" onclick="viewRegisterDetails('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-address-book"></i> View Register</button>
-                        <button class="btn-outline" onclick="renderHistoryStudents('${ass.id}')" style="padding:3px 12px;font-size:9px;"><i class="fas fa-users"></i> View Students</button>
-                        <button class="btn-outline" onclick="duplicateAssessment('${ass.id}')" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.15);color:#d4952a;"><i class="fas fa-copy"></i> Duplicate & Edit</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            };
 
+            // -------- Render: grouped or flat --------
+            if (view === 'all') {
+                const sortedFolders = [...assessmentFolders].sort((a, b) => (a.order || 0) - (b.order || 0));
+                let html = '';
+
+                sortedFolders.forEach(folder => {
+                    const inFolder = availableAssessments.filter(a => a.folderId === folder.id);
+                    if (inFolder.length === 0) return;
+                    html += `<div class="folder-group-header">
+                                <i class="fas fa-folder"></i> ${escapeHtml(folder.name)}
+                                <span class="folder-group-count">${inFolder.length}</span>
+                             </div>`;
+                    html += inFolder.map(buildHistoryCard).join('');
+                });
+
+                const unfiled = availableAssessments.filter(a => !a.folderId);
+                if (unfiled.length > 0) {
+                    html += `<div class="folder-group-header">
+                                <i class="fas fa-inbox"></i> Unfiled
+                                <span class="folder-group-count">${unfiled.length}</span>
+                             </div>`;
+                    html += unfiled.map(buildHistoryCard).join('');
+                }
+
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = availableAssessments.map(buildHistoryCard).join('');
+            }
+
+            // -------- Attach listeners --------
             container.querySelectorAll('.history-assessment-card').forEach(card => {
                 card.addEventListener('click', function(e) {
                     if (e.target.closest('button')) return;
-                    const assId = this.dataset.assid;
-                    renderHistoryStudents(assId);
+                    renderHistoryStudents(this.dataset.assid);
+                });
+            });
+
+            container.querySelectorAll('.move-history-assessment-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openMoveAssessmentModal(this.dataset.assid);
                 });
             });
 
@@ -18424,78 +18497,10 @@ function renderPopupRegisterList(searchTerm = '') {
                 generateFullScoreSheetHTML(assId);
             });
         }
-
-        window.viewRegisterDetails = function(assId) {
+                                            function renderHistoryStudents(assId) {
+            currentHistoryAssessmentId = assId;
+            document.getElementById('historyFoldersBarWrap').style.display = 'none';   // NEW
             const ass = assessments.find(a => a.id === assId);
-            if (!ass) { showToast('Assessment not found.', 'error'); return; }
-            const registerIds = ass.registerIds || [];
-            const registersData = registerIds.map(id => registers.find(r => r.id === id)).filter(Boolean);
-
-            const allMembers = [];
-            const allUserIds = new Set();
-            registersData.forEach(reg => {
-                (reg.members || []).forEach(uid => allUserIds.add(uid));
-            });
-            allUserIds.forEach(uid => {
-                const user = users.find(u => u.uid === uid);
-                if (user) {
-                    allMembers.push({ uid, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User', email: user.email });
-                }
-            });
-
-            const submittedUserIds = assessmentResponses
-                .filter(r => r.assessmentId === assId && (r.status === 'completed' || r.status === 'ended'))
-                .map(r => r.userId);
-
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay open';
-            modal.style.cssText =
-                'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-            modal.innerHTML = `
-                <div class="modal-box" style="max-width:600px;width:100%;padding:1.5rem;max-height:80vh;overflow-y:auto;">
-                    <button class="close-modal" onclick="this.closest('.modal-overlay').remove();" style="float:right;background:none;border:none;font-size:1.5rem;color:#8b8fa3;cursor:pointer;">&times;</button>
-                    <div class="utom-brand">UTOM</div>
-                    <h3 style="margin-bottom:0.4rem;"><i class="fas fa-address-book"></i> Registers: ${registersData.map(r => escapeHtml(r.name)).join(', ')}</h3>
-                    <p style="font-size:12px;color:#8b8fa3;margin-bottom:0.8rem;">Assessment: ${escapeHtml(ass.name)}</p>
-                    <div style="margin-bottom:0.8rem;">
-                        <strong>Total Members:</strong> ${allMembers.length}<br>
-                        <strong>Submitted:</strong> ${submittedUserIds.length}<br>
-                        <strong>Not Submitted:</strong> ${allMembers.length - submittedUserIds.length}
-                    </div>
-                    <div style="border-top:1px solid #eee;padding-top:0.8rem;">
-                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                            <thead>
-                                <tr style="background:#f5b042;color:#fff;">
-                                    <th style="padding:6px 10px;text-align:left;">#</th>
-                                    <th style="padding:6px 10px;text-align:left;">Name</th>
-                                    <th style="padding:6px 10px;text-align:left;">Email</th>
-                                    <th style="padding:6px 10px;text-align:center;">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${allMembers.map((m, idx) => {
-                                    const submitted = submittedUserIds.includes(m.uid);
-                                    return `
-                                        <tr style="border-bottom:1px solid #f0f0f5;">
-                                            <td style="padding:4px 8px;">${idx+1}</td>
-                                            <td style="padding:4px 8px;">${escapeHtml(m.name)}</td>
-                                            <td style="padding:4px 8px;">${escapeHtml(m.email)}</td>
-                                            <td style="padding:4px 8px;text-align:center;">
-                                                <span style="background:${submitted ? '#d4edda' : '#f8d7da'};color:${submitted ? '#155724' : '#721c24'};padding:1px 8px;border-radius:30px;font-size:9px;font-weight:700;">${submitted ? 'Submitted' : 'Not Submitted'}</span>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="margin-top:1rem;display:flex;gap:10px;justify-content:flex-end;">
-                        <button class="btn-outline" onclick="this.closest('.modal-overlay').remove();">Close</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        };
 
                 function renderHistoryStudents(assId) {
             currentHistoryAssessmentId = assId;
@@ -20131,13 +20136,13 @@ const responses = assStillOpen
    ASSESSMENT FOLDERS
    ================================================================= */
 
-function renderAssessmentFoldersBar() {
-    const container = document.getElementById('assessmentFoldersList');
+/* ---------- Generic folder bar builder (used by both Assessments & History) ---------- */
+function buildFoldersBar(containerId, activeView, onSelect, countSource) {
+    const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Count assessments per folder
     const counts = {};
-    assessments.forEach(a => {
+    (countSource || []).forEach(a => {
         const key = a.folderId || 'unfiled';
         counts[key] = (counts[key] || 0) + 1;
     });
@@ -20145,18 +20150,19 @@ function renderAssessmentFoldersBar() {
     const sortedFolders = [...assessmentFolders].sort(
         (a, b) => (a.order || 0) - (b.order || 0)
     );
+    const total = (countSource || []).length;
 
     let html = `
-        <div class="folder-chip ${currentAssessmentFolderView === 'all' ? 'active' : ''}" data-folderid="all">
+        <div class="folder-chip ${activeView === 'all' ? 'active' : ''}" data-folderid="all">
             <i class="fas fa-layer-group"></i> All
-            <span class="folder-count">${assessments.length}</span>
+            <span class="folder-count">${total}</span>
         </div>
     `;
 
     sortedFolders.forEach(f => {
         const c = counts[f.id] || 0;
         html += `
-            <div class="folder-chip ${currentAssessmentFolderView === f.id ? 'active' : ''}" data-folderid="${f.id}">
+            <div class="folder-chip ${activeView === f.id ? 'active' : ''}" data-folderid="${f.id}">
                 <i class="fas fa-folder"></i> ${escapeHtml(f.name)}
                 <span class="folder-count">${c}</span>
                 <span class="folder-chip-actions">
@@ -20167,11 +20173,10 @@ function renderAssessmentFoldersBar() {
         `;
     });
 
-    const unfiledCount = counts['unfiled'] || 0;
     html += `
-        <div class="folder-chip ${currentAssessmentFolderView === 'unfiled' ? 'active' : ''}" data-folderid="unfiled">
+        <div class="folder-chip ${activeView === 'unfiled' ? 'active' : ''}" data-folderid="unfiled">
             <i class="fas fa-inbox"></i> Unfiled
-            <span class="folder-count">${unfiledCount}</span>
+            <span class="folder-count">${counts['unfiled'] || 0}</span>
         </div>
     `;
 
@@ -20180,9 +20185,7 @@ function renderAssessmentFoldersBar() {
     container.querySelectorAll('.folder-chip').forEach(chip => {
         chip.addEventListener('click', (e) => {
             if (e.target.closest('.folder-chip-btn')) return;
-            currentAssessmentFolderView = chip.dataset.folderid;
-            renderAssessmentFoldersBar();
-            renderAssessmentsList();
+            onSelect(chip.dataset.folderid);
         });
     });
 
@@ -20199,6 +20202,40 @@ function renderAssessmentFoldersBar() {
             await deleteAssessmentFolder(btn.dataset.folderid);
         });
     });
+}
+
+function renderAssessmentFoldersBar() {
+    buildFoldersBar(
+        'assessmentFoldersList',
+        currentAssessmentFolderView,
+        (folderId) => {
+            currentAssessmentFolderView = folderId;
+            renderAssessmentFoldersBar();
+            renderAssessmentsList();
+            renderHistoryAssessments();          // NEW
+        },
+        assessments
+    );
+}
+
+/* ---------- History folder bar (only counts assessments with submitted scripts) ---------- */
+function renderHistoryFoldersBar() {
+    const completedAssIds = [...new Set(
+        assessmentResponses
+            .filter(r => r.status === 'ended' || r.status === 'completed')
+            .map(r => r.assessmentId)
+    )];
+    const completedAssessments = assessments.filter(a => completedAssIds.includes(a.id));
+
+    buildFoldersBar(
+        'historyFoldersList',
+        currentHistoryFolderView,
+        (folderId) => {
+            currentHistoryFolderView = folderId;
+            renderHistoryAssessments();
+        },
+        completedAssessments
+    );
 }
 
 /* ---------- Create / Edit Folder Modal ---------- */
@@ -20289,10 +20326,12 @@ async function deleteAssessmentFolder(folderId) {
 
         await remove(ref(db, `assessmentFolders/${folderId}`));
 
-        if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
+                if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
+        if (currentHistoryFolderView === folderId)   currentHistoryFolderView = 'all';   // NEW
         showToast('Folder deleted.', 'info');
         renderAssessmentFoldersBar();
         renderAssessmentsList();
+        renderHistoryAssessments();          // NEW
     } catch (err) {
         showToast('Error deleting folder: ' + err.message, 'error');
     }
@@ -20344,6 +20383,7 @@ function openMoveAssessmentModal(assId) {
             modal.remove();
             renderAssessmentFoldersBar();
             renderAssessmentsList();
+            renderHistoryAssessments();   
         } catch (err) {
             showToast('Error moving: ' + err.message, 'error');
         }
@@ -20352,6 +20392,7 @@ function openMoveAssessmentModal(assId) {
 
 /* ---------- Wire up "New Folder" button once ---------- */
 document.getElementById('addAssessmentFolderBtn')?.addEventListener('click', () => openFolderModal(null));
+document.getElementById('historyAddFolderBtn')?.addEventListener('click', () => openFolderModal(null));   // NEW
 
         // =================================================================
         // ALL ASSESSMENTS LIST (PAPERS)
