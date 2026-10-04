@@ -11371,25 +11371,31 @@ async function loadRegistersAndAssessments(uid) {
         });
 
         // ---- Responses: admin + lecturer ----
+               // ---- Responses: admin + lecturer ----
+        // Only stream THIS user's responses (huge win on History / Submitted).
+        // Uses indexOn('userId') if configured; otherwise RTDB still works.
         const rebuildResponses = () => {
             allAssessmentResponses = [..._adminResponses, ..._lecturerResponses];
             if (document.getElementById('assessmentHistoryPage').classList.contains('active-page')) {
                 renderAssessmentHistory();
             }
+            // Recompute Submitted-assignments badge count too
+            updateExamBadge();
         };
-        onValue(ref(db, 'assessmentResponses'), (snap) => {
+        const adminRespQuery    = query(ref(db, 'assessmentResponses'), orderByChild('userId'), equalTo(uid));
+        const lecturerRespQuery = query(ref(db, 'lecturerResponses'),   orderByChild('userId'), equalTo(uid));
+        onValue(adminRespQuery, (snap) => {
             const data = snap.val();
             _adminResponses = data ? Object.entries(data).map(([id, r]) => ({ id, ...r, _source: 'admin' })) : [];
             rebuildResponses();
             maybeResolve();
         });
-        onValue(ref(db, 'lecturerResponses'), (snap) => {
+        onValue(lecturerRespQuery, (snap) => {
             const data = snap.val();
             _lecturerResponses = data ? Object.entries(data).map(([id, r]) => ({ id, ...r, _source: 'lecturer' })) : [];
             rebuildResponses();
             maybeResolve();
         });
-    });
 }
 
 function updateExamBadge() {
@@ -15475,11 +15481,15 @@ function renderAssessmentTake(assessment) {
         </div>
     `;
 
-    const startBtn = document.getElementById('startAssessmentBtn');
-    startBtn.addEventListener('click', async () => {
+       const startBtn = document.getElementById('startAssessmentBtn');
+    startBtn.addEventListener('click', () => {
+        // ── 1. Validate / collect student info ─────────────────────
+        let studentInfo = null;
+        let needsUpdate = false;
+
         if (assessment.infoEnabled && assessment.infoFields && assessment.infoFields.length > 0 && !existingResponse) {
             let valid = true;
-            const studentInfo = {};
+            studentInfo = {};
             document.querySelectorAll('#assessmentInfoSection .info-field input').forEach(inp => {
                 if (inp.hasAttribute('required') && !inp.value.trim()) {
                     valid = false;
@@ -15493,34 +15503,35 @@ function renderAssessmentTake(assessment) {
                 addNotification('warning', 'Please fill in all required student information fields.');
                 return;
             }
-            await update(ref(db, `${responsesPath}/${responseId}`), {
-                studentInfo: studentInfo,
-                status: 'ongoing'
-            });
+            needsUpdate = true;
         } else if (existingResponse) {
-            const studentInfo = {};
+            studentInfo = {};
             document.querySelectorAll('#assessmentInfoSection .info-field input').forEach(inp => {
                 studentInfo[inp.name] = inp.value.trim();
             });
-            await update(ref(db, `${responsesPath}/${responseId}`), {
-                studentInfo: studentInfo
-            });
+            needsUpdate = true;
         }
+
+        // ── 2. Reveal questions IMMEDIATELY (no network wait) ──────
         document.getElementById('assessmentCoverInfo').style.display = 'none';
         document.getElementById('assessmentInfoSection').style.display = 'none';
         startBtn.style.display = 'none';
         document.getElementById('assessmentQuestionsWrapper').style.display = 'block';
+
+        // ── 3. Attach scratchpad toggles (with deferred canvas init) ──
         document.querySelectorAll('.scratch-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const wrapper = this.nextElementSibling;
-        if (wrapper && wrapper.classList.contains('scratchpad-wrapper')) {
-            const isOpening = !wrapper.classList.contains('open');
-            wrapper.classList.toggle('open');
-            this.classList.toggle('open');
-            if (isOpening) {
+            btn.addEventListener('click', function() {
+                const wrapper = this.nextElementSibling;
+                if (!wrapper || !wrapper.classList.contains('scratchpad-wrapper')) return;
+                const isOpening = !wrapper.classList.contains('open');
+                wrapper.classList.toggle('open');
+                this.classList.toggle('open');
+                if (!isOpening) return;
                 const canvas = wrapper.querySelector('canvas');
-                if (canvas && !canvas.dataset.scratchInited) {
-                    canvas.dataset.scratchInited = '1';
+                if (!canvas || canvas.dataset.scratchInited) return;
+                canvas.dataset.scratchInited = '1';
+                // Defer init so the open transition stays smooth
+                requestAnimationFrame(() => {
                     initScratchpad(canvas);
                     const key = canvas.id.replace('scratch-', '');
                     if (savedScratch[key]) {
@@ -15532,11 +15543,11 @@ function renderAssessmentTake(assessment) {
                         };
                         img.src = savedScratch[key];
                     }
-                }
-            }
-        }
-    });
-});
+                });
+            });
+        });
+
+        // ── 4. Timers / autosave ────────────────────────────────────
         if (isAssignment) {
             currentAssessmentTaking.autoSaveInterval = setInterval(async () => {
                 const answers = collectAnswers();
@@ -15573,12 +15584,8 @@ function renderAssessmentTake(assessment) {
                     } catch (e) {}
                 }
             };
-            const onVisibilityChange = () => {
-                if (document.hidden) saveOnLeave();
-            };
-            const onPageHide = () => {
-                saveOnLeave();
-            };
+            const onVisibilityChange = () => { if (document.hidden) saveOnLeave(); };
+            const onPageHide = () => { saveOnLeave(); };
             const onBeforeUnload = (e) => {
                 saveOnLeave();
                 if (currentAssessmentTaking) {
@@ -15599,13 +15606,10 @@ function renderAssessmentTake(assessment) {
                         clearInterval(timerInterval);
                         timerElement.textContent = '00:00:00';
                         timerElement.classList.add('warning');
-                        addNotification('warning',
-                            '⏰ Time is up! Your assessment will be submitted automatically.'
-                        );
+                        addNotification('warning', '⏰ Time is up! Your assessment will be submitted automatically.');
                         autoSubmitAssessment();
                     } else {
-                        timerElement.textContent = formatTime(currentAssessmentTaking
-                        .remainingSeconds);
+                        timerElement.textContent = formatTime(currentAssessmentTaking.remainingSeconds);
                         if (currentAssessmentTaking.remainingSeconds < 60) {
                             timerElement.classList.add('warning');
                         }
@@ -15613,6 +15617,15 @@ function renderAssessmentTake(assessment) {
                 }, 1000);
                 currentAssessmentTaking.timerInterval = timerInterval;
             }
+        }
+
+        // ── 5. Fire-and-forget DB write (was blocking the reveal) ──
+        if (needsUpdate && studentInfo) {
+            const payload = existingResponse
+                ? { studentInfo }
+                : { studentInfo, status: 'ongoing' };
+            update(ref(db, `${responsesPath}/${responseId}`), payload)
+                .catch(e => console.warn('Background studentInfo update failed:', e));
         }
     });
 
@@ -15798,7 +15811,8 @@ function initScratchpad(canvas) {
     let lineWidth = 4;
     let isEraser = false;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    const w = canvas.parentElement.clientWidth || 600;
+    // Cache the measured width — never trigger a second reflow.
+    const w = canvas.clientWidth || canvas.parentElement.clientWidth || 600;
     const h = 160;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
