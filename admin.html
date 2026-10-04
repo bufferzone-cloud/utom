@@ -12821,7 +12821,7 @@ function loadCommentsForVideo(videoId, onChange) {
             duplicateAssessment(assessmentId);
         };
 
-        window.duplicateAssessment = async function(assessmentId) {
+               window.duplicateAssessment = async function(assessmentId) {
             setLoading('duplicateAssessment', true, null);
             const ass = assessments.find(a => a.id === assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
@@ -12855,27 +12855,42 @@ function loadCommentsForVideo(videoId, onChange) {
                     newAss.registerIds = [newAss.registerId];
                 }
                 await set(newRef, newAss);
-                showToast(`Assessment "${ass.name}" duplicated as draft! You can now edit it.`, 'success');
+
+                const newId  = newRef.key;
+                const type   = ass.type;
+                const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
+                const target = sectionMap[type];
+
+                // ── 1. Eagerly push the new assessment into the local array
+                //       so populateAssessmentForm() can find it immediately
+                //       (replace the serverTimestamp sentinel with a number).
+                const eager = { id: newId, ...newAss };
+                eager.createdAt = Date.now();
+                assessments.push(eager);
+
+                showToast(`Assessment "${ass.name}" duplicated as draft!`, 'success');
                 push(notificationsRef, {
                     message: `📋 Assessment "${ass.name}" duplicated for editing`,
                     timestamp: serverTimestamp()
                 });
-                renderAssessmentsList();
-                renderTestExamsDashboard();
-                const newId = newRef.key;
-const type = ass.type;
-const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
-const target = sectionMap[type];
-if (target) {
-    // Hand the ID off — the create-form renderer will pick it up.
-    // Do NOT set editingAssessmentId here, because renderCreateXForm()
-    // is about to run on the hashchange and would reset it to null.
-    pendingDuplicateEditId = newId;
-    showSection(target);
-    showToast(`Editing copy of "${ass.name}"`, 'info');
-}
+
+                // ── 2. Set pendingDuplicateEditId BEFORE navigating
+                //       so renderCreateXForm() picks it up on hashchange.
+                if (target) {
+                    pendingDuplicateEditId = newId;
+
+                    // ── 3. Navigate — this triggers renderCreateXForm()
+                    //       which reads pendingDuplicateEditId and populates the form.
+                    showSection(target);
+                    showToast(`Editing copy of "${ass.name}"`, 'info');
+                } else {
+                    // Fallback — unknown type, just re-render the list
+                    try { renderAssessmentsList(); }    catch (e) { console.warn(e); }
+                    try { renderTestExamsDashboard(); } catch (e) { console.warn(e); }
+                }
             } catch (err) {
                 showToast('Error duplicating: ' + err.message, 'error');
+                console.error('duplicateAssessment error:', err);
             } finally {
                 setLoading('duplicateAssessment', false, null);
             }
