@@ -11350,13 +11350,17 @@ async function loadRegistersAndAssessments(uid) {
         });
 
         // ---- Assessments: admin + lecturer ----
-        const rebuildAssessments = () => {
-            allAssessments = [..._adminAssessments, ..._lecturerAssessments];
-            updateExamBadge();
-            if (document.getElementById('assessmentHistoryPage').classList.contains('active-page')) {
-                renderAssessmentHistory();
-            }
-        };
+        // ---- Responses: admin + lecturer ----
+const rebuildResponses = () => {
+    allAssessmentResponses = [..._adminResponses, ..._lecturerResponses];
+    // ✅ Critical fix: re-compute the badge whenever responses change,
+    //    because responses may load AFTER assessments/registers.
+    updateExamBadge();
+    // ✅ Keep history DOM in sync so it's correct the moment the user opens it.
+    if (document.getElementById('assessmentHistoryPage')) {
+        renderAssessmentHistory();
+    }
+};
         onValue(ref(db, 'assessments'), (snap) => {
             const data = snap.val();
             _adminAssessments = data ? Object.entries(data).map(([id, a]) => ({ id, ...a, _source: 'admin' })) : [];
