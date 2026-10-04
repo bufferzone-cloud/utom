@@ -6072,6 +6072,83 @@ body.dark-mode .script-question .part-breakdown .part-row .part-label {
 body.dark-mode .script-question .part-breakdown .part-row .part-correct {
     color: #aaaaaa;
 }
+        /* ===== ASSESSMENT FOLDERS ===== */
+.assessments-folders-bar{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 0 12px 0;
+    border-bottom:1px dashed rgba(229,232,237,0.6);
+    margin-bottom:12px;
+}
+.assessment-folders-list{
+    display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0;
+}
+.folder-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border-radius:30px;
+    background:rgba(255,255,255,0.8);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border:1.5px solid rgba(229,232,237,0.7);
+    font-size:12px;font-weight:600;color:var(--text);
+    cursor:pointer;transition:var(--transition);
+    white-space:nowrap;box-shadow:var(--shadow-sm);
+}
+.folder-chip:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.folder-chip.active{
+    background:linear-gradient(135deg,#f5b042,#ff6b00);
+    color:#fff;border-color:transparent;
+    box-shadow:0 4px 18px rgba(245,176,66,0.3);
+}
+.folder-chip.active i{color:#fff;}
+.folder-chip.active .folder-count{background:rgba(255,255,255,0.25);color:#fff;}
+.folder-chip i{color:#d4952a;font-size:12px;}
+.folder-count{
+    background:rgba(245,176,66,0.15);color:#d4952a;
+    font-size:10px;font-weight:700;
+    padding:1px 8px;border-radius:30px;
+    min-width:20px;text-align:center;
+}
+.folder-chip-actions{display:none;gap:2px;margin-left:2px;}
+.folder-chip:hover .folder-chip-actions{display:inline-flex;}
+.folder-chip-btn{
+    width:18px;height:18px;border:none;border-radius:50%;
+    background:rgba(0,0,0,0.06);color:#5f6377;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:8px;transition:var(--transition);padding:0;
+}
+.folder-chip-btn:hover{background:rgba(0,0,0,0.12);}
+.folder-chip.active .folder-chip-btn{background:rgba(255,255,255,0.2);color:#fff;}
+.folder-chip.active .folder-chip-btn:hover{background:rgba(255,255,255,0.35);}
+.folder-chip-btn.delete-folder-btn:hover{background:rgba(231,76,60,0.85);color:#fff;}
+.add-folder-btn{
+    background:rgba(245,176,66,0.12);
+    border:1.5px dashed rgba(245,176,66,0.4);
+    color:#d4952a;padding:6px 14px;border-radius:30px;
+    font-size:11px;font-weight:700;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;
+    transition:var(--transition);white-space:nowrap;
+}
+.add-folder-btn:hover{
+    background:rgba(245,176,66,0.2);
+    border-color:var(--gold);transform:translateY(-2px);
+}
+.folder-group-header{
+    display:flex;align-items:center;gap:8px;
+    font-size:13px;font-weight:700;color:var(--text);
+    margin:16px 0 8px 0;padding-bottom:6px;
+    border-bottom:2px solid rgba(245,176,66,0.2);
+}
+.folder-group-header:first-child{margin-top:0;}
+.folder-group-header i{color:#d4952a;}
+.folder-group-header .folder-group-count{
+    font-size:10px;background:rgba(245,176,66,0.12);
+    color:#d4952a;padding:1px 10px;border-radius:30px;font-weight:700;
+}
+body.dark-mode .folder-chip{background:rgba(31,31,31,0.9)!important;border-color:#333!important;color:#e0e0e0!important;}
+body.dark-mode .folder-chip i{color:#f5b042!important;}
+body.dark-mode .folder-count{background:rgba(245,176,66,0.15)!important;color:#f5b042!important;}
+body.dark-mode .add-folder-btn{background:rgba(245,176,66,0.12)!important;border-color:rgba(245,176,66,0.4)!important;color:#f5b042!important;}
+body.dark-mode .folder-group-header{color:#f1f1f1!important;}
+body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,66,0.15)!important;color:#f5b042!important;}
         /* ===== Floating player (extra) ===== */
         /* (already defined above) */
     </style>
@@ -7581,6 +7658,13 @@ body.dark-mode .script-question .part-breakdown .part-row .part-correct {
                                 <option value="ended">Ended</option>
                             </select>
                         </div>
+                        <!-- ===== ASSESSMENT FOLDERS BAR ===== -->
+<div class="assessments-folders-bar">
+    <div id="assessmentFoldersList" class="assessment-folders-list"></div>
+    <button id="addAssessmentFolderBtn" class="add-folder-btn" type="button">
+        <i class="fas fa-plus"></i> New Folder
+    </button>
+</div>
                         <div id="assessmentsListContainer"></div>
                     </div>
                 </div>
@@ -8173,6 +8257,8 @@ let popupSelectedRegisters = new Set();
         // ---- Test/Exams state ----
         let registers = [];
         let assessments = [];
+        let assessmentFolders = [];
+let currentAssessmentFolderView = 'all'; // 'all' | folderId | 'unfiled'
         let assessmentResponses = [];
         let editingAssessmentId = null;
 let pendingDuplicateEditId = null;      // ← NEW
@@ -8343,6 +8429,7 @@ function computeAssessmentDeadline(a) {
         const inAppNotificationsRef = ref(db, 'inAppNotifications');
         const registersRef = ref(db, 'registers');
         const assessmentsRef = ref(db, 'assessments');
+        const assessmentFoldersRef = ref(db, 'assessmentFolders');
         const assessmentResponsesRef = ref(db, 'assessmentResponses');
         const assessmentDraftsRef = ref(db, 'assessmentDrafts');
 
@@ -8481,6 +8568,9 @@ function computeAssessmentDeadline(a) {
         // =================================================================
         // INITIAL DATA FETCH
         // =================================================================
+                // =================================================================
+        // INITIAL DATA FETCH
+        // =================================================================
         async function fetchInitialData() {
             const snapshots = await Promise.all([
                 get(usersRef),
@@ -8497,11 +8587,12 @@ function computeAssessmentDeadline(a) {
                 get(pendingPurchasesRef),
                 get(registersRef),
                 get(assessmentsRef),
-                get(assessmentResponsesRef)
+                get(assessmentResponsesRef),
+                get(assessmentFoldersRef)
             ]);
 
             const [usersSn, coursesSn, subSn, vidSn, docSn, promSn, popSn, notifSn, banSn, paySn, txSn, penSn, regSn, assSn,
-                respSn
+                respSn, foldersSn
             ] = snapshots;
 
             users = usersSn.val() ? Object.entries(usersSn.val()).map(([uid, d]) => ({ uid, ...d })) : [];
@@ -8536,6 +8627,7 @@ function computeAssessmentDeadline(a) {
             registers = regSn.val() ? Object.entries(regSn.val()).map(([id, d]) => ({ id, ...d })) : [];
             assessments = assSn.val() ? Object.entries(assSn.val()).map(([id, d]) => ({ id, ...d })) : [];
             assessmentResponses = respSn.val() ? Object.entries(respSn.val()).map(([id, d]) => ({ id, ...d })) : [];
+            assessmentFolders = foldersSn.val() ? Object.entries(foldersSn.val()).map(([id, d]) => ({ id, ...d })) : [];
 
             renderAdminHome();
             renderPostedGrid();
@@ -14650,6 +14742,15 @@ function renderPopupRegisterList(searchTerm = '') {
     const prevIds = new Set(videos.map(v => v.id));
     videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
     const newIds = new Set(videos.map(v => v.id));
+            onValue(assessmentFoldersRef, (snap) => {
+    try {
+        const data = snap.val();
+        assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+        scheduleRender('assessments');
+    } catch (err) {
+        console.error('Error in assessmentFolders listener:', err);
+    }
+}, (err) => console.error('assessmentFolders listener error:', err));
 
     // Detach listeners for deleted videos
     prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
@@ -19793,93 +19894,369 @@ const responses = assStillOpen
             showToast('Script HTML downloaded!', 'success');
         }
 
+    /* =================================================================
+   ASSESSMENT FOLDERS
+   ================================================================= */
+
+function renderAssessmentFoldersBar() {
+    const container = document.getElementById('assessmentFoldersList');
+    if (!container) return;
+
+    // Count assessments per folder
+    const counts = {};
+    assessments.forEach(a => {
+        const key = a.folderId || 'unfiled';
+        counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const sortedFolders = [...assessmentFolders].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+    );
+
+    let html = `
+        <div class="folder-chip ${currentAssessmentFolderView === 'all' ? 'active' : ''}" data-folderid="all">
+            <i class="fas fa-layer-group"></i> All
+            <span class="folder-count">${assessments.length}</span>
+        </div>
+    `;
+
+    sortedFolders.forEach(f => {
+        const c = counts[f.id] || 0;
+        html += `
+            <div class="folder-chip ${currentAssessmentFolderView === f.id ? 'active' : ''}" data-folderid="${f.id}">
+                <i class="fas fa-folder"></i> ${escapeHtml(f.name)}
+                <span class="folder-count">${c}</span>
+                <span class="folder-chip-actions">
+                    <button class="folder-chip-btn edit-folder-btn" data-folderid="${f.id}" title="Rename"><i class="fas fa-pen"></i></button>
+                    <button class="folder-chip-btn delete-folder-btn" data-folderid="${f.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                </span>
+            </div>
+        `;
+    });
+
+    const unfiledCount = counts['unfiled'] || 0;
+    html += `
+        <div class="folder-chip ${currentAssessmentFolderView === 'unfiled' ? 'active' : ''}" data-folderid="unfiled">
+            <i class="fas fa-inbox"></i> Unfiled
+            <span class="folder-count">${unfiledCount}</span>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.folder-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            if (e.target.closest('.folder-chip-btn')) return;
+            currentAssessmentFolderView = chip.dataset.folderid;
+            renderAssessmentFoldersBar();
+            renderAssessmentsList();
+        });
+    });
+
+    container.querySelectorAll('.edit-folder-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openFolderModal(btn.dataset.folderid);
+        });
+    });
+
+    container.querySelectorAll('.delete-folder-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await deleteAssessmentFolder(btn.dataset.folderid);
+        });
+    });
+}
+
+/* ---------- Create / Edit Folder Modal ---------- */
+function openFolderModal(folderId) {
+    const isEdit = !!folderId;
+    const folder = isEdit ? assessmentFolders.find(f => f.id === folderId) : null;
+    if (isEdit && !folder) { showToast('Folder not found.', 'error'); return; }
+
+    document.getElementById('folderEditModal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'folderEditModal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:380px;">
+            <button class="close-modal" type="button" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-folder"></i> ${isEdit ? 'Rename Folder' : 'New Folder'}</h3>
+            <div class="form-row">
+                <input type="text" id="folderNameInput" placeholder="Folder name"
+                       value="${isEdit ? escapeHtml(folder.name) : ''}"
+                       style="width:100%;padding:10px 18px;border-radius:40px;border:1.5px solid rgba(229,232,237,0.6);font-size:13px;" />
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                <button type="button" class="btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                <button type="button" class="btn-confirm" id="saveFolderBtn"><i class="fas fa-check"></i> ${isEdit ? 'Save' : 'Create'}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const input = modal.querySelector('#folderNameInput');
+    setTimeout(() => input.focus(), 100);
+
+    const doSave = async () => {
+        const name = input.value.trim();
+        if (!name) { showToast('Please enter a folder name.', 'error'); return; }
+        try {
+            if (isEdit) {
+                await update(ref(db, `assessmentFolders/${folderId}`), { name });
+                showToast('Folder renamed!', 'success');
+            } else {
+                const newRef = push(assessmentFoldersRef);
+                await set(newRef, {
+                    name,
+                    createdAt: serverTimestamp(),
+                    order: assessmentFolders.length
+                });
+                showToast('Folder created!', 'success');
+            }
+            modal.remove();
+            renderAssessmentFoldersBar();
+            renderAssessmentsList();
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+        }
+    };
+
+    modal.querySelector('#saveFolderBtn').addEventListener('click', doSave);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+}
+
+/* ---------- Delete Folder ---------- */
+async function deleteAssessmentFolder(folderId) {
+    const folder = assessmentFolders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const contained = assessments.filter(a => a.folderId === folderId);
+    const msg = contained.length > 0
+        ? `Folder "<strong>${escapeHtml(folder.name)}</strong>" contains <strong>${contained.length}</strong> assessment(s). They will become <em>Unfiled</em>.`
+        : `Delete folder "<strong>${escapeHtml(folder.name)}</strong>"?`;
+
+    const confirmed = await showConfirmPopup({
+        icon: '🗑️',
+        type: 'danger',
+        title: 'Delete Folder?',
+        message: msg,
+        okText: 'Delete',
+        okClass: 'btn-confirm-danger'
+    });
+    if (!confirmed) return;
+
+    try {
+        // Un-file any assessments that were inside
+        const updates = {};
+        contained.forEach(a => { updates[`assessments/${a.id}/folderId`] = null; });
+        if (Object.keys(updates).length > 0) await update(ref(db), updates);
+
+        await remove(ref(db, `assessmentFolders/${folderId}`));
+
+        if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
+        showToast('Folder deleted.', 'info');
+        renderAssessmentFoldersBar();
+        renderAssessmentsList();
+    } catch (err) {
+        showToast('Error deleting folder: ' + err.message, 'error');
+    }
+}
+
+/* ---------- Move Assessment to Folder ---------- */
+function openMoveAssessmentModal(assId) {
+    const ass = assessments.find(a => a.id === assId);
+    if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+    document.getElementById('moveAssessmentModal')?.remove();
+
+    const sortedFolders = [...assessmentFolders].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const options = `<option value="">— Unfiled —</option>` +
+        sortedFolders.map(f =>
+            `<option value="${f.id}" ${ass.folderId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`
+        ).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'moveAssessmentModal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:400px;">
+            <button class="close-modal" type="button" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-folder-tree"></i> Move to Folder</h3>
+            <p style="font-size:12px;color:#8b8fa3;margin-bottom:10px;">
+                Assessment: <strong>${escapeHtml(ass.name)}</strong>
+            </p>
+            <div class="form-row">
+                <select id="moveAssessmentFolderSelect"
+                        style="width:100%;padding:10px 14px;border-radius:30px;border:1.5px solid rgba(229,232,237,0.6);font-size:13px;background:#fff;">
+                    ${options}
+                </select>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                <button type="button" class="btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                <button type="button" class="btn-confirm" id="confirmMoveAssessmentBtn"><i class="fas fa-check"></i> Move</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#confirmMoveAssessmentBtn').addEventListener('click', async () => {
+        const newFolderId = modal.querySelector('#moveAssessmentFolderSelect').value || null;
+        try {
+            await update(ref(db, `assessments/${assId}`), { folderId: newFolderId });
+            showToast(newFolderId ? 'Moved to folder!' : 'Moved to Unfiled.', 'success');
+            modal.remove();
+            renderAssessmentFoldersBar();
+            renderAssessmentsList();
+        } catch (err) {
+            showToast('Error moving: ' + err.message, 'error');
+        }
+    });
+}
+
+/* ---------- Wire up "New Folder" button once ---------- */
+document.getElementById('addAssessmentFolderBtn')?.addEventListener('click', () => openFolderModal(null));
+
         // =================================================================
         // ALL ASSESSMENTS LIST (PAPERS)
         // =================================================================
         function renderAssessmentsList() {
-            const container = document.getElementById('assessmentsListContainer');
-            if (!container) return;
-            const search = (document.getElementById('assessmentsSearch')?.value || '').toLowerCase();
-            const typeFilter = document.getElementById('assessmentsFilterType')?.value || 'all';
-            const statusFilter = document.getElementById('assessmentsFilterStatus')?.value || 'all';
+    const container = document.getElementById('assessmentsListContainer');
+    if (!container) return;
 
-            let filtered = assessments;
-            if (search) {
-                filtered = filtered.filter(a =>
-                    (a.name || '').toLowerCase().includes(search) ||
-                    (a.type || '').toLowerCase().includes(search) ||
-                    (a.registerIds || []).some(id => (registers.find(r => r.id === id)?.name || '').toLowerCase().includes(search))
-                );
-            }
-            if (typeFilter !== 'all') {
-                filtered = filtered.filter(a => a.type === typeFilter);
-            }
-            if (statusFilter !== 'all') {
-                filtered = filtered.filter(a => a.status === statusFilter);
-            }
+    // Always render the folder bar first
+    renderAssessmentFoldersBar();
 
-            if (filtered.length === 0) {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments found.</div>';
-                return;
-            }
+    const search = (document.getElementById('assessmentsSearch')?.value || '').toLowerCase();
+    const typeFilter = document.getElementById('assessmentsFilterType')?.value || 'all';
+    const statusFilter = document.getElementById('assessmentsFilterStatus')?.value || 'all';
 
-            container.innerHTML = filtered.map(ass => {
-                const registerNames = (ass.registerIds || []).map(id => registers.find(r => r.id === id)?.name || 'N/A').join(', ');
-                const statusClass = ass.status === 'published' ? 'active' : (ass.status === 'draft' ? 'pending' :
-                    ass.status === 'scheduled' ? 'scheduled' : '');
-                const statusLabel = ass.status.charAt(0).toUpperCase() + ass.status.slice(1);
-                const scheduledBadge = ass.scheduledPublishTime ? `<span style="background:rgba(245,176,66,0.12);color:#d4952a;padding:2px 8px;border-radius:30px;font-size:9px;margin-left:6px;">📅 ${new Date(ass.scheduledPublishTime).toLocaleString()}</span>` : '';
-                return `
-                    <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-sm);padding:14px 18px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:8px;">
-                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                            <div>
-                                <strong style="font-size:14px;">${escapeHtml(ass.name)}</strong>
-                                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
-                                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
-                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
-                                <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Registers: ${escapeHtml(registerNames)}</span>
-                                ${scheduledBadge}
-                            </div>
-                            <div style="font-size:12px;">
-                                <span class="user-status-badge ${statusClass}">${statusLabel}</span>
-                                <span style="margin-left:12px;">Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</span>
-                            </div>
-                        </div>
-                        ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin:4px 0;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
-                        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-                            <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="previewAssessment('${ass.id}')"><i class="fas fa-eye"></i> Preview</button>
-                            <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;border-radius:30px;color:#fff;" onclick="duplicateAssessment('${ass.id}')"><i class="fas fa-copy"></i> Duplicate & Edit</button>
-                            <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${ass.id}">Delete</button>
-                            ${ass.status === 'draft' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;" onclick="publishAssessment('${ass.id}')"><i class="fas fa-check"></i> Publish</button>` : ''}
-                            ${ass.status === 'scheduled' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f39c12,#e67e22);border:none;border-radius:30px;color:#fff;" onclick="publishAssessmentNow('${ass.id}')"><i class="fas fa-clock"></i> Publish Now</button>` : ''}
-                        </div>
+    let filtered = assessments;
+    if (search) {
+        filtered = filtered.filter(a =>
+            (a.name || '').toLowerCase().includes(search) ||
+            (a.type || '').toLowerCase().includes(search) ||
+            (a.registerIds || []).some(id => (registers.find(r => r.id === id)?.name || '').toLowerCase().includes(search))
+        );
+    }
+    if (typeFilter !== 'all') filtered = filtered.filter(a => a.type === typeFilter);
+    if (statusFilter !== 'all') filtered = filtered.filter(a => a.status === statusFilter);
+
+    // Apply folder view filter
+    const view = currentAssessmentFolderView;
+    if (view === 'unfiled') {
+        filtered = filtered.filter(a => !a.folderId);
+    } else if (view !== 'all') {
+        filtered = filtered.filter(a => a.folderId === view);
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No assessments found.</div>';
+        return;
+    }
+
+    // -------- Card builder --------
+    const buildCard = (ass) => {
+        const registerNames = (ass.registerIds || [])
+            .map(id => registers.find(r => r.id === id)?.name || 'N/A').join(', ');
+        const statusClass =
+            ass.status === 'published' ? 'active'
+            : ass.status === 'draft'    ? 'pending'
+            : ass.status === 'scheduled'? 'scheduled'
+            : '';
+        const statusLabel = (ass.status || '').charAt(0).toUpperCase() + (ass.status || '').slice(1);
+        const scheduledBadge = ass.scheduledPublishTime
+            ? `<span style="background:rgba(245,176,66,0.12);color:#d4952a;padding:2px 8px;border-radius:30px;font-size:9px;margin-left:6px;">📅 ${new Date(ass.scheduledPublishTime).toLocaleString()}</span>`
+            : '';
+        return `
+            <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-sm);padding:14px 18px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                    <div>
+                        <strong style="font-size:14px;">${escapeHtml(ass.name)}</strong>
+                        ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                        ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
+                        <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
+                        <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">Registers: ${escapeHtml(registerNames)}</span>
+                        ${scheduledBadge}
                     </div>
-                `;
-            }).join('');
+                    <div style="font-size:12px;">
+                        <span class="user-status-badge ${statusClass}">${statusLabel}</span>
+                        <span style="margin-left:12px;">Duration: ${ass.duration || 'N/A'} · Total Marks: ${ass.totalMarks || 0}</span>
+                    </div>
+                </div>
+                ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin:4px 0;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
+                <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn-outline" style="padding:3px 12px;font-size:9px;" onclick="previewAssessment('${ass.id}')"><i class="fas fa-eye"></i> Preview</button>
+                    <button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#4a90d9,#2979c1);border:none;border-radius:30px;color:#fff;" onclick="duplicateAssessment('${ass.id}')"><i class="fas fa-copy"></i> Duplicate &amp; Edit</button>
+                    <button class="btn-outline move-assessment-btn" style="padding:3px 12px;font-size:9px;background:rgba(245,176,66,0.12);color:#d4952a;" data-assid="${ass.id}"><i class="fas fa-folder-tree"></i> Move to Folder</button>
+                    <button class="btn-danger" style="padding:3px 12px;font-size:9px;background:#fde8e8;color:#c62828;border:none;border-radius:30px;cursor:pointer;" data-assid="${ass.id}">Delete</button>
+                    ${ass.status === 'draft' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;" onclick="publishAssessment('${ass.id}')"><i class="fas fa-check"></i> Publish</button>` : ''}
+                    ${ass.status === 'scheduled' ? `<button class="btn-primary" style="padding:3px 12px;font-size:9px;background:linear-gradient(135deg,#f39c12,#e67e22);border:none;border-radius:30px;color:#fff;" onclick="publishAssessmentNow('${ass.id}')"><i class="fas fa-clock"></i> Publish Now</button>` : ''}
+                </div>
+            </div>
+        `;
+    };
 
-            container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const assId = this.dataset.assid;
-                    const confirmed = await showConfirmPopup({
-                        icon: '🗑️',
-                        type: 'danger',
-                        title: 'Delete Assessment?',
-                        message: 'Delete this assessment? This cannot be undone.',
-                        okText: 'Delete',
-                        okClass: 'btn-confirm-danger'
-                    });
-                    if (confirmed) {
-                        await remove(ref(db, `assessments/${assId}`));
-                        const responsesToDelete = assessmentResponses.filter(r => r.assessmentId === assId);
-                        for (const r of responsesToDelete) {
-                            await remove(ref(db, `assessmentResponses/${r.id}`));
-                        }
-                        showToast('Assessment deleted.', 'info');
-                    }
-                });
-            });
+    // -------- Render: grouped or flat --------
+    if (view === 'all') {
+        const sortedFolders = [...assessmentFolders].sort((a, b) => (a.order || 0) - (b.order || 0));
+        let html = '';
+
+        sortedFolders.forEach(folder => {
+            const inFolder = filtered.filter(a => a.folderId === folder.id);
+            if (inFolder.length === 0) return;
+            html += `<div class="folder-group-header">
+                        <i class="fas fa-folder"></i> ${escapeHtml(folder.name)}
+                        <span class="folder-group-count">${inFolder.length}</span>
+                     </div>`;
+            html += inFolder.map(buildCard).join('');
+        });
+
+        const unfiled = filtered.filter(a => !a.folderId);
+        if (unfiled.length > 0) {
+            html += `<div class="folder-group-header">
+                        <i class="fas fa-inbox"></i> Unfiled
+                        <span class="folder-group-count">${unfiled.length}</span>
+                     </div>`;
+            html += unfiled.map(buildCard).join('');
         }
+
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = filtered.map(buildCard).join('');
+    }
+
+    // -------- Attach listeners --------
+    container.querySelectorAll('.btn-danger[data-assid]').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const assId = this.dataset.assid;
+            const confirmed = await showConfirmPopup({
+                icon: '🗑️',
+                type: 'danger',
+                title: 'Delete Assessment?',
+                message: 'Delete this assessment? This cannot be undone.',
+                okText: 'Delete',
+                okClass: 'btn-confirm-danger'
+            });
+            if (!confirmed) return;
+            await remove(ref(db, `assessments/${assId}`));
+            const responsesToDelete = assessmentResponses.filter(r => r.assessmentId === assId);
+            for (const r of responsesToDelete) {
+                await remove(ref(db, `assessmentResponses/${r.id}`));
+            }
+            showToast('Assessment deleted.', 'info');
+        });
+    });
+
+    container.querySelectorAll('.move-assessment-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            openMoveAssessmentModal(this.dataset.assid);
+        });
+    });
+}
 
         window.publishAssessment = async function(assessmentId) {
             const confirmed = await showConfirmPopup({
