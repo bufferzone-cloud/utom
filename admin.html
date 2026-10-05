@@ -6975,7 +6975,7 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                                 <span class="label">Create Assignment</span>
                             </button>
                         </div>
-                        <div class="te-dashboard-actions" style="margin-top:0;">
+                                               <div class="te-dashboard-actions" style="margin-top:0;">
                             <button class="btn-square-outline" id="teOngoingBtn">
                                 <i class="fas fa-play-circle"></i>
                                 <span class="label">On Going</span>
@@ -6987,6 +6987,10 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                             <button class="btn-square-outline" id="teHistoryBtn">
                                 <i class="fas fa-history"></i>
                                 <span class="label">History / Script</span>
+                            </button>
+                            <button class="btn-square-outline" id="teDraftsBtn">
+                                <i class="fas fa-file-pen"></i>
+                                <span class="label">Drafts</span>
                             </button>
                         </div>
                     </div>
@@ -7874,6 +7878,23 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                 </div>
             </div>
 
+                <!-- ===== DRAFTS SECTION (NEW) ===== -->
+            <div id="draftsSection" class="section">
+                <div style="padding:0 0 4px 0;">
+                    <button id="backFromDrafts" class="btn-outline" style="padding:8px 18px;font-size:11px;margin-bottom:10px;">
+                        <i class="fas fa-arrow-left"></i> Back to Test/Exams
+                    </button>
+                    <div class="form-card">
+                        <h4><i class="fas fa-file-pen"></i> Question Paper Drafts</h4>
+                        <p style="font-size:12px;color:#8b8fa3;margin:6px 0 14px 0;line-height:1.5;">
+                            Drafts contain <strong>only questions</strong> — no cover page, registers, schedule, or deadline yet.
+                            Open a draft to add those details and publish it as a full assessment.
+                        </p>
+                        <div id="draftsListContainer"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ===== STUDENT SCRIPT VIEWER ===== -->
             <div id="studentScriptSection" class="section">
                 <div style="padding:0 0 4px 0;">
@@ -7984,7 +8005,8 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
             <div class="popup-group-label">Secondary Actions</div>
             <button class="popup-item" data-action="ongoing"><i class="fas fa-play-circle"></i> On Going</button>
             <button class="popup-item" data-action="registers"><i class="fas fa-address-book"></i> Registers</button>
-            <button class="popup-item" data-action="history"><i class="fas fa-history"></i> History / Final Script</button>
+                       <button class="popup-item" data-action="history"><i class="fas fa-history"></i> History / Final Script</button>
+            <button class="popup-item" data-action="drafts"><i class="fas fa-file-pen"></i> Drafts</button>
             <button class="popup-item" data-action="assessments"><i class="fas fa-folder-open"></i> All Assessments</button>
         </div>
     </div>
@@ -8425,6 +8447,9 @@ let currentHistoryFolderView = 'all';    // NEW — folder view for History/Scri
 let pendingDuplicateEditId = null;      // ← NEW
 let currentHistoryAssessmentId = null;
 
+             // ---- Question Paper Drafts state (NEW) ----
+        let paperDrafts = [];
+
         // Carousel state
         let carouselItems = [];
         let currentCarouselIndex = 0;
@@ -8559,7 +8584,8 @@ function computeAssessmentDeadline(a) {
                             case 'registers': renderRegistersList(); break;
                             case 'ongoing': renderOngoingList(); break;
                             case 'history': renderHistoryList(); break;
-                            case 'assessments': renderAssessmentsList(); break;
+                                                        case 'assessments': renderAssessmentsList(); break;
+                            case 'drafts': renderDraftsList(); break;
                             default: break;
                         }
                     });
@@ -8592,7 +8618,8 @@ function computeAssessmentDeadline(a) {
         const assessmentsRef = ref(db, 'assessments');
         const assessmentFoldersRef = ref(db, 'assessmentFolders');
         const assessmentResponsesRef = ref(db, 'assessmentResponses');
-        const assessmentDraftsRef = ref(db, 'assessmentDrafts');
+                const assessmentDraftsRef = ref(db, 'assessmentDrafts');
+        const paperDraftsRef = ref(db, 'paperDrafts');   // ← NEW: question paper drafts
 
         // =================================================================
         // BAN HELPERS
@@ -11150,8 +11177,9 @@ function loadCommentsForVideo(videoId, onChange) {
                 case 'createAssignment': renderCreateAssignmentForm(); break;
                 case 'ongoing': renderOngoingList(); break;
                 case 'registers': renderRegistersList(); break;
-                case 'history': renderHistoryList(); break;
+                                case 'history': renderHistoryList(); break;
                 case 'assessments': renderAssessmentsList(); break;
+                case 'drafts': renderDraftsList(); break;
                 default: break;
             }
         }
@@ -11258,7 +11286,7 @@ function loadCommentsForVideo(videoId, onChange) {
                     const action = item.dataset.action;
                     popup.classList.remove('open');
                     closeSidebar();
-                    const sectionMap = {
+                                        const sectionMap = {
                         createRegister: 'createRegister',
                         createTest: 'createTest',
                         createQuiz: 'createQuiz',
@@ -11267,6 +11295,7 @@ function loadCommentsForVideo(videoId, onChange) {
                         ongoing: 'ongoing',
                         registers: 'registers',
                         history: 'history',
+                        drafts: 'drafts',
                         assessments: 'assessments'
                     };
                     if (sectionMap[action]) {
@@ -11318,24 +11347,36 @@ function loadCommentsForVideo(videoId, onChange) {
                 window._regMembers = [];
                 showSection('testExams');
             });
-            document.getElementById('backFromCreateTest').addEventListener('click', () => {
+                       document.getElementById('backFromCreateTest').addEventListener('click', () => {
                 editingAssessmentId = null;
+                window._draftBeingPublished = null;
+                window._pendingDraftId = null;
                 showSection('testExams');
             });
             document.getElementById('backFromCreateQuiz').addEventListener('click', () => {
                 editingAssessmentId = null;
+                window._draftBeingPublished = null;
+                window._pendingDraftId = null;
                 showSection('testExams');
             });
             document.getElementById('backFromCreateExam').addEventListener('click', () => {
                 editingAssessmentId = null;
+                window._draftBeingPublished = null;
+                window._pendingDraftId = null;
                 showSection('testExams');
             });
             document.getElementById('backFromCreateAssignment').addEventListener('click', () => {
                 editingAssessmentId = null;
+                window._draftBeingPublished = null;
+                window._pendingDraftId = null;
                 showSection('testExams');
             });
-            document.getElementById('backFromOngoing').addEventListener('click', () => showSection('testExams'));
+                        document.getElementById('backFromOngoing').addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromRegisters').addEventListener('click', () => showSection('testExams'));
+
+            // Drafts button on the Test/Exams dashboard
+            document.getElementById('teDraftsBtn')?.addEventListener('click', () => showSection('drafts'));
+            document.getElementById('backFromDrafts')?.addEventListener('click', () => showSection('testExams'));
             document.getElementById('backFromHistory').addEventListener('click', () => {
                 if (currentHistoryAssessmentId) {
                     renderHistoryList();
@@ -12458,7 +12499,19 @@ function loadCommentsForVideo(videoId, onChange) {
                 showToast('Draft saved!', 'success');
             });
 
-            loadAssessmentDraft(type);
+                       loadAssessmentDraft(type);
+
+            // ---- SAVE AS DRAFT BUTTON (NEW) ----
+            const previewBtn = document.getElementById(`${type}PreviewFullBtn`);
+            if (previewBtn && !previewBtn.parentElement.querySelector('.save-as-draft-btn')) {
+                const saveDraftBtn = document.createElement('button');
+                saveDraftBtn.type = 'button';
+                saveDraftBtn.className = 'btn-outline save-as-draft-btn';
+                saveDraftBtn.style.cssText = 'padding:10px 24px;font-size:12px;';
+                saveDraftBtn.innerHTML = '<i class="fas fa-file-pen"></i> Save as Draft';
+                saveDraftBtn.addEventListener('click', () => saveAsQuestionDraft(type));
+                previewBtn.parentElement.insertBefore(saveDraftBtn, previewBtn);
+            }
 
             // ---- MULTI-REGISTER SELECT ----
             setupMultiRegisterSelect(type);
@@ -14928,6 +14981,16 @@ function renderPopupRegisterList(searchTerm = '') {
     }
 }, (err) => console.error('assessmentFolders listener error:', err));
 
+                        onValue(paperDraftsRef, (snap) => {
+                try {
+                    const data = snap.val();
+                    paperDrafts = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    scheduleRender('drafts');
+                } catch (err) {
+                    console.error('Error in paperDrafts listener:', err);
+                }
+            }, (err) => console.error('paperDrafts listener error:', err));
+
     // Detach listeners for deleted videos
     prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
 
@@ -15430,7 +15493,16 @@ function renderPopupRegisterList(searchTerm = '') {
                     showToast(`Test "${data.name}" created successfully!`, 'success');
                     push(notificationsRef, { message: `📝 Test "${data.name}" created${data.scheduledPublishTime ? ' (scheduled)' : ''}`, timestamp: serverTimestamp() });
                 }
-                editingAssessmentId = null;
+                                editingAssessmentId = null;
+
+                // If this was opened from a Draft, delete it now that it's been published
+                if (window._pendingDraftId) {
+                    try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
+                    catch (e) { console.warn('Could not delete draft:', e); }
+                    window._pendingDraftId = null;
+                    window._draftBeingPublished = null;
+                }
+
                 showSection('ongoing');
             } catch (err) {
                 showToast('Error saving test: ' + err.message, 'error');
@@ -15498,7 +15570,16 @@ function renderPopupRegisterList(searchTerm = '') {
                     showToast(`Quiz "${data.name}" created successfully!`, 'success');
                     push(notificationsRef, { message: `📝 Quiz "${data.name}" created${data.scheduledPublishTime ? ' (scheduled)' : ''}`, timestamp: serverTimestamp() });
                 }
-                editingAssessmentId = null;
+                                editingAssessmentId = null;
+
+                // If this was opened from a Draft, delete it now that it's been published
+                if (window._pendingDraftId) {
+                    try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
+                    catch (e) { console.warn('Could not delete draft:', e); }
+                    window._pendingDraftId = null;
+                    window._draftBeingPublished = null;
+                }
+
                 showSection('ongoing');
             } catch (err) {
                 showToast('Error saving quiz: ' + err.message, 'error');
@@ -15566,7 +15647,16 @@ function renderPopupRegisterList(searchTerm = '') {
                     showToast(`Exam "${data.name}" created successfully!`, 'success');
                     push(notificationsRef, { message: `📝 Exam "${data.name}" created${data.scheduledPublishTime ? ' (scheduled)' : ''}`, timestamp: serverTimestamp() });
                 }
-                editingAssessmentId = null;
+                               editingAssessmentId = null;
+
+                // If this was opened from a Draft, delete it now that it's been published
+                if (window._pendingDraftId) {
+                    try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
+                    catch (e) { console.warn('Could not delete draft:', e); }
+                    window._pendingDraftId = null;
+                    window._draftBeingPublished = null;
+                }
+
                 showSection('ongoing');
             } catch (err) {
                 showToast('Error saving exam: ' + err.message, 'error');
@@ -15630,7 +15720,16 @@ function renderPopupRegisterList(searchTerm = '') {
                     showToast(`Assignment "${data.name}" created successfully!`, 'success');
                     push(notificationsRef, { message: `📝 Assignment "${data.name}" created${data.scheduledPublishTime ? ' (scheduled)' : ''}`, timestamp: serverTimestamp() });
                 }
-                editingAssessmentId = null;
+                                editingAssessmentId = null;
+
+                // If this was opened from a Draft, delete it now that it's been published
+                if (window._pendingDraftId) {
+                    try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
+                    catch (e) { console.warn('Could not delete draft:', e); }
+                    window._pendingDraftId = null;
+                    window._draftBeingPublished = null;
+                }
+
                 showSection('ongoing');
             } catch (err) {
                 showToast('Error saving assignment: ' + err.message, 'error');
@@ -15682,9 +15781,12 @@ function renderPopupRegisterList(searchTerm = '') {
                 ms.updateHiddenInput();
             }
 
-            if (editingAssessmentId) {
+                       if (window._draftBeingPublished && window._draftBeingPublished.type === 'assignment') {
+                populateAssessmentForm('assignment', window._draftBeingPublished);
+            } else if (editingAssessmentId) {
                 populateAssessmentForm('assignment');
             }
+            const h = parseInt(document.getElementById('assignmentDurationHours').value) || 0;
             const h = parseInt(document.getElementById('assignmentDurationHours').value) || 0;
             const m = parseInt(document.getElementById('assignmentDurationMinutes').value) || 0;
             document.getElementById('assignmentDurationDisplay').textContent = `${h}h ${m}m`;
@@ -16246,7 +16348,9 @@ function renderPopupRegisterList(searchTerm = '') {
                 ms.updateHiddenInput();
             }
 
-            if (editingAssessmentId) {
+                       if (window._draftBeingPublished && window._draftBeingPublished.type === 'test') {
+                populateAssessmentForm('test', window._draftBeingPublished);
+            } else if (editingAssessmentId) {
                 populateAssessmentForm('test');
             }
             const h = parseInt(document.getElementById('testDurationHours').value) || 0;
@@ -16844,7 +16948,9 @@ function renderPopupRegisterList(searchTerm = '') {
                 ms.updateHiddenInput();
             }
 
-            if (editingAssessmentId) {
+                        if (window._draftBeingPublished && window._draftBeingPublished.type === 'quiz') {
+                populateAssessmentForm('quiz', window._draftBeingPublished);
+            } else if (editingAssessmentId) {
                 populateAssessmentForm('quiz');
             }
             const h = parseInt(document.getElementById('quizDurationHours').value) || 0;
@@ -17405,7 +17511,9 @@ function renderPopupRegisterList(searchTerm = '') {
                 ms.updateHiddenInput();
             }
 
-            if (editingAssessmentId) {
+                        if (window._draftBeingPublished && window._draftBeingPublished.type === 'exam') {
+                populateAssessmentForm('exam', window._draftBeingPublished);
+            } else if (editingAssessmentId) {
                 populateAssessmentForm('exam');
             }
             const h = parseInt(document.getElementById('examDurationHours').value) || 0;
@@ -17956,24 +18064,28 @@ function renderPopupRegisterList(searchTerm = '') {
         });
 
         // ===== Populate Assessment Form for Editing =====
-        async function populateAssessmentForm(type) {
-    const id = editingAssessmentId;
-    if (!id) return;
-
-    let ass = assessments.find(a => a.id === id);
+                // ===== Populate Assessment Form for Editing =====
+        async function populateAssessmentForm(type, sourceData = null) {
+    let ass = sourceData;
     if (!ass) {
-        // Fallback: the realtime listener may not have caught up yet.
-        try {
-            const snap = await get(ref(db, `assessments/${id}`));
-            if (snap.exists()) {
-                ass = { id, ...snap.val() };
-                assessments.push(ass);      // cache so we don't refetch
+        const id = editingAssessmentId;
+        if (!id) return;
+
+        ass = assessments.find(a => a.id === id);
+        if (!ass) {
+            // Fallback: the realtime listener may not have caught up yet.
+            try {
+                const snap = await get(ref(db, `assessments/${id}`));
+                if (snap.exists()) {
+                    ass = { id, ...snap.val() };
+                    assessments.push(ass);      // cache so we don't refetch
+                }
+            } catch (err) {
+                console.warn('Could not fetch assessment for edit:', err);
             }
-        } catch (err) {
-            console.warn('Could not fetch assessment for edit:', err);
         }
+        if (!ass) return;
     }
-    if (!ass) return;
             document.getElementById(type + 'Name').value = ass.name || '';
             if (ass.duration) {
                 const parts = ass.duration.split(':');
@@ -18697,6 +18809,286 @@ function renderPopupRegisterList(searchTerm = '') {
                 });
             });
         }
+
+        /* =================================================================
+   QUESTION PAPER DRAFTS (NEW)
+   ================================================================= */
+
+/* -------- Render the drafts list -------- */
+function renderDraftsList() {
+    const container = document.getElementById('draftsListContainer');
+    if (!container) return;
+
+    if (!paperDrafts || paperDrafts.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:36px 16px;color:#8b8fa3;">
+                <i class="fas fa-file-pen" style="font-size:44px;opacity:0.25;display:block;margin-bottom:12px;"></i>
+                <h3 style="font-size:16px;font-weight:600;color:#888;margin-bottom:6px;">No drafts yet</h3>
+                <p style="font-size:12px;line-height:1.5;max-width:340px;margin:0 auto;">
+                    While creating a Test, Quiz, Exam or Assignment, click
+                    <strong>"Save as Draft"</strong> on the questions step to save it here.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    const sorted = [...paperDrafts].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+
+    container.innerHTML = sorted.map(d => {
+        const typeLabel = (d.type || 'test').charAt(0).toUpperCase() + (d.type || 'test').slice(1);
+        let qCount = 0;
+        if (d.type === 'quiz') {
+            qCount = (d.questions || []).length;
+        } else {
+            qCount = (d.sections || []).reduce((s, sec) => s + (sec.questions || []).length, 0);
+        }
+        const date = d.savedAt ? new Date(d.savedAt).toLocaleString() : 'N/A';
+        return `
+            <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+                        border-radius:var(--radius-sm);padding:14px 18px;box-shadow:var(--shadow-sm);
+                        border:1px solid rgba(255,255,255,0.5);margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;">
+                    <div style="min-width:0;flex:1;">
+                        <strong style="font-size:14px;">${escapeHtml(d.name || 'Untitled Draft')}</strong>
+                        <span style="font-size:10px;background:rgba(245,176,66,0.14);color:#d4952a;padding:2px 10px;
+                                     border-radius:30px;margin-left:8px;font-weight:700;">${typeLabel}</span>
+                        <div style="font-size:11px;color:#8b8fa3;margin-top:4px;">
+                            ${qCount} question${qCount !== 1 ? 's' : ''} ·
+                            Total marks: ${d.totalMarks || 0} ·
+                            Saved ${date}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button class="btn-primary draft-open-btn" data-draftid="${d.id}"
+                                style="padding:7px 16px;font-size:10px;">
+                            <i class="fas fa-arrow-right"></i> Add Details &amp; Publish
+                        </button>
+                        <button class="btn-outline draft-delete-btn" data-draftid="${d.id}"
+                                style="padding:7px 14px;font-size:10px;color:#c62828;border-color:#f8d7da;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.draft-open-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            openDraftInCreateForm(this.dataset.draftid);
+        });
+    });
+    container.querySelectorAll('.draft-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const draftId = this.dataset.draftid;
+            const confirmed = await showConfirmPopup({
+                icon: '🗑️',
+                type: 'danger',
+                title: 'Delete Draft?',
+                message: 'Permanently delete this question paper draft? This cannot be undone.',
+                okText: 'Delete',
+                okClass: 'btn-confirm-danger'
+            });
+            if (confirmed) {
+                await remove(ref(db, `paperDrafts/${draftId}`));
+                showToast('Draft deleted.', 'info');
+            }
+        });
+    });
+}
+
+/* -------- Open a draft into the matching create-assessment form -------- */
+function openDraftInCreateForm(draftId) {
+    const draft = paperDrafts.find(d => d.id === draftId);
+    if (!draft) { showToast('Draft not found.', 'error'); return; }
+
+    // Clear conflicting state
+    editingAssessmentId = null;
+    pendingDuplicateEditId = null;
+
+    // Store the draft for the create form to pick up
+    window._draftBeingPublished = draft;
+    window._pendingDraftId = draftId;
+
+    const type = draft.type || 'test';
+    const sectionMap = {
+        test: 'createTest',
+        quiz: 'createQuiz',
+        exam: 'createExam',
+        assignment: 'createAssignment'
+    };
+    const target = sectionMap[type] || 'createTest';
+    showToast(`Loaded draft "${draft.name}" — add cover & details to publish.`, 'info');
+    showSection(target);
+}
+
+/* -------- Extract ONLY the questions/sections (no cover, no register, no schedule) -------- */
+function collectQuestionsData(type) {
+    let sections = [];
+    let questions = [];
+
+    const extractOne = (q) => {
+        const text    = q.querySelector('.qb-question-text').value.trim();
+        const marks   = parseInt(q.querySelector('.qb-marks').value) || 1;
+        const qtype   = q.querySelector('.qb-type').value;
+        const image   = q.querySelector('.qb-image-url')?.value || '';
+        let opts = [];
+        let correct = null;
+        let rangeMin = null, rangeMax = null;
+
+        if (qtype === 'mcq') {
+            q.querySelectorAll('.qb-option').forEach((opt, idx) => {
+                const optText = opt.querySelector('.qb-option-text').value.trim();
+                if (optText) {
+                    const radio = opt.querySelector('.qb-correct');
+                    if (radio && radio.checked) correct = idx;
+                    opts.push(optText);
+                }
+            });
+        } else if (qtype === 'tf') {
+            q.querySelectorAll('.qb-correct').forEach(r => { if (r.checked) correct = r.value; });
+            opts = ['True', 'False'];
+        } else if (qtype === 'matching') {
+            q.querySelectorAll('.qb-matching-row').forEach(row => {
+                const left  = row.querySelector('.matching-left').value.trim();
+                const right = row.querySelector('.matching-right').value.trim();
+                if (left && right) opts.push({ left, right });
+            });
+        } else if (qtype === 'fillblank') {
+            correct = q.querySelector('.fillblank-answer')?.value.trim() || '';
+        } else if (qtype === 'ordering') {
+            q.querySelectorAll('.qb-order-item .order-item').forEach(inp => {
+                const val = inp.value?.trim();
+                if (val) opts.push(val);
+            });
+        } else if (qtype === 'multi-answer') {
+            const parts = [];
+            q.querySelectorAll('.qb-parts-container .qb-part-row').forEach(row => {
+                const label         = row.querySelector('.qb-part-label-input').value.trim();
+                const correctAnswer = row.querySelector('.qb-part-correct-input').value.trim();
+                const rangeMinVal   = parseFloat(row.querySelector('.qb-part-range-min')?.value);
+                const rangeMaxVal   = parseFloat(row.querySelector('.qb-part-range-max')?.value);
+                const partMarks     = parseFloat(row.querySelector('.qb-part-marks-input').value) || 0;
+                if (label) {
+                    parts.push({
+                        label, correctAnswer, marks: partMarks,
+                        rangeMin: isNaN(rangeMinVal) ? undefined : rangeMinVal,
+                        rangeMax: isNaN(rangeMaxVal) ? undefined : rangeMaxVal
+                    });
+                }
+            });
+            opts = parts;
+            correct = parts.map(p => p.correctAnswer);
+        } else if (qtype === 'range') {
+            const minInp = q.querySelector('.range-min');
+            const maxInp = q.querySelector('.range-max');
+            rangeMin = minInp ? parseFloat(minInp.value) : null;
+            rangeMax = maxInp ? parseFloat(maxInp.value) : null;
+        }
+
+        if (text || qtype === 'range') {
+            return { text, marks, type: qtype, options: opts, correct, image, rangeMin, rangeMax };
+        }
+        return null;
+    };
+
+    if (type === 'quiz') {
+        document.querySelectorAll('#quizQuestionsContainer .question-builder').forEach(q => {
+            const obj = extractOne(q);
+            if (obj) questions.push(obj);
+        });
+    } else {
+        const containerId =
+            type === 'test'       ? 'testSectionsContainer' :
+            type === 'exam'       ? 'examSectionsContainer' :
+                                    'assignmentSectionsContainer';
+        document.querySelectorAll(`#${containerId} .question-builder`).forEach(sec => {
+            const secName         = sec.querySelector('.section-name')?.value?.trim() || 'Section';
+            const secInstructions = sec.querySelector('.section-instructions')?.value || '';
+            const secDuration     = sec.querySelector('.section-duration')?.value || '';
+            const qs = [];
+            sec.querySelectorAll('.test-question, .exam-question, .assignment-question').forEach(q => {
+                const obj = extractOne(q);
+                if (obj) qs.push(obj);
+            });
+            if (qs.length > 0) {
+                sections.push({ name: secName, instructions: secInstructions, duration: secDuration, questions: qs });
+            }
+        });
+    }
+
+    let totalMarks = 0;
+    if (type === 'quiz') {
+        totalMarks = questions.reduce((s, q) => s + q.marks, 0);
+    } else {
+        totalMarks = sections.reduce((s, sec) => s + sec.questions.reduce((sq, q) => sq + q.marks, 0), 0);
+    }
+    return { sections, questions, totalMarks };
+}
+
+/* -------- Save the current create-form's questions as a draft -------- */
+async function saveAsQuestionDraft(type) {
+    try {
+        const nameInput = document.getElementById(`${type}Name`);
+        let name = nameInput?.value.trim() || '';
+
+        const { sections, questions, totalMarks } = collectQuestionsData(type);
+
+        const hasQuestions =
+            (type === 'quiz' && questions.length > 0) ||
+            (type !== 'quiz' && sections.some(s => s.questions.length > 0));
+
+        if (!hasQuestions) {
+            showToast('Please add at least one question before saving as draft.', 'error');
+            return;
+        }
+
+        if (!name) {
+            const suggested = prompt(
+                `Name this ${type} draft:`,
+                `${type.charAt(0).toUpperCase() + type.slice(1)} Draft ${new Date().toLocaleDateString()}`
+            );
+            if (suggested === null) return;   // user cancelled
+            name = suggested.trim();
+            if (!name) { showToast('Draft name is required.', 'error'); return; }
+            if (nameInput) nameInput.value = name;
+        }
+
+        const draftData = {
+            name,
+            type,
+            questions,
+            sections,
+            totalMarks,
+            savedAt: Date.now(),
+            savedBy: currentAdmin?.email || 'admin'
+        };
+
+        if (window._pendingDraftId) {
+            await update(ref(db, `paperDrafts/${window._pendingDraftId}`), draftData);
+            showToast('Draft updated!', 'success');
+        } else {
+            const newRef = push(paperDraftsRef);
+            await set(newRef, draftData);
+            showToast('Draft saved! Open it from the Drafts tab to publish.', 'success');
+        }
+
+        push(notificationsRef, {
+            message: `📝 ${type} draft "${name}" saved (${totalMarks} marks)`,
+            timestamp: serverTimestamp()
+        });
+
+        // Clear draft-editing state — we're navigating away
+        window._draftBeingPublished = null;
+        window._pendingDraftId = null;
+        editingAssessmentId = null;
+
+        showSection('drafts');
+    } catch (err) {
+        showToast('Error saving draft: ' + err.message, 'error');
+    }
+}
 
         /* =================================================================
    BULK ADD / REMOVE MARKS — apply to every submitted script
@@ -20750,9 +21142,12 @@ document.getElementById('historyAddFolderBtn')?.addEventListener('click', () => 
         window.previewAssessment = previewAssessment;
         window.publishAssessment = publishAssessment;
         window.publishAssessmentNow = publishAssessmentNow;
-        window.viewRegisterDetails = viewRegisterDetails;
+                window.viewRegisterDetails = viewRegisterDetails;
         window.showConfirmPopup = showConfirmPopup;
         window.openUserEditModal = openUserEditModal;
+        window.renderDraftsList = renderDraftsList;
+        window.openDraftInCreateForm = openDraftInCreateForm;
+        window.saveAsQuestionDraft = saveAsQuestionDraft;
 
     /* =========================================================
    MANUAL VIDEO ARRANGEMENT
