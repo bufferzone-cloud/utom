@@ -19836,6 +19836,7 @@ function renderOngoingList() {
     });
 
     // ---------- End-for-ALL ----------
+       // ---------- End-for-ALL ----------
     container.querySelectorAll('.btn-end-assessment').forEach(btn => {
         btn.addEventListener('click', async function (e) {
             e.stopPropagation();
@@ -19857,19 +19858,22 @@ function renderOngoingList() {
             });
             if (!confirmed) return;
 
-            setLoading('endAll', true, this);
-            const originalHTML = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ending...';
+            // ---- Manual loading state (no setLoading — it needs a selector string) ----
+            const btnEl        = this;
+            const originalHTML = btnEl.innerHTML;
+            btnEl.disabled         = true;
+            btnEl.style.pointerEvents = 'none';
+            btnEl.style.opacity    = '0.75';
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ending...';
 
             try {
-                // Atomically end every ongoing response + the assessment itself
                 const ongoingResponses = assessmentResponses.filter(r =>
                     r.assessmentId === assId &&
                     (r.status === 'started' || r.status === 'ongoing')
                 );
 
-                const updates = {};
-                const endedAt = Date.now();
+                const updates  = {};
+                const endedAt  = Date.now();
 
                 ongoingResponses.forEach(r => {
                     updates[`assessmentResponses/${r.id}/status`]  = 'ended';
@@ -19877,9 +19881,9 @@ function renderOngoingList() {
                     updates[`assessmentResponses/${r.id}/endedBy`] = 'admin';
                 });
 
-                updates[`assessments/${assId}/status`]   = 'ended';
-                updates[`assessments/${assId}/endedAt`]  = endedAt;
-                updates[`assessments/${assId}/endedBy`]  = currentAdmin?.email || 'admin';
+                updates[`assessments/${assId}/status`]  = 'ended';
+                updates[`assessments/${assId}/endedAt`] = endedAt;
+                updates[`assessments/${assId}/endedBy`] = currentAdmin?.email || 'admin';
 
                 await update(ref(db), updates);
 
@@ -19893,15 +19897,16 @@ function renderOngoingList() {
                     timestamp: serverTimestamp()
                 });
 
-                // Refresh views
                 renderOngoingList();
                 renderTestExamsDashboard();
                 if (typeof renderHistoryAssessments === 'function') renderHistoryAssessments();
                 if (typeof renderAssessmentsList === 'function')    renderAssessmentsList();
             } catch (err) {
                 showToast('Error ending assessment: ' + err.message, 'error');
-                this.innerHTML = originalHTML;
-                setLoading('endAll', false, this);
+                btnEl.disabled            = false;
+                btnEl.style.pointerEvents = 'auto';
+                btnEl.style.opacity       = '1';
+                btnEl.innerHTML           = originalHTML;
             }
         });
     });
