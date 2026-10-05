@@ -14914,34 +14914,39 @@ function renderPopupRegisterList(searchTerm = '') {
         // REALTIME
         // =================================================================
         function setupRealtime() {
-            onValue(videosRef, snap => {
-    const prevIds = new Set(videos.map(v => v.id));
-    videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-    const newIds = new Set(videos.map(v => v.id));
-            onValue(assessmentFoldersRef, (snap) => {
-    try {
-        const data = snap.val();
-        assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-        scheduleRender('assessments');
-    } catch (err) {
-        console.error('Error in assessmentFolders listener:', err);
-    }
-}, (err) => console.error('assessmentFolders listener error:', err));
+             onValue(videosRef, snap => {
+                const prevIds = new Set(videos.map(v => v.id));
+                videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                const newIds = new Set(videos.map(v => v.id));
 
-    // Detach listeners for deleted videos
-    prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
+                // Detach listeners for deleted videos
+                prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
 
-    // Attach listeners only for NEW videos
-    videos.forEach(v => {
-        if (!prevIds.has(v.id)) {
-            bindComments(v.id, () => scheduleRender('videos'));
-        }
-    });
+                // Attach listeners only for NEW videos
+                videos.forEach(v => {
+                    if (!prevIds.has(v.id)) {
+                        bindComments(v.id, () => scheduleRender('videos'));
+                    }
+                });
 
-    scheduleRender('home');
-    scheduleRender('videos');
-    scheduleRender('courses');
-});
+                scheduleRender('home');
+                scheduleRender('videos');
+                scheduleRender('courses');
+            });
+
+             onValue(assessmentFoldersRef, (snap) => {
+                try {
+                    const data = snap.val();
+                    assessmentFolders = data
+                        ? Object.entries(data).map(([id, d]) => ({ id, ...d }))
+                        : [];
+                    scheduleRender('assessments');   // All Assessments page
+                    scheduleRender('history');       // History / Script page (folder bar)
+                    scheduleRender('testExams');
+                } catch (err) {
+                    console.error('Error in assessmentFolders listener:', err);
+                }
+            }, (err) => console.error('assessmentFolders listener error:', err));
 
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
