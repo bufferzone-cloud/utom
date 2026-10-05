@@ -2937,6 +2937,19 @@
             transition: opacity 0.3s ease;
             border-radius: var(--radius-sm);
         }
+
+        .ongoing-card-header:hover { background: rgba(245,176,66,0.04); }
+.ongoing-card .ongoing-chevron { transition: transform .3s ease; }
+.ongoing-card .btn-end-assessment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(231,76,60,0.35) !important;
+}
+body.dark-mode .ongoing-card {
+    background: rgba(31,31,31,0.9) !important;
+    border-color: #2a2a2a !important;
+}
+body.dark-mode .ongoing-card-body { border-top-color: #2a2a2a; }
+        
         .video-upload-square:hover .upload-overlay { opacity: 1; }
         .video-upload-square .upload-overlay i {
             font-size: 28px;
@@ -19555,128 +19568,344 @@ function openBulkMarksModal(assId) {
         }
 
         // ---- renderOngoingList ----
-        function renderOngoingList() {
-            const container = document.getElementById('ongoingListContainer');
-            const search = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
-            const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
+        // ---- renderOngoingList (dropdown + end-for-all) ----
+function renderOngoingList() {
+    const container = document.getElementById('ongoingListContainer');
+    if (!container) return;
 
-            const allPublished = assessments.filter(a => a.status === 'published');
-            const now = Date.now();
-            const publishedAssessments = allPublished.filter(a => {
-    const ts = computeAssessmentDeadline(a);
-    if (ts === null) return true;        // keep indefinite items
-    return ts > now;                      // else only keep unexpired
-});
+    const search   = (document.getElementById('ongoingSearch')?.value || '').toLowerCase();
+    const filterAss = document.getElementById('ongoingFilterAssessment')?.value || 'all';
 
-            const filterSel = document.getElementById('ongoingFilterAssessment');
-            if (filterSel) {
-                filterSel.innerHTML = '<option value="all">All Assessments</option>' +
-                    publishedAssessments.map(a =>
-                        `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})${a.isEdited ? ' ✏️' : ''}${a.editedVersion ? ' 🔄' : ''}</option>`).join('');
-            }
+    const now = Date.now();
+    const allPublished = assessments.filter(a => a.status === 'published');
+    const publishedAssessments = allPublished.filter(a => {
+        const ts = computeAssessmentDeadline(a);
+        if (ts === null) return true;   // indefinite items stay
+        return ts > now;                // otherwise only unexpired
+    });
 
-            let filteredAssessments = publishedAssessments;
-            if (search) {
-                filteredAssessments = filteredAssessments.filter(a =>
-                    a.name.toLowerCase().includes(search) ||
-                    a.type.toLowerCase().includes(search)
-                );
-            }
-            if (filterAss !== 'all') {
-                filteredAssessments = filteredAssessments.filter(a => a.id === filterAss);
-            }
+    // Populate filter dropdown
+    const filterSel = document.getElementById('ongoingFilterAssessment');
+    if (filterSel) {
+        filterSel.innerHTML = '<option value="all">All Assessments</option>' +
+            publishedAssessments.map(a =>
+                `<option value="${a.id}">${escapeHtml(a.name)} (${a.type})</option>`
+            ).join('');
+        filterSel.value = filterAss;   // preserve selection
+    }
 
-            if (filteredAssessments.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No published assessments found.</div>';
-                return;
-            }
+    let filteredAssessments = publishedAssessments;
+    if (search) {
+        filteredAssessments = filteredAssessments.filter(a =>
+            a.name.toLowerCase().includes(search) ||
+            a.type.toLowerCase().includes(search)
+        );
+    }
+    if (filterAss !== 'all') {
+        filteredAssessments = filteredAssessments.filter(a => a.id === filterAss);
+    }
 
-            let html = '';
-            filteredAssessments.forEach(ass => {
-                const assDeadlineTs = computeAssessmentDeadline(ass);
-const assStillOpen = assDeadlineTs === null || assDeadlineTs > now;
-const responses = assStillOpen
-    ? assessmentResponses.filter(r =>
-          r.assessmentId === ass.id &&
-          (r.status === 'started' || r.status === 'ongoing')
-      )
-    : [];
+    if (filteredAssessments.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:#8b8fa3;">No published assessments found.</div>';
+        return;
+    }
 
-                html += `
-                    <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);padding:16px 18px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);margin-bottom:12px;">
-                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid rgba(240,240,245,0.5);padding-bottom:8px;margin-bottom:8px;">
-                            <div>
-                                <strong style="font-size:16px;">${escapeHtml(ass.name)}</strong>
-                                ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
-                                ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
-                                <span style="font-size:12px;color:#8b8fa3;margin-left:8px;">${ass.type}</span>
-                            </div>
-                            <div style="font-size:12px;color:#8b8fa3;">
-                                Duration: ${ass.duration || 'N/A'} · Passing: ${ass.passingScore || 0}% · Total Marks: ${ass.totalMarks || 0}
-                                ${ass.type === 'assignment' && ass.deadline ? ` · Deadline: ${new Date(ass.deadline).toLocaleString()}` : ''}
-                            </div>
+    // ---------- Build cards ----------
+    let html = '';
+    filteredAssessments.forEach(ass => {
+        const deadlineTs = computeAssessmentDeadline(ass);
+        const stillOpen  = deadlineTs === null || deadlineTs > now;
+
+        const responses = stillOpen
+            ? assessmentResponses.filter(r =>
+                  r.assessmentId === ass.id &&
+                  (r.status === 'started' || r.status === 'ongoing')
+              )
+            : [];
+
+        // Register names
+        const registerNames = (ass.registerIds || [])
+            .map(id => registers.find(r => r.id === id)?.name || 'N/A')
+            .join(', ');
+
+        const studentCount = responses.length;
+        const scheduleLine = formatAssessmentSchedule(ass);
+
+        html += `
+            <div class="ongoing-card" data-assid="${ass.id}"
+                 style="background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);
+                        -webkit-backdrop-filter:blur(12px);border-radius:var(--radius-md);
+                        box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);
+                        margin-bottom:12px;overflow:hidden;transition:var(--transition);">
+
+                <!-- ===== Header (click to toggle) ===== -->
+                <div class="ongoing-card-header"
+                     style="display:flex;justify-content:space-between;align-items:center;
+                            padding:14px 18px;cursor:pointer;gap:10px;flex-wrap:wrap;">
+
+                    <div style="min-width:0;flex:1;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <strong style="font-size:15px;color:var(--text);">${escapeHtml(ass.name)}</strong>
+                            ${ass.isEdited ? '<span class="edited-badge edited">✏️ EDITED</span>' : ''}
+                            ${ass.editedVersion ? '<span class="edited-badge edited">🔄 VERSION</span>' : ''}
+                            <span style="font-size:11px;color:#8b8fa3;">${ass.type}</span>
+                            <span style="font-size:10px;background:rgba(245,176,66,0.12);color:#d4952a;
+                                         padding:1px 10px;border-radius:30px;font-weight:700;">
+                                ${studentCount} doing
+                            </span>
                         </div>
-                        ${ass.cover?.instructions ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(ass.cover.instructions)}</div>` : ''}
-                        <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
-                            Registers: ${ass.registerIds && Array.isArray(ass.registerIds) ? ass.registerIds.map(id => escapeHtml(registers.find(r => r.id === id)?.name || 'N/A')).join(', ') : 'N/A'}
-                            ${ass.type !== 'assignment' ? (ass.scheduleType === 'fixed' ? ` · Start: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : 'N/A'} · End: ${ass.endTime ? new Date(ass.endTime).toLocaleString() : 'N/A'}` : '') : ''}
-                            ${ass.type !== 'assignment' && ass.scheduleType === 'self' ? ` · Available: ${ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A'} – ${ass.availableUntil ? new Date(ass.availableUntil).toLocaleString() : 'N/A'}` : ''}
+                        <div style="font-size:11px;color:#8b8fa3;margin-top:3px;">
+                            <i class="fas fa-address-book"></i> ${escapeHtml(registerNames || 'No registers')}
                         </div>
-                        <div style="border-top:1px solid rgba(240,240,245,0.5);padding-top:8px;">
-                            <span style="font-size:13px;font-weight:600;color:var(--text);">Students Doing (${responses.length})</span>
-                            ${responses.length === 0 ? '<div style="font-size:12px;color:#8b8fa3;padding:4px 0;">No students have started yet.</div>' : ''}
-                            ${responses.map(r => {
-                                const user = users.find(u => u.uid === r.userId);
-                                const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown';
-                                const email = user ? user.email : '';
-                                const answered = r.answers ? Object.keys(r.answers).length : 0;
-                                const total = ass.totalMarks || 0;
-                                const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
-                                return `
-                                    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
-                                        <span>${escapeHtml(name)} (${escapeHtml(email)})</span>
-                                        <span>Progress: ${progress}% (${answered}/${total})</span>
-                                        <span style="font-size:11px;color:#8b8fa3;">Started: ${r.startedAt ? new Date(r.startedAt).toLocaleString() : 'N/A'}</span>
-                                        <div>
-                                            <button class="btn-view-scratch" data-responseid="${r.id}" style="padding:2px 10px;border-radius:20px;background:rgba(245,176,66,0.15);color:#d4952a;border:none;font-size:10px;cursor:pointer;">Scratch</button>
-                                            <button class="btn-force-end" data-responseid="${r.id}" style="padding:2px 10px;border-radius:20px;background:#fde8e8;color:#c62828;border:none;font-size:10px;cursor:pointer;">End</button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
+                        <div style="font-size:11px;color:#d4952a;font-weight:600;margin-top:3px;">
+                            <i class="fas fa-calendar-alt"></i> ${escapeHtml(scheduleLine)}
                         </div>
                     </div>
-                `;
+
+                    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                        <span style="font-size:11px;color:#8b8fa3;">
+                            ${ass.duration || 'N/A'} · ${ass.totalMarks || 0} marks
+                        </span>
+                        <i class="fas fa-chevron-down ongoing-chevron"
+                           style="color:#b0b4c0;font-size:13px;transition:transform .3s ease;"></i>
+                    </div>
+                </div>
+
+                <!-- ===== Body (collapsed by default) ===== -->
+                <div class="ongoing-card-body"
+                     style="max-height:0;overflow:hidden;opacity:0;
+                            transition:max-height .35s cubic-bezier(.25,.46,.45,.94),opacity .3s ease,padding .3s ease;
+                            padding:0 18px;border-top:1px solid transparent;">
+
+                    ${ass.cover?.instructions ? `
+                        <div style="font-size:12px;color:var(--text-secondary);
+                                    background:rgba(250,251,252,0.6);padding:8px 12px;
+                                    border-radius:8px;border-left:3px solid #f5b042;margin:12px 0 10px;">
+                            ${escapeHtml(ass.cover.instructions)}
+                        </div>
+                    ` : '<div style="margin-top:12px;"></div>'}
+
+                    <div style="font-size:12px;font-weight:700;color:var(--text);
+                                margin-bottom:6px;display:flex;justify-content:space-between;
+                                align-items:center;flex-wrap:wrap;gap:6px;">
+                        <span>👥 Students Currently Doing This (${studentCount})</span>
+                        <span style="font-size:10px;color:#8b8fa3;font-weight:500;">
+                            Started: ${ass.startTime ? new Date(ass.startTime).toLocaleString() : (ass.availableFrom ? new Date(ass.availableFrom).toLocaleString() : 'N/A')}
+                        </span>
+                    </div>
+
+                    ${studentCount === 0
+                        ? `<div style="text-align:center;padding:12px;color:#8b8fa3;font-size:12px;">
+                               No students have started yet.
+                           </div>`
+                        : responses.map(r => {
+                            const u = users.find(x => x.uid === r.userId);
+                            const name  = u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : 'Unknown';
+                            const email = u ? (u.email || '') : '';
+                            const answered = r.answers ? Object.keys(r.answers).length : 0;
+                            const total    = ass.totalMarks || 0;
+                            const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+                            return `
+                                <div style="display:flex;justify-content:space-between;align-items:center;
+                                            padding:8px 4px;border-bottom:1px solid #f5f5f5;
+                                            font-size:12px;gap:8px;flex-wrap:wrap;">
+                                    <div style="min-width:0;flex:1;">
+                                        <div style="font-weight:600;color:var(--text);">${escapeHtml(name)}</div>
+                                        <div style="font-size:10px;color:#8b8fa3;">${escapeHtml(email)}</div>
+                                    </div>
+                                    <div style="font-size:11px;color:#5f6377;text-align:right;">
+                                        <div>Progress: <strong>${progress}%</strong> (${answered}/${total})</div>
+                                        <div style="font-size:10px;color:#8b8fa3;">
+                                            Started: ${r.startedAt ? new Date(r.startedAt).toLocaleString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;gap:6px;flex-shrink:0;">
+                                        <button class="btn-view-scratch" data-responseid="${r.id}"
+                                                style="padding:3px 12px;border-radius:20px;
+                                                       background:rgba(245,176,66,0.15);color:#d4952a;
+                                                       border:none;font-size:10px;cursor:pointer;font-weight:600;">
+                                            <i class="fas fa-pen"></i> Scratch
+                                        </button>
+                                        <button class="btn-force-end" data-responseid="${r.id}"
+                                                style="padding:3px 12px;border-radius:20px;
+                                                       background:#fde8e8;color:#c62828;
+                                                       border:none;font-size:10px;cursor:pointer;font-weight:600;">
+                                            <i class="fas fa-stop"></i> End
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                          }).join('')}
+
+                    <!-- ===== End-for-ALL button ===== -->
+                    <div style="display:flex;justify-content:flex-end;gap:8px;
+                                padding:14px 0 16px;flex-wrap:wrap;">
+                        <button class="btn-end-assessment"
+                                data-assid="${ass.id}"
+                                data-assname="${escapeHtml(ass.name)}"
+                                data-count="${studentCount}"
+                                style="background:linear-gradient(135deg,#e74c3c,#c0392b);
+                                       border:none;padding:10px 22px;border-radius:40px;
+                                       font-weight:700;color:#fff;font-size:12px;cursor:pointer;
+                                       box-shadow:0 4px 20px rgba(231,76,60,0.25);
+                                       display:inline-flex;align-items:center;gap:8px;
+                                       transition:var(--transition);">
+                            <i class="fas fa-flag-checkered"></i>
+                            End Assessment for All (${studentCount})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // ---------- Header toggle (accordion) ----------
+    container.querySelectorAll('.ongoing-card-header').forEach(header => {
+        header.addEventListener('click', function () {
+            const card = this.closest('.ongoing-card');
+            const body = card.querySelector('.ongoing-card-body');
+            const chev = card.querySelector('.ongoing-chevron');
+            const isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
+
+            // Close every other open card
+            container.querySelectorAll('.ongoing-card-body').forEach(b => {
+                if (b !== body) {
+                    b.style.maxHeight = '0px';
+                    b.style.opacity = '0';
+                    b.style.paddingTop = '0';
+                    b.style.paddingBottom = '0';
+                    b.style.borderTopColor = 'transparent';
+                    const otherChev = b.closest('.ongoing-card').querySelector('.ongoing-chevron');
+                    if (otherChev) otherChev.style.transform = '';
+                }
             });
 
-            container.innerHTML = html;
+            if (isOpen) {
+                body.style.maxHeight = '0px';
+                body.style.opacity = '0';
+                body.style.paddingTop = '0';
+                body.style.paddingBottom = '0';
+                body.style.borderTopColor = 'transparent';
+                chev.style.transform = '';
+            } else {
+                body.style.maxHeight = '1200px';
+                body.style.opacity = '1';
+                body.style.paddingTop = '0';
+                body.style.paddingBottom = '0';
+                body.style.borderTopColor = 'rgba(240,240,245,0.6)';
+                chev.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
 
-            container.querySelectorAll('.btn-view-scratch').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const responseId = this.dataset.responseid;
-                    showStudentScratchView(responseId);
+    // ---------- Per-student Scratch ----------
+    container.querySelectorAll('.btn-view-scratch').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            showStudentScratchView(this.dataset.responseid);
+        });
+    });
+
+    // ---------- Per-student End ----------
+    container.querySelectorAll('.btn-force-end').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            e.stopPropagation();
+            const confirmed = await showConfirmPopup({
+                icon: '⏹️',
+                type: 'warning',
+                title: 'Force End This Student?',
+                message: 'This student will be removed from the ongoing list and their script saved to History.',
+                okText: 'End for This Student',
+                okClass: 'btn-confirm-danger'
+            });
+            if (!confirmed) return;
+            try {
+                await update(ref(db, `assessmentResponses/${this.dataset.responseid}`), {
+                    status: 'ended',
+                    endedAt: serverTimestamp(),
+                    endedBy: 'admin'
                 });
-            });
+                showToast('Student assessment ended.', 'info');
+                renderOngoingList();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        });
+    });
 
-            container.querySelectorAll('.btn-force-end').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const confirmed = await showConfirmPopup({
-                        icon: '⏹️',
-                        type: 'warning',
-                        title: 'Force End Assessment?',
-                        message: 'Forcefully end this assessment for this student?',
-                        okText: 'End',
-                        okClass: 'btn-confirm-danger'
-                    });
-                    if (confirmed) {
-                        await update(ref(db, `assessmentResponses/${this.dataset.responseid}`), { status: 'ended',
-                            endedAt: serverTimestamp() });
-                        showToast('Assessment ended.', 'info');
-                        renderOngoingList();
-                    }
-                });
+    // ---------- End-for-ALL ----------
+    container.querySelectorAll('.btn-end-assessment').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            e.stopPropagation();
+            const assId   = this.dataset.assid;
+            const assName = this.dataset.assname;
+            const count   = parseInt(this.dataset.count) || 0;
+
+            const confirmed = await showConfirmPopup({
+                icon: '🏁',
+                type: 'warning',
+                title: 'End Assessment for All?',
+                message:
+                    `End "<strong>${escapeHtml(assName)}</strong>" for <strong>${count}</strong> ` +
+                    `student(s)?<br><br>` +
+                    `Their scripts will be finalized and the assessment will move to ` +
+                    `<strong>History / Script</strong> immediately. This cannot be undone.`,
+                okText: 'End for All',
+                okClass: 'btn-confirm-danger'
             });
-        }
+            if (!confirmed) return;
+
+            setLoading('endAll', true, this);
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ending...';
+
+            try {
+                // Atomically end every ongoing response + the assessment itself
+                const ongoingResponses = assessmentResponses.filter(r =>
+                    r.assessmentId === assId &&
+                    (r.status === 'started' || r.status === 'ongoing')
+                );
+
+                const updates = {};
+                const endedAt = Date.now();
+
+                ongoingResponses.forEach(r => {
+                    updates[`assessmentResponses/${r.id}/status`]  = 'ended';
+                    updates[`assessmentResponses/${r.id}/endedAt`] = endedAt;
+                    updates[`assessmentResponses/${r.id}/endedBy`] = 'admin';
+                });
+
+                updates[`assessments/${assId}/status`]   = 'ended';
+                updates[`assessments/${assId}/endedAt`]  = endedAt;
+                updates[`assessments/${assId}/endedBy`]  = currentAdmin?.email || 'admin';
+
+                await update(ref(db), updates);
+
+                showToast(
+                    `✅ "${assName}" ended for ${ongoingResponses.length} student(s). Moved to History.`,
+                    'success'
+                );
+
+                push(notificationsRef, {
+                    message: `🏁 Assessment "${assName}" ended for all ${ongoingResponses.length} student(s)`,
+                    timestamp: serverTimestamp()
+                });
+
+                // Refresh views
+                renderOngoingList();
+                renderTestExamsDashboard();
+                if (typeof renderHistoryAssessments === 'function') renderHistoryAssessments();
+                if (typeof renderAssessmentsList === 'function')    renderAssessmentsList();
+            } catch (err) {
+                showToast('Error ending assessment: ' + err.message, 'error');
+                this.innerHTML = originalHTML;
+                setLoading('endAll', false, this);
+            }
+        });
+    });
+}
 
         document.getElementById('ongoingSearch')?.addEventListener('input', debounce(renderOngoingList, 300));
         document.getElementById('ongoingFilterAssessment')?.addEventListener('change', debounce(renderOngoingList, 200));
