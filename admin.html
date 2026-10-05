@@ -8917,6 +8917,60 @@ function escapeHtml(text) {
             setTimeout(() => toast.remove(), 3500);
         }
 
+        /* =================================================================
+   PENDING PAYMENT POPUP
+   ================================================================= */
+let pendingPopupLastCount = -1;
+
+function checkAndShowPendingPopup() {
+    try {
+        const pendingTxs = (allTransactions || []).filter(t => t.status === 'pending');
+        let popup = document.getElementById('pendingPaymentPopup');
+
+        if (pendingTxs.length === 0) {
+            if (popup) popup.classList.remove('show');
+            pendingPopupLastCount = 0;
+            return;
+        }
+
+        if (!popup) {
+            popup = document.createElement('div');
+            popup.id = 'pendingPaymentPopup';
+            popup.className = 'pending-payment-popup';
+            popup.innerHTML = `
+                <div class="popup-icon"><i class="fas fa-coins"></i></div>
+                <div class="popup-content">
+                    <div class="popup-title"></div>
+                    <div class="popup-desc"></div>
+                </div>
+                <button class="popup-close-btn" type="button"><i class="fas fa-times"></i></button>
+            `;
+            document.body.appendChild(popup);
+
+            popup.addEventListener('click', (e) => {
+                if (e.target.closest('.popup-close-btn')) {
+                    e.stopPropagation();
+                    popup.classList.remove('show');
+                    return;
+                }
+                showSection('account');
+                popup.classList.remove('show');
+            });
+        }
+
+        const total = pendingTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+        popup.querySelector('.popup-title').textContent =
+            `${pendingTxs.length} Pending Payment${pendingTxs.length !== 1 ? 's' : ''}`;
+        popup.querySelector('.popup-desc').textContent =
+            `Total: ZMW ${total.toFixed(2)} — tap to review`;
+        popup.classList.add('show');
+
+        pendingPopupLastCount = pendingTxs.length;
+    } catch (err) {
+        console.warn('checkAndShowPendingPopup:', err);
+    }
+}
+
         function getYouTubeId(url) {
             if (!url) return null;
             let id = null;
@@ -12634,8 +12688,9 @@ function loadCommentsForVideo(videoId, onChange) {
                 const data = snap.val();
                 if (!data) return;
 
-                const coverUrl = data.coverUrl || '';
-                document.getElementById(`${type}CoverUrl`).value = coverUrl;
+                                const coverUrl = data.coverUrl || '';
+                const coverUrlEl = document.getElementById(`${type}CoverUrl`);
+                if (coverUrlEl) coverUrlEl.value = coverUrl;
                 if (coverUrl) {
                     const previewDiv = document.getElementById(`${type}CoverPreview`);
                     const placeholder = document.getElementById(`${type}CoverPlaceholder`);
@@ -12657,11 +12712,14 @@ function loadCommentsForVideo(videoId, onChange) {
                     }
                 }
 
-                document.getElementById(`${type}Name`).value = data.name || '';
-                if (data.duration) {
+                               const nameEl = document.getElementById(`${type}Name`);
+                if (nameEl) nameEl.value = data.name || '';
+                                if (data.duration) {
                     const parts = data.duration.split(':');
-                    document.getElementById(`${type}DurationHours`).value = parts[0] || 0;
-                    document.getElementById(`${type}DurationMinutes`).value = parts[1] || 0;
+                    const hEl = document.getElementById(`${type}DurationHours`);
+                    const mEl = document.getElementById(`${type}DurationMinutes`);
+                    if (hEl) hEl.value = parts[0] || 0;
+                    if (mEl) mEl.value = parts[1] || 0;
                 }
                 if (data.registerIds && Array.isArray(data.registerIds)) {
                     const hiddenInput = document.getElementById(`${type}RegisterIds`);
@@ -13003,14 +13061,22 @@ function loadCommentsForVideo(videoId, onChange) {
                     else if (type === 'assignment') updateAssignmentQuestionNumbers();
                 }
 
-                if (data.name || data.registerIds) {
+                               const coverStep     = document.getElementById(`${type}CoverStep`);
+                const detailsStep   = document.getElementById(`${type}DetailsStep`);
+                const questionsStep = document.getElementById(`${type}QuestionsStep`);
+                const stepTitle     = document.getElementById(`${type}StepTitle`);
+
+                if (coverStep && detailsStep && (data.name || data.registerIds)) {
                     coverStep.style.display = 'none';
                     detailsStep.style.display = 'block';
                     if (stepTitle) {
                         stepTitle.textContent =
                             `Create ${type.charAt(0).toUpperCase()+type.slice(1)} — Step 2: Details`;
                     }
-                    if (data.sections && data.sections.length > 0 || data.questions && data.questions.length > 0) {
+                    const hasQuestions =
+                        (data.sections && data.sections.length > 0) ||
+                        (data.questions && data.questions.length > 0);
+                    if (hasQuestions && questionsStep) {
                         detailsStep.style.display = 'none';
                         questionsStep.style.display = 'block';
                         if (stepTitle) {
@@ -21147,6 +21213,76 @@ document.getElementById('historyAddFolderBtn')?.addEventListener('click', () => 
             }
         });
 
+        /* =================================================================
+   VIEW REGISTER DETAILS (modal)
+   ================================================================= */
+window.viewRegisterDetails = function (assId) {
+    const ass = assessments.find(a => a.id === assId);
+    if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+    const registerIds = ass.registerIds || [];
+    const regs = registerIds
+        .map(id => registers.find(r => r.id === id))
+        .filter(Boolean);
+
+    document.getElementById('viewRegisterModal')?.remove();
+
+    let html = `
+        <div class="modal-box" style="max-width:600px;">
+            <button class="close-modal" type="button"
+                    onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-address-book"></i> Registers for "${escapeHtml(ass.name)}"</h3>
+            <div style="max-height:420px;overflow-y:auto;padding-right:4px;">
+    `;
+
+    if (regs.length === 0) {
+        html += `<p style="text-align:center;color:#8b8fa3;padding:20px;">
+                    No registers linked to this assessment.
+                 </p>`;
+    } else {
+        regs.forEach(reg => {
+            const members = (reg.memberDetails && reg.memberDetails.length)
+                ? reg.memberDetails
+                : (reg.members || []).map(uid => {
+                    const u = users.find(x => x.uid === uid);
+                    return u ? { uid, name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User', email: u.email } : null;
+                }).filter(Boolean);
+
+            html += `
+                <div style="margin-bottom:12px;padding:10px 14px;
+                            background:rgba(245,176,66,0.08);border-radius:12px;
+                            border-left:4px solid #f5b042;">
+                    <strong style="font-size:14px;">${escapeHtml(reg.name)}</strong>
+                    <span style="font-size:11px;color:#8b8fa3;margin-left:8px;">${escapeHtml(reg.lecture || '')}</span>
+                    <div style="font-size:11px;color:#8b8fa3;margin-top:4px;">${members.length} member(s)</div>
+                    <div style="margin-top:6px;">
+                        ${members.map(m => `
+                            <div style="font-size:12px;padding:3px 0;border-bottom:1px solid rgba(240,240,245,0.5);">
+                                ${escapeHtml(m.name || '')}
+                                <span style="color:#8b8fa3;">(${escapeHtml(m.email || '')})</span>
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+        });
+    }
+
+    html += `
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+                <button class="btn-primary"
+                        onclick="this.closest('.modal-overlay').remove()">Close</button>
+            </div>
+        </div>`;
+
+    const modal = document.createElement('div');
+    modal.id = 'viewRegisterModal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = html;
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+};
+
         // =================================================================
         // EXPOSE FUNCTIONS TO WINDOW
         // =================================================================
@@ -21161,7 +21297,8 @@ document.getElementById('historyAddFolderBtn')?.addEventListener('click', () => 
         window.previewAssessment = previewAssessment;
         window.publishAssessment = publishAssessment;
         window.publishAssessmentNow = publishAssessmentNow;
-                window.viewRegisterDetails = viewRegisterDetails;
+        window.viewRegisterDetails = viewRegisterDetails;
+        window.viewRegisterDetails = viewRegisterDetails;   // ← ReferenceError here
         window.showConfirmPopup = showConfirmPopup;
         window.openUserEditModal = openUserEditModal;
         window.renderDraftsList = renderDraftsList;
