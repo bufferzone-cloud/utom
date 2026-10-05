@@ -18497,13 +18497,13 @@ function renderPopupRegisterList(searchTerm = '') {
                 generateFullScoreSheetHTML(assId);
             });
         }
-                                            function renderHistoryStudents(assId) {
+        function renderHistoryStudents(assId) {
             currentHistoryAssessmentId = assId;
-            document.getElementById('historyFoldersBarWrap').style.display = 'none';   // NEW
-            const ass = assessments.find(a => a.id === assId);
 
-                function renderHistoryStudents(assId) {
-            currentHistoryAssessmentId = assId;
+            // Hide the folder chip bar while viewing a specific assessment's students
+            const foldersWrap = document.getElementById('historyFoldersBarWrap');
+            if (foldersWrap) foldersWrap.style.display = 'none';
+
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
 
@@ -19496,8 +19496,8 @@ const responses = assStillOpen
                                     <span style="font-size:11px;color:#8b8fa3;margin-left:6px;">${passed ? '✅ Passed' : '❌ Failed'}</span>
                                 </div>
                             </div>
-                            <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
-                                Submitted: ${response.submittedAt ? new Date(response.submittedAt).toLocaleString() : (response.endedAt ? new Date(response.endedAt).toLocaleString() : 'N/A')}
+                                                        <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
+                                Submitted: ${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : (r.endedAt ? new Date(r.endedAt).toLocaleString() : 'N/A')}
                             </div>
                         </div>
                     `;
@@ -19896,11 +19896,13 @@ const responses = assStillOpen
     });
 }
         // ---- Download Assessment as colorful HTML (with cover page, A4) ----
-        function downloadAssessmentHTML(responseId) {
+                function downloadAssessmentHTML(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) { showToast('Response not found.', 'error'); return; }
             const ass = assessments.find(a => a.id === response.assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
+
+            const user = users.find(u => u.uid === response.userId);   // ← ADD THIS
 
             let allQuestions = [];
             if (ass.sections) {
