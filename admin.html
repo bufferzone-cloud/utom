@@ -20277,30 +20277,36 @@ function openFolderModal(folderId) {
     const input = modal.querySelector('#folderNameInput');
     setTimeout(() => input.focus(), 100);
 
-    const doSave = async () => {
+       const doSave = async () => {
         const name = input.value.trim();
         if (!name) { showToast('Please enter a folder name.', 'error'); return; }
         try {
             if (isEdit) {
                 await update(ref(db, `assessmentFolders/${folderId}`), { name });
+                // Optimistic local update
+                const local = assessmentFolders.find(f => f.id === folderId);
+                if (local) local.name = name;
                 showToast('Folder renamed!', 'success');
             } else {
                 const newRef = push(assessmentFoldersRef);
-                await set(newRef, {
+                const newFolder = {
                     name,
-                    createdAt: serverTimestamp(),
+                    createdAt: Date.now(),          // local copy uses a number
                     order: assessmentFolders.length
-                });
+                };
+                await set(newRef, { ...newFolder, createdAt: serverTimestamp() });
+                // Optimistic local push (with id)
+                assessmentFolders.push({ id: newRef.key, ...newFolder });
                 showToast('Folder created!', 'success');
             }
             modal.remove();
             renderAssessmentFoldersBar();
             renderAssessmentsList();
+            renderHistoryAssessments();          // keep History in sync immediately
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
         }
     };
-
     modal.querySelector('#saveFolderBtn').addEventListener('click', doSave);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
 }
@@ -20325,7 +20331,7 @@ async function deleteAssessmentFolder(folderId) {
     });
     if (!confirmed) return;
 
-    try {
+        try {
         // Un-file any assessments that were inside
         const updates = {};
         contained.forEach(a => { updates[`assessments/${a.id}/folderId`] = null; });
@@ -20333,16 +20339,19 @@ async function deleteAssessmentFolder(folderId) {
 
         await remove(ref(db, `assessmentFolders/${folderId}`));
 
-                if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
-        if (currentHistoryFolderView === folderId)   currentHistoryFolderView = 'all';   // NEW
+        // Optimistic local updates
+        contained.forEach(a => { a.folderId = null; });
+        assessmentFolders = assessmentFolders.filter(f => f.id !== folderId);
+
+        if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
+        if (currentHistoryFolderView === folderId)   currentHistoryFolderView = 'all';
         showToast('Folder deleted.', 'info');
         renderAssessmentFoldersBar();
         renderAssessmentsList();
-        renderHistoryAssessments();          // NEW
+        renderHistoryAssessments();
     } catch (err) {
         showToast('Error deleting folder: ' + err.message, 'error');
     }
-}
 
 /* ---------- Move Assessment to Folder ---------- */
 function openMoveAssessmentModal(assId) {
@@ -20382,15 +20391,20 @@ function openMoveAssessmentModal(assId) {
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('#confirmMoveAssessmentBtn').addEventListener('click', async () => {
+        modal.querySelector('#confirmMoveAssessmentBtn').addEventListener('click', async () => {
         const newFolderId = modal.querySelector('#moveAssessmentFolderSelect').value || null;
         try {
             await update(ref(db, `assessments/${assId}`), { folderId: newFolderId });
+
+            // Optimistic local update so the card moves instantly
+            const local = assessments.find(a => a.id === assId);
+            if (local) local.folderId = newFolderId;
+
             showToast(newFolderId ? 'Moved to folder!' : 'Moved to Unfiled.', 'success');
             modal.remove();
             renderAssessmentFoldersBar();
             renderAssessmentsList();
-            renderHistoryAssessments();   
+            renderHistoryAssessments();
         } catch (err) {
             showToast('Error moving: ' + err.message, 'error');
         }
