@@ -11472,11 +11472,46 @@ function loadCommentsForVideo(videoId, onChange) {
                 window.location.href = 'index.html';
             });
 
-            // --- Debounced search inputs ---
-            document.getElementById('searchVideoInput')?.addEventListener('input', debounce(renderPostedGrid, 300));
-            document.getElementById('filterCourseSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
-            document.getElementById('filterPriceSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
-            document.getElementById('usersSearchInput')?.addEventListener('input', debounce(renderUsers, 300));
+            // ---------- WITH THESE (much more responsive) ----------
+const FAST = 90;   // almost instant feel
+const MED  = 140;
+
+// ---- Videos ----
+const searchVideoInput = document.getElementById('searchVideoInput');
+searchVideoInput?.addEventListener('input', debounce(renderPostedGrid, FAST));
+searchVideoInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') renderPostedGrid();          // instant on Enter
+});
+document.getElementById('filterCourseSelect')?.addEventListener('change', renderPostedGrid);
+document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
+
+// ---- Users ----
+document.getElementById('usersSearchInput')?.addEventListener('input',
+    debounce(renderUsers, FAST));
+
+// ---- Assessments ----
+document.getElementById('assessmentsSearch')?.addEventListener('input',
+    debounce(renderAssessmentsList, FAST));
+document.getElementById('assessmentsFilterType')?.addEventListener('change',
+    renderAssessmentsList);
+document.getElementById('assessmentsFilterStatus')?.addEventListener('change',
+    renderAssessmentsList);
+
+// ---- Ongoing ----
+document.getElementById('ongoingSearch')?.addEventListener('input',
+    debounce(renderOngoingList, FAST));
+document.getElementById('ongoingFilterAssessment')?.addEventListener('change',
+    renderOngoingList);
+
+// ---- Registers ----
+document.getElementById('registersSearch')?.addEventListener('input',
+    debounce(renderRegistersList, FAST));
+
+// ---- Popup user/register search (these were already fast, just unify) ----
+document.getElementById('popupUserSearch')?.addEventListener('input',
+    debounce(function(){ renderPopupUserList(this.value); }, FAST));
+document.getElementById('popupRegisterSearch')?.addEventListener('input',
+    debounce(function(){ renderPopupRegisterList(this.value); }, FAST));
 
             document.querySelectorAll('.filter-pill').forEach(pill => {
                 pill.addEventListener('click', () => {
