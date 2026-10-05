@@ -11472,46 +11472,11 @@ function loadCommentsForVideo(videoId, onChange) {
                 window.location.href = 'index.html';
             });
 
-            // ---------- WITH THESE (much more responsive) ----------
-const FAST = 90;   // almost instant feel
-const MED  = 140;
-
-// ---- Videos ----
-const searchVideoInput = document.getElementById('searchVideoInput');
-searchVideoInput?.addEventListener('input', debounce(renderPostedGrid, FAST));
-searchVideoInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') renderPostedGrid();          // instant on Enter
-});
-document.getElementById('filterCourseSelect')?.addEventListener('change', renderPostedGrid);
-document.getElementById('filterPriceSelect')?.addEventListener('change', renderPostedGrid);
-
-// ---- Users ----
-document.getElementById('usersSearchInput')?.addEventListener('input',
-    debounce(renderUsers, FAST));
-
-// ---- Assessments ----
-document.getElementById('assessmentsSearch')?.addEventListener('input',
-    debounce(renderAssessmentsList, FAST));
-document.getElementById('assessmentsFilterType')?.addEventListener('change',
-    renderAssessmentsList);
-document.getElementById('assessmentsFilterStatus')?.addEventListener('change',
-    renderAssessmentsList);
-
-// ---- Ongoing ----
-document.getElementById('ongoingSearch')?.addEventListener('input',
-    debounce(renderOngoingList, FAST));
-document.getElementById('ongoingFilterAssessment')?.addEventListener('change',
-    renderOngoingList);
-
-// ---- Registers ----
-document.getElementById('registersSearch')?.addEventListener('input',
-    debounce(renderRegistersList, FAST));
-
-// ---- Popup user/register search (these were already fast, just unify) ----
-document.getElementById('popupUserSearch')?.addEventListener('input',
-    debounce(function(){ renderPopupUserList(this.value); }, FAST));
-document.getElementById('popupRegisterSearch')?.addEventListener('input',
-    debounce(function(){ renderPopupRegisterList(this.value); }, FAST));
+            // --- Debounced search inputs ---
+            document.getElementById('searchVideoInput')?.addEventListener('input', debounce(renderPostedGrid, 300));
+            document.getElementById('filterCourseSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
+            document.getElementById('filterPriceSelect')?.addEventListener('change', debounce(renderPostedGrid, 200));
+            document.getElementById('usersSearchInput')?.addEventListener('input', debounce(renderUsers, 300));
 
             document.querySelectorAll('.filter-pill').forEach(pill => {
                 pill.addEventListener('click', () => {
@@ -14949,39 +14914,34 @@ function renderPopupRegisterList(searchTerm = '') {
         // REALTIME
         // =================================================================
         function setupRealtime() {
-             onValue(videosRef, snap => {
-                const prevIds = new Set(videos.map(v => v.id));
-                videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-                const newIds = new Set(videos.map(v => v.id));
+            onValue(videosRef, snap => {
+    const prevIds = new Set(videos.map(v => v.id));
+    videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+    const newIds = new Set(videos.map(v => v.id));
+            onValue(assessmentFoldersRef, (snap) => {
+    try {
+        const data = snap.val();
+        assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+        scheduleRender('assessments');
+    } catch (err) {
+        console.error('Error in assessmentFolders listener:', err);
+    }
+}, (err) => console.error('assessmentFolders listener error:', err));
 
-                // Detach listeners for deleted videos
-                prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
+    // Detach listeners for deleted videos
+    prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
 
-                // Attach listeners only for NEW videos
-                videos.forEach(v => {
-                    if (!prevIds.has(v.id)) {
-                        bindComments(v.id, () => scheduleRender('videos'));
-                    }
-                });
+    // Attach listeners only for NEW videos
+    videos.forEach(v => {
+        if (!prevIds.has(v.id)) {
+            bindComments(v.id, () => scheduleRender('videos'));
+        }
+    });
 
-                scheduleRender('home');
-                scheduleRender('videos');
-                scheduleRender('courses');
-            });
-
-             onValue(assessmentFoldersRef, (snap) => {
-                try {
-                    const data = snap.val();
-                    assessmentFolders = data
-                        ? Object.entries(data).map(([id, d]) => ({ id, ...d }))
-                        : [];
-                    scheduleRender('assessments');   // All Assessments page
-                    scheduleRender('history');       // History / Script page (folder bar)
-                    scheduleRender('testExams');
-                } catch (err) {
-                    console.error('Error in assessmentFolders listener:', err);
-                }
-            }, (err) => console.error('assessmentFolders listener error:', err));
+    scheduleRender('home');
+    scheduleRender('videos');
+    scheduleRender('courses');
+});
 
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
@@ -18537,13 +18497,13 @@ function renderPopupRegisterList(searchTerm = '') {
                 generateFullScoreSheetHTML(assId);
             });
         }
-        function renderHistoryStudents(assId) {
+                                            function renderHistoryStudents(assId) {
             currentHistoryAssessmentId = assId;
+            document.getElementById('historyFoldersBarWrap').style.display = 'none';   // NEW
+            const ass = assessments.find(a => a.id === assId);
 
-            // Hide the folder chip bar while viewing a specific assessment's students
-            const foldersWrap = document.getElementById('historyFoldersBarWrap');
-            if (foldersWrap) foldersWrap.style.display = 'none';
-
+                function renderHistoryStudents(assId) {
+            currentHistoryAssessmentId = assId;
             const ass = assessments.find(a => a.id === assId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
 
@@ -19536,8 +19496,8 @@ const responses = assStillOpen
                                     <span style="font-size:11px;color:#8b8fa3;margin-left:6px;">${passed ? '✅ Passed' : '❌ Failed'}</span>
                                 </div>
                             </div>
-                                                        <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
-                                Submitted: ${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : (r.endedAt ? new Date(r.endedAt).toLocaleString() : 'N/A')}
+                            <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">
+                                Submitted: ${response.submittedAt ? new Date(response.submittedAt).toLocaleString() : (response.endedAt ? new Date(response.endedAt).toLocaleString() : 'N/A')}
                             </div>
                         </div>
                     `;
@@ -19936,13 +19896,11 @@ const responses = assStillOpen
     });
 }
         // ---- Download Assessment as colorful HTML (with cover page, A4) ----
-                function downloadAssessmentHTML(responseId) {
+        function downloadAssessmentHTML(responseId) {
             const response = assessmentResponses.find(r => r.id === responseId);
             if (!response) { showToast('Response not found.', 'error'); return; }
             const ass = assessments.find(a => a.id === response.assessmentId);
             if (!ass) { showToast('Assessment not found.', 'error'); return; }
-
-            const user = users.find(u => u.uid === response.userId);   // ← ADD THIS
 
             let allQuestions = [];
             if (ass.sections) {
@@ -20312,36 +20270,30 @@ function openFolderModal(folderId) {
     const input = modal.querySelector('#folderNameInput');
     setTimeout(() => input.focus(), 100);
 
-       const doSave = async () => {
+    const doSave = async () => {
         const name = input.value.trim();
         if (!name) { showToast('Please enter a folder name.', 'error'); return; }
         try {
             if (isEdit) {
                 await update(ref(db, `assessmentFolders/${folderId}`), { name });
-                // Optimistic local update
-                const local = assessmentFolders.find(f => f.id === folderId);
-                if (local) local.name = name;
                 showToast('Folder renamed!', 'success');
             } else {
                 const newRef = push(assessmentFoldersRef);
-                const newFolder = {
+                await set(newRef, {
                     name,
-                    createdAt: Date.now(),          // local copy uses a number
+                    createdAt: serverTimestamp(),
                     order: assessmentFolders.length
-                };
-                await set(newRef, { ...newFolder, createdAt: serverTimestamp() });
-                // Optimistic local push (with id)
-                assessmentFolders.push({ id: newRef.key, ...newFolder });
+                });
                 showToast('Folder created!', 'success');
             }
             modal.remove();
             renderAssessmentFoldersBar();
             renderAssessmentsList();
-            renderHistoryAssessments();          // keep History in sync immediately
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
         }
     };
+
     modal.querySelector('#saveFolderBtn').addEventListener('click', doSave);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
 }
@@ -20374,22 +20326,16 @@ async function deleteAssessmentFolder(folderId) {
 
         await remove(ref(db, `assessmentFolders/${folderId}`));
 
-        // Optimistic local updates
-        contained.forEach(a => { a.folderId = null; });
-        assessmentFolders = assessmentFolders.filter(f => f.id !== folderId);
-
-        if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
-        if (currentHistoryFolderView === folderId)   currentHistoryFolderView = 'all';
+                if (currentAssessmentFolderView === folderId) currentAssessmentFolderView = 'all';
+        if (currentHistoryFolderView === folderId)   currentHistoryFolderView = 'all';   // NEW
         showToast('Folder deleted.', 'info');
         renderAssessmentFoldersBar();
         renderAssessmentsList();
-        renderHistoryAssessments();
+        renderHistoryAssessments();          // NEW
     } catch (err) {
         showToast('Error deleting folder: ' + err.message, 'error');
     }
-}   // ← THIS is the missing brace
-
-/* ---------- Move Assessment to Folder ---------- */
+}
 
 /* ---------- Move Assessment to Folder ---------- */
 function openMoveAssessmentModal(assId) {
@@ -20429,20 +20375,15 @@ function openMoveAssessmentModal(assId) {
     `;
     document.body.appendChild(modal);
 
-        modal.querySelector('#confirmMoveAssessmentBtn').addEventListener('click', async () => {
+    modal.querySelector('#confirmMoveAssessmentBtn').addEventListener('click', async () => {
         const newFolderId = modal.querySelector('#moveAssessmentFolderSelect').value || null;
         try {
             await update(ref(db, `assessments/${assId}`), { folderId: newFolderId });
-
-            // Optimistic local update so the card moves instantly
-            const local = assessments.find(a => a.id === assId);
-            if (local) local.folderId = newFolderId;
-
             showToast(newFolderId ? 'Moved to folder!' : 'Moved to Unfiled.', 'success');
             modal.remove();
             renderAssessmentFoldersBar();
             renderAssessmentsList();
-            renderHistoryAssessments();
+            renderHistoryAssessments();   
         } catch (err) {
             showToast('Error moving: ' + err.message, 'error');
         }
