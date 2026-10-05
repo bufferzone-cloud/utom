@@ -12482,35 +12482,35 @@ function loadCommentsForVideo(videoId, onChange) {
                 });
             }
 
-            // ===== DRAFT SAVE BUTTON =====
-            const saveDraftBtn = document.createElement('button');
-            saveDraftBtn.type = 'button';
-            saveDraftBtn.className = 'btn-outline';
-            saveDraftBtn.style.cssText = 'padding:6px 18px;font-size:10px;margin-top:8px;';
-            saveDraftBtn.innerHTML = '<i class="fas fa-save"></i> Save Draft';
-            saveDraftBtn.id = `${type}SaveDraftBtn`;
+                       // ===== DRAFT SAVE BUTTON (auto-save working draft) =====
+            const autoSaveDraftBtn = document.createElement('button');
+            autoSaveDraftBtn.type = 'button';
+            autoSaveDraftBtn.className = 'btn-outline';
+            autoSaveDraftBtn.style.cssText = 'padding:6px 18px;font-size:10px;margin-top:8px;';
+            autoSaveDraftBtn.innerHTML = '<i class="fas fa-save"></i> Save Draft';
+            autoSaveDraftBtn.id = `${type}SaveDraftBtn`;
             const container = document.getElementById(`${type}DetailsStep`) || document.getElementById(`${type}QuestionsStep`);
             if (container) {
                 const wrapper = container.querySelector('.form-row:last-child')?.parentElement || container;
-                wrapper.appendChild(saveDraftBtn);
+                wrapper.appendChild(autoSaveDraftBtn);
             }
-            saveDraftBtn.addEventListener('click', function() {
+            autoSaveDraftBtn.addEventListener('click', function() {
                 saveAssessmentDraft(type);
                 showToast('Draft saved!', 'success');
             });
 
-                       loadAssessmentDraft(type);
+            loadAssessmentDraft(type);
 
-            // ---- SAVE AS DRAFT BUTTON (NEW) ----
+            // ---- SAVE AS QUESTION PAPER DRAFT (NEW) ----
             const previewBtn = document.getElementById(`${type}PreviewFullBtn`);
             if (previewBtn && !previewBtn.parentElement.querySelector('.save-as-draft-btn')) {
-                const saveDraftBtn = document.createElement('button');
-                saveDraftBtn.type = 'button';
-                saveDraftBtn.className = 'btn-outline save-as-draft-btn';
-                saveDraftBtn.style.cssText = 'padding:10px 24px;font-size:12px;';
-                saveDraftBtn.innerHTML = '<i class="fas fa-file-pen"></i> Save as Draft';
-                saveDraftBtn.addEventListener('click', () => saveAsQuestionDraft(type));
-                previewBtn.parentElement.insertBefore(saveDraftBtn, previewBtn);
+                const saveAsPaperDraftBtn = document.createElement('button');
+                saveAsPaperDraftBtn.type = 'button';
+                saveAsPaperDraftBtn.className = 'btn-outline save-as-draft-btn';
+                saveAsPaperDraftBtn.style.cssText = 'padding:10px 24px;font-size:12px;';
+                saveAsPaperDraftBtn.innerHTML = '<i class="fas fa-file-pen"></i> Save as Draft';
+                saveAsPaperDraftBtn.addEventListener('click', () => saveAsQuestionDraft(type));
+                previewBtn.parentElement.insertBefore(saveAsPaperDraftBtn, previewBtn);
             }
 
             // ---- MULTI-REGISTER SELECT ----
@@ -14966,22 +14966,23 @@ function renderPopupRegisterList(searchTerm = '') {
         // =================================================================
         // REALTIME
         // =================================================================
+                // =================================================================
+        // REALTIME
+        // =================================================================
         function setupRealtime() {
-            onValue(videosRef, snap => {
-    const prevIds = new Set(videos.map(v => v.id));
-    videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
-    const newIds = new Set(videos.map(v => v.id));
+            // ---- assessmentFolders listener (top-level, registered once) ----
             onValue(assessmentFoldersRef, (snap) => {
-    try {
-        const data = snap.val();
-        assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
-        scheduleRender('assessments');
-    } catch (err) {
-        console.error('Error in assessmentFolders listener:', err);
-    }
-}, (err) => console.error('assessmentFolders listener error:', err));
+                try {
+                    const data = snap.val();
+                    assessmentFolders = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
+                    scheduleRender('assessments');
+                } catch (err) {
+                    console.error('Error in assessmentFolders listener:', err);
+                }
+            }, (err) => console.error('assessmentFolders listener error:', err));
 
-                        onValue(paperDraftsRef, (snap) => {
+            // ---- paperDrafts listener (top-level, registered once) ----
+            onValue(paperDraftsRef, (snap) => {
                 try {
                     const data = snap.val();
                     paperDrafts = data ? Object.entries(data).map(([id, d]) => ({ id, ...d })) : [];
@@ -14991,21 +14992,28 @@ function renderPopupRegisterList(searchTerm = '') {
                 }
             }, (err) => console.error('paperDrafts listener error:', err));
 
-    // Detach listeners for deleted videos
-    prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
+            // ---- videos listener (with comment-binding lifecycle) ----
+            onValue(videosRef, snap => {
+                const prevIds = new Set(videos.map(v => v.id));
+                videos = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
+                const newIds = new Set(videos.map(v => v.id));
 
-    // Attach listeners only for NEW videos
-    videos.forEach(v => {
-        if (!prevIds.has(v.id)) {
-            bindComments(v.id, () => scheduleRender('videos'));
-        }
-    });
+                // Detach listeners for deleted videos
+                prevIds.forEach(id => { if (!newIds.has(id)) unbindComments(id); });
 
-    scheduleRender('home');
-    scheduleRender('videos');
-    scheduleRender('courses');
-});
+                // Attach listeners only for NEW videos
+                videos.forEach(v => {
+                    if (!prevIds.has(v.id)) {
+                        bindComments(v.id, () => scheduleRender('videos'));
+                    }
+                });
 
+                scheduleRender('home');
+                scheduleRender('videos');
+                scheduleRender('courses');
+            });
+
+            // ---- users listener ----
             onValue(usersRef, snap => {
                 users = snap.val() ? Object.entries(snap.val()).map(([uid, d]) => ({ uid, ...d })) : [];
                 scheduleRender('users');
@@ -15018,6 +15026,7 @@ function renderPopupRegisterList(searchTerm = '') {
                 }
             });
 
+            // ---- courses listener ----
             onValue(coursesRef, snap => {
                 courses = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 updateCourseSelects();
@@ -15026,6 +15035,7 @@ function renderPopupRegisterList(searchTerm = '') {
                 scheduleRender('account');
             });
 
+            // ---- subfolders listener ----
             onValue(subfoldersRef, snap => {
                 subfolders = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 scheduleRender('home');
@@ -15033,24 +15043,28 @@ function renderPopupRegisterList(searchTerm = '') {
                 updateSubfolderSelects();
             });
 
+            // ---- docs listener ----
             onValue(docsRef, snap => {
                 docs = snap.val() ? Object.entries(snap.val()).map(([id, d]) => ({ id, ...d })) : [];
                 scheduleRender('docs');
                 scheduleRender('courses');
             });
 
+            // ---- notifications listener ----
             onValue(notificationsRef, snap => {
                 notifications = snap.val() ? Object.values(snap.val()) : [];
                 updateNotifBadge();
                 renderNotificationsSidebar();
             });
 
+            // ---- bannedUsers listener ----
             onValue(bannedUsersRef, snap => {
                 bannedUsersMap = snap.val() || {};
                 scheduleRender('users');
                 scheduleRender('settings');
             });
 
+            // ---- paymentSettings listener ----
             onValue(paymentSettingsRef, snap => {
                 if (snap.val()) paymentSettings = snap.val();
                 document.getElementById('mtnNumberInput').value = paymentSettings.mtnNumber || '';
@@ -15058,6 +15072,7 @@ function renderPopupRegisterList(searchTerm = '') {
                 document.getElementById('paymentMethodSelect').value = paymentSettings.paymentMethod || 'MTN Mobile Money';
             });
 
+            // ---- transactions + pendingPurchases listener ----
             const fetchTransactions = async () => {
                 const txSnap = await get(transactionsRef);
                 const txData = txSnap.val() || {};
@@ -15087,6 +15102,7 @@ function renderPopupRegisterList(searchTerm = '') {
             onValue(transactionsRef, fetchTransactions);
             onValue(pendingPurchasesRef, fetchTransactions);
 
+            // ---- promos listener ----
             onValue(promosRef, snap => {
                 const data = snap.val();
                 promos = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
@@ -15094,12 +15110,14 @@ function renderPopupRegisterList(searchTerm = '') {
                 scheduleRender('promo');
             });
 
+            // ---- inAppNotifications listener ----
             onValue(inAppNotificationsRef, snap => {
                 const data = snap.val();
                 inAppNotifications = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
                 scheduleRender('popup');
             });
 
+            // ---- registers listener ----
             onValue(registersRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -15120,6 +15138,7 @@ function renderPopupRegisterList(searchTerm = '') {
                 console.error('Registers listener error:', err);
             });
 
+            // ---- assessments listener ----
             onValue(assessmentsRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -15136,6 +15155,7 @@ function renderPopupRegisterList(searchTerm = '') {
                 console.error('Assessments listener error:', err);
             });
 
+            // ---- assessmentResponses listener ----
             onValue(assessmentResponsesRef, (snap) => {
                 try {
                     const data = snap.val();
@@ -15781,12 +15801,11 @@ function renderPopupRegisterList(searchTerm = '') {
                 ms.updateHiddenInput();
             }
 
-                       if (window._draftBeingPublished && window._draftBeingPublished.type === 'assignment') {
+                                   if (window._draftBeingPublished && window._draftBeingPublished.type === 'assignment') {
                 populateAssessmentForm('assignment', window._draftBeingPublished);
             } else if (editingAssessmentId) {
                 populateAssessmentForm('assignment');
             }
-            const h = parseInt(document.getElementById('assignmentDurationHours').value) || 0;
             const h = parseInt(document.getElementById('assignmentDurationHours').value) || 0;
             const m = parseInt(document.getElementById('assignmentDurationMinutes').value) || 0;
             document.getElementById('assignmentDurationDisplay').textContent = `${h}h ${m}m`;
