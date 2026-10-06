@@ -40,6 +40,15 @@ input,select,textarea,button{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loader p{font-weight:700;color:var(--sub);font-size:14px}
 
+/* IN-PAGE LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(242,244,248,.72);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:5000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.loading-overlay.show{display:flex}
+.loading-overlay .spinner{width:52px;height:52px}
+.loading-overlay p{font-weight:700;color:var(--sub);font-size:14px;letter-spacing:.3px}
+.loading-overlay small{font-size:11px;color:var(--muted)}
+
 .app{display:flex;flex-direction:column;height:var(--app-h);overflow:hidden}
 
 /* HEADER */
@@ -89,10 +98,8 @@ input,select,textarea,button{font-family:inherit}
 .nav.active i{color:#d4952a}
 .nav .badge{margin-left:auto;background:#e63946;color:#fff;font-size:9px;font-weight:800;
   padding:2px 9px;border-radius:30px}
-.nav .badge:empty{display:none}
 .divider{height:1px;background:rgba(240,240,245,.8);margin:8px 4px}
 
-/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 90px}
 
@@ -104,13 +111,32 @@ input,select,textarea,button{font-family:inherit}
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .card h3{font-size:13.5px;font-weight:800;margin-bottom:12px;display:flex;
   align-items:center;gap:8px;flex-wrap:wrap}
-.card h3 i{color:var(--gold-d)}
 .card p.hint{font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.55}
+
+/* COLLAPSIBLE SECTION */
+.collapse{background:var(--card);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.6);border-radius:var(--r-md);
+  box-shadow:var(--sh-sm);margin-bottom:14px;overflow:hidden}
+.collapse-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;cursor:pointer;user-select:none;transition:background .2s}
+.collapse-head:hover{background:rgba(245,176,66,.06)}
+.collapse-head h3{margin:0;font-size:13.5px;font-weight:800;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.collapse-head h3 i{color:var(--gold-d)}
+.collapse-head h3 .count{font-size:10.5px;font-weight:700;color:var(--gold-d);
+  background:rgba(245,176,66,.14);padding:2px 10px;border-radius:30px;margin-left:4px}
+.collapse-head .chev{width:28px;height:28px;border-radius:50%;
+  background:rgba(245,176,66,.12);display:flex;align-items:center;justify-content:center;
+  color:var(--gold-d);font-size:12px;transition:transform .3s;flex-shrink:0}
+.collapse.open .collapse-head .chev{transform:rotate(180deg)}
+.collapse-body{max-height:0;overflow:hidden;
+  transition:max-height .35s cubic-bezier(.25,.46,.45,.94)}
+.collapse.open .collapse-body{max-height:20000px}
+.collapse-body-inner{padding:0 16px 16px}
 
 /* FILTERS */
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:10px;margin-bottom:12px}
-.filters.full{grid-template-columns:1fr}
 .filters select,.filters input{width:100%;padding:10px 16px;border-radius:30px;
   border:1.5px solid var(--line);background:rgba(250,251,252,.85);font-size:12px;
   color:var(--text);outline:none;transition:var(--t);-webkit-appearance:none;appearance:none}
@@ -206,11 +232,22 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
 .badge.draft{background:#f1f5f9;color:#475569}
 .badge.scheduled{background:#e0e7ff;color:#3730a3}
 .badge.published{background:#dcfce7;color:#15803d}
+.badge.free{background:#cce5ff;color:#004085}
+.badge.paid{background:#fff3cd;color:#856404}
 
-.empty{text-align:center;padding:30px 16px;color:var(--muted);font-size:12.5px}
-.empty i{font-size:34px;display:block;margin-bottom:10px;opacity:.25}
+.empty{text-align:center;padding:26px 16px;color:var(--muted);font-size:12.5px}
+.empty i{font-size:32px;display:block;margin-bottom:8px;opacity:.25}
 
-/* RESPONSIVE */
+/* SUB-TABS */
+.subtabs{display:flex;gap:4px;border-bottom:1.5px solid rgba(240,240,245,.8);
+  margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.subtabs::-webkit-scrollbar{display:none}
+.subtab{border:none;background:transparent;padding:9px 14px;font-weight:700;font-size:11.5px;
+  color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;
+  gap:6px;border-bottom:2.5px solid transparent;transition:var(--t)}
+.subtab:hover{color:var(--gold-d)}
+.subtab.active{color:#d4952a;border-bottom-color:#d4952a;background:rgba(245,176,66,.07)}
+
 @media (max-width:560px){
   .header{padding:0 12px;height:56px}
   .header-title{font-size:15.5px}
@@ -224,6 +261,8 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
   .btn{padding:9px 16px;font-size:11px}
   table.rpt{font-size:11px}
   table.rpt th,table.rpt td{padding:8px 10px}
+  .collapse-head{padding:12px 14px}
+  .collapse-body-inner{padding:0 12px 14px}
 }
 </style>
 </head>
@@ -234,8 +273,13 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
   <p>Loading Reports Studio…</p>
 </div>
 
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p id="loadingText">Processing…</p>
+  <small id="loadingSub">Fetching all records in range</small>
+</div>
+
 <div class="app">
-  <!-- HEADER -->
   <header class="header">
     <div class="header-left">
       <button class="icon-btn" id="menuBtn" aria-label="Menu"><i class="fas fa-bars"></i></button>
@@ -251,7 +295,6 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
   </div>
 </div>
 
-<!-- SIDEBAR -->
 <div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sb-head">
@@ -262,10 +305,8 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
   <nav class="sb-body" id="sbBody">
     <button class="nav active" data-module="overview">
       <i class="fas fa-chart-pie"></i><span>Overview</span></button>
-    <button class="nav" data-module="courses">
-      <i class="fas fa-book-open"></i><span>Courses</span></button>
-    <button class="nav" data-module="subfolders">
-      <i class="fas fa-folder"></i><span>Subfolders</span></button>
+    <button class="nav" data-module="contentSales">
+      <i class="fas fa-book-open"></i><span>Courses &amp; Subfolders</span></button>
     <button class="nav" data-module="lectureDash">
       <i class="fas fa-chalkboard-teacher"></i><span>Lecture Dashboard</span></button>
     <button class="nav" data-module="express">
@@ -321,14 +362,16 @@ const STATE = {
   module:'overview',
   range:'today',
   startTs:0, endTs:Date.now(),
-  // module-specific filters
-  courses:{ status:'all', sortBy:'revenue-desc', search:'' },
-  subfolders:{ status:'all', sortBy:'revenue-desc', search:'' },
+  // filter defaults
+  overview:{},
+  contentSales:{ status:'all', typeFilter:'all', sortBy:'revenue-desc', search:'' },
   lectureDash:{ status:'all', sortBy:'earnings-desc', search:'' },
   express:{ status:'all', sortBy:'date-desc', search:'' },
-  assessments:{ status:'all', sortBy:'date-desc', search:'' },
+  assessments:{ status:'all', sortBy:'attempts-desc', search:'' },
   students:{ status:'all', sortBy:'spend-desc', search:'' },
-  lecturers:{ status:'all', sortBy:'date-desc', search:'' }
+  lecturers:{ status:'all', sortBy:'date-desc', search:'' },
+  // collapse state — which sections are open per module
+  collapsed:{}
 };
 
 let currentAdmin = null;
@@ -356,6 +399,44 @@ function toast(msg, type){
   setTimeout(()=>c.remove(), 3000);
 }
 
+function showLoading(text, sub){
+  const el = document.getElementById('loadingOverlay');
+  document.getElementById('loadingText').textContent = text || 'Processing…';
+  document.getElementById('loadingSub').textContent = sub || 'Fetching all records in range';
+  el.classList.add('show');
+}
+function hideLoading(){
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+/* collapse state storage */
+function isOpen(key, def){
+  if(!(key in STATE.collapsed)) STATE.collapsed[key] = def !== false;
+  return STATE.collapsed[key];
+}
+function toggleCollapse(key){
+  STATE.collapsed[key] = !isOpen(key);
+  render();
+}
+window.__toggleCollapse = toggleCollapse;
+
+function collapseSection(key, icon, title, count, body, defaultOpen){
+  const open = isOpen(key, defaultOpen !== false);
+  const countHtml = count !== undefined && count !== null
+    ? `<span class="count">${count}</span>` : '';
+  return `
+    <div class="collapse ${open?'open':''}" data-key="${esc(key)}">
+      <div class="collapse-head" onclick="window.__toggleCollapse('${esc(key)}')">
+        <h3><i class="fas ${esc(icon)}"></i> ${esc(title)} ${countHtml}</h3>
+        <div class="chev"><i class="fas fa-chevron-down"></i></div>
+      </div>
+      <div class="collapse-body"><div class="collapse-body-inner">
+        ${body}
+      </div></div>
+    </div>
+  `;
+}
+
 /* =================================================================
    AUTH
 ================================================================= */
@@ -381,7 +462,6 @@ function attachListeners(){
     'expressCategories','expressPickupLocations','lecturers'
   ];
   const total = paths.length;
-
   paths.forEach(p => {
     onValue(ref(db, p), snap => {
       S[p] = snap.val() || {};
@@ -399,7 +479,7 @@ function attachListeners(){
 }
 
 /* =================================================================
-   RANGE HANDLING
+   RANGE
 ================================================================= */
 function computeRange(){
   const now = new Date();
@@ -433,13 +513,12 @@ function rangeLabel(){
 }
 
 /* =================================================================
-   BUILD ALL TRANSACTIONS
+   TRANSACTIONS
 ================================================================= */
 function buildAllTx(){
   const out = [];
-  Object.entries(S.transactions).forEach(([id,tx]) => {
-    out.push({ id, ...tx, _src:'tx' });
-  });
+  Object.entries(S.transactions).forEach(([id,tx]) =>
+    out.push({ id, ...tx, _src:'tx' }));
   Object.entries(S.pendingPurchases).forEach(([uid,map]) => {
     Object.entries(map||{}).forEach(([tid,tx]) =>
       out.push({ id:tid, userId:uid, ...tx, _src:'pending' }));
@@ -486,8 +565,6 @@ function buildAllTx(){
   });
   return out;
 }
-
-/* Dedupe by id, prefer non-approved versions */
 function dedupeTx(list){
   const m = new Map();
   list.forEach(t => {
@@ -501,19 +578,17 @@ function dedupeTx(list){
 }
 
 /* =================================================================
-   MODULE RENDERERS
+   RENDER SWITCHER
 ================================================================= */
 function render(){
   computeRange();
   updateHeader();
-  const html = MODULES[STATE.module].render();
-  document.getElementById('reportRoot').innerHTML = html;
-  attachModuleEvents();
+  document.getElementById('reportRoot').innerHTML = MODULES[STATE.module].render();
+  attachEvents();
 }
-
 function updateHeader(){
   const names = {
-    overview:'Overview', courses:'Courses', subfolders:'Subfolders',
+    overview:'Overview', contentSales:'Courses & Subfolders',
     lectureDash:'Lecture Dashboard', express:'Express Shopping',
     assessments:'Assessments', students:'Students', lecturers:'Lecturers'
   };
@@ -521,7 +596,9 @@ function updateHeader(){
     `${names[STATE.module]} <small>Reports Studio</small>`;
 }
 
-/* ---------- SHARED CONTROLS HTML ---------- */
+/* =================================================================
+   SHARED CONTROLS
+================================================================= */
 function rangeControlsHTML(){
   return `
     <div class="range-btns">
@@ -535,7 +612,7 @@ function rangeControlsHTML(){
     <div class="custom-box ${STATE.range==='custom'?'show':''}" id="customBox">
       <input type="date" id="fromDate" value="${STATE.startTs ? new Date(STATE.startTs).toISOString().slice(0,10) : ''}" />
       <input type="date" id="toDate" value="${new Date(STATE.endTs).toISOString().slice(0,10)}" />
-      <button class="btn btn-primary" id="applyCustomBtn"><i class="fas fa-check"></i> Apply</button>
+      <button class="btn btn-primary" id="applyCustomBtn"><i class="fas fa-check"></i> Load Data</button>
     </div>
     <div class="range-display"><i class="fas fa-calendar-alt"></i> Range: <strong>${esc(rangeLabel())}</strong></div>
   `;
@@ -546,12 +623,13 @@ function downloadControlsHTML(){
     <div class="action-btns">
       <button class="btn btn-red" data-dl="pdf"><i class="fas fa-file-pdf"></i> Download PDF</button>
       <button class="btn btn-green" data-dl="excel"><i class="fas fa-file-excel"></i> Download Excel</button>
+      <button class="btn btn-outline" data-dl="expandAll"><i class="fas fa-angles-down"></i> Expand All</button>
+      <button class="btn btn-outline" data-dl="collapseAll"><i class="fas fa-angles-up"></i> Collapse All</button>
       <button class="btn btn-outline" data-dl="refresh"><i class="fas fa-sync"></i> Refresh</button>
     </div>
   `;
 }
 
-/* ---------- KPI ---------- */
 function kpi(icon, v, label, color){
   return `<div class="kpi">
     <div class="icon" style="color:${color}"><i class="fas ${icon}"></i></div>
@@ -561,466 +639,496 @@ function kpi(icon, v, label, color){
 }
 
 /* =================================================================
-   MODULE: OVERVIEW
+   MODULES
 ================================================================= */
-MODULES_OVERVIEW();
-function MODULES_OVERVIEW(){
-  window.MODULES = window.MODULES || {};
-  window.MODULES.overview = {
-    render(){
-      const courses   = Object.values(S.courses);
-      const subs      = Object.values(S.subfolders);
-      const vids      = Object.values(S.videos);
-      const docs      = Object.values(S.docs);
-      const users     = Object.values(S.users);
-      const regs      = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
-      const ass       = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
-      const lectArr   = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
-      const banned    = Object.entries(S.bannedUsers).filter(([,v])=>v);
+const MODULES = {};
 
-      const allTx = dedupeTx(buildAllTx()).filter(t => inRange(t.timestamp));
-      const approved = allTx.filter(t => t.status==='approved');
-      const pending  = allTx.filter(t => t.status==='pending');
-      const rejected = allTx.filter(t => t.status==='rejected');
-      const sum = a => a.reduce((s,t)=>s+num(t.amount),0);
-
-      // Split by source
-      const platformTx = approved.filter(t =>
-        t.itemType === 'course' || t.itemType === 'subfolder'
-      );
-      const shopTx = approved.filter(t => t.itemType === 'shop');
-
-      return `
-        <div class="card">
-          <h2><i class="fas fa-chart-pie"></i> Platform Overview</h2>
-          <p class="hint">High-level snapshot of the entire UTOM platform.</p>
-          ${rangeControlsHTML()}
-          ${downloadControlsHTML()}
-        </div>
-
-        <div class="kpi-grid">
-          ${kpi('fa-book-open', courses.length, 'Courses', '#d4952a')}
-          ${kpi('fa-folder', subs.length, 'Subfolders', '#3b82f6')}
-          ${kpi('fa-video', vids.length, 'Videos', '#7c3aed')}
-          ${kpi('fa-file-alt', docs.length, 'Documents', '#0891b2')}
-          ${kpi('fa-user-graduate', users.length, 'Students', '#2ecc71')}
-          ${kpi('fa-graduation-cap', ass.length, 'Assessments', '#f39c12')}
-          ${kpi('fa-address-book', regs.length, 'Registers', '#e11d48')}
-          ${kpi('fa-chalkboard-teacher', lectArr.length, 'Lecturers', '#7c3aed')}
-          ${kpi('fa-user-slash', banned.length, 'Banned Users', '#e74c3c')}
-        </div>
-
-        <div class="card" style="background:linear-gradient(135deg,#fff8ed,#fef3e2);border:1px solid rgba(245,176,66,.25)">
-          <h3><i class="fas fa-coins"></i> Revenue in Range (${esc(rangeLabel())})</h3>
-          <div class="kpi-grid" style="margin-bottom:0">
-            ${kpi('fa-check-circle', money(sum(approved)), 'Approved Revenue', '#2e7d32')}
-            ${kpi('fa-hourglass-half', money(sum(pending)), 'Pending Value', '#e65100')}
-            ${kpi('fa-times-circle', money(sum(rejected)), 'Rejected Value', '#c62828')}
-            ${kpi('fa-list', allTx.length, 'Total Transactions', '#3b82f6')}
-            ${kpi('fa-book', money(sum(platformTx)), 'Course + Subfolder Sales', '#d4952a')}
-            ${kpi('fa-store', money(sum(shopTx)), 'Express Shop Sales', '#3b82f6')}
-          </div>
-        </div>
-
-        <div class="card">
-          <h3><i class="fas fa-list-ul"></i> Recent Activity (Top 20)</h3>
-          ${recentActivityHTML(allTx)}
-        </div>
-      `;
-    }
-  };
-}
-
-function recentActivityHTML(txs){
-  const recent = [...txs].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,20);
-  if(!recent.length) return `<div class="empty"><i class="fas fa-inbox"></i>No activity in this period.</div>`;
-  return `
-    <div class="tbl-wrap"><table class="rpt">
-      <thead><tr>
-        <th>User</th><th>Item</th><th>Type</th>
-        <th class="right">Amount</th><th class="center">Status</th><th>Date</th>
-      </tr></thead>
-      <tbody>${recent.map(t=>`
-        <tr>
-          <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
-          <td>${esc(t.itemTitle||'—')}</td>
-          <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
-          <td class="right money">${money(t.amount)}</td>
-          <td class="center"><span class="badge ${esc(t.status||'pending')}">${esc(t.status||'pending')}</span></td>
-          <td class="muted">${fmtDate(t.timestamp)}</td>
-        </tr>`).join('')}</tbody>
-    </table></div>
-  `;
-}
-
-/* =================================================================
-   MODULE: COURSES
-================================================================= */
-window.MODULES = window.MODULES || {};
-window.MODULES.courses = {
+/* ---------- OVERVIEW ---------- */
+MODULES.overview = {
   render(){
-    const f = STATE.courses;
-    // Get approved course sales
+    const courses   = Object.values(S.courses);
+    const subs      = Object.values(S.subfolders);
+    const vids      = Object.values(S.videos);
+    const docs      = Object.values(S.docs);
+    const users     = Object.values(S.users);
+    const regs      = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
+    const ass       = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+    const lectArr   = Object.entries(S.lecturerData);
+    const banned    = Object.entries(S.bannedUsers).filter(([,v])=>v);
+
+    const allTx = dedupeTx(buildAllTx()).filter(t => inRange(t.timestamp));
+    const approved = allTx.filter(t => t.status==='approved');
+    const pending  = allTx.filter(t => t.status==='pending');
+    const rejected = allTx.filter(t => t.status==='rejected');
+    const sum = a => a.reduce((s,t)=>s+num(t.amount),0);
+
+    const platformTx = approved.filter(t =>
+      t.itemType === 'course' || t.itemType === 'subfolder');
+    const shopTx = approved.filter(t => t.itemType === 'shop');
+
+    // recent activity body
+    const recent = [...allTx].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,50);
+    const recentBody = recent.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No activity in this period.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>User</th><th>Item</th><th>Type</th>
+            <th class="right">Amount</th><th class="center">Status</th><th>Date</th>
+          </tr></thead>
+          <tbody>${recent.map(t=>`
+            <tr>
+              <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+              <td>${esc(t.itemTitle||'—')}</td>
+              <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
+              <td class="right money">${money(t.amount)}</td>
+              <td class="center"><span class="badge ${esc(t.status||'pending')}">${esc(t.status||'pending')}</span></td>
+              <td class="muted">${fmtDate(t.timestamp)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    // approved detail
+    const approvedBody = approved.length === 0
+      ? `<div class="empty"><i class="fas fa-check-circle"></i>No approved transactions.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>User</th><th>Item</th><th>Type</th>
+            <th class="right">Amount</th><th>Date</th>
+          </tr></thead>
+          <tbody>${approved.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).map(t=>`
+            <tr>
+              <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+              <td>${esc(t.itemTitle||'—')}</td>
+              <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
+              <td class="right money">${money(t.amount)}</td>
+              <td class="muted">${fmtDate(t.timestamp)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    // pending detail
+    const pendingBody = pending.length === 0
+      ? `<div class="empty"><i class="fas fa-hourglass-half"></i>No pending transactions.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>User</th><th>Item</th><th>Type</th>
+            <th class="right">Amount</th><th>Date</th>
+          </tr></thead>
+          <tbody>${pending.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).map(t=>`
+            <tr>
+              <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+              <td>${esc(t.itemTitle||'—')}</td>
+              <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
+              <td class="right money">${money(t.amount)}</td>
+              <td class="muted">${fmtDate(t.timestamp)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    // rejected detail
+    const rejectedBody = rejected.length === 0
+      ? `<div class="empty"><i class="fas fa-times-circle"></i>No rejected transactions.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>User</th><th>Item</th><th>Type</th>
+            <th class="right">Amount</th><th>Date</th>
+          </tr></thead>
+          <tbody>${rejected.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).map(t=>`
+            <tr>
+              <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+              <td>${esc(t.itemTitle||'—')}</td>
+              <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
+              <td class="right money">${money(t.amount)}</td>
+              <td class="muted">${fmtDate(t.timestamp)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-chart-pie"></i> Platform Overview</h2>
+        <p class="hint">High-level snapshot of the entire UTOM platform.</p>
+        ${rangeControlsHTML()}
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-book-open', courses.length, 'Courses', '#d4952a')}
+        ${kpi('fa-folder', subs.length, 'Subfolders', '#3b82f6')}
+        ${kpi('fa-video', vids.length, 'Videos', '#7c3aed')}
+        ${kpi('fa-file-alt', docs.length, 'Documents', '#0891b2')}
+        ${kpi('fa-user-graduate', users.length, 'Students', '#2ecc71')}
+        ${kpi('fa-graduation-cap', ass.length, 'Assessments', '#f39c12')}
+        ${kpi('fa-address-book', regs.length, 'Registers', '#e11d48')}
+        ${kpi('fa-chalkboard-teacher', lectArr.length, 'Lecturers', '#7c3aed')}
+        ${kpi('fa-user-slash', banned.length, 'Banned Users', '#e74c3c')}
+      </div>
+
+      ${collapseSection('ov-revenue','fa-coins','Revenue in Range', null, `
+        <div class="kpi-grid" style="margin-bottom:0">
+          ${kpi('fa-check-circle', money(sum(approved)), 'Approved Revenue', '#2e7d32')}
+          ${kpi('fa-hourglass-half', money(sum(pending)), 'Pending Value', '#e65100')}
+          ${kpi('fa-times-circle', money(sum(rejected)), 'Rejected Value', '#c62828')}
+          ${kpi('fa-list', allTx.length, 'Total Transactions', '#3b82f6')}
+          ${kpi('fa-book', money(sum(platformTx)), 'Course + Subfolder Sales', '#d4952a')}
+          ${kpi('fa-store', money(sum(shopTx)), 'Express Shop Sales', '#3b82f6')}
+        </div>
+      `, true)}
+
+      ${collapseSection('ov-recent','fa-history','Recent Activity', recent.length, recentBody, true)}
+      ${collapseSection('ov-approved','fa-check-circle','Approved Transactions', approved.length, approvedBody, false)}
+      ${collapseSection('ov-pending','fa-hourglass-half','Pending Transactions', pending.length, pendingBody, false)}
+      ${collapseSection('ov-rejected','fa-times-circle','Rejected Transactions', rejected.length, rejectedBody, false)}
+    `;
+  }
+};
+
+/* ---------- CONTENT SALES (Courses + Subfolders combined) ---------- */
+MODULES.contentSales = {
+  render(){
+    const f = STATE.contentSales;
     const txApproved = dedupeTx(buildAllTx())
       .filter(t => inRange(t.timestamp) && t.status === 'approved')
-      .filter(t => t.itemType === 'course' || !t.itemType);
+      .filter(t => {
+        const it = (t.itemType||'course').toLowerCase();
+        return it === 'course' || it === 'subfolder';
+      });
 
-    // Group by course
-    const byCourse = {};
+    // Build combined rows
+    const rows = [];
+
+    // Courses
     Object.values(S.courses).forEach(c => {
-      byCourse[c.id] = {
-        id:c.id, name:c.name||'Unnamed',
-        price:num(c.price),
+      rows.push({
+        id: c.id,
+        name: c.name || 'Unnamed',
+        type: 'course',
+        parent: '',
+        price: num(c.price),
         priceType: num(c.price) > 0 ? 'paid' : 'free',
         durationType: c.durationType || 'lifetime',
         durationValue: num(c.durationValue),
         subfolders: Object.values(S.subfolders).filter(s=>s.courseId===c.id).length,
         videos: Object.values(S.videos).filter(v=>v.courseId===c.id).length,
         docs: Object.values(S.docs).filter(d=>d.courseId===c.id).length,
-        enrollments:0, revenue:0, students:[]
-      };
+        sales: 0, revenue: 0, students: []
+      });
     });
 
+    // Subfolders
+    Object.values(S.subfolders).forEach(sf => {
+      const parent = S.courses[sf.courseId];
+      rows.push({
+        id: sf.id,
+        name: sf.name || 'Unnamed',
+        type: 'subfolder',
+        parent: parent?.name || '—',
+        price: num(sf.price),
+        priceType: num(sf.price) > 0 ? 'paid' : 'free',
+        durationType: sf.durationType || 'lifetime',
+        durationValue: num(sf.durationValue),
+        subfolders: 0,
+        videos: Object.values(S.videos).filter(v=>v.subfolderId===sf.id).length,
+        docs: Object.values(S.docs).filter(d=>d.subfolderId===sf.id).length,
+        sales: 0, revenue: 0, students: []
+      });
+    });
+
+    // Attach sales
+    const byId = {};
+    rows.forEach(r => byId[r.id] = r);
     txApproved.forEach(t => {
-      const c = byCourse[t.itemId];
-      if(!c) return;
-      c.enrollments += 1;
-      c.revenue += num(t.amount);
-      c.students.push({ uid:t.userId, name:t.userName||'Unknown', email:t.userEmail||'', amount:num(t.amount) });
+      const r = byId[t.itemId];
+      if(!r) return;
+      r.sales += 1;
+      r.revenue += num(t.amount);
+      r.students.push({
+        uid: t.userId,
+        name: t.userName || 'Unknown',
+        email: t.userEmail || '',
+        amount: num(t.amount),
+        date: t.timestamp
+      });
     });
 
-    let rows = Object.values(byCourse);
-
-    // Filters
-    if(f.status === 'free')      rows = rows.filter(r=>r.priceType==='free');
-    else if(f.status === 'paid') rows = rows.filter(r=>r.priceType==='paid');
-    else if(f.status === 'top')  rows = rows.filter(r=>r.enrollments > 0);
+    // Filter
+    let filtered = rows;
+    if(f.typeFilter === 'course')         filtered = filtered.filter(r => r.type === 'course');
+    else if(f.typeFilter === 'subfolder') filtered = filtered.filter(r => r.type === 'subfolder');
+    else if(f.typeFilter === 'free')      filtered = filtered.filter(r => r.priceType === 'free');
+    else if(f.typeFilter === 'paid')      filtered = filtered.filter(r => r.priceType === 'paid');
+    else if(f.typeFilter === 'top')       filtered = filtered.filter(r => r.sales > 0);
 
     if(f.search){
       const q = f.search.toLowerCase();
-      rows = rows.filter(r => r.name.toLowerCase().includes(q));
+      filtered = filtered.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.parent.toLowerCase().includes(q));
     }
 
     // Sort
     const sorters = {
       'revenue-desc': (a,b)=>b.revenue - a.revenue,
       'revenue-asc':  (a,b)=>a.revenue - b.revenue,
-      'enroll-desc':  (a,b)=>b.enrollments - a.enrollments,
-      'enroll-asc':   (a,b)=>a.enrollments - b.enrollments,
+      'sales-desc':   (a,b)=>b.sales - a.sales,
+      'sales-asc':    (a,b)=>a.sales - b.sales,
       'name-asc':     (a,b)=>a.name.localeCompare(b.name),
       'name-desc':    (a,b)=>b.name.localeCompare(a.name),
       'price-desc':   (a,b)=>b.price - a.price,
       'price-asc':    (a,b)=>a.price - b.price
     };
-    rows.sort(sorters[f.sortBy] || sorters['revenue-desc']);
+    filtered.sort(sorters[f.sortBy] || sorters['revenue-desc']);
 
-    const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
-    const totalEnroll = rows.reduce((s,r)=>s+r.enrollments,0);
-    const totalFree = rows.filter(r=>r.priceType==='free').length;
-    const totalPaid = rows.filter(r=>r.priceType==='paid').length;
+    const totalRevenue = filtered.reduce((s,r)=>s+r.revenue,0);
+    const totalSales = filtered.reduce((s,r)=>s+r.sales,0);
+    const courseCount = filtered.filter(r=>r.type==='course').length;
+    const subCount = filtered.filter(r=>r.type==='subfolder').length;
+    const paidCount = filtered.filter(r=>r.priceType==='paid').length;
+    const freeCount = filtered.filter(r=>r.priceType==='free').length;
+
+    /* Main table */
+    const mainTable = filtered.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No items match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th>
+            <th>Item</th>
+            <th class="center">Type</th>
+            <th>Parent Course</th>
+            <th class="center">Price Type</th>
+            <th class="right">Price</th>
+            <th class="right">Sales</th>
+            <th class="right">Revenue</th>
+            <th class="right">Vid / Docs</th>
+          </tr></thead>
+          <tbody>${filtered.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong></td>
+              <td class="center"><span class="badge ${r.type==='course'?'approved':'pending'}">${esc(r.type)}</span></td>
+              <td class="muted">${esc(r.parent||'—')}</td>
+              <td class="center"><span class="badge ${r.priceType}">${esc(r.priceType)}</span></td>
+              <td class="right">${r.price > 0 ? money(r.price) : 'FREE'}</td>
+              <td class="right"><strong>${r.sales}</strong></td>
+              <td class="right money">${money(r.revenue)}</td>
+              <td class="right muted">${r.videos} / ${r.docs}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    /* Best-selling (top 20) */
+    const best = [...filtered].filter(r=>r.sales>0).sort((a,b)=>b.revenue-a.revenue).slice(0,20);
+    const bestBody = best.length === 0
+      ? `<div class="empty"><i class="fas fa-fire"></i>No sales in this period.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Item</th><th>Type</th><th>Parent</th>
+            <th class="right">Sales</th><th class="right">Revenue</th>
+          </tr></thead>
+          <tbody>${best.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(r.name)}</td>
+              <td style="text-transform:capitalize">${esc(r.type)}</td>
+              <td class="muted">${esc(r.parent||'—')}</td>
+              <td class="right"><strong>${r.sales}</strong></td>
+              <td class="right money">${money(r.revenue)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    /* Most enrolled (top 20) */
+    const most = [...filtered].filter(r=>r.sales>0).sort((a,b)=>b.sales-a.sales).slice(0,20);
+    const mostBody = most.length === 0
+      ? `<div class="empty"><i class="fas fa-users"></i>No enrollments in this period.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Item</th><th>Type</th><th>Parent</th>
+            <th class="right">Enrollments</th>
+          </tr></thead>
+          <tbody>${most.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(r.name)}</td>
+              <td style="text-transform:capitalize">${esc(r.type)}</td>
+              <td class="muted">${esc(r.parent||'—')}</td>
+              <td class="right"><strong>${r.sales}</strong></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    /* Per-item students breakdown */
+    const itemsWithStudents = filtered.filter(r => r.students.length > 0);
+    const perItemBody = itemsWithStudents.length === 0
+      ? `<div class="empty"><i class="fas fa-user-graduate"></i>No students purchased in this period.</div>`
+      : itemsWithStudents.map(r=>`
+          <div style="margin-bottom:18px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--gold-d)">${esc(r.name)}</span>
+              <span class="badge ${r.type==='course'?'approved':'pending'}">${esc(r.type)}</span>
+              <span class="badge approved">${r.students.length} student${r.students.length!==1?'s':''}</span>
+              <span class="badge pending">${money(r.revenue)}</span>
+            </div>
+            <div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Student</th><th>Email</th>
+                <th class="right">Paid</th><th>Date</th>
+              </tr></thead>
+              <tbody>${r.students.map((s,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td>${esc(s.name)}</td>
+                  <td class="muted">${esc(s.email)}</td>
+                  <td class="right money">${money(s.amount)}</td>
+                  <td class="muted">${fmtDate(s.date)}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
+          </div>`).join('');
+
+    /* All purchases detail (flat) */
+    const flatPurchases = [];
+    filtered.forEach(r => {
+      r.students.forEach(s => {
+        flatPurchases.push({
+          item: r.name,
+          type: r.type,
+          parent: r.parent,
+          student: s.name,
+          email: s.email,
+          amount: s.amount,
+          date: s.date
+        });
+      });
+    });
+    flatPurchases.sort((a,b)=>(b.date||0)-(a.date||0));
+    const flatBody = flatPurchases.length === 0
+      ? `<div class="empty"><i class="fas fa-receipt"></i>No purchase records.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Item</th><th>Type</th><th>Parent</th>
+            <th>Student</th><th>Email</th>
+            <th class="right">Amount</th><th>Date</th>
+          </tr></thead>
+          <tbody>${flatPurchases.map((p,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(p.item)}</td>
+              <td style="text-transform:capitalize">${esc(p.type)}</td>
+              <td class="muted">${esc(p.parent||'—')}</td>
+              <td>${esc(p.student)}</td>
+              <td class="muted">${esc(p.email)}</td>
+              <td class="right money">${money(p.amount)}</td>
+              <td class="muted">${fmtDate(p.date)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
 
     return `
       <div class="card">
-        <h2><i class="fas fa-book-open"></i> Courses Report</h2>
-        <p class="hint">All course sales, enrollments and revenue with full filtering.</p>
+        <h2><i class="fas fa-book-open"></i> Courses &amp; Subfolders Report</h2>
+        <p class="hint">Combined report of every course and subfolder with full sales breakdown.</p>
         ${rangeControlsHTML()}
 
         <div class="filters">
-          <select id="crsStatus">
-            <option value="all" ${f.status==='all'?'selected':''}>All courses</option>
-            <option value="paid" ${f.status==='paid'?'selected':''}>Paid only</option>
-            <option value="free" ${f.status==='free'?'selected':''}>Free only</option>
-            <option value="top" ${f.status==='top'?'selected':''}>With enrollments</option>
+          <select id="csType">
+            <option value="all" ${f.typeFilter==='all'?'selected':''}>All types</option>
+            <option value="course" ${f.typeFilter==='course'?'selected':''}>Courses only</option>
+            <option value="subfolder" ${f.typeFilter==='subfolder'?'selected':''}>Subfolders only</option>
+            <option value="paid" ${f.typeFilter==='paid'?'selected':''}>Paid only</option>
+            <option value="free" ${f.typeFilter==='free'?'selected':''}>Free only</option>
+            <option value="top" ${f.typeFilter==='top'?'selected':''}>With sales</option>
           </select>
-          <select id="crsSort">
+          <select id="csSort">
             <option value="revenue-desc" ${f.sortBy==='revenue-desc'?'selected':''}>Sort: Revenue ↓</option>
-            <option value="revenue-asc"  ${f.sortBy==='revenue-asc'?'selected':''}>Sort: Revenue ↑</option>
-            <option value="enroll-desc"  ${f.sortBy==='enroll-desc'?'selected':''}>Sort: Enrollments ↓</option>
-            <option value="enroll-asc"   ${f.sortBy==='enroll-asc'?'selected':''}>Sort: Enrollments ↑</option>
-            <option value="price-desc"   ${f.sortBy==='price-desc'?'selected':''}>Sort: Price ↓</option>
-            <option value="price-asc"    ${f.sortBy==='price-asc'?'selected':''}>Sort: Price ↑</option>
-            <option value="name-asc"     ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
-            <option value="name-desc"    ${f.sortBy==='name-desc'?'selected':''}>Sort: Name Z–A</option>
+            <option value="revenue-asc" ${f.sortBy==='revenue-asc'?'selected':''}>Sort: Revenue ↑</option>
+            <option value="sales-desc" ${f.sortBy==='sales-desc'?'selected':''}>Sort: Sales ↓</option>
+            <option value="sales-asc" ${f.sortBy==='sales-asc'?'selected':''}>Sort: Sales ↑</option>
+            <option value="price-desc" ${f.sortBy==='price-desc'?'selected':''}>Sort: Price ↓</option>
+            <option value="price-asc" ${f.sortBy==='price-asc'?'selected':''}>Sort: Price ↑</option>
+            <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+            <option value="name-desc" ${f.sortBy==='name-desc'?'selected':''}>Sort: Name Z–A</option>
           </select>
-          <input type="text" id="crsSearch" placeholder="Search course name…" value="${esc(f.search)}" />
+          <input type="text" id="csSearch" placeholder="Search name or parent course…" value="${esc(f.search)}" />
         </div>
 
         ${downloadControlsHTML()}
       </div>
 
       <div class="kpi-grid">
-        ${kpi('fa-book', rows.length, 'Courses Shown', '#d4952a')}
-        ${kpi('fa-check-circle', totalPaid, 'Paid Courses', '#2e7d32')}
-        ${kpi('fa-gift', totalFree, 'Free Courses', '#3b82f6')}
-        ${kpi('fa-users', totalEnroll, 'Total Enrollments', '#7c3aed')}
+        ${kpi('fa-book-open', courseCount, 'Courses', '#d4952a')}
+        ${kpi('fa-folder', subCount, 'Subfolders', '#3b82f6')}
+        ${kpi('fa-check-circle', paidCount, 'Paid Items', '#2e7d32')}
+        ${kpi('fa-gift', freeCount, 'Free Items', '#7c3aed')}
+        ${kpi('fa-shopping-cart', totalSales, 'Total Sales', '#0891b2')}
         ${kpi('fa-coins', money(totalRevenue), 'Total Revenue', '#f39c12')}
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Course Breakdown</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No courses match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th>
-                <th>Course</th>
-                <th class="center">Type</th>
-                <th class="right">Price</th>
-                <th class="right">Enroll.</th>
-                <th class="right">Revenue</th>
-                <th class="right">Sub / Vid / Docs</th>
-              </tr></thead>
-              <tbody>${rows.map((r,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong></td>
-                  <td class="center"><span class="badge ${r.priceType==='free'?'approved':'pending'}">${r.priceType}</span></td>
-                  <td class="right">${r.price>0 ? money(r.price) : 'FREE'}</td>
-                  <td class="right"><strong>${r.enrollments}</strong></td>
-                  <td class="right money">${money(r.revenue)}</td>
-                  <td class="right muted">${r.subfolders} / ${r.videos} / ${r.docs}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('cs-main','fa-table','Full Breakdown — All Courses & Subfolders',
+        filtered.length, mainTable, true)}
 
-      <div class="card">
-        <h3><i class="fas fa-user-check"></i> Students Enrolled per Course</h3>
-        ${rows.filter(r=>r.students.length).length === 0
-          ? `<div class="empty"><i class="fas fa-user-graduate"></i>No enrollments in this period.</div>`
-          : rows.filter(r=>r.students.length).map(r=>`
-            <div style="margin-bottom:14px;">
-              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
-                ${esc(r.name)} <span class="badge approved">${r.students.length} student${r.students.length!==1?'s':''}</span>
-              </div>
-              <div class="tbl-wrap"><table class="rpt">
-                <thead><tr>
-                  <th>#</th><th>Student</th><th>Email</th><th class="right">Paid</th>
-                </tr></thead>
-                <tbody>${r.students.map((s,i)=>`
-                  <tr>
-                    <td class="rank">${i+1}</td>
-                    <td>${esc(s.name)}</td>
-                    <td class="muted">${esc(s.email)}</td>
-                    <td class="right money">${money(s.amount)}</td>
-                  </tr>`).join('')}</tbody>
-              </table></div>
-            </div>`).join('')}
-      </div>
+      ${collapseSection('cs-best','fa-fire','Best-Selling (Top 20 by Revenue)',
+        best.length, bestBody, true)}
+
+      ${collapseSection('cs-most','fa-users','Most Enrolled (Top 20 by Enrollments)',
+        most.length, mostBody, false)}
+
+      ${collapseSection('cs-per-item','fa-user-check','Students Per Item',
+        itemsWithStudents.length, perItemBody, false)}
+
+      ${collapseSection('cs-flat','fa-receipt','All Purchase Records',
+        flatPurchases.length, flatBody, false)}
     `;
   }
 };
 
-/* =================================================================
-   MODULE: SUBFOLDERS
-================================================================= */
-window.MODULES.subfolders = {
-  render(){
-    const f = STATE.subfolders;
-    const txApproved = dedupeTx(buildAllTx())
-      .filter(t => inRange(t.timestamp) && t.status === 'approved')
-      .filter(t => t.itemType === 'subfolder');
-
-    const bySub = {};
-    Object.values(S.subfolders).forEach(sf => {
-      const parent = S.courses[sf.courseId];
-      bySub[sf.id] = {
-        id:sf.id, name:sf.name||'Unnamed',
-        courseId: sf.courseId||'',
-        courseName: parent?.name || '—',
-        price: num(sf.price),
-        priceType: num(sf.price) > 0 ? 'paid' : 'free',
-        durationType: sf.durationType || 'lifetime',
-        durationValue: num(sf.durationValue),
-        videos: Object.values(S.videos).filter(v=>v.subfolderId===sf.id).length,
-        docs: Object.values(S.docs).filter(d=>d.subfolderId===sf.id).length,
-        purchases:0, revenue:0, students:[]
-      };
-    });
-
-    txApproved.forEach(t => {
-      const s = bySub[t.itemId];
-      if(!s) return;
-      s.purchases += 1;
-      s.revenue += num(t.amount);
-      s.students.push({ uid:t.userId, name:t.userName||'Unknown', email:t.userEmail||'', amount:num(t.amount) });
-    });
-
-    let rows = Object.values(bySub);
-
-    if(f.status === 'free')      rows = rows.filter(r=>r.priceType==='free');
-    else if(f.status === 'paid') rows = rows.filter(r=>r.priceType==='paid');
-    else if(f.status === 'top')  rows = rows.filter(r=>r.purchases > 0);
-
-    if(f.search){
-      const q = f.search.toLowerCase();
-      rows = rows.filter(r =>
-        r.name.toLowerCase().includes(q) ||
-        r.courseName.toLowerCase().includes(q));
-    }
-
-    const sorters = {
-      'revenue-desc': (a,b)=>b.revenue - a.revenue,
-      'revenue-asc':  (a,b)=>a.revenue - b.revenue,
-      'purchase-desc':(a,b)=>b.purchases - a.purchases,
-      'purchase-asc': (a,b)=>a.purchases - b.purchases,
-      'name-asc':     (a,b)=>a.name.localeCompare(b.name),
-      'name-desc':    (a,b)=>b.name.localeCompare(a.name),
-      'price-desc':   (a,b)=>b.price - a.price,
-      'price-asc':    (a,b)=>a.price - b.price
-    };
-    rows.sort(sorters[f.sortBy] || sorters['revenue-desc']);
-
-    const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
-    const totalPurch = rows.reduce((s,r)=>s+r.purchases,0);
-
-    return `
-      <div class="card">
-        <h2><i class="fas fa-folder"></i> Subfolders Report</h2>
-        <p class="hint">Sales, revenue and content breakdown for every subfolder.</p>
-        ${rangeControlsHTML()}
-
-        <div class="filters">
-          <select id="sfStatus">
-            <option value="all" ${f.status==='all'?'selected':''}>All subfolders</option>
-            <option value="paid" ${f.status==='paid'?'selected':''}>Paid only</option>
-            <option value="free" ${f.status==='free'?'selected':''}>Free only</option>
-            <option value="top"  ${f.status==='top'?'selected':''}>With purchases</option>
-          </select>
-          <select id="sfSort">
-            <option value="revenue-desc" ${f.sortBy==='revenue-desc'?'selected':''}>Sort: Revenue ↓</option>
-            <option value="revenue-asc"  ${f.sortBy==='revenue-asc'?'selected':''}>Sort: Revenue ↑</option>
-            <option value="purchase-desc"${f.sortBy==='purchase-desc'?'selected':''}>Sort: Purchases ↓</option>
-            <option value="purchase-asc" ${f.sortBy==='purchase-asc'?'selected':''}>Sort: Purchases ↑</option>
-            <option value="price-desc"   ${f.sortBy==='price-desc'?'selected':''}>Sort: Price ↓</option>
-            <option value="price-asc"    ${f.sortBy==='price-asc'?'selected':''}>Sort: Price ↑</option>
-            <option value="name-asc"     ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
-          </select>
-          <input type="text" id="sfSearch" placeholder="Search subfolder or course…" value="${esc(f.search)}" />
-        </div>
-
-        ${downloadControlsHTML()}
-      </div>
-
-      <div class="kpi-grid">
-        ${kpi('fa-folder', rows.length, 'Subfolders Shown', '#3b82f6')}
-        ${kpi('fa-shopping-cart', totalPurch, 'Total Purchases', '#7c3aed')}
-        ${kpi('fa-coins', money(totalRevenue), 'Revenue', '#d4952a')}
-        ${kpi('fa-video', rows.reduce((s,r)=>s+r.videos,0), 'Total Videos', '#0891b2')}
-        ${kpi('fa-file-alt', rows.reduce((s,r)=>s+r.docs,0), 'Total Docs', '#ec4899')}
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Subfolder Breakdown</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No subfolders match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Subfolder</th><th>Parent Course</th>
-                <th class="center">Type</th>
-                <th class="right">Price</th>
-                <th class="right">Purchases</th>
-                <th class="right">Revenue</th>
-                <th class="right">Vid/Docs</th>
-              </tr></thead>
-              <tbody>${rows.map((r,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong></td>
-                  <td class="muted">${esc(r.courseName)}</td>
-                  <td class="center"><span class="badge ${r.priceType==='free'?'approved':'pending'}">${r.priceType}</span></td>
-                  <td class="right">${r.price>0 ? money(r.price) : 'FREE'}</td>
-                  <td class="right"><strong>${r.purchases}</strong></td>
-                  <td class="right money">${money(r.revenue)}</td>
-                  <td class="right muted">${r.videos} / ${r.docs}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-user-check"></i> Students Who Purchased</h3>
-        ${rows.filter(r=>r.students.length).length === 0
-          ? `<div class="empty"><i class="fas fa-user-graduate"></i>No subfolder purchases in this period.</div>`
-          : rows.filter(r=>r.students.length).map(r=>`
-            <div style="margin-bottom:14px;">
-              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
-                ${esc(r.name)} — <span class="muted">${esc(r.courseName)}</span>
-                <span class="badge approved">${r.students.length}</span>
-              </div>
-              <div class="tbl-wrap"><table class="rpt">
-                <thead><tr><th>#</th><th>Student</th><th>Email</th><th class="right">Paid</th></tr></thead>
-                <tbody>${r.students.map((s,i)=>`
-                  <tr>
-                    <td class="rank">${i+1}</td>
-                    <td>${esc(s.name)}</td>
-                    <td class="muted">${esc(s.email)}</td>
-                    <td class="right money">${money(s.amount)}</td>
-                  </tr>`).join('')}</tbody>
-              </table></div>
-            </div>`).join('')}
-      </div>
-    `;
-  }
-};
-
-/* =================================================================
-   MODULE: LECTURE DASHBOARD
-================================================================= */
-window.MODULES.lectureDash = {
+/* ---------- LECTURE DASHBOARD ---------- */
+MODULES.lectureDash = {
   render(){
     const f = STATE.lectureDash;
     const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
 
-    // Compute earnings per lecturer from approved purchases
     const txApproved = dedupeTx(buildAllTx())
       .filter(t => inRange(t.timestamp) && t.status === 'approved')
       .filter(t => t.itemType === 'course' || t.itemType === 'subfolder');
 
-    // Build owner index
     const ownerIdx = {};
     Object.entries(S.courses).forEach(([id,c])=>{ if(c.lecturerId) ownerIdx[id]=c.lecturerId; });
     Object.entries(S.subfolders).forEach(([id,s])=>{ if(s.lecturerId) ownerIdx[id]=s.lecturerId; });
 
-    const byLecturer = {};
+    const byL = {};
     lectArr.forEach(l => {
-      byLecturer[l.id] = {
-        id:l.id,
-        name:l.name||'Unnamed',
-        email:l.email||'',
-        phone:l.phone||'',
-        status:l.status||'pending',
-        banned:!!l.banned,
-        accessExpiresAt:l.accessExpiresAt||null,
-        approvedAt:l.approvedAt||0,
+      byL[l.id] = {
+        id:l.id, name:l.name||'Unnamed', email:l.email||'', phone:l.phone||'',
+        status:l.status||'pending', banned:!!l.banned,
+        accessExpiresAt:l.accessExpiresAt||null, approvedAt:l.approvedAt||0,
         courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
         subfolders: Object.values(S.subfolders).filter(s=>s.lecturerId===l.id).length,
         videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
         docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
         assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length,
-        sales:0, revenue:0, students:new Set()
+        sales:0, revenue:0, students:new Set(), items:[]
       };
     });
 
     txApproved.forEach(t => {
-      const ownerId = ownerIdx[t.itemId];
-      if(!ownerId || !byLecturer[ownerId]) return;
-      const L = byLecturer[ownerId];
+      const owner = ownerIdx[t.itemId];
+      if(!owner || !byL[owner]) return;
+      const L = byL[owner];
       L.sales += 1;
       L.revenue += num(t.amount);
       if(t.userId) L.students.add(t.userId);
+      L.items.push({
+        title: t.itemTitle||'—',
+        type: t.itemType||'course',
+        studentName: t.userName||'—',
+        studentEmail: t.userEmail||'',
+        amount: num(t.amount),
+        date: t.timestamp
+      });
     });
 
-    let rows = Object.values(byLecturer);
-    rows.forEach(r => r.uniqueStudents = r.students.size);
+    let rows = Object.values(byL).map(r => ({...r, uniqueStudents:r.students.size}));
 
-    // Apply status filter
     if(f.status === 'approved')   rows = rows.filter(r => r.status === 'approved' && !r.banned);
     else if(f.status === 'pending')  rows = rows.filter(r => r.status === 'pending');
     else if(f.status === 'rejected') rows = rows.filter(r => r.status === 'rejected');
     else if(f.status === 'banned')   rows = rows.filter(r => r.banned);
-    else if(f.status === 'active')   rows = rows.filter(r => {
-      return r.status === 'approved' && !r.banned &&
-             (!r.accessExpiresAt || r.accessExpiresAt > Date.now());
-    });
+    else if(f.status === 'active')   rows = rows.filter(r =>
+      r.status === 'approved' && !r.banned &&
+      (!r.accessExpiresAt || r.accessExpiresAt > Date.now()));
     else if(f.status === 'expired')  rows = rows.filter(r =>
       r.accessExpiresAt && r.accessExpiresAt <= Date.now());
 
@@ -1046,10 +1154,73 @@ window.MODULES.lectureDash = {
 
     const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
     const totalSales = rows.reduce((s,r)=>s+r.sales,0);
-    const totalPosts = rows.reduce((s,r)=>s+r.courses+r.subfolders+r.videos+r.docs+r.assessments,0);
-    const activeCount = rows.filter(r => {
-      return r.status==='approved' && !r.banned && (!r.accessExpiresAt || r.accessExpiresAt > Date.now());
-    }).length;
+    const activeCount = rows.filter(r =>
+      r.status==='approved' && !r.banned &&
+      (!r.accessExpiresAt || r.accessExpiresAt > Date.now())).length;
+
+    const perfTable = rows.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Lecturer</th><th class="center">Status</th>
+            <th class="right">Courses</th><th class="right">Subs</th>
+            <th class="right">Videos</th><th class="right">Docs</th>
+            <th class="right">Assess.</th>
+            <th class="right">Sales</th><th class="right">Students</th>
+            <th class="right">Earnings</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>{
+            let pillCls = 'pending', pillTxt = r.status;
+            if(r.banned){ pillCls='banned'; pillTxt='banned'; }
+            else if(r.status==='approved' && (!r.accessExpiresAt || r.accessExpiresAt>Date.now())){
+              pillCls='active'; pillTxt='active';
+            } else if(r.accessExpiresAt && r.accessExpiresAt<=Date.now()){
+              pillCls='expired'; pillTxt='expired';
+            }
+            return `
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span></td>
+              <td class="center"><span class="badge ${pillCls}">${esc(pillTxt)}</span></td>
+              <td class="right">${r.courses}</td>
+              <td class="right">${r.subfolders}</td>
+              <td class="right">${r.videos}</td>
+              <td class="right">${r.docs}</td>
+              <td class="right">${r.assessments}</td>
+              <td class="right"><strong>${r.sales}</strong></td>
+              <td class="right">${r.uniqueStudents}</td>
+              <td class="right money">${money(r.revenue)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+
+    // Per-lecturer sales detail
+    const perLectBody = rows.filter(r=>r.items.length).length === 0
+      ? `<div class="empty"><i class="fas fa-receipt"></i>No sales in this period.</div>`
+      : rows.filter(r=>r.items.length).map(r=>`
+          <div style="margin-bottom:18px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--gold-d)">${esc(r.name)}</span>
+              <span class="badge approved">${r.items.length} sale${r.items.length!==1?'s':''}</span>
+              <span class="badge pending">${money(r.revenue)}</span>
+            </div>
+            <div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Item</th><th>Type</th>
+                <th>Student</th><th class="right">Amount</th><th>Date</th>
+              </tr></thead>
+              <tbody>${r.items.sort((a,b)=>(b.date||0)-(a.date||0)).map((it,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td>${esc(it.title)}</td>
+                  <td style="text-transform:capitalize">${esc(it.type)}</td>
+                  <td>${esc(it.studentName)}<br><span class="muted">${esc(it.studentEmail)}</span></td>
+                  <td class="right money">${money(it.amount)}</td>
+                  <td class="muted">${fmtDate(it.date)}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
+          </div>`).join('');
 
     return `
       <div class="card">
@@ -1088,54 +1259,19 @@ window.MODULES.lectureDash = {
         ${kpi('fa-bolt', activeCount, 'Active Access', '#2ecc71')}
         ${kpi('fa-shopping-cart', totalSales, 'Sales Made', '#3b82f6')}
         ${kpi('fa-coins', money(totalRevenue), 'Revenue Generated', '#d4952a')}
-        ${kpi('fa-folder-open', totalPosts, 'Total Posts', '#0891b2')}
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Lecturer Performance</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Lecturer</th><th class="center">Status</th>
-                <th class="right">Courses</th>
-                <th class="right">Subs</th>
-                <th class="right">Posts</th>
-                <th class="right">Sales</th>
-                <th class="right">Students</th>
-                <th class="right">Earnings</th>
-              </tr></thead>
-              <tbody>${rows.map((r,i)=>{
-                let pillCls = 'pending', pillTxt = r.status;
-                if(r.banned){ pillCls='banned'; pillTxt='banned'; }
-                else if(r.status==='approved' && (!r.accessExpiresAt || r.accessExpiresAt>Date.now())){
-                  pillCls='active'; pillTxt='active';
-                } else if(r.accessExpiresAt && r.accessExpiresAt<=Date.now()){
-                  pillCls='expired'; pillTxt='expired';
-                }
-                return `
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span></td>
-                  <td class="center"><span class="badge ${pillCls}">${pillTxt}</span></td>
-                  <td class="right">${r.courses}</td>
-                  <td class="right">${r.subfolders}</td>
-                  <td class="right muted">${r.videos}/${r.docs}/${r.assessments}</td>
-                  <td class="right"><strong>${r.sales}</strong></td>
-                  <td class="right">${r.uniqueStudents}</td>
-                  <td class="right money">${money(r.revenue)}</td>
-                </tr>`;
-              }).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('ld-perf','fa-table','Lecturer Performance',
+        rows.length, perfTable, true)}
+
+      ${collapseSection('ld-sales','fa-receipt','Sales Breakdown Per Lecturer',
+        rows.filter(r=>r.items.length).length, perLectBody, false)}
     `;
   }
 };
 
-/* =================================================================
-   MODULE: EXPRESS SHOPPING
-================================================================= */
-window.MODULES.express = {
+/* ---------- EXPRESS SHOP ---------- */
+MODULES.express = {
   render(){
     const f = STATE.express;
     const products = Object.values(S.expressProducts);
@@ -1143,9 +1279,7 @@ window.MODULES.express = {
     const payments = Object.values(S.expressPayments).filter(p => inRange(p.createdAt));
 
     let rows = [...orders];
-
     if(f.status !== 'all') rows = rows.filter(r => r.status === f.status);
-
     if(f.search){
       const q = f.search.toLowerCase();
       rows = rows.filter(r =>
@@ -1172,7 +1306,6 @@ window.MODULES.express = {
     const paymentsPending  = payments.filter(p=>p.status==='pending');
     const paymentsRejected = payments.filter(p=>p.status==='rejected');
 
-    // Product sales by units
     const prodUnits = {};
     rows.forEach(o => {
       (o.items||[]).forEach(it => {
@@ -1183,6 +1316,89 @@ window.MODULES.express = {
       });
     });
     const topProducts = Object.values(prodUnits).sort((a,b)=>b.units-a.units);
+
+    const ordersTable = rows.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No orders match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>Order</th><th>Customer</th><th>Items</th>
+            <th class="right">Total</th>
+            <th class="center">Status</th><th>Date</th>
+          </tr></thead>
+          <tbody>${rows.map(o=>{
+            const items = (o.items||[]).map(i=>`${i.name||'?'} ×${i.qty||1}`).join(', ');
+            return `
+            <tr>
+              <td class="muted">#${esc((o.id||'').slice(0,8))}</td>
+              <td><strong>${esc(o.customerName||'Guest')}</strong><br><span class="muted">${esc(o.customerEmail||'')}</span></td>
+              <td class="muted" style="max-width:280px">${esc(items||'—')}</td>
+              <td class="right money">${money(o.total)}</td>
+              <td class="center"><span class="badge ${esc(o.status||'pending')}">${esc(o.status||'pending')}</span></td>
+              <td class="muted">${fmtDate(o.createdAt)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+
+    const paymentsTable = payments.length === 0
+      ? `<div class="empty"><i class="fas fa-receipt"></i>No payments in this period.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>Payment ID</th><th>Customer</th><th>Product</th>
+            <th class="right">Amount</th>
+            <th class="center">Status</th><th>Date</th>
+          </tr></thead>
+          <tbody>${payments.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(p=>`
+            <tr>
+              <td class="muted">#${esc((p.id||'').slice(0,8))}</td>
+              <td><strong>${esc(p.customerName||'Guest')}</strong><br><span class="muted">${esc(p.customerEmail||'')}</span></td>
+              <td class="muted" style="max-width:240px">${esc(p.productName||'—')}</td>
+              <td class="right money">${money(p.amount)}</td>
+              <td class="center"><span class="badge ${esc(p.status||'pending')}">${esc(p.status||'pending')}</span></td>
+              <td class="muted">${fmtDate(p.createdAt)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    const topProductsTable = topProducts.length === 0
+      ? `<div class="empty"><i class="fas fa-box"></i>No product sales in this period.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Product</th>
+            <th class="right">Units Sold</th><th class="right">Revenue</th>
+          </tr></thead>
+          <tbody>${topProducts.map((p,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(p.name)}</td>
+              <td class="right"><strong>${p.units}</strong></td>
+              <td class="right money">${money(p.revenue)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    const stockTable = products.length === 0
+      ? `<div class="empty"><i class="fas fa-box-open"></i>No products registered.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Product</th>
+            <th class="right">Price</th>
+            <th class="right">Stock</th>
+            <th class="center">Status</th>
+          </tr></thead>
+          <tbody>${products.map((p,i)=>{
+            const qty = num(p.quantity);
+            const low = num(p.lowStockThreshold) || 5;
+            let st = 'active';
+            if(qty <= 0) st = 'expired';
+            else if(qty <= low) st = 'pending';
+            return `
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(p.name||'Unnamed')}</td>
+              <td class="right money">${money(p.price)}</td>
+              <td class="right">${qty}</td>
+              <td class="center"><span class="badge ${st}">${qty<=0?'Out of Stock':(qty<=low?'Low Stock':'In Stock')}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
 
     return `
       <div class="card">
@@ -1223,91 +1439,31 @@ window.MODULES.express = {
         ${kpi('fa-times-circle', products.filter(p=>num(p.quantity)<=0).length, 'Out of Stock', '#e74c3c')}
       </div>
 
-      <div class="card" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid rgba(59,130,246,.2)">
-        <h3><i class="fas fa-credit-card"></i> Payments Status</h3>
+      ${collapseSection('ex-payments','fa-credit-card','Payments Status', null, `
         <div class="kpi-grid" style="margin-bottom:0">
           ${kpi('fa-check-circle', paymentsApproved.length, 'Approved', '#2e7d32')}
           ${kpi('fa-hourglass-half', paymentsPending.length, 'Pending', '#e65100')}
           ${kpi('fa-times-circle', paymentsRejected.length, 'Rejected', '#c62828')}
         </div>
-      </div>
+      `, true)}
 
-      <div class="card">
-        <h3><i class="fas fa-fire"></i> Top-Selling Products</h3>
-        ${topProducts.length === 0
-          ? `<div class="empty"><i class="fas fa-box"></i>No product sales in this period.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Product</th>
-                <th class="right">Units Sold</th>
-                <th class="right">Revenue</th>
-              </tr></thead>
-              <tbody>${topProducts.slice(0,30).map((p,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td>${esc(p.name)}</td>
-                  <td class="right"><strong>${p.units}</strong></td>
-                  <td class="right money">${money(p.revenue)}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('ex-top','fa-fire','Top-Selling Products',
+        topProducts.length, topProductsTable, true)}
 
-      <div class="card">
-        <h3><i class="fas fa-list"></i> Orders Detail (${rows.length})</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No orders match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>Order</th><th>Customer</th><th>Items</th>
-                <th class="right">Total</th>
-                <th class="center">Status</th>
-                <th>Date</th>
-              </tr></thead>
-              <tbody>${rows.slice(0,150).map(o=>{
-                const items = (o.items||[]).map(i=>`${i.name||'?'} ×${i.qty||1}`).join(', ');
-                return `
-                <tr>
-                  <td class="muted">#${esc((o.id||'').slice(0,8))}</td>
-                  <td><strong>${esc(o.customerName||'Guest')}</strong><br><span class="muted">${esc(o.customerEmail||'')}</span></td>
-                  <td class="muted" style="max-width:280px">${esc(items||'—')}</td>
-                  <td class="right money">${money(o.total)}</td>
-                  <td class="center"><span class="badge ${esc(o.status||'pending')}">${esc(o.status||'pending')}</span></td>
-                  <td class="muted">${fmtDate(o.createdAt)}</td>
-                </tr>`;
-              }).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('ex-orders','fa-list','Orders Detail',
+        rows.length, ordersTable, false)}
 
-      <div class="card">
-        <h3><i class="fas fa-receipt"></i> Payments Detail (${payments.length})</h3>
-        ${payments.length === 0
-          ? `<div class="empty"><i class="fas fa-receipt"></i>No payments in this period.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>Payment ID</th><th>Customer</th><th>Product</th>
-                <th class="right">Amount</th>
-                <th class="center">Status</th>
-                <th>Date</th>
-              </tr></thead>
-              <tbody>${payments.slice(0,100).map(p=>`
-                <tr>
-                  <td class="muted">#${esc((p.id||'').slice(0,8))}</td>
-                  <td><strong>${esc(p.customerName||'Guest')}</strong><br><span class="muted">${esc(p.customerEmail||'')}</span></td>
-                  <td class="muted" style="max-width:240px">${esc(p.productName||'—')}</td>
-                  <td class="right money">${money(p.amount)}</td>
-                  <td class="center"><span class="badge ${esc(p.status||'pending')}">${esc(p.status||'pending')}</span></td>
-                  <td class="muted">${fmtDate(p.createdAt)}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('ex-pay-detail','fa-receipt','Payments Detail',
+        payments.length, paymentsTable, false)}
+
+      ${collapseSection('ex-stock','fa-boxes','Product Stock Status',
+        products.length, stockTable, false)}
     `;
   }
 };
 
-/* =================================================================
-   MODULE: ASSESSMENTS
-================================================================= */
-window.MODULES.assessments = {
+/* ---------- ASSESSMENTS ---------- */
+MODULES.assessments = {
   render(){
     const f = STATE.assessments;
     const assArr = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
@@ -1331,12 +1487,12 @@ window.MODULES.assessments = {
         passingScore:num(a.passingScore||50),
         price:num(a.price),
         status:a.status||'draft',
-        registerIds: a.registerIds || [],
         attempts:resps.length,
         completed:completed.length,
         passed:passed.length,
         failed:completed.length - passed.length,
-        avgScore: completed.length ? Math.round(completed.reduce((s,r)=>s+num(r.score),0) / completed.length) : 0
+        avgScore: completed.length ? Math.round(completed.reduce((s,r)=>s+num(r.score),0) / completed.length) : 0,
+        responses: resps
       };
     });
 
@@ -1355,7 +1511,6 @@ window.MODULES.assessments = {
     }
 
     const sorters = {
-      'date-desc': (a,b)=>(b.attempts||0)-(a.attempts||0),
       'attempts-desc': (a,b)=>b.attempts - a.attempts,
       'attempts-asc': (a,b)=>a.attempts - b.attempts,
       'passed-desc': (a,b)=>b.passed - a.passed,
@@ -1369,6 +1524,80 @@ window.MODULES.assessments = {
     const totalPassed = rows.reduce((s,r)=>s+r.passed,0);
     const totalFailed = rows.reduce((s,r)=>s+r.failed,0);
     const passRate = totalCompleted > 0 ? Math.round((totalPassed/totalCompleted)*100) : 0;
+
+    const mainTable = rows.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No assessments match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Assessment</th><th class="center">Type</th>
+            <th class="center">Status</th>
+            <th class="right">Marks</th>
+            <th class="right">Attempts</th>
+            <th class="right">Passed</th>
+            <th class="right">Failed</th>
+            <th class="right">Avg</th>
+            <th class="right">Price</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.duration)}</span></td>
+              <td class="center"><span class="badge pending">${esc(r.type)}</span></td>
+              <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+              <td class="right">${r.totalMarks}</td>
+              <td class="right"><strong>${r.attempts}</strong></td>
+              <td class="right" style="color:#2e7d32;font-weight:700">${r.passed}</td>
+              <td class="right" style="color:#c62828;font-weight:700">${r.failed}</td>
+              <td class="right">${r.avgScore}</td>
+              <td class="right money">${r.price>0?money(r.price):'FREE'}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    // All response attempts flat
+    const flat = [];
+    rows.forEach(r => {
+      r.responses.forEach(resp => {
+        const total = r.totalMarks;
+        const pct = total > 0 ? Math.round((num(resp.score)/total)*100) : 0;
+        const passed = pct >= r.passingScore;
+        flat.push({
+          assessment: r.name,
+          type: r.type,
+          user: resp.userId||'—',
+          score: num(resp.score),
+          total: total,
+          percent: pct,
+          passed: passed,
+          status: resp.status||'—',
+          date: resp.submittedAt || resp.startedAt || resp.endedAt
+        });
+      });
+    });
+    flat.sort((a,b)=>(b.date||0)-(a.date||0));
+    const flatBody = flat.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No attempts recorded.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Assessment</th><th class="center">Type</th>
+            <th>User ID</th>
+            <th class="right">Score</th><th class="right">%</th>
+            <th class="center">Result</th>
+            <th class="center">Status</th>
+            <th>Date</th>
+          </tr></thead>
+          <tbody>${flat.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(r.assessment)}</td>
+              <td class="center">${esc(r.type)}</td>
+              <td class="muted">${esc(r.user)}</td>
+              <td class="right">${r.score} / ${r.total}</td>
+              <td class="right">${r.percent}%</td>
+              <td class="center"><span class="badge ${r.passed?'approved':'rejected'}">${r.passed?'PASS':'FAIL'}</span></td>
+              <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+              <td class="muted">${fmtDate(r.date)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
 
     return `
       <div class="card">
@@ -1390,10 +1619,10 @@ window.MODULES.assessments = {
             <option value="attempts-desc" ${f.sortBy==='attempts-desc'?'selected':''}>Sort: Most attempts</option>
             <option value="attempts-asc" ${f.sortBy==='attempts-asc'?'selected':''}>Sort: Fewest attempts</option>
             <option value="passed-desc" ${f.sortBy==='passed-desc'?'selected':''}>Sort: Most passes</option>
-            <option value="avg-desc" ${f.sortBy==='avg-desc'?'selected':''}>Sort: Highest avg score</option>
+            <option value="avg-desc" ${f.sortBy==='avg-desc'?'selected':''}>Sort: Highest avg</option>
             <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
           </select>
-          <input type="text" id="asSearch" placeholder="Search assessment name…" value="${esc(f.search)}" />
+          <input type="text" id="asSearch" placeholder="Search assessment…" value="${esc(f.search)}" />
         </div>
 
         ${downloadControlsHTML()}
@@ -1408,44 +1637,17 @@ window.MODULES.assessments = {
         ${kpi('fa-percentage', passRate + '%', 'Pass Rate', '#f39c12')}
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Assessment Breakdown</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No assessments match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Assessment</th><th class="center">Type</th>
-                <th class="center">Status</th>
-                <th class="right">Marks</th>
-                <th class="right">Attempts</th>
-                <th class="right">Passed</th>
-                <th class="right">Failed</th>
-                <th class="right">Avg</th>
-                <th class="right">Price</th>
-              </tr></thead>
-              <tbody>${rows.map((r,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.duration)}</span></td>
-                  <td class="center"><span class="badge pending" style="text-transform:uppercase">${esc(r.type)}</span></td>
-                  <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
-                  <td class="right">${r.totalMarks}</td>
-                  <td class="right"><strong>${r.attempts}</strong></td>
-                  <td class="right" style="color:#2e7d32;font-weight:700">${r.passed}</td>
-                  <td class="right" style="color:#c62828;font-weight:700">${r.failed}</td>
-                  <td class="right">${r.avgScore}</td>
-                  <td class="right money">${r.price>0?money(r.price):'FREE'}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('as-main','fa-table','Assessment Breakdown',
+        rows.length, mainTable, true)}
+
+      ${collapseSection('as-attempts','fa-list','All Attempts',
+        flat.length, flatBody, false)}
     `;
   }
 };
 
-/* =================================================================
-   MODULE: STUDENTS
-================================================================= */
-window.MODULES.students = {
+/* ---------- STUDENTS ---------- */
+MODULES.students = {
   render(){
     const f = STATE.students;
     const usersArr = Object.entries(S.users).map(([id,d])=>({id,...d}));
@@ -1453,8 +1655,6 @@ window.MODULES.students = {
 
     const txApproved = dedupeTx(buildAllTx())
       .filter(t => inRange(t.timestamp) && t.status === 'approved');
-
-    const txAll = dedupeTx(buildAllTx());
 
     const byStudent = {};
     usersArr.forEach(u => {
@@ -1482,7 +1682,10 @@ window.MODULES.students = {
       if(type === 'course') s.courses += 1;
       else if(type === 'subfolder') s.subfolders += 1;
       else if(type === 'shop') s.shopItems += 1;
-      s.items.push({ title:t.itemTitle||'—', type, amount:num(t.amount), date:t.timestamp });
+      s.items.push({
+        title:t.itemTitle||'—', type,
+        amount:num(t.amount), date:t.timestamp
+      });
     });
 
     let rows = Object.values(byStudent);
@@ -1514,6 +1717,60 @@ window.MODULES.students = {
     const totalPurch = rows.reduce((s,r)=>s+r.purchases,0);
     const buyersCount = rows.filter(r => r.purchases > 0).length;
     const bannedCount = rows.filter(r => r.banned).length;
+
+    const studentTable = rows.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No students match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Student</th><th>Email</th><th>Phone</th>
+            <th class="right">Courses</th>
+            <th class="right">Subfolders</th>
+            <th class="right">Shop</th>
+            <th class="right">Spend</th>
+            <th class="center">Status</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong></td>
+              <td class="muted">${esc(r.email)}</td>
+              <td class="muted">${esc(r.phone||'—')}</td>
+              <td class="right">${r.courses}</td>
+              <td class="right">${r.subfolders}</td>
+              <td class="right">${r.shopItems}</td>
+              <td class="right money">${money(r.spend)}</td>
+              <td class="center"><span class="badge ${r.banned?'banned':'active'}">${r.banned?'banned':'active'}</span></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    // Per student purchase detail
+    const itemsWithPurchases = rows.filter(r => r.items.length > 0);
+    const perStudentBody = itemsWithPurchases.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No purchases in this period.</div>`
+      : itemsWithPurchases.map(r=>`
+          <div style="margin-bottom:18px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--gold-d)">${esc(r.name)}</span>
+              <span class="muted" style="font-weight:400">${esc(r.email)}</span>
+              <span class="badge approved">${r.items.length} purchase${r.items.length!==1?'s':''}</span>
+              <span class="badge pending">${money(r.spend)}</span>
+            </div>
+            <div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Item</th><th>Type</th>
+                <th class="right">Amount</th><th>Date</th>
+              </tr></thead>
+              <tbody>${r.items.sort((a,b)=>(b.date||0)-(a.date||0)).map((it,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td>${esc(it.title)}</td>
+                  <td style="text-transform:capitalize">${esc(it.type)}</td>
+                  <td class="right money">${money(it.amount)}</td>
+                  <td class="muted">${fmtDate(it.date)}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
+          </div>`).join('');
 
     return `
       <div class="card">
@@ -1551,66 +1808,17 @@ window.MODULES.students = {
         ${kpi('fa-user-slash', bannedCount, 'Banned', '#e74c3c')}
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Student Details</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No students match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Student</th><th>Email</th><th>Phone</th>
-                <th class="right">Courses</th>
-                <th class="right">Subfolders</th>
-                <th class="right">Shop</th>
-                <th class="right">Spend</th>
-                <th class="center">Status</th>
-              </tr></thead>
-              <tbody>${rows.slice(0,250).map((r,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong></td>
-                  <td class="muted">${esc(r.email)}</td>
-                  <td class="muted">${esc(r.phone||'—')}</td>
-                  <td class="right">${r.courses}</td>
-                  <td class="right">${r.subfolders}</td>
-                  <td class="right">${r.shopItems}</td>
-                  <td class="right money">${money(r.spend)}</td>
-                  <td class="center"><span class="badge ${r.banned?'banned':'active'}">${r.banned?'banned':'active'}</span></td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('st-main','fa-table','Student Details',
+        rows.length, studentTable, true)}
 
-      <div class="card">
-        <h3><i class="fas fa-list"></i> Purchase History by Student</h3>
-        ${rows.filter(r=>r.items.length).length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No purchases in this period.</div>`
-          : rows.filter(r=>r.items.length).slice(0,30).map(r=>`
-            <div style="margin-bottom:14px;">
-              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
-                ${esc(r.name)} — <span class="muted">${esc(r.email)}</span>
-                <span class="badge approved">${r.items.length} purchase${r.items.length!==1?'s':''}</span>
-                <span class="badge pending" style="margin-left:4px">${money(r.spend)}</span>
-              </div>
-              <div class="tbl-wrap"><table class="rpt">
-                <thead><tr><th>#</th><th>Item</th><th>Type</th><th class="right">Amount</th><th>Date</th></tr></thead>
-                <tbody>${r.items.map((it,i)=>`
-                  <tr>
-                    <td class="rank">${i+1}</td>
-                    <td>${esc(it.title)}</td>
-                    <td style="text-transform:capitalize">${esc(it.type)}</td>
-                    <td class="right money">${money(it.amount)}</td>
-                    <td class="muted">${fmtDate(it.date)}</td>
-                  </tr>`).join('')}</tbody>
-              </table></div>
-            </div>`).join('')}
-      </div>
+      ${collapseSection('st-purchases','fa-receipt','Purchase History Per Student',
+        itemsWithPurchases.length, perStudentBody, false)}
     `;
   }
 };
 
-/* =================================================================
-   MODULE: LECTURERS
-================================================================= */
-window.MODULES.lecturers = {
+/* ---------- LECTURERS ---------- */
+MODULES.lecturers = {
   render(){
     const f = STATE.lecturers;
     const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
@@ -1623,21 +1831,16 @@ window.MODULES.lecturers = {
       else if(l.status === 'approved' && l.accessExpiresAt && l.accessExpiresAt <= now) status = 'expired';
       return {
         id:l.id,
-        name:l.name||'Unnamed',
-        email:l.email||'',
-        phone:l.phone||'',
-        nrc:l.nrcNumber||'',
-        college:l.collegeName||'',
-        city:l.city||'',
-        town:l.town||'',
-        status,
-        rawStatus: l.status||'pending',
+        name:l.name||'Unnamed', email:l.email||'', phone:l.phone||'',
+        nrc:l.nrcNumber||'', college:l.collegeName||'',
+        city:l.city||'', town:l.town||'', address:l.address||'',
+        status, rawStatus: l.status||'pending',
         banned: !!l.banned,
         accessExpiresAt: l.accessExpiresAt||null,
-        approvedAt: l.approvedAt||0,
-        appliedAt: l.appliedAt||0,
+        approvedAt: l.approvedAt||0, appliedAt: l.appliedAt||0,
         paidAmount: num(l.paidAmount),
         courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
+        subfolders: Object.values(S.subfolders).filter(s=>s.lecturerId===l.id).length,
         videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
         docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
         assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length
@@ -1673,6 +1876,72 @@ window.MODULES.lecturers = {
       banned: rows.filter(r=>r.status==='banned').length
     };
     const totalPaid = rows.reduce((s,r)=>s+r.paidAmount,0);
+
+    const mainTable = rows.length === 0
+      ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Lecturer</th><th>College / Location</th>
+            <th class="center">Status</th>
+            <th class="right">Courses</th><th class="right">Subs</th>
+            <th class="right">Videos</th><th class="right">Docs</th>
+            <th class="right">Assess.</th>
+            <th class="right">Paid</th><th>Expires</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span><br><span class="muted">${esc(r.phone)}</span></td>
+              <td>${esc(r.college||'—')}<br><span class="muted">${esc([r.city,r.town].filter(Boolean).join(', '))||'—'}</span></td>
+              <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+              <td class="right">${r.courses}</td>
+              <td class="right">${r.subfolders}</td>
+              <td class="right">${r.videos}</td>
+              <td class="right">${r.docs}</td>
+              <td class="right">${r.assessments}</td>
+              <td class="right money">${money(r.paidAmount)}</td>
+              <td class="muted">${r.accessExpiresAt ? fmtDay(r.accessExpiresAt) : 'Lifetime'}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    /* Applications detail — pending */
+    const pending = rows.filter(r => r.status === 'pending');
+    const pendingBody = pending.length === 0
+      ? `<div class="empty"><i class="fas fa-check-circle"></i>No pending applications.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Applicant</th><th>NRC</th>
+            <th>College</th><th>Location</th><th>Applied</th>
+          </tr></thead>
+          <tbody>${pending.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)} · ${esc(r.phone)}</span></td>
+              <td class="muted">${esc(r.nrc||'—')}</td>
+              <td>${esc(r.college||'—')}</td>
+              <td class="muted">${esc([r.city,r.town].filter(Boolean).join(', '))||'—'}</td>
+              <td class="muted">${fmtDate(r.appliedAt)}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    /* Banned detail */
+    const ban = rows.filter(r => r.status === 'banned');
+    const banBody = ban.length === 0
+      ? `<div class="empty"><i class="fas fa-check-circle"></i>No banned lecturers.</div>`
+      : `<div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Lecturer</th><th>Email</th>
+            <th>Phone</th><th>College</th>
+          </tr></thead>
+          <tbody>${ban.map((r,i)=>`
+            <tr>
+              <td class="rank">${i+1}</td>
+              <td>${esc(r.name)}</td>
+              <td class="muted">${esc(r.email)}</td>
+              <td class="muted">${esc(r.phone)}</td>
+              <td>${esc(r.college||'—')}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
 
     return `
       <div class="card">
@@ -1712,36 +1981,14 @@ window.MODULES.lecturers = {
         ${kpi('fa-coins', money(totalPaid), 'Total Subscriptions', '#d4952a')}
       </div>
 
-      <div class="card">
-        <h3><i class="fas fa-table"></i> Lecturer Details</h3>
-        ${rows.length === 0
-          ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
-          : `<div class="tbl-wrap"><table class="rpt">
-              <thead><tr>
-                <th>#</th><th>Lecturer</th><th>College / Location</th>
-                <th class="center">Status</th>
-                <th class="right">Courses</th>
-                <th class="right">Videos</th>
-                <th class="right">Docs</th>
-                <th class="right">Assess.</th>
-                <th class="right">Paid</th>
-                <th>Expires</th>
-              </tr></thead>
-              <tbody>${rows.map((r,i)=>`
-                <tr>
-                  <td class="rank">${i+1}</td>
-                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span><br><span class="muted">${esc(r.phone)}</span></td>
-                  <td>${esc(r.college||'—')}<br><span class="muted">${esc([r.city,r.town].filter(Boolean).join(', '))||'—'}</span></td>
-                  <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
-                  <td class="right">${r.courses}</td>
-                  <td class="right">${r.videos}</td>
-                  <td class="right">${r.docs}</td>
-                  <td class="right">${r.assessments}</td>
-                  <td class="right money">${money(r.paidAmount)}</td>
-                  <td class="muted">${r.accessExpiresAt ? fmtDay(r.accessExpiresAt) : 'Lifetime'}</td>
-                </tr>`).join('')}</tbody>
-            </table></div>`}
-      </div>
+      ${collapseSection('lc-main','fa-table','Lecturer Details',
+        rows.length, mainTable, true)}
+
+      ${collapseSection('lc-pending','fa-hourglass-half','Pending Applications',
+        pending.length, pendingBody, false)}
+
+      ${collapseSection('lc-banned','fa-ban','Banned Lecturers',
+        ban.length, banBody, false)}
     `;
   }
 };
@@ -1749,23 +1996,29 @@ window.MODULES.lecturers = {
 /* =================================================================
    EVENTS
 ================================================================= */
-function attachModuleEvents(){
-  // Range buttons
+function attachEvents(){
+  // Range buttons — with loading overlay
   document.querySelectorAll('.range-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      STATE.range = btn.dataset.range;
-      document.getElementById('customBox')?.classList.toggle('show', STATE.range === 'custom');
-      if(STATE.range !== 'custom'){
-        computeRange();
-        render();
-      } else {
+      const r = btn.dataset.range;
+      if(r === 'custom'){
+        STATE.range = 'custom';
         document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
+        document.getElementById('customBox')?.classList.add('show');
+        return;
       }
+      STATE.range = r;
+      showLoading('Loading data…', `Range: ${r} — fetching all records`);
+      setTimeout(() => {
+        computeRange();
+        render();
+        hideLoading();
+      }, 300);
     });
   });
 
-  // Custom range apply
+  // Custom apply — with loading overlay
   document.getElementById('applyCustomBtn')?.addEventListener('click', () => {
     const f = document.getElementById('fromDate').value;
     const t = document.getElementById('toDate').value;
@@ -1773,51 +2026,79 @@ function attachModuleEvents(){
     const sTs = new Date(f + 'T00:00:00').getTime();
     const eTs = new Date(t + 'T23:59:59').getTime();
     if(eTs < sTs){ toast('End date must be after start date','error'); return; }
-    STATE.startTs = sTs; STATE.endTs = eTs;
-    render();
+    showLoading('Loading data…', `Range: ${f} → ${t}`);
+    setTimeout(() => {
+      STATE.startTs = sTs; STATE.endTs = eTs;
+      render();
+      hideLoading();
+    }, 400);
   });
 
-  // Download buttons
+  // Download / expand / collapse buttons
   document.querySelectorAll('[data-dl]').forEach(btn => {
     btn.addEventListener('click', () => {
       const k = btn.dataset.dl;
-      if(k === 'pdf') downloadPDF();
-      else if(k === 'excel') downloadExcel();
-      else if(k === 'refresh'){ computeRange(); render(); toast('Refreshed','info'); }
+      if(k === 'pdf'){
+        showLoading('Generating PDF…', 'Applying styles and pagination');
+        setTimeout(() => downloadPDF().finally(hideLoading), 200);
+      } else if(k === 'excel'){
+        showLoading('Generating Excel…', 'Building workbook sheets');
+        setTimeout(() => { try{ downloadExcel(); } finally { hideLoading(); } }, 200);
+      } else if(k === 'expandAll'){
+        const keys = Object.keys(STATE.collapsed);
+        // actually we have to open ALL sections — build a list of all currently rendered keys
+        document.querySelectorAll('.collapse').forEach(c => {
+          STATE.collapsed[c.dataset.key] = true;
+        });
+        render();
+        toast('All sections expanded','info');
+      } else if(k === 'collapseAll'){
+        document.querySelectorAll('.collapse').forEach(c => {
+          STATE.collapsed[c.dataset.key] = false;
+        });
+        render();
+        toast('All sections collapsed','info');
+      } else if(k === 'refresh'){
+        showLoading('Refreshing…', 'Reloading data');
+        setTimeout(() => { computeRange(); render(); hideLoading(); }, 250);
+      }
     });
   });
 
   // Module-specific filters
-  const bind = (id, key, valKey) => {
+  const bind = (id, key) => {
     const el = document.getElementById(id);
     if(!el) return;
-    el.addEventListener('change', () => {
-      STATE[STATE.module][key] = el.value;
-      render();
-    });
     if(el.tagName === 'INPUT'){
       let t;
       el.addEventListener('input', () => {
         clearTimeout(t);
         t = setTimeout(() => {
-          STATE[STATE.module][key] = el.value;
-          // preserve focus
           const pos = el.selectionStart;
+          STATE[STATE.module][key] = el.value;
           render();
           const n = document.getElementById(id);
           if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} }
-        }, 350);
+        }, 300);
+      });
+    } else {
+      el.addEventListener('change', () => {
+        showLoading('Applying filter…', 'Please wait');
+        setTimeout(() => {
+          STATE[STATE.module][key] = el.value;
+          render();
+          hideLoading();
+        }, 150);
       });
     }
   };
 
-  bind('crsStatus','status'); bind('crsSort','sortBy'); bind('crsSearch','search');
-  bind('sfStatus','status');  bind('sfSort','sortBy');  bind('sfSearch','search');
-  bind('ldStatus','status');  bind('ldSort','sortBy');  bind('ldSearch','search');
-  bind('exStatus','status');  bind('exSort','sortBy');  bind('exSearch','search');
-  bind('asStatus','status');  bind('asSort','sortBy');  bind('asSearch','search');
-  bind('stStatus','status');  bind('stSort','sortBy');  bind('stSearch','search');
-  bind('lcStatus','status');  bind('lcSort','sortBy');  bind('lcSearch','search');
+  bind('csType','typeFilter'); bind('csSort','sortBy'); bind('csSearch','search');
+  bind('ldStatus','status');   bind('ldSort','sortBy'); bind('ldSearch','search');
+  bind('exStatus','status');   bind('exSort','sortBy'); bind('exSearch','search');
+  bind('asStatus','status');   bind('asSort','sortBy'); bind('asSearch','search');
+  bind('stStatus','status');   bind('stSort','sortBy'); bind('stSearch','search');
+  bind('lcStatus','status');   bind('lcSort','sortBy'); bind('lcSearch','search');
 }
 
 /* =================================================================
@@ -1828,12 +2109,17 @@ document.getElementById('sbBody').addEventListener('click', e => {
   if(!n) return;
   document.querySelectorAll('.nav[data-module]').forEach(x=>x.classList.remove('active'));
   n.classList.add('active');
-  STATE.module = n.dataset.module;
-  closeSidebar();
-  document.getElementById('content').scrollTop = 0;
-  render();
+  const target = n.dataset.module;
+  showLoading('Loading module…', 'Fetching all records');
+  setTimeout(() => {
+    STATE.module = target;
+    STATE.collapsed = {}; // reset collapse state per module
+    closeSidebar();
+    document.getElementById('content').scrollTop = 0;
+    render();
+    hideLoading();
+  }, 250);
 });
-
 function openSidebar(){
   document.getElementById('overlay').classList.add('open');
   document.getElementById('sidebar').classList.add('open');
@@ -1849,14 +2135,13 @@ document.getElementById('sbClose').onclick = closeSidebar;
 document.getElementById('overlay').onclick = closeSidebar;
 
 /* =================================================================
-   PDF DOWNLOAD (per module)
+   PDF EXPORT
 ================================================================= */
 async function downloadPDF(){
   const root = document.getElementById('reportRoot');
   if(!root) return;
-
   const moduleNames = {
-    overview:'Platform Overview', courses:'Courses Report', subfolders:'Subfolders Report',
+    overview:'Platform Overview', contentSales:'Courses & Subfolders Report',
     lectureDash:'Lecture Dashboard Report', express:'Express Shopping Report',
     assessments:'Assessments Report', students:'Students Report', lecturers:'Lecturers Report'
   };
@@ -1871,20 +2156,18 @@ async function downloadPDF(){
       <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">By: ${esc(currentAdmin?.email||'admin')}</div>
     </div>
   `;
-
   const cloned = root.cloneNode(true);
-  cloned.querySelectorAll('.card, .kpi').forEach(el => {
+  // Open all collapsibles for the PDF
+  cloned.querySelectorAll('.collapse').forEach(c => c.classList.add('open'));
+  cloned.querySelectorAll('.collapse-body').forEach(b => { b.style.maxHeight = 'none'; });
+  cloned.querySelectorAll('.card, .kpi, .collapse').forEach(el => {
     el.style.background = '#fff';
     el.style.boxShadow = 'none';
     el.style.border = '1px solid #e5e8ed';
   });
-  cloned.querySelectorAll('.range-btns, .custom-box, .action-btns, .filters').forEach(el => el.remove());
+  cloned.querySelectorAll('.range-btns, .custom-box, .action-btns, .filters, .collapse-head .chev').forEach(el => el.remove());
   wrap.appendChild(cloned);
   document.body.appendChild(wrap);
-
-  const btn = document.querySelector('[data-dl="pdf"]');
-  const orig = btn ? btn.innerHTML : '';
-  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…'; }
 
   try{
     await html2pdf().set({
@@ -1901,12 +2184,11 @@ async function downloadPDF(){
     toast('PDF error: ' + e.message,'error');
   }finally{
     document.body.removeChild(wrap);
-    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
   }
 }
 
 /* =================================================================
-   EXCEL DOWNLOAD (per module)
+   EXCEL EXPORT
 ================================================================= */
 function downloadExcel(){
   if(typeof XLSX === 'undefined'){ toast('Excel library not loaded','error'); return; }
@@ -1923,7 +2205,6 @@ function downloadExcel(){
     XLSX.utils.book_append_sheet(wb, ws, name);
   };
 
-  /* INFO */
   const infoRows = [
     ['UTOM REPORT'],
     ['Module', STATE.module],
@@ -1936,10 +2217,10 @@ function downloadExcel(){
   if(STATE.module === 'overview'){
     const courses = Object.values(S.courses);
     const subs    = Object.values(S.subfolders);
-    const vids    = Object.values(S.videos);
-    const docs    = Object.values(S.docs);
     const users   = Object.values(S.users);
     const lectArr = Object.entries(S.lecturerData);
+    const ass     = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+    const regs    = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
 
     const allTx = dedupeTx(buildAllTx()).filter(t => inRange(t.timestamp));
     const approved = allTx.filter(t => t.status==='approved');
@@ -1952,117 +2233,93 @@ function downloadExcel(){
       ['LIBRARY TOTALS',''],
       ['Courses', courses.length],
       ['Subfolders', subs.length],
-      ['Videos', vids.length],
-      ['Documents', docs.length],
+      ['Videos', Object.keys(S.videos).length],
+      ['Documents', Object.keys(S.docs).length],
       ['Students', users.length],
       ['Lecturers', lectArr.length],
+      ['Assessments', ass.length],
+      ['Registers', regs.length],
       [],
       ['TRANSACTIONS','Count','ZMW'],
       ['Approved', approved.length, sum(approved).toFixed(2)],
       ['Pending', pending.length, sum(pending).toFixed(2)],
       ['Rejected', rejected.length, sum(rejected).toFixed(2)],
-      ['Total', allTx.length, (sum(approved)+sum(pending)+sum(rejected)).toFixed(2)],
-      [],
-      ['RECENT ACTIVITY (Top 50)','','','',''],
-      ['User','Email','Item','Type','Amount','Status','Date'],
-      ...allTx.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,50).map(t=>[
-        t.userName||'', t.userEmail||'', t.itemTitle||'',
-        t.itemType||'', num(t.amount).toFixed(2),
-        t.status||'', fmtDate(t.timestamp)
+      ['Total', allTx.length, (sum(approved)+sum(pending)+sum(rejected)).toFixed(2)]
+    ]);
+
+    addSheet('All Transactions', [
+      ['ID','Source','User','Email','Item','Type','Amount','Status','Date'],
+      ...allTx.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).map(t=>[
+        t.id, t._src||'', t.userName||'', t.userEmail||'',
+        t.itemTitle||'', t.itemType||'',
+        num(t.amount).toFixed(2), t.status||'',
+        fmtDate(t.timestamp)
       ])
     ]);
   }
 
-  else if(STATE.module === 'courses'){
+  else if(STATE.module === 'contentSales'){
     const txApproved = dedupeTx(buildAllTx())
       .filter(t => inRange(t.timestamp) && t.status === 'approved')
-      .filter(t => t.itemType === 'course' || !t.itemType);
+      .filter(t => {
+        const it = (t.itemType||'course').toLowerCase();
+        return it === 'course' || it === 'subfolder';
+      });
 
-    const byCourse = {};
+    const rows = [];
     Object.values(S.courses).forEach(c => {
-      byCourse[c.id] = {
-        id:c.id, name:c.name||'', price:num(c.price),
-        priceType: num(c.price) > 0 ? 'paid' : 'free',
-        subfolders: Object.values(S.subfolders).filter(s=>s.courseId===c.id).length,
+      rows.push({
+        id:c.id, name:c.name||'', type:'course', parent:'',
+        price:num(c.price), priceType: num(c.price)>0?'paid':'free',
         videos: Object.values(S.videos).filter(v=>v.courseId===c.id).length,
         docs: Object.values(S.docs).filter(d=>d.courseId===c.id).length,
-        enrollments:0, revenue:0, students:[]
-      };
+        sales:0, revenue:0, students:[]
+      });
     });
-    txApproved.forEach(t => {
-      const c = byCourse[t.itemId];
-      if(!c) return;
-      c.enrollments += 1;
-      c.revenue += num(t.amount);
-      c.students.push({ name:t.userName||'', email:t.userEmail||'', amount:num(t.amount) });
-    });
-    const rows = Object.values(byCourse).sort((a,b)=>b.revenue-a.revenue);
-
-    addSheet('Overview', [
-      ...infoRows,
-      ['Courses', rows.length],
-      ['Total Enrollments', rows.reduce((s,r)=>s+r.enrollments,0)],
-      ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
-    ]);
-    addSheet('Courses', [
-      ['#','Course','Type','Price','Enrollments','Revenue','Subfolders','Videos','Docs'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.priceType, r.price.toFixed(2),
-        r.enrollments, r.revenue.toFixed(2),
-        r.subfolders, r.videos, r.docs
-      ])
-    ]);
-    const stRows = [['Course','Student','Email','Amount (ZMW)']];
-    rows.forEach(r => r.students.forEach(s =>
-      stRows.push([r.name, s.name, s.email, s.amount.toFixed(2)])));
-    addSheet('Students per Course', stRows);
-  }
-
-  else if(STATE.module === 'subfolders'){
-    const txApproved = dedupeTx(buildAllTx())
-      .filter(t => inRange(t.timestamp) && t.status === 'approved')
-      .filter(t => t.itemType === 'subfolder');
-
-    const bySub = {};
     Object.values(S.subfolders).forEach(sf => {
       const parent = S.courses[sf.courseId];
-      bySub[sf.id] = {
-        id:sf.id, name:sf.name||'',
-        courseName: parent?.name||'',
-        price:num(sf.price),
-        priceType: num(sf.price) > 0 ? 'paid' : 'free',
+      rows.push({
+        id:sf.id, name:sf.name||'', type:'subfolder', parent:parent?.name||'',
+        price:num(sf.price), priceType: num(sf.price)>0?'paid':'free',
         videos: Object.values(S.videos).filter(v=>v.subfolderId===sf.id).length,
         docs: Object.values(S.docs).filter(d=>d.subfolderId===sf.id).length,
-        purchases:0, revenue:0, students:[]
-      };
+        sales:0, revenue:0, students:[]
+      });
     });
+    const byId = {};
+    rows.forEach(r => byId[r.id] = r);
     txApproved.forEach(t => {
-      const s = bySub[t.itemId];
-      if(!s) return;
-      s.purchases += 1;
-      s.revenue += num(t.amount);
-      s.students.push({ name:t.userName||'', email:t.userEmail||'', amount:num(t.amount) });
+      const r = byId[t.itemId];
+      if(!r) return;
+      r.sales += 1; r.revenue += num(t.amount);
+      r.students.push({
+        name:t.userName||'', email:t.userEmail||'',
+        amount:num(t.amount), date:t.timestamp
+      });
     });
-    const rows = Object.values(bySub).sort((a,b)=>b.revenue-a.revenue);
 
     addSheet('Overview', [
       ...infoRows,
-      ['Subfolders', rows.length],
-      ['Total Purchases', rows.reduce((s,r)=>s+r.purchases,0)],
+      ['Courses', rows.filter(r=>r.type==='course').length],
+      ['Subfolders', rows.filter(r=>r.type==='subfolder').length],
+      ['Total Sales', rows.reduce((s,r)=>s+r.sales,0)],
       ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
     ]);
-    addSheet('Subfolders', [
-      ['#','Subfolder','Parent Course','Type','Price','Purchases','Revenue','Videos','Docs'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.courseName, r.priceType,
-        r.price.toFixed(2), r.purchases, r.revenue.toFixed(2),
+
+    addSheet('Courses & Subfolders', [
+      ['Type','Name','Parent','Price','PriceType','Sales','Revenue','Videos','Docs'],
+      ...rows.map(r=>[
+        r.type, r.name, r.parent,
+        r.price.toFixed(2), r.priceType,
+        r.sales, r.revenue.toFixed(2),
         r.videos, r.docs
       ])
     ]);
-    const stRows = [['Subfolder','Course','Student','Email','Amount (ZMW)']];
+
+    const stRows = [['Item','Type','Parent','Student','Email','Amount (ZMW)','Date']];
     rows.forEach(r => r.students.forEach(s =>
-      stRows.push([r.name, r.courseName, s.name, s.email, s.amount.toFixed(2)])));
-    addSheet('Students per Subfolder', stRows);
+      stRows.push([r.name, r.type, r.parent, s.name, s.email, s.amount.toFixed(2), fmtDate(s.date)])));
+    addSheet('All Purchase Records', stRows);
   }
 
   else if(STATE.module === 'lectureDash'){
@@ -2085,17 +2342,22 @@ function downloadExcel(){
         videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
         docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
         assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length,
-        sales:0, revenue:0, students:new Set()
+        sales:0, revenue:0, students:new Set(), items:[]
       };
     });
     txApproved.forEach(t => {
       const owner = ownerIdx[t.itemId];
       if(!owner || !byL[owner]) return;
-      byL[owner].sales += 1;
-      byL[owner].revenue += num(t.amount);
-      if(t.userId) byL[owner].students.add(t.userId);
+      const L = byL[owner];
+      L.sales += 1; L.revenue += num(t.amount);
+      if(t.userId) L.students.add(t.userId);
+      L.items.push({
+        title:t.itemTitle||'', type:t.itemType||'',
+        student:t.userName||'', email:t.userEmail||'',
+        amount:num(t.amount), date:t.timestamp
+      });
     });
-    const rows = Object.values(byL).map(r => ({...r, uniqueStudents:r.students.size}))
+    const rows = Object.values(byL).map(r=>({...r, uniqueStudents:r.students.size}))
       .sort((a,b)=>b.revenue-a.revenue);
 
     addSheet('Overview', [
@@ -2104,31 +2366,26 @@ function downloadExcel(){
       ['Total Sales', rows.reduce((s,r)=>s+r.sales,0)],
       ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
     ]);
-    addSheet('Lecturers', [
-      ['#','Lecturer','Email','Status','Banned','Courses','Videos','Docs','Assessments','Sales','Unique Students','Revenue'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.email, r.status,
-        r.banned?'Yes':'No',
+
+    addSheet('Lecturer Performance', [
+      ['Name','Email','Status','Banned','Courses','Videos','Docs','Assessments','Sales','Unique Students','Revenue'],
+      ...rows.map(r=>[
+        r.name, r.email, r.status, r.banned?'Yes':'No',
         r.courses, r.videos, r.docs, r.assessments,
         r.sales, r.uniqueStudents, r.revenue.toFixed(2)
       ])
     ]);
+
+    const salesRows = [['Lecturer','Item','Type','Student','Email','Amount (ZMW)','Date']];
+    rows.forEach(r => r.items.forEach(it =>
+      salesRows.push([r.name, it.title, it.type, it.student, it.email, it.amount.toFixed(2), fmtDate(it.date)])));
+    addSheet('Sales Breakdown', salesRows);
   }
 
   else if(STATE.module === 'express'){
     const orders = Object.values(S.expressOrders).filter(o => inRange(o.createdAt));
     const payments = Object.values(S.expressPayments).filter(p => inRange(p.createdAt));
-
-    const prodUnits = {};
-    orders.forEach(o => {
-      (o.items||[]).forEach(it => {
-        const key = it.productId || it.name;
-        if(!prodUnits[key]) prodUnits[key] = { name: it.name||'', units:0, revenue:0 };
-        prodUnits[key].units += num(it.qty) || 1;
-        prodUnits[key].revenue += num(it.price)*(num(it.qty)||1);
-      });
-    });
-    const topProducts = Object.values(prodUnits).sort((a,b)=>b.units-a.units);
+    const products = Object.values(S.expressProducts);
 
     addSheet('Overview', [
       ...infoRows,
@@ -2136,8 +2393,12 @@ function downloadExcel(){
       ['Revenue', orders.filter(o=>o.status==='completed'||o.status==='collected').reduce((s,o)=>s+num(o.total),0).toFixed(2)],
       ['Pending Payments', payments.filter(p=>p.status==='pending').length],
       ['Approved Payments', payments.filter(p=>p.status==='approved').length],
-      ['Rejected Payments', payments.filter(p=>p.status==='rejected').length]
+      ['Rejected Payments', payments.filter(p=>p.status==='rejected').length],
+      ['Total Products', products.length],
+      ['Low Stock', products.filter(p=>num(p.quantity)>0 && num(p.quantity)<=(p.lowStockThreshold||5)).length],
+      ['Out of Stock', products.filter(p=>num(p.quantity)<=0).length]
     ]);
+
     addSheet('Orders', [
       ['Order ID','Customer','Email','Phone','Items','Total','Status','Date'],
       ...orders.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(o=>[
@@ -2146,6 +2407,7 @@ function downloadExcel(){
         num(o.total).toFixed(2), o.status||'', fmtDate(o.createdAt)
       ])
     ]);
+
     addSheet('Payments', [
       ['Payment ID','Customer','Email','Product','Amount','Status','Date'],
       ...payments.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(p=>[
@@ -2154,9 +2416,17 @@ function downloadExcel(){
         p.status||'', fmtDate(p.createdAt)
       ])
     ]);
-    addSheet('Top Products', [
-      ['#','Product','Units Sold','Revenue'],
-      ...topProducts.map((p,i)=>[i+1, p.name, p.units, p.revenue.toFixed(2)])
+
+    addSheet('Product Stock', [
+      ['Product','Price','Stock','Threshold','Status'],
+      ...products.map(p=>{
+        const qty = num(p.quantity);
+        const low = num(p.lowStockThreshold)||5;
+        let st = 'In Stock';
+        if(qty <= 0) st = 'Out of Stock';
+        else if(qty <= low) st = 'Low Stock';
+        return [p.name||'', num(p.price).toFixed(2), qty, low, st];
+      })
     ]);
   }
 
@@ -2189,13 +2459,30 @@ function downloadExcel(){
       ['Total Passed', rows.reduce((s,r)=>s+r.passed,0)],
       ['Total Failed', rows.reduce((s,r)=>s+r.failed,0)]
     ]);
+
     addSheet('Assessments', [
-      ['#','Name','Type','Status','Duration','Marks','Attempts','Completed','Passed','Failed'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.type, r.status, r.duration,
+      ['Name','Type','Status','Duration','Marks','Attempts','Completed','Passed','Failed'],
+      ...rows.map(r=>[
+        r.name, r.type, r.status, r.duration,
         r.totalMarks, r.attempts, r.completed, r.passed, r.failed
       ])
     ]);
+
+    const attemptsRows = [['Assessment','Type','User ID','Score','Total','Percent','Result','Status','Date']];
+    respArr.forEach(r => {
+      const a = assArr.find(x=>x.id===r.assessmentId);
+      if(!a) return;
+      const total = num(a.totalMarks);
+      const pct = total > 0 ? Math.round((num(r.score)/total)*100) : 0;
+      const passed = pct >= num(a.passingScore||50);
+      attemptsRows.push([
+        a.name||'', a.type||'', r.userId||'',
+        num(r.score), total, pct + '%',
+        passed ? 'PASS' : 'FAIL', r.status||'',
+        fmtDate(r.submittedAt||r.startedAt||r.endedAt)
+      ]);
+    });
+    addSheet('All Attempts', attemptsRows);
   }
 
   else if(STATE.module === 'students'){
@@ -2210,18 +2497,21 @@ function downloadExcel(){
         name: `${u.firstName||''} ${u.lastName||''}`.trim() || u.email || 'Unknown',
         email: u.email||'', phone: u.phone||'',
         banned: banned.includes(u.id),
-        purchases:0, spend:0, courses:0, subfolders:0, shop:0
+        purchases:0, spend:0, courses:0, subfolders:0, shop:0,
+        items:[]
       };
     });
     txApproved.forEach(t => {
       const s = byStudent[t.userId];
       if(!s) return;
-      s.purchases += 1;
-      s.spend += num(t.amount);
+      s.purchases += 1; s.spend += num(t.amount);
       const type = (t.itemType||'course').toLowerCase();
       if(type === 'course') s.courses += 1;
       else if(type === 'subfolder') s.subfolders += 1;
       else if(type === 'shop') s.shop += 1;
+      s.items.push({
+        title:t.itemTitle||'', type, amount:num(t.amount), date:t.timestamp
+      });
     });
     const rows = Object.values(byStudent).sort((a,b)=>b.spend-a.spend);
 
@@ -2231,14 +2521,20 @@ function downloadExcel(){
       ['Total Purchases', rows.reduce((s,r)=>s+r.purchases,0)],
       ['Total Spend', rows.reduce((s,r)=>s+r.spend,0).toFixed(2)]
     ]);
+
     addSheet('Students', [
-      ['#','Name','Email','Phone','Purchases','Courses','Subfolders','Shop','Spend','Banned'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.email, r.phone,
+      ['Name','Email','Phone','Purchases','Courses','Subfolders','Shop','Spend','Banned'],
+      ...rows.map(r=>[
+        r.name, r.email, r.phone,
         r.purchases, r.courses, r.subfolders, r.shop,
         r.spend.toFixed(2), r.banned?'Yes':'No'
       ])
     ]);
+
+    const purRows = [['Student','Email','Item','Type','Amount','Date']];
+    rows.forEach(s => s.items.forEach(it =>
+      purRows.push([s.name, s.email, it.title, it.type, it.amount.toFixed(2), fmtDate(it.date)])));
+    addSheet('Purchases', purRows);
   }
 
   else if(STATE.module === 'lecturers'){
@@ -2273,11 +2569,12 @@ function downloadExcel(){
       ['Banned', rows.filter(r=>r.status==='banned').length],
       ['Total Subscriptions', rows.reduce((s,r)=>s+r.paidAmount,0).toFixed(2)]
     ]);
+
     addSheet('Lecturers', [
-      ['#','Name','Email','Phone','NRC','College','City','Town','Status','Banned','Expires','Paid','Courses','Videos','Docs','Assessments'],
-      ...rows.map((r,i)=>[
-        i+1, r.name, r.email, r.phone, r.nrc,
-        r.college, r.city, r.town, r.status,
+      ['Name','Email','Phone','NRC','College','City','Town','Address','Status','Banned','Expires','Paid','Courses','Videos','Docs','Assessments'],
+      ...rows.map(r=>[
+        r.name, r.email, r.phone, r.nrc,
+        r.college, r.city, r.town, r.address, r.status,
         r.banned?'Yes':'No',
         r.accessExpiresAt ? new Date(r.accessExpiresAt).toLocaleString() : 'Lifetime',
         r.paidAmount.toFixed(2),
