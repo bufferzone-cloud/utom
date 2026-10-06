@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-<title>UTOM · Reports & Analytics</title>
+<title>UTOM · Reports Studio</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -22,7 +22,9 @@
   --sh-lg:0 24px 60px rgba(16,20,40,.14);
   --r-sm:12px;--r-md:18px;--r-lg:24px;
   --t:.22s cubic-bezier(.25,.46,.45,.94);
+  --app-h:100dvh;
 }
+@supports not (height:100dvh){:root{--app-h:100vh}}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font:15px/1.5 Inter,-apple-system,BlinkMacSystemFont,sans-serif}
 input,select,textarea,button{font-family:inherit}
@@ -38,31 +40,84 @@ input,select,textarea,button{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loader p{font-weight:700;color:var(--sub);font-size:14px}
 
-.app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:var(--app-h);overflow:hidden}
+
+/* HEADER */
 .header{display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:0 16px;height:62px;flex-shrink:0;background:var(--bg);
-  border-bottom:1px solid rgba(0,0,0,.04);z-index:10}
+  border-bottom:1px solid rgba(0,0,0,.04);z-index:40}
 .header-left{display:flex;align-items:center;gap:12px;min-width:0}
 .icon-btn{width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:1px solid rgba(255,255,255,.6);
   background:rgba(255,255,255,.75);backdrop-filter:blur(8px);display:flex;align-items:center;
-  justify-content:center;font-size:16px;cursor:pointer;box-shadow:var(--sh-sm);transition:var(--t);color:var(--text);
-  text-decoration:none}
+  justify-content:center;font-size:16px;cursor:pointer;box-shadow:var(--sh-sm);transition:var(--t);
+  color:var(--text);text-decoration:none}
 .icon-btn:hover{transform:scale(1.06)}
-.header-title{font-size:19px;font-weight:900;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;
+.header-title{font-size:18px;font-weight:900;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .header-title small{font-size:11px;-webkit-text-fill-color:var(--sub);
   color:var(--sub);font-weight:600;background:none;margin-left:6px;letter-spacing:0}
 
+/* SIDEBAR */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  z-index:800;display:none}
+.overlay.open{display:block}
+.sidebar{position:fixed;top:0;left:-360px;width:320px;max-width:88vw;height:var(--app-h);
+  background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:900;
+  box-shadow:10px 0 40px rgba(0,0,0,.10);transition:left .32s cubic-bezier(.25,.46,.45,.94);
+  display:flex;flex-direction:column;border-radius:0 var(--r-lg) var(--r-lg) 0;overflow:hidden}
+.sidebar.open{left:0}
+.sb-head{padding:22px 20px 18px;border-bottom:1px solid rgba(240,232,216,.6);
+  display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;
+  background:rgba(255,254,249,.6);flex-shrink:0}
+.sb-head .brand{font-size:22px;font-weight:900;
+  background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:-.5px}
+.sb-head .tag{font-size:9px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.sb-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;
+  background:rgba(245,245,245,.9);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;color:#555;border:none;transition:var(--t)}
+.sb-close:hover{background:#e74c3c;color:#fff;transform:rotate(90deg)}
+.sb-body{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:3px}
+.nav{display:flex;align-items:center;gap:13px;padding:12px 16px;border-radius:var(--r-sm);
+  cursor:pointer;transition:var(--t);color:var(--text);font-weight:600;font-size:13.5px;
+  background:transparent;border:none;width:100%;text-align:left}
+.nav:hover{background:rgba(248,244,236,.6)}
+.nav i{font-size:17px;width:22px;text-align:center;color:var(--muted);transition:color .2s}
+.nav.active{background:rgba(245,176,66,.12);color:#d4952a}
+.nav.active i{color:#d4952a}
+.nav .badge{margin-left:auto;background:#e63946;color:#fff;font-size:9px;font-weight:800;
+  padding:2px 9px;border-radius:30px}
+.nav .badge:empty{display:none}
+.divider{height:1px;background:rgba(240,240,245,.8);margin:8px 4px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 90px}
 
+/* CARDS */
 .card{background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.6);
   border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-sm);margin-bottom:14px}
 .card h2{font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .card h2 i{background:linear-gradient(135deg,#d4952a,#f5b042);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.card h3{font-size:13.5px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.card p.hint{font-size:11px;color:var(--muted);margin-bottom:12px}
+.card h3{font-size:13.5px;font-weight:800;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 i{color:var(--gold-d)}
+.card p.hint{font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.55}
+
+/* FILTERS */
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin-bottom:12px}
+.filters.full{grid-template-columns:1fr}
+.filters select,.filters input{width:100%;padding:10px 16px;border-radius:30px;
+  border:1.5px solid var(--line);background:rgba(250,251,252,.85);font-size:12px;
+  color:var(--text);outline:none;transition:var(--t);-webkit-appearance:none;appearance:none}
+.filters select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%238b8fa3' d='M6 8L0 0h12z'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+.filters select:focus,.filters input:focus{border-color:var(--gold);background:#fff;
+  box-shadow:0 0 0 4px rgba(245,176,66,.10)}
 
 .range-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .range-btn{padding:8px 18px;border-radius:30px;border:1.5px solid rgba(229,232,237,.8);
@@ -74,7 +129,7 @@ input,select,textarea,button{font-family:inherit}
 
 .custom-box{display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .custom-box.show{display:flex}
-.custom-box input{flex:1;min-width:130px;padding:9px 14px;border-radius:30px;
+.custom-box input{flex:1;min-width:120px;padding:9px 14px;border-radius:30px;
   border:1.5px solid rgba(229,232,237,.8);background:rgba(250,251,252,.85);font-size:12px;
   color:var(--text);outline:none;transition:var(--t)}
 .custom-box input:focus{border-color:var(--gold);background:#fff;
@@ -101,10 +156,11 @@ input,select,textarea,button{font-family:inherit}
   background:rgba(245,176,66,.08);padding:8px 14px;border-radius:30px;
   display:inline-block;width:100%;font-weight:600}
 
+/* KPI */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
   gap:10px;margin-bottom:14px}
 .kpi{background:var(--card);backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.6);border-radius:var(--r-md);padding:14px 14px;
+  border:1px solid rgba(255,255,255,.6);border-radius:var(--r-md);padding:14px;
   box-shadow:var(--sh-sm);text-align:center;position:relative;overflow:hidden;
   transition:var(--t);min-width:0}
 .kpi::after{content:'';position:absolute;inset:0 0 auto 0;height:3px;
@@ -117,20 +173,24 @@ input,select,textarea,button{font-family:inherit}
 .kpi .lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;
   letter-spacing:.5px;margin-top:4px}
 
-.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line);
+  background:#fff;-webkit-overflow-scrolling:touch}
 table.rpt{width:100%;border-collapse:collapse;font-size:12px;min-width:520px;background:#fff}
 table.rpt th{background:rgba(245,176,66,.10);padding:10px 12px;text-align:left;
   font-weight:700;color:var(--gold-d);font-size:10.5px;text-transform:uppercase;
   letter-spacing:.5px;border-bottom:1.5px solid rgba(245,176,66,.22);white-space:nowrap}
-table.rpt td{padding:9px 12px;border-bottom:1px solid rgba(240,240,245,.8);color:var(--text)}
+table.rpt td{padding:9px 12px;border-bottom:1px solid rgba(240,240,245,.8);color:var(--text);
+  vertical-align:top}
 table.rpt tr:last-child td{border-bottom:none}
 table.rpt tr:hover td{background:rgba(245,176,66,.04)}
 table.rpt td.right,table.rpt th.right{text-align:right}
 table.rpt td.center,table.rpt th.center{text-align:center}
 table.rpt .money{font-weight:800;color:var(--gold-d)}
 table.rpt .muted{color:var(--muted);font-size:11px}
+table.rpt .rank{font-weight:800;width:32px;color:var(--gold-d)}
 table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
-  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 .badge.approved{background:#e8f5e9;color:#2e7d32}
 .badge.pending{background:#fff3e0;color:#e65100}
 .badge.rejected{background:#fde8e8;color:#c62828}
@@ -140,39 +200,20 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
 .badge.banned{background:#721c24;color:#fff}
 .badge.unpaid{background:#fff3cd;color:#856404}
 .badge.expired{background:#f8d7da;color:#721c24}
+.badge.confirmed{background:#e3f2fd;color:#0d47a1}
+.badge.ready{background:#e8f5e9;color:#2e7d32}
+.badge.collected{background:#e8eaf6;color:#283593}
+.badge.draft{background:#f1f5f9;color:#475569}
+.badge.scheduled{background:#e0e7ff;color:#3730a3}
+.badge.published{background:#dcfce7;color:#15803d}
 
-.empty{text-align:center;padding:26px 16px;color:var(--muted);font-size:12.5px}
-.empty i{font-size:32px;display:block;margin-bottom:8px;opacity:.25}
+.empty{text-align:center;padding:30px 16px;color:var(--muted);font-size:12.5px}
+.empty i{font-size:34px;display:block;margin-bottom:10px;opacity:.25}
 
-.row-flex{display:flex;gap:10px;flex-wrap:wrap}
-.col-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media (max-width:720px){.col-2{grid-template-columns:1fr}}
-
-.gradient-gold{background:linear-gradient(135deg,#fff8ed,#fef3e2)!important;
-  border:1px solid rgba(245,176,66,.25)!important}
-.gradient-blue{background:linear-gradient(135deg,#f0f9ff,#e0f2fe)!important;
-  border:1px solid rgba(59,130,246,.2)!important}
-.gradient-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7)!important;
-  border:1px solid rgba(46,204,113,.2)!important}
-.gradient-purple{background:linear-gradient(135deg,#f5f3ff,#ede9fe)!important;
-  border:1px solid rgba(124,58,237,.2)!important}
-.gradient-rose{background:linear-gradient(135deg,#fff1f2,#ffe4e6)!important;
-  border:1px solid rgba(230,57,70,.2)!important}
-
-.bar-row{display:flex;align-items:center;gap:10px;padding:8px 0;
-  border-bottom:1px solid rgba(240,240,245,.6);font-size:12px}
-.bar-row:last-child{border-bottom:none}
-.bar-row .label{flex:0 0 140px;font-weight:600;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
-.bar-row .bar-wrap{flex:1;height:8px;background:rgba(240,240,245,.9);
-  border-radius:30px;overflow:hidden;min-width:80px}
-.bar-row .bar-fill{height:100%;background:linear-gradient(90deg,#f5b042,#ff6b00);
-  border-radius:30px;transition:width .5s cubic-bezier(.25,.46,.45,.94)}
-.bar-row .value{flex:0 0 90px;text-align:right;font-weight:700;color:var(--gold-d)}
-
-@media (max-width:520px){
+/* RESPONSIVE */
+@media (max-width:560px){
   .header{padding:0 12px;height:56px}
-  .header-title{font-size:16px}
+  .header-title{font-size:15.5px}
   .header-title small{font-size:9px}
   .content{padding:12px 11px 90px}
   .card{padding:14px}
@@ -181,6 +222,8 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
   .kpi .lbl{font-size:9px}
   .range-btn{padding:7px 14px;font-size:11px}
   .btn{padding:9px 16px;font-size:11px}
+  table.rpt{font-size:11px}
+  table.rpt th,table.rpt td{padding:8px 10px}
 }
 </style>
 </head>
@@ -188,60 +231,55 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
 
 <div id="loader">
   <div class="spinner"></div>
-  <p>Loading reports…</p>
+  <p>Loading Reports Studio…</p>
 </div>
 
 <div class="app">
+  <!-- HEADER -->
   <header class="header">
     <div class="header-left">
-      <a href="admin.html" class="icon-btn" title="Back to admin">
-        <i class="fas fa-arrow-left"></i>
-      </a>
-      <span class="header-title">UTOM Reports <small>Analytics Studio</small></span>
+      <button class="icon-btn" id="menuBtn" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <span class="header-title" id="headerTitle">Reports <small>Analytics Studio</small></span>
     </div>
-    <button class="icon-btn" id="refreshAllBtn" title="Refresh">
-      <i class="fas fa-sync-alt"></i>
-    </button>
+    <a href="admin.html" class="icon-btn" title="Back to admin"><i class="fas fa-home"></i></a>
   </header>
 
-  <main class="content" id="content">
-
-    <!-- CONTROLS -->
-    <div class="card">
-      <h2><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</h2>
-      <p class="hint">Full breakdown of activity across the entire UTOM platform.</p>
-
-      <div class="range-btns" id="rangeBtns">
-        <button class="range-btn active" data-range="today"><i class="fas fa-calendar-day"></i> Today</button>
-        <button class="range-btn" data-range="week"><i class="fas fa-calendar-week"></i> This Week</button>
-        <button class="range-btn" data-range="month"><i class="fas fa-calendar-alt"></i> This Month</button>
-        <button class="range-btn" data-range="year"><i class="fas fa-calendar"></i> This Year</button>
-        <button class="range-btn" data-range="all"><i class="fas fa-infinity"></i> All Time</button>
-        <button class="range-btn" data-range="custom"><i class="fas fa-sliders-h"></i> Custom…</button>
-      </div>
-
-      <div class="custom-box" id="customBox">
-        <input type="date" id="fromDate" />
-        <input type="date" id="toDate" />
-        <button class="btn btn-primary" id="applyCustomBtn">
-          <i class="fas fa-check"></i> Apply
-        </button>
-      </div>
-
-      <div class="action-btns">
-        <button class="btn btn-red" id="dlPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
-        <button class="btn btn-green" id="dlExcelBtn"><i class="fas fa-file-excel"></i> Download Excel</button>
-        <button class="btn btn-outline" id="refreshBtn"><i class="fas fa-sync"></i> Refresh</button>
-      </div>
-
-      <div class="range-display" id="rangeDisplay">Range: Loading…</div>
-    </div>
-
-    <!-- RENDER TARGET -->
-    <div id="reportRoot"></div>
-
-  </main>
+  <div class="main">
+    <main class="content" id="content">
+      <div id="reportRoot"></div>
+    </main>
+  </div>
 </div>
+
+<!-- SIDEBAR -->
+<div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <button class="sb-close" id="sbClose"><i class="fas fa-times"></i></button>
+    <div class="brand">UTOM</div>
+    <div class="tag">Reports · Studio</div>
+  </div>
+  <nav class="sb-body" id="sbBody">
+    <button class="nav active" data-module="overview">
+      <i class="fas fa-chart-pie"></i><span>Overview</span></button>
+    <button class="nav" data-module="courses">
+      <i class="fas fa-book-open"></i><span>Courses</span></button>
+    <button class="nav" data-module="subfolders">
+      <i class="fas fa-folder"></i><span>Subfolders</span></button>
+    <button class="nav" data-module="lectureDash">
+      <i class="fas fa-chalkboard-teacher"></i><span>Lecture Dashboard</span></button>
+    <button class="nav" data-module="express">
+      <i class="fas fa-store"></i><span>Express Shopping</span></button>
+    <button class="nav" data-module="assessments">
+      <i class="fas fa-graduation-cap"></i><span>Assessments</span></button>
+    <button class="nav" data-module="students">
+      <i class="fas fa-user-graduate"></i><span>Students</span></button>
+    <button class="nav" data-module="lecturers">
+      <i class="fas fa-users"></i><span>Lecturers</span></button>
+    <div class="divider"></div>
+    <a class="nav" href="admin.html"><i class="fas fa-arrow-left"></i><span>Back to Admin</span></a>
+  </nav>
+</aside>
 
 <script type="module">
 /* =================================================================
@@ -249,8 +287,7 @@ table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
 ================================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { getDatabase, ref, onValue, get }
-  from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
@@ -261,7 +298,6 @@ const firebaseConfig = {
   messagingSenderId: "878225874050",
   appId: "1:878225874050:web:643626906bfd233eeae89b"
 };
-
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getDatabase(app);
@@ -278,15 +314,24 @@ const S = {
   bannedUsers:{},
   expressProducts:{}, expressOrders:{}, expressPayments:{},
   expressCategories:{}, expressPickupLocations:{},
-  lecturerData:{},
-  notifications:{}
+  lecturerData:{}
+};
+
+const STATE = {
+  module:'overview',
+  range:'today',
+  startTs:0, endTs:Date.now(),
+  // module-specific filters
+  courses:{ status:'all', sortBy:'revenue-desc', search:'' },
+  subfolders:{ status:'all', sortBy:'revenue-desc', search:'' },
+  lectureDash:{ status:'all', sortBy:'earnings-desc', search:'' },
+  express:{ status:'all', sortBy:'date-desc', search:'' },
+  assessments:{ status:'all', sortBy:'date-desc', search:'' },
+  students:{ status:'all', sortBy:'spend-desc', search:'' },
+  lecturers:{ status:'all', sortBy:'date-desc', search:'' }
 };
 
 let currentAdmin = null;
-let rangeType = 'today';
-let startTs = 0, endTs = Date.now();
-let readyCount = 0;
-const TOTAL_LISTENERS = 20;
 
 /* =================================================================
    HELPERS
@@ -295,9 +340,9 @@ const _ESC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const _RE = /[&<>"']/g;
 const esc = s => s == null ? '' : String(s).replace(_RE, c => _ESC[c]);
 const num = v => Number(v) || 0;
-const fmtMoney = v => 'ZMW ' + (Number(v)||0).toFixed(2);
+const money = v => 'ZMW ' + (Number(v)||0).toFixed(2);
 const fmtDate = ts => ts ? new Date(ts).toLocaleString() : '—';
-const fmtShort = ts => ts ? new Date(ts).toLocaleDateString() : '—';
+const fmtDay  = ts => ts ? new Date(ts).toLocaleDateString() : '—';
 
 function toast(msg, type){
   const c = document.createElement('div');
@@ -305,7 +350,7 @@ function toast(msg, type){
     background:rgba(26,29,40,.95);color:#fff;padding:11px 20px;border-radius:30px;
     box-shadow:0 12px 40px rgba(0,0,0,.25);font-size:12px;font-weight:600;
     border-left:3px solid ${type==='error'?'#e74c3c':type==='success'?'#2ecc71':'#f5b042'};
-    animation:fadeIn .3s ease;max-width:340px`;
+    max-width:340px`;
   c.textContent = msg;
   document.body.appendChild(c);
   setTimeout(()=>c.remove(), 3000);
@@ -322,120 +367,87 @@ onAuthStateChanged(auth, user => {
 });
 
 /* =================================================================
-   REALTIME LISTENERS
+   REALTIME DATA
 ================================================================= */
+let readyCount = 0;
 function attachListeners(){
   const paths = [
-    ['courses','courses'],
-    ['subfolders','subfolders'],
-    ['videos','videos'],
-    ['docs','docs'],
-    ['users','users'],
-    ['promos','promos'],
-    ['registers','registers'],
-    ['assessments','assessments'],
-    ['assessmentResponses','assessmentResponses'],
-    ['lecturerRegisters','lecturerRegisters'],
-    ['lecturerAssessments','lecturerAssessments'],
-    ['lecturerResponses','lecturerResponses'],
-    ['transactions','transactions'],
-    ['pendingPurchases','pendingPurchases'],
-    ['approvedPurchases','approvedPurchases'],
-    ['lecturerPendingPurchases','lecturerPendingPurchases'],
-    ['lecturerApprovedPurchases','lecturerApprovedPurchases'],
-    ['bannedUsers','bannedUsers'],
-    ['expressProducts','expressProducts'],
-    ['expressOrders','expressOrders'],
-    ['expressPayments','expressPayments'],
-    ['expressCategories','expressCategories'],
-    ['expressPickupLocations','expressPickupLocations'],
-    ['lecturers','lecturerData'],
-    ['notifications','notifications']
+    'courses','subfolders','videos','docs','users','promos',
+    'registers','assessments','assessmentResponses',
+    'lecturerRegisters','lecturerAssessments','lecturerResponses',
+    'transactions','pendingPurchases','approvedPurchases',
+    'lecturerPendingPurchases','lecturerApprovedPurchases',
+    'bannedUsers','expressProducts','expressOrders','expressPayments',
+    'expressCategories','expressPickupLocations','lecturers'
   ];
   const total = paths.length;
 
-  paths.forEach(([path,key]) => {
-    onValue(ref(db, path), snap => {
-      S[key] = snap.val() || {};
+  paths.forEach(p => {
+    onValue(ref(db, p), snap => {
+      S[p] = snap.val() || {};
       readyCount++;
-      if(readyCount >= total || readyCount >= 15){
+      if(readyCount >= total || readyCount >= 12){
         document.getElementById('loader').classList.add('hidden');
-        renderEverything();
+        render();
       }
     }, ()=>{});
   });
-
-  // Fallback: show UI after 3s regardless
-  setTimeout(() => {
+  setTimeout(()=>{
     document.getElementById('loader').classList.add('hidden');
-    renderEverything();
+    render();
   }, 3000);
 }
 
 /* =================================================================
-   RANGE HELPERS
+   RANGE HANDLING
 ================================================================= */
 function computeRange(){
   const now = new Date();
-  switch(rangeType){
+  switch(STATE.range){
     case 'today':
-      startTs = new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
-      endTs = now.getTime();
-      break;
+      STATE.startTs = new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+      STATE.endTs = now.getTime(); break;
     case 'week': {
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTs = new Date(now.getFullYear(),now.getMonth(),diff,0,0,0).getTime();
-      endTs = now.getTime();
-      break;
+      STATE.startTs = new Date(now.getFullYear(),now.getMonth(),diff,0,0,0).getTime();
+      STATE.endTs = now.getTime(); break;
     }
     case 'month':
-      startTs = new Date(now.getFullYear(),now.getMonth(),1).getTime();
-      endTs = now.getTime();
-      break;
+      STATE.startTs = new Date(now.getFullYear(),now.getMonth(),1).getTime();
+      STATE.endTs = now.getTime(); break;
     case 'year':
-      startTs = new Date(now.getFullYear(),0,1).getTime();
-      endTs = now.getTime();
-      break;
+      STATE.startTs = new Date(now.getFullYear(),0,1).getTime();
+      STATE.endTs = now.getTime(); break;
     case 'all':
-      startTs = 0;
-      endTs = now.getTime();
-      break;
+      STATE.startTs = 0; STATE.endTs = now.getTime(); break;
   }
 }
 function inRange(ts){
-  if(!ts) return rangeType === 'all';
-  return ts >= startTs && ts <= endTs;
+  if(!ts) return STATE.range === 'all';
+  return ts >= STATE.startTs && ts <= STATE.endTs;
 }
 function rangeLabel(){
-  if(rangeType === 'all') return 'All Time';
-  const a = new Date(startTs).toLocaleDateString();
-  const b = new Date(endTs).toLocaleDateString();
-  return `${a} → ${b}`;
+  if(STATE.range === 'all') return 'All Time';
+  return `${new Date(STATE.startTs).toLocaleDateString()} → ${new Date(STATE.endTs).toLocaleDateString()}`;
 }
 
 /* =================================================================
-   DATA AGGREGATION
+   BUILD ALL TRANSACTIONS
 ================================================================= */
-function buildAllTransactions(){
+function buildAllTx(){
   const out = [];
-  // transactions
   Object.entries(S.transactions).forEach(([id,tx]) => {
-    out.push({ id, ...tx, _src:'transactions' });
+    out.push({ id, ...tx, _src:'tx' });
   });
-  // pendingPurchases (nested by uid)
   Object.entries(S.pendingPurchases).forEach(([uid,map]) => {
-    Object.entries(map||{}).forEach(([tid,tx]) => {
-      out.push({ id:tid, userId:uid, ...tx, _src:'pendingPurchases' });
-    });
+    Object.entries(map||{}).forEach(([tid,tx]) =>
+      out.push({ id:tid, userId:uid, ...tx, _src:'pending' }));
   });
-  // lecturerPendingPurchases
   Object.entries(S.lecturerPendingPurchases).forEach(([uid,map]) => {
-    Object.entries(map||{}).forEach(([tid,tx]) => {
-      out.push({ id:tid, userId:uid, ...tx, _src:'lecturerPendingPurchases' });
-    });
+    Object.entries(map||{}).forEach(([tid,tx]) =>
+      out.push({ id:tid, userId:uid, ...tx, _src:'lecPending' }));
   });
-  // approvedPurchases (as approved transactions)
   Object.entries(S.approvedPurchases).forEach(([uid,map]) => {
     Object.entries(map||{}).forEach(([iid,info]) => {
       out.push({
@@ -444,11 +456,10 @@ function buildAllTransactions(){
         itemType:info.itemType||'course',
         amount:num(info.amount), status:'approved',
         timestamp:info.approvedAt||info.timestamp||null,
-        userEmail:'', userName:'', _src:'approvedPurchases'
+        _src:'approved'
       });
     });
   });
-  // lecturerApprovedPurchases
   Object.entries(S.lecturerApprovedPurchases).forEach(([uid,map]) => {
     Object.entries(map||{}).forEach(([iid,info]) => {
       out.push({
@@ -457,768 +468,1829 @@ function buildAllTransactions(){
         itemType:info.itemType||'course',
         amount:num(info.amount), status:'approved',
         timestamp:info.approvedAt||info.timestamp||null,
-        userEmail:'', userName:'', _src:'lecturerApprovedPurchases'
+        _src:'lecApproved'
       });
     });
   });
-  // express payments (as shop transactions)
   Object.entries(S.expressPayments).forEach(([id,p]) => {
     out.push({
       id, userId:p.userId||'', itemId:p.orderId||id,
       itemTitle:p.productName||'Express Order',
-      itemType:'shop',
-      amount:num(p.amount), status:p.status||'pending',
-      timestamp:p.createdAt||null,
+      itemType:'shop', amount:num(p.amount),
+      status:p.status||'pending', timestamp:p.createdAt||null,
       userEmail:p.customerEmail||'', userName:p.customerName||'',
-      userPhone:p.customerPhone||'',
-      screenshot:p.screenshot||'',
-      provider:'MTN/Airtel',
-      quantity:p.quantity||0,
-      pickupLocationId:p.pickupLocationId||'',
-      _src:'express'
+      userPhone:p.customerPhone||'', screenshot:p.screenshot||'',
+      provider:'MTN/Airtel', quantity:p.quantity||0,
+      pickupLocationId:p.pickupLocationId||'', _src:'express'
     });
   });
   return out;
 }
 
-function buildReport(){
-  const now = Date.now();
-  const coursesArr = Object.values(S.courses);
-  const subsArr    = Object.values(S.subfolders);
-  const vidsArr    = Object.values(S.videos);
-  const docsArr    = Object.values(S.docs);
-  const usersArr   = Object.values(S.users);
-  const regsArr    = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
-  const assArr     = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
-  const respArr    = [...Object.values(S.assessmentResponses), ...Object.values(S.lecturerResponses)];
-  const promosArr  = Object.values(S.promos);
-  const bannedArr  = Object.entries(S.bannedUsers).filter(([,v])=>v);
-  const lectArr    = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
-
-  /* ---- Library Totals ---- */
-  const totals = {
-    courses:coursesArr.length,
-    subfolders:subsArr.length,
-    videos:vidsArr.length,
-    docs:docsArr.length,
-    students:usersArr.length,
-    registers:regsArr.length,
-    assessments:assArr.length,
-    promos:promosArr.length,
-    banned:bannedArr.length,
-    lecturers:lectArr.length
-  };
-
-  /* ---- All transactions ---- */
-  const allTx = buildAllTransactions();
-  const txInRange = allTx.filter(t => inRange(t.timestamp));
-
-  // dedupe: if a transaction exists both as approvedPurchases and pendingPurchases/transactions, prefer pending/transactions
-  const dedup = new Map();
-  txInRange.forEach(t => {
-    const key = t.id;
-    if(!dedup.has(key)) dedup.set(key, t);
-  });
-  const txs = [...dedup.values()];
-
-  const approved = txs.filter(t => t.status === 'approved');
-  const pending  = txs.filter(t => t.status === 'pending');
-  const rejected = txs.filter(t => t.status === 'rejected');
-
-  const sum = a => a.reduce((s,t) => s + num(t.amount), 0);
-
-  const money = {
-    approved: sum(approved),
-    pending:  sum(pending),
-    rejected: sum(rejected),
-    total:    sum(txs)
-  };
-
-  /* ---- Course & Subfolder Sales (only course/subfolder types) ---- */
-  const itemSales = {};
-  approved.forEach(t => {
-    const it = (t.itemType||'').toLowerCase();
-    if(it !== 'course' && it !== 'subfolder') return;
-    const key = t.itemId || t.itemTitle;
-    if(!itemSales[key]){
-      itemSales[key] = {
-        itemId:key,
-        title:t.itemTitle||'Unknown',
-        type:it,
-        count:0, revenue:0
-      };
+/* Dedupe by id, prefer non-approved versions */
+function dedupeTx(list){
+  const m = new Map();
+  list.forEach(t => {
+    if(!m.has(t.id)) m.set(t.id, t);
+    else {
+      const cur = m.get(t.id);
+      if(cur.status !== 'approved' && t.status === 'approved') m.set(t.id, t);
     }
-    itemSales[key].count += 1;
-    itemSales[key].revenue += num(t.amount);
   });
-  const bestSelling = Object.values(itemSales)
-    .sort((a,b)=>b.revenue-a.revenue);
-
-  /* ---- Top Students ---- */
-  const byStudent = {};
-  approved.forEach(t => {
-    const key = t.userId || t.userEmail || t.userName || 'unknown';
-    if(!byStudent[key]){
-      const u = S.users[key] || {};
-      byStudent[key] = {
-        userId:key,
-        name: t.userName || ((u.firstName||'')+' '+(u.lastName||'')).trim() || 'Unknown',
-        email: t.userEmail || u.email || '',
-        count:0, spend:0, items:[]
-      };
-    }
-    byStudent[key].count += 1;
-    byStudent[key].spend += num(t.amount);
-    byStudent[key].items.push(t.itemTitle || '—');
-  });
-  const topStudents = Object.values(byStudent).sort((a,b)=>b.spend-a.spend);
-
-  /* ---- Course Enrollments ---- */
-  const courseEnrollments = {};
-  approved.forEach(t => {
-    const key = t.itemId;
-    if(!key) return;
-    const c = S.courses[key] || S.subfolders[key];
-    if(!courseEnrollments[key]){
-      courseEnrollments[key] = {
-        itemId:key,
-        title: t.itemTitle || c?.name || '—',
-        type: t.itemType || 'course',
-        enrollments:0
-      };
-    }
-    courseEnrollments[key].enrollments += 1;
-  });
-  const mostEnrolled = Object.values(courseEnrollments)
-    .sort((a,b)=>b.enrollments-a.enrollments);
-
-  /* ---- Express Shop ---- */
-  const products = Object.values(S.expressProducts);
-  const orders   = Object.values(S.expressOrders);
-  const payments = Object.values(S.expressPayments);
-  const ordersInRange = orders.filter(o => inRange(o.createdAt));
-  const paymentsInRange = payments.filter(p => inRange(p.createdAt));
-
-  const orderStatuses = {
-    pending: ordersInRange.filter(o=>o.status==='pending').length,
-    confirmed: ordersInRange.filter(o=>o.status==='confirmed').length,
-    ready: ordersInRange.filter(o=>o.status==='ready').length,
-    collected: ordersInRange.filter(o=>o.status==='collected').length,
-    completed: ordersInRange.filter(o=>o.status==='completed').length,
-    cancelled: ordersInRange.filter(o=>o.status==='cancelled').length
-  };
-  const expressRevenue = ordersInRange
-    .filter(o=>o.status==='completed'||o.status==='collected')
-    .reduce((s,o)=>s+num(o.total),0);
-  const expressPending = paymentsInRange.filter(p=>p.status==='pending').length;
-  const expressApproved = paymentsInRange.filter(p=>p.status==='approved').length;
-  const expressRejected = paymentsInRange.filter(p=>p.status==='rejected').length;
-  const lowStock = products.filter(p => num(p.quantity)>0 && num(p.quantity) <= (p.lowStockThreshold||5));
-  const outOfStock = products.filter(p => num(p.quantity) <= 0);
-
-  /* Top express products */
-  const prodUnits = {};
-  ordersInRange.forEach(o => {
-    (o.items || []).forEach(it => {
-      const key = it.productId || it.name;
-      if(!prodUnits[key]){
-        prodUnits[key] = { name: it.name||'Product', units:0, revenue:0 };
-      }
-      prodUnits[key].units += num(it.qty) || 1;
-      prodUnits[key].revenue += num(it.price) * (num(it.qty)||1);
-    });
-  });
-  const topExpressProducts = Object.values(prodUnits)
-    .sort((a,b)=>b.units-a.units);
-
-  /* ---- Assessments ---- */
-  const respsInRange = respArr.filter(r => inRange(r.submittedAt || r.startedAt || r.endedAt));
-  const completed = respsInRange.filter(r => r.status==='completed'||r.status==='ended');
-  const passed = completed.filter(r => {
-    const a = assArr.find(x => x.id === r.assessmentId);
-    if(!a) return false;
-    const total = num(a.totalMarks);
-    if(total <= 0) return num(r.score) >= num(a.passingScore);
-    return (num(r.score)/total)*100 >= num(a.passingScore||50);
-  });
-  const assessmentStats = {
-    total: assArr.length,
-    attempts: respsInRange.length,
-    completed: completed.length,
-    passed: passed.length,
-    failed: completed.length - passed.length
-  };
-
-  /* ---- Lecturers ---- */
-  const lecturerStats = {
-    total: lectArr.length,
-    approved: lectArr.filter(l=>l.status==='approved').length,
-    pending:  lectArr.filter(l=>(l.status||'pending')==='pending').length,
-    rejected: lectArr.filter(l=>l.status==='rejected').length,
-    banned:   lectArr.filter(l=>l.banned).length,
-    active:   lectArr.filter(l=>{
-      const exp = l.accessExpiresAt;
-      return l.status==='approved' && !l.banned && (!exp || exp > now);
-    }).length,
-    expired:  lectArr.filter(l=>l.accessExpiresAt && l.accessExpiresAt<=now).length
-  };
-
-  /* ---- Detail lists (limited) ---- */
-  const txList = txs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,150);
-
-  return {
-    totals, money,
-    tx: {
-      approved: approved.length, pending: pending.length,
-      rejected: rejected.length, total: txs.length
-    },
-    txList,
-    bestSelling,
-    topStudents,
-    mostEnrolled,
-    express: {
-      orders: orderStatuses,
-      ordersCount: ordersInRange.length,
-      revenue: expressRevenue,
-      pending: expressPending,
-      approved: expressApproved,
-      rejected: expressRejected,
-      products: products.length,
-      lowStock: lowStock.length,
-      outOfStock: outOfStock.length,
-      topProducts: topExpressProducts
-    },
-    assessmentStats,
-    lecturerStats,
-    range: { label: rangeLabel(), start: startTs, end: endTs }
-  };
+  return [...m.values()];
 }
 
 /* =================================================================
-   RENDER
+   MODULE RENDERERS
 ================================================================= */
-function kpi(icon, num, label, color){
+function render(){
+  computeRange();
+  updateHeader();
+  const html = MODULES[STATE.module].render();
+  document.getElementById('reportRoot').innerHTML = html;
+  attachModuleEvents();
+}
+
+function updateHeader(){
+  const names = {
+    overview:'Overview', courses:'Courses', subfolders:'Subfolders',
+    lectureDash:'Lecture Dashboard', express:'Express Shopping',
+    assessments:'Assessments', students:'Students', lecturers:'Lecturers'
+  };
+  document.getElementById('headerTitle').innerHTML =
+    `${names[STATE.module]} <small>Reports Studio</small>`;
+}
+
+/* ---------- SHARED CONTROLS HTML ---------- */
+function rangeControlsHTML(){
+  return `
+    <div class="range-btns">
+      <button class="range-btn ${STATE.range==='today'?'active':''}" data-range="today"><i class="fas fa-calendar-day"></i> Today</button>
+      <button class="range-btn ${STATE.range==='week'?'active':''}" data-range="week"><i class="fas fa-calendar-week"></i> This Week</button>
+      <button class="range-btn ${STATE.range==='month'?'active':''}" data-range="month"><i class="fas fa-calendar-alt"></i> This Month</button>
+      <button class="range-btn ${STATE.range==='year'?'active':''}" data-range="year"><i class="fas fa-calendar"></i> This Year</button>
+      <button class="range-btn ${STATE.range==='all'?'active':''}" data-range="all"><i class="fas fa-infinity"></i> All Time</button>
+      <button class="range-btn ${STATE.range==='custom'?'active':''}" data-range="custom"><i class="fas fa-sliders-h"></i> Custom…</button>
+    </div>
+    <div class="custom-box ${STATE.range==='custom'?'show':''}" id="customBox">
+      <input type="date" id="fromDate" value="${STATE.startTs ? new Date(STATE.startTs).toISOString().slice(0,10) : ''}" />
+      <input type="date" id="toDate" value="${new Date(STATE.endTs).toISOString().slice(0,10)}" />
+      <button class="btn btn-primary" id="applyCustomBtn"><i class="fas fa-check"></i> Apply</button>
+    </div>
+    <div class="range-display"><i class="fas fa-calendar-alt"></i> Range: <strong>${esc(rangeLabel())}</strong></div>
+  `;
+}
+
+function downloadControlsHTML(){
+  return `
+    <div class="action-btns">
+      <button class="btn btn-red" data-dl="pdf"><i class="fas fa-file-pdf"></i> Download PDF</button>
+      <button class="btn btn-green" data-dl="excel"><i class="fas fa-file-excel"></i> Download Excel</button>
+      <button class="btn btn-outline" data-dl="refresh"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+  `;
+}
+
+/* ---------- KPI ---------- */
+function kpi(icon, v, label, color){
   return `<div class="kpi">
     <div class="icon" style="color:${color}"><i class="fas ${icon}"></i></div>
-    <div class="num">${esc(num)}</div>
+    <div class="num">${esc(v)}</div>
     <div class="lbl">${esc(label)}</div>
   </div>`;
 }
 
-function statusBadge(s){
-  const k = (s||'pending').toLowerCase();
-  return `<span class="badge ${k}">${esc(s||'pending')}</span>`;
+/* =================================================================
+   MODULE: OVERVIEW
+================================================================= */
+MODULES_OVERVIEW();
+function MODULES_OVERVIEW(){
+  window.MODULES = window.MODULES || {};
+  window.MODULES.overview = {
+    render(){
+      const courses   = Object.values(S.courses);
+      const subs      = Object.values(S.subfolders);
+      const vids      = Object.values(S.videos);
+      const docs      = Object.values(S.docs);
+      const users     = Object.values(S.users);
+      const regs      = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
+      const ass       = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+      const lectArr   = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+      const banned    = Object.entries(S.bannedUsers).filter(([,v])=>v);
+
+      const allTx = dedupeTx(buildAllTx()).filter(t => inRange(t.timestamp));
+      const approved = allTx.filter(t => t.status==='approved');
+      const pending  = allTx.filter(t => t.status==='pending');
+      const rejected = allTx.filter(t => t.status==='rejected');
+      const sum = a => a.reduce((s,t)=>s+num(t.amount),0);
+
+      // Split by source
+      const platformTx = approved.filter(t =>
+        t.itemType === 'course' || t.itemType === 'subfolder'
+      );
+      const shopTx = approved.filter(t => t.itemType === 'shop');
+
+      return `
+        <div class="card">
+          <h2><i class="fas fa-chart-pie"></i> Platform Overview</h2>
+          <p class="hint">High-level snapshot of the entire UTOM platform.</p>
+          ${rangeControlsHTML()}
+          ${downloadControlsHTML()}
+        </div>
+
+        <div class="kpi-grid">
+          ${kpi('fa-book-open', courses.length, 'Courses', '#d4952a')}
+          ${kpi('fa-folder', subs.length, 'Subfolders', '#3b82f6')}
+          ${kpi('fa-video', vids.length, 'Videos', '#7c3aed')}
+          ${kpi('fa-file-alt', docs.length, 'Documents', '#0891b2')}
+          ${kpi('fa-user-graduate', users.length, 'Students', '#2ecc71')}
+          ${kpi('fa-graduation-cap', ass.length, 'Assessments', '#f39c12')}
+          ${kpi('fa-address-book', regs.length, 'Registers', '#e11d48')}
+          ${kpi('fa-chalkboard-teacher', lectArr.length, 'Lecturers', '#7c3aed')}
+          ${kpi('fa-user-slash', banned.length, 'Banned Users', '#e74c3c')}
+        </div>
+
+        <div class="card" style="background:linear-gradient(135deg,#fff8ed,#fef3e2);border:1px solid rgba(245,176,66,.25)">
+          <h3><i class="fas fa-coins"></i> Revenue in Range (${esc(rangeLabel())})</h3>
+          <div class="kpi-grid" style="margin-bottom:0">
+            ${kpi('fa-check-circle', money(sum(approved)), 'Approved Revenue', '#2e7d32')}
+            ${kpi('fa-hourglass-half', money(sum(pending)), 'Pending Value', '#e65100')}
+            ${kpi('fa-times-circle', money(sum(rejected)), 'Rejected Value', '#c62828')}
+            ${kpi('fa-list', allTx.length, 'Total Transactions', '#3b82f6')}
+            ${kpi('fa-book', money(sum(platformTx)), 'Course + Subfolder Sales', '#d4952a')}
+            ${kpi('fa-store', money(sum(shopTx)), 'Express Shop Sales', '#3b82f6')}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><i class="fas fa-list-ul"></i> Recent Activity (Top 20)</h3>
+          ${recentActivityHTML(allTx)}
+        </div>
+      `;
+    }
+  };
 }
 
-function renderEverything(){
-  computeRange();
-  const d = buildReport();
-  document.getElementById('rangeDisplay').innerHTML =
-    `<i class="fas fa-calendar-alt"></i> Range: <strong>${esc(d.range.label)}</strong>`;
-
-  let html = '';
-
-  /* ---- LIBRARY KPIs ---- */
-  html += `
-    <div class="kpi-grid">
-      ${kpi('fa-book-open',       d.totals.courses,    'Courses',     '#d4952a')}
-      ${kpi('fa-folder',          d.totals.subfolders, 'Subfolders',  '#3b82f6')}
-      ${kpi('fa-video',           d.totals.videos,     'Videos',      '#7c3aed')}
-      ${kpi('fa-file-alt',        d.totals.docs,       'Documents',   '#0891b2')}
-      ${kpi('fa-user-graduate',   d.totals.students,   'Students',    '#2ecc71')}
-      ${kpi('fa-graduation-cap',  d.totals.assessments,'Assessments', '#f39c12')}
-      ${kpi('fa-address-book',    d.totals.registers,  'Registers',   '#e11d48')}
-      ${kpi('fa-images',          d.totals.promos,     'Promo Items', '#ec4899')}
-      ${kpi('fa-chalkboard-teacher', d.totals.lecturers,'Lecturers',  '#7c3aed')}
-      ${kpi('fa-user-slash',      d.totals.banned,     'Banned Users','#e74c3c')}
-    </div>
+function recentActivityHTML(txs){
+  const recent = [...txs].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,20);
+  if(!recent.length) return `<div class="empty"><i class="fas fa-inbox"></i>No activity in this period.</div>`;
+  return `
+    <div class="tbl-wrap"><table class="rpt">
+      <thead><tr>
+        <th>User</th><th>Item</th><th>Type</th>
+        <th class="right">Amount</th><th class="center">Status</th><th>Date</th>
+      </tr></thead>
+      <tbody>${recent.map(t=>`
+        <tr>
+          <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+          <td>${esc(t.itemTitle||'—')}</td>
+          <td style="text-transform:capitalize">${esc(t.itemType||'course')}</td>
+          <td class="right money">${money(t.amount)}</td>
+          <td class="center"><span class="badge ${esc(t.status||'pending')}">${esc(t.status||'pending')}</span></td>
+          <td class="muted">${fmtDate(t.timestamp)}</td>
+        </tr>`).join('')}</tbody>
+    </table></div>
   `;
-
-  /* ---- PURCHASE MONEY ---- */
-  html += `
-    <div class="card gradient-gold">
-      <h3><i class="fas fa-coins" style="color:#d4952a"></i>
-          Purchase Overview — ${esc(d.range.label)}</h3>
-      <div class="kpi-grid" style="margin-bottom:0">
-        ${kpi('fa-check-circle','ZMW '+d.money.approved.toFixed(2),'Approved Revenue','#2e7d32')}
-        ${kpi('fa-hourglass-half','ZMW '+d.money.pending.toFixed(2),'Pending Value','#e65100')}
-        ${kpi('fa-times-circle','ZMW '+d.money.rejected.toFixed(2),'Rejected Value','#c62828')}
-        ${kpi('fa-receipt','ZMW '+d.money.total.toFixed(2),'Total Value','#d4952a')}
-        ${kpi('fa-check',d.tx.approved,'Approved Count','#2e7d32')}
-        ${kpi('fa-clock',d.tx.pending,'Pending Count','#e65100')}
-        ${kpi('fa-ban',d.tx.rejected,'Rejected Count','#c62828')}
-        ${kpi('fa-list',d.tx.total,'Total Transactions','#3b82f6')}
-      </div>
-    </div>
-  `;
-
-  /* ---- BEST SELLING ---- */
-  const bestRows = d.bestSelling.length
-    ? d.bestSelling.map((s,i)=>`
-      <tr>
-        <td style="font-weight:800;width:36px">${i+1}</td>
-        <td>${esc(s.title)}</td>
-        <td style="text-transform:capitalize">${esc(s.type)}</td>
-        <td class="right">${s.count}</td>
-        <td class="right money">${fmtMoney(s.revenue)}</td>
-      </tr>`).join('')
-    : '';
-  html += `
-    <div class="card">
-      <h3><i class="fas fa-fire" style="color:#e74c3c"></i> Best-Selling Courses &amp; Subfolders</h3>
-      ${bestRows
-        ? `<div class="tbl-wrap"><table class="rpt">
-            <thead><tr>
-              <th>#</th><th>Item</th><th>Type</th>
-              <th class="right">Sales</th><th class="right">Revenue</th>
-            </tr></thead>
-            <tbody>${bestRows}</tbody>
-          </table></div>`
-        : `<div class="empty"><i class="fas fa-inbox"></i>No sales in this period.</div>`}
-    </div>
-  `;
-
-  /* ---- MOST ENROLLED ---- */
-  const enrollRows = d.mostEnrolled.length
-    ? d.mostEnrolled.map((s,i)=>`
-      <tr>
-        <td style="font-weight:800;width:36px">${i+1}</td>
-        <td>${esc(s.title)}</td>
-        <td style="text-transform:capitalize">${esc(s.type)}</td>
-        <td class="right"><strong>${s.enrollments}</strong> student${s.enrollments!==1?'s':''}</td>
-      </tr>`).join('')
-    : '';
-  html += `
-    <div class="card gradient-blue">
-      <h3><i class="fas fa-users" style="color:#3b82f6"></i> Courses With Most Students Enrolled</h3>
-      ${enrollRows
-        ? `<div class="tbl-wrap"><table class="rpt">
-            <thead><tr>
-              <th>#</th><th>Course / Subfolder</th><th>Type</th>
-              <th class="right">Enrollments</th>
-            </tr></thead>
-            <tbody>${enrollRows}</tbody>
-          </table></div>`
-        : `<div class="empty"><i class="fas fa-users"></i>No enrollments in this period.</div>`}
-    </div>
-  `;
-
-  /* ---- TOP STUDENTS ---- */
-  const studentRows = d.topStudents.length
-    ? d.topStudents.slice(0,25).map((s,i)=>`
-      <tr>
-        <td style="font-weight:800;width:36px">${i+1}</td>
-        <td>${esc(s.name||'Unknown')}</td>
-        <td class="muted">${esc(s.email||'—')}</td>
-        <td class="right">${s.count}</td>
-        <td class="right money">${fmtMoney(s.spend)}</td>
-      </tr>`).join('')
-    : '';
-  html += `
-    <div class="card gradient-green">
-      <h3><i class="fas fa-trophy" style="color:#2ecc71"></i> Top Students (by Spend)</h3>
-      ${studentRows
-        ? `<div class="tbl-wrap"><table class="rpt">
-            <thead><tr>
-              <th>#</th><th>Student</th><th>Email</th>
-              <th class="right">Purchases</th><th class="right">Spend</th>
-            </tr></thead>
-            <tbody>${studentRows}</tbody>
-          </table></div>`
-        : `<div class="empty"><i class="fas fa-trophy"></i>No student activity in this period.</div>`}
-    </div>
-  `;
-
-  /* ---- EXPRESS SHOP ---- */
-  const topProdRows = d.express.topProducts.length
-    ? d.express.topProducts.slice(0,20).map((p,i)=>`
-      <tr>
-        <td style="font-weight:800;width:36px">${i+1}</td>
-        <td>${esc(p.name)}</td>
-        <td class="right"><strong>${p.units}</strong></td>
-        <td class="right money">${fmtMoney(p.revenue)}</td>
-      </tr>`).join('')
-    : '';
-
-  html += `
-    <div class="card gradient-blue">
-      <h3><i class="fas fa-store" style="color:#3b82f6"></i> UTOM Express Shop</h3>
-      <div class="kpi-grid" style="margin-bottom:12px">
-        ${kpi('fa-shopping-cart', d.express.ordersCount, 'Orders in Range', '#3b82f6')}
-        ${kpi('fa-coins','ZMW '+d.express.revenue.toFixed(2),'Express Revenue','#2e7d32')}
-        ${kpi('fa-box',d.express.products,'Products','#d4952a')}
-        ${kpi('fa-exclamation-triangle',d.express.lowStock,'Low Stock','#f39c12')}
-        ${kpi('fa-ban',d.express.outOfStock,'Out of Stock','#e74c3c')}
-        ${kpi('fa-hourglass-half',d.express.pending,'Pending Payments','#e65100')}
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px">
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#e65100">${d.express.orders.pending}</strong>Pending</div>
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#0d47a1">${d.express.orders.confirmed}</strong>Confirmed</div>
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#2e7d32">${d.express.orders.ready}</strong>Ready</div>
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#283593">${d.express.orders.collected}</strong>Collected</div>
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#00695c">${d.express.orders.completed}</strong>Completed</div>
-        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#c62828">${d.express.orders.cancelled}</strong>Cancelled</div>
-      </div>
-      ${topProdRows ? `
-        <h4 style="font-size:12px;font-weight:800;margin:0 0 8px 0;color:#3b82f6"><i class="fas fa-fire"></i> Top-Selling Express Products</h4>
-        <div class="tbl-wrap"><table class="rpt">
-          <thead><tr>
-            <th>#</th><th>Product</th>
-            <th class="right">Units Sold</th>
-            <th class="right">Revenue</th>
-          </tr></thead>
-          <tbody>${topProdRows}</tbody>
-        </table></div>
-      ` : ''}
-    </div>
-  `;
-
-  /* ---- ASSESSMENTS ---- */
-  html += `
-    <div class="card gradient-rose">
-      <h3><i class="fas fa-graduation-cap" style="color:#e63946"></i> Assessments</h3>
-      <div class="kpi-grid" style="margin-bottom:0">
-        ${kpi('fa-file-alt', d.assessmentStats.total,'Assessments','#d4952a')}
-        ${kpi('fa-play', d.assessmentStats.attempts,'Attempts','#3b82f6')}
-        ${kpi('fa-flag-checkered', d.assessmentStats.completed,'Completed','#7c3aed')}
-        ${kpi('fa-check-circle', d.assessmentStats.passed,'Passed','#2ecc71')}
-        ${kpi('fa-times-circle', d.assessmentStats.failed,'Failed','#e74c3c')}
-      </div>
-    </div>
-  `;
-
-  /* ---- LECTURERS ---- */
-  html += `
-    <div class="card gradient-purple">
-      <h3><i class="fas fa-chalkboard-teacher" style="color:#7c3aed"></i> Lecturer Applications &amp; Access</h3>
-      <div class="kpi-grid" style="margin-bottom:0">
-        ${kpi('fa-users', d.lecturerStats.total,'Total Lecturers','#7c3aed')}
-        ${kpi('fa-check-circle', d.lecturerStats.approved,'Approved','#2ecc71')}
-        ${kpi('fa-hourglass-half', d.lecturerStats.pending,'Pending Approval','#f39c12')}
-        ${kpi('fa-times-circle', d.lecturerStats.rejected,'Rejected','#e74c3c')}
-        ${kpi('fa-ban', d.lecturerStats.banned,'Banned','#7f1d1d')}
-        ${kpi('fa-bolt', d.lecturerStats.active,'Active Access','#d4952a')}
-        ${kpi('fa-clock', d.lecturerStats.expired,'Expired Access','#c62828')}
-      </div>
-    </div>
-  `;
-
-  /* ---- DETAILED TRANSACTIONS ---- */
-  const txRows = d.txList.length
-    ? d.txList.map(t=>`
-      <tr>
-        <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
-        <td>${esc(t.itemTitle||'—')}<br><span class="muted" style="text-transform:capitalize">${esc(t.itemType||'course')}</span></td>
-        <td class="right money">${fmtMoney(t.amount)}</td>
-        <td class="center">${statusBadge(t.status)}</td>
-        <td class="muted">${fmtDate(t.timestamp)}</td>
-      </tr>`).join('')
-    : '';
-  html += `
-    <div class="card">
-      <h3><i class="fas fa-list-ul" style="color:#d4952a"></i> Recent Transactions in Range (${d.txList.length})</h3>
-      ${txRows
-        ? `<div class="tbl-wrap"><table class="rpt">
-            <thead><tr>
-              <th>User</th><th>Item</th>
-              <th class="right">Amount</th>
-              <th class="center">Status</th>
-              <th>Date</th>
-            </tr></thead>
-            <tbody>${txRows}</tbody>
-          </table></div>`
-        : `<div class="empty"><i class="fas fa-inbox"></i>No transactions in this period.</div>`}
-    </div>
-  `;
-
-  document.getElementById('reportRoot').innerHTML = html;
 }
 
 /* =================================================================
-   PDF DOWNLOAD
+   MODULE: COURSES
+================================================================= */
+window.MODULES = window.MODULES || {};
+window.MODULES.courses = {
+  render(){
+    const f = STATE.courses;
+    // Get approved course sales
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'course' || !t.itemType);
+
+    // Group by course
+    const byCourse = {};
+    Object.values(S.courses).forEach(c => {
+      byCourse[c.id] = {
+        id:c.id, name:c.name||'Unnamed',
+        price:num(c.price),
+        priceType: num(c.price) > 0 ? 'paid' : 'free',
+        durationType: c.durationType || 'lifetime',
+        durationValue: num(c.durationValue),
+        subfolders: Object.values(S.subfolders).filter(s=>s.courseId===c.id).length,
+        videos: Object.values(S.videos).filter(v=>v.courseId===c.id).length,
+        docs: Object.values(S.docs).filter(d=>d.courseId===c.id).length,
+        enrollments:0, revenue:0, students:[]
+      };
+    });
+
+    txApproved.forEach(t => {
+      const c = byCourse[t.itemId];
+      if(!c) return;
+      c.enrollments += 1;
+      c.revenue += num(t.amount);
+      c.students.push({ uid:t.userId, name:t.userName||'Unknown', email:t.userEmail||'', amount:num(t.amount) });
+    });
+
+    let rows = Object.values(byCourse);
+
+    // Filters
+    if(f.status === 'free')      rows = rows.filter(r=>r.priceType==='free');
+    else if(f.status === 'paid') rows = rows.filter(r=>r.priceType==='paid');
+    else if(f.status === 'top')  rows = rows.filter(r=>r.enrollments > 0);
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r => r.name.toLowerCase().includes(q));
+    }
+
+    // Sort
+    const sorters = {
+      'revenue-desc': (a,b)=>b.revenue - a.revenue,
+      'revenue-asc':  (a,b)=>a.revenue - b.revenue,
+      'enroll-desc':  (a,b)=>b.enrollments - a.enrollments,
+      'enroll-asc':   (a,b)=>a.enrollments - b.enrollments,
+      'name-asc':     (a,b)=>a.name.localeCompare(b.name),
+      'name-desc':    (a,b)=>b.name.localeCompare(a.name),
+      'price-desc':   (a,b)=>b.price - a.price,
+      'price-asc':    (a,b)=>a.price - b.price
+    };
+    rows.sort(sorters[f.sortBy] || sorters['revenue-desc']);
+
+    const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
+    const totalEnroll = rows.reduce((s,r)=>s+r.enrollments,0);
+    const totalFree = rows.filter(r=>r.priceType==='free').length;
+    const totalPaid = rows.filter(r=>r.priceType==='paid').length;
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-book-open"></i> Courses Report</h2>
+        <p class="hint">All course sales, enrollments and revenue with full filtering.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="crsStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All courses</option>
+            <option value="paid" ${f.status==='paid'?'selected':''}>Paid only</option>
+            <option value="free" ${f.status==='free'?'selected':''}>Free only</option>
+            <option value="top" ${f.status==='top'?'selected':''}>With enrollments</option>
+          </select>
+          <select id="crsSort">
+            <option value="revenue-desc" ${f.sortBy==='revenue-desc'?'selected':''}>Sort: Revenue ↓</option>
+            <option value="revenue-asc"  ${f.sortBy==='revenue-asc'?'selected':''}>Sort: Revenue ↑</option>
+            <option value="enroll-desc"  ${f.sortBy==='enroll-desc'?'selected':''}>Sort: Enrollments ↓</option>
+            <option value="enroll-asc"   ${f.sortBy==='enroll-asc'?'selected':''}>Sort: Enrollments ↑</option>
+            <option value="price-desc"   ${f.sortBy==='price-desc'?'selected':''}>Sort: Price ↓</option>
+            <option value="price-asc"    ${f.sortBy==='price-asc'?'selected':''}>Sort: Price ↑</option>
+            <option value="name-asc"     ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+            <option value="name-desc"    ${f.sortBy==='name-desc'?'selected':''}>Sort: Name Z–A</option>
+          </select>
+          <input type="text" id="crsSearch" placeholder="Search course name…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-book', rows.length, 'Courses Shown', '#d4952a')}
+        ${kpi('fa-check-circle', totalPaid, 'Paid Courses', '#2e7d32')}
+        ${kpi('fa-gift', totalFree, 'Free Courses', '#3b82f6')}
+        ${kpi('fa-users', totalEnroll, 'Total Enrollments', '#7c3aed')}
+        ${kpi('fa-coins', money(totalRevenue), 'Total Revenue', '#f39c12')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Course Breakdown</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No courses match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th>
+                <th>Course</th>
+                <th class="center">Type</th>
+                <th class="right">Price</th>
+                <th class="right">Enroll.</th>
+                <th class="right">Revenue</th>
+                <th class="right">Sub / Vid / Docs</th>
+              </tr></thead>
+              <tbody>${rows.map((r,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong></td>
+                  <td class="center"><span class="badge ${r.priceType==='free'?'approved':'pending'}">${r.priceType}</span></td>
+                  <td class="right">${r.price>0 ? money(r.price) : 'FREE'}</td>
+                  <td class="right"><strong>${r.enrollments}</strong></td>
+                  <td class="right money">${money(r.revenue)}</td>
+                  <td class="right muted">${r.subfolders} / ${r.videos} / ${r.docs}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-user-check"></i> Students Enrolled per Course</h3>
+        ${rows.filter(r=>r.students.length).length === 0
+          ? `<div class="empty"><i class="fas fa-user-graduate"></i>No enrollments in this period.</div>`
+          : rows.filter(r=>r.students.length).map(r=>`
+            <div style="margin-bottom:14px;">
+              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
+                ${esc(r.name)} <span class="badge approved">${r.students.length} student${r.students.length!==1?'s':''}</span>
+              </div>
+              <div class="tbl-wrap"><table class="rpt">
+                <thead><tr>
+                  <th>#</th><th>Student</th><th>Email</th><th class="right">Paid</th>
+                </tr></thead>
+                <tbody>${r.students.map((s,i)=>`
+                  <tr>
+                    <td class="rank">${i+1}</td>
+                    <td>${esc(s.name)}</td>
+                    <td class="muted">${esc(s.email)}</td>
+                    <td class="right money">${money(s.amount)}</td>
+                  </tr>`).join('')}</tbody>
+              </table></div>
+            </div>`).join('')}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: SUBFOLDERS
+================================================================= */
+window.MODULES.subfolders = {
+  render(){
+    const f = STATE.subfolders;
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'subfolder');
+
+    const bySub = {};
+    Object.values(S.subfolders).forEach(sf => {
+      const parent = S.courses[sf.courseId];
+      bySub[sf.id] = {
+        id:sf.id, name:sf.name||'Unnamed',
+        courseId: sf.courseId||'',
+        courseName: parent?.name || '—',
+        price: num(sf.price),
+        priceType: num(sf.price) > 0 ? 'paid' : 'free',
+        durationType: sf.durationType || 'lifetime',
+        durationValue: num(sf.durationValue),
+        videos: Object.values(S.videos).filter(v=>v.subfolderId===sf.id).length,
+        docs: Object.values(S.docs).filter(d=>d.subfolderId===sf.id).length,
+        purchases:0, revenue:0, students:[]
+      };
+    });
+
+    txApproved.forEach(t => {
+      const s = bySub[t.itemId];
+      if(!s) return;
+      s.purchases += 1;
+      s.revenue += num(t.amount);
+      s.students.push({ uid:t.userId, name:t.userName||'Unknown', email:t.userEmail||'', amount:num(t.amount) });
+    });
+
+    let rows = Object.values(bySub);
+
+    if(f.status === 'free')      rows = rows.filter(r=>r.priceType==='free');
+    else if(f.status === 'paid') rows = rows.filter(r=>r.priceType==='paid');
+    else if(f.status === 'top')  rows = rows.filter(r=>r.purchases > 0);
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.courseName.toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'revenue-desc': (a,b)=>b.revenue - a.revenue,
+      'revenue-asc':  (a,b)=>a.revenue - b.revenue,
+      'purchase-desc':(a,b)=>b.purchases - a.purchases,
+      'purchase-asc': (a,b)=>a.purchases - b.purchases,
+      'name-asc':     (a,b)=>a.name.localeCompare(b.name),
+      'name-desc':    (a,b)=>b.name.localeCompare(a.name),
+      'price-desc':   (a,b)=>b.price - a.price,
+      'price-asc':    (a,b)=>a.price - b.price
+    };
+    rows.sort(sorters[f.sortBy] || sorters['revenue-desc']);
+
+    const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
+    const totalPurch = rows.reduce((s,r)=>s+r.purchases,0);
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-folder"></i> Subfolders Report</h2>
+        <p class="hint">Sales, revenue and content breakdown for every subfolder.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="sfStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All subfolders</option>
+            <option value="paid" ${f.status==='paid'?'selected':''}>Paid only</option>
+            <option value="free" ${f.status==='free'?'selected':''}>Free only</option>
+            <option value="top"  ${f.status==='top'?'selected':''}>With purchases</option>
+          </select>
+          <select id="sfSort">
+            <option value="revenue-desc" ${f.sortBy==='revenue-desc'?'selected':''}>Sort: Revenue ↓</option>
+            <option value="revenue-asc"  ${f.sortBy==='revenue-asc'?'selected':''}>Sort: Revenue ↑</option>
+            <option value="purchase-desc"${f.sortBy==='purchase-desc'?'selected':''}>Sort: Purchases ↓</option>
+            <option value="purchase-asc" ${f.sortBy==='purchase-asc'?'selected':''}>Sort: Purchases ↑</option>
+            <option value="price-desc"   ${f.sortBy==='price-desc'?'selected':''}>Sort: Price ↓</option>
+            <option value="price-asc"    ${f.sortBy==='price-asc'?'selected':''}>Sort: Price ↑</option>
+            <option value="name-asc"     ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+          </select>
+          <input type="text" id="sfSearch" placeholder="Search subfolder or course…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-folder', rows.length, 'Subfolders Shown', '#3b82f6')}
+        ${kpi('fa-shopping-cart', totalPurch, 'Total Purchases', '#7c3aed')}
+        ${kpi('fa-coins', money(totalRevenue), 'Revenue', '#d4952a')}
+        ${kpi('fa-video', rows.reduce((s,r)=>s+r.videos,0), 'Total Videos', '#0891b2')}
+        ${kpi('fa-file-alt', rows.reduce((s,r)=>s+r.docs,0), 'Total Docs', '#ec4899')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Subfolder Breakdown</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No subfolders match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Subfolder</th><th>Parent Course</th>
+                <th class="center">Type</th>
+                <th class="right">Price</th>
+                <th class="right">Purchases</th>
+                <th class="right">Revenue</th>
+                <th class="right">Vid/Docs</th>
+              </tr></thead>
+              <tbody>${rows.map((r,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong></td>
+                  <td class="muted">${esc(r.courseName)}</td>
+                  <td class="center"><span class="badge ${r.priceType==='free'?'approved':'pending'}">${r.priceType}</span></td>
+                  <td class="right">${r.price>0 ? money(r.price) : 'FREE'}</td>
+                  <td class="right"><strong>${r.purchases}</strong></td>
+                  <td class="right money">${money(r.revenue)}</td>
+                  <td class="right muted">${r.videos} / ${r.docs}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-user-check"></i> Students Who Purchased</h3>
+        ${rows.filter(r=>r.students.length).length === 0
+          ? `<div class="empty"><i class="fas fa-user-graduate"></i>No subfolder purchases in this period.</div>`
+          : rows.filter(r=>r.students.length).map(r=>`
+            <div style="margin-bottom:14px;">
+              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
+                ${esc(r.name)} — <span class="muted">${esc(r.courseName)}</span>
+                <span class="badge approved">${r.students.length}</span>
+              </div>
+              <div class="tbl-wrap"><table class="rpt">
+                <thead><tr><th>#</th><th>Student</th><th>Email</th><th class="right">Paid</th></tr></thead>
+                <tbody>${r.students.map((s,i)=>`
+                  <tr>
+                    <td class="rank">${i+1}</td>
+                    <td>${esc(s.name)}</td>
+                    <td class="muted">${esc(s.email)}</td>
+                    <td class="right money">${money(s.amount)}</td>
+                  </tr>`).join('')}</tbody>
+              </table></div>
+            </div>`).join('')}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: LECTURE DASHBOARD
+================================================================= */
+window.MODULES.lectureDash = {
+  render(){
+    const f = STATE.lectureDash;
+    const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+
+    // Compute earnings per lecturer from approved purchases
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'course' || t.itemType === 'subfolder');
+
+    // Build owner index
+    const ownerIdx = {};
+    Object.entries(S.courses).forEach(([id,c])=>{ if(c.lecturerId) ownerIdx[id]=c.lecturerId; });
+    Object.entries(S.subfolders).forEach(([id,s])=>{ if(s.lecturerId) ownerIdx[id]=s.lecturerId; });
+
+    const byLecturer = {};
+    lectArr.forEach(l => {
+      byLecturer[l.id] = {
+        id:l.id,
+        name:l.name||'Unnamed',
+        email:l.email||'',
+        phone:l.phone||'',
+        status:l.status||'pending',
+        banned:!!l.banned,
+        accessExpiresAt:l.accessExpiresAt||null,
+        approvedAt:l.approvedAt||0,
+        courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
+        subfolders: Object.values(S.subfolders).filter(s=>s.lecturerId===l.id).length,
+        videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
+        docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
+        assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length,
+        sales:0, revenue:0, students:new Set()
+      };
+    });
+
+    txApproved.forEach(t => {
+      const ownerId = ownerIdx[t.itemId];
+      if(!ownerId || !byLecturer[ownerId]) return;
+      const L = byLecturer[ownerId];
+      L.sales += 1;
+      L.revenue += num(t.amount);
+      if(t.userId) L.students.add(t.userId);
+    });
+
+    let rows = Object.values(byLecturer);
+    rows.forEach(r => r.uniqueStudents = r.students.size);
+
+    // Apply status filter
+    if(f.status === 'approved')   rows = rows.filter(r => r.status === 'approved' && !r.banned);
+    else if(f.status === 'pending')  rows = rows.filter(r => r.status === 'pending');
+    else if(f.status === 'rejected') rows = rows.filter(r => r.status === 'rejected');
+    else if(f.status === 'banned')   rows = rows.filter(r => r.banned);
+    else if(f.status === 'active')   rows = rows.filter(r => {
+      return r.status === 'approved' && !r.banned &&
+             (!r.accessExpiresAt || r.accessExpiresAt > Date.now());
+    });
+    else if(f.status === 'expired')  rows = rows.filter(r =>
+      r.accessExpiresAt && r.accessExpiresAt <= Date.now());
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.phone.toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'earnings-desc': (a,b)=>b.revenue - a.revenue,
+      'earnings-asc':  (a,b)=>a.revenue - b.revenue,
+      'sales-desc':    (a,b)=>b.sales - a.sales,
+      'sales-asc':     (a,b)=>a.sales - b.sales,
+      'courses-desc':  (a,b)=>b.courses - a.courses,
+      'students-desc': (a,b)=>b.uniqueStudents - a.uniqueStudents,
+      'name-asc':      (a,b)=>a.name.localeCompare(b.name),
+      'date-desc':     (a,b)=>(b.approvedAt||0)-(a.approvedAt||0)
+    };
+    rows.sort(sorters[f.sortBy] || sorters['earnings-desc']);
+
+    const totalRevenue = rows.reduce((s,r)=>s+r.revenue,0);
+    const totalSales = rows.reduce((s,r)=>s+r.sales,0);
+    const totalPosts = rows.reduce((s,r)=>s+r.courses+r.subfolders+r.videos+r.docs+r.assessments,0);
+    const activeCount = rows.filter(r => {
+      return r.status==='approved' && !r.banned && (!r.accessExpiresAt || r.accessExpiresAt > Date.now());
+    }).length;
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-chalkboard-teacher"></i> Lecture Dashboard Report</h2>
+        <p class="hint">Per-lecturer earnings, content output and access status.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="ldStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All lecturers</option>
+            <option value="active" ${f.status==='active'?'selected':''}>Active</option>
+            <option value="expired" ${f.status==='expired'?'selected':''}>Expired</option>
+            <option value="approved" ${f.status==='approved'?'selected':''}>Approved</option>
+            <option value="pending" ${f.status==='pending'?'selected':''}>Pending approval</option>
+            <option value="rejected" ${f.status==='rejected'?'selected':''}>Rejected</option>
+            <option value="banned" ${f.status==='banned'?'selected':''}>Banned</option>
+          </select>
+          <select id="ldSort">
+            <option value="earnings-desc" ${f.sortBy==='earnings-desc'?'selected':''}>Sort: Earnings ↓</option>
+            <option value="earnings-asc"  ${f.sortBy==='earnings-asc'?'selected':''}>Sort: Earnings ↑</option>
+            <option value="sales-desc"    ${f.sortBy==='sales-desc'?'selected':''}>Sort: Sales ↓</option>
+            <option value="sales-asc"     ${f.sortBy==='sales-asc'?'selected':''}>Sort: Sales ↑</option>
+            <option value="courses-desc"  ${f.sortBy==='courses-desc'?'selected':''}>Sort: Courses ↓</option>
+            <option value="students-desc" ${f.sortBy==='students-desc'?'selected':''}>Sort: Unique Students ↓</option>
+            <option value="name-asc"      ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+            <option value="date-desc"     ${f.sortBy==='date-desc'?'selected':''}>Sort: Newest first</option>
+          </select>
+          <input type="text" id="ldSearch" placeholder="Search lecturer…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-users', rows.length, 'Lecturers Shown', '#7c3aed')}
+        ${kpi('fa-bolt', activeCount, 'Active Access', '#2ecc71')}
+        ${kpi('fa-shopping-cart', totalSales, 'Sales Made', '#3b82f6')}
+        ${kpi('fa-coins', money(totalRevenue), 'Revenue Generated', '#d4952a')}
+        ${kpi('fa-folder-open', totalPosts, 'Total Posts', '#0891b2')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Lecturer Performance</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Lecturer</th><th class="center">Status</th>
+                <th class="right">Courses</th>
+                <th class="right">Subs</th>
+                <th class="right">Posts</th>
+                <th class="right">Sales</th>
+                <th class="right">Students</th>
+                <th class="right">Earnings</th>
+              </tr></thead>
+              <tbody>${rows.map((r,i)=>{
+                let pillCls = 'pending', pillTxt = r.status;
+                if(r.banned){ pillCls='banned'; pillTxt='banned'; }
+                else if(r.status==='approved' && (!r.accessExpiresAt || r.accessExpiresAt>Date.now())){
+                  pillCls='active'; pillTxt='active';
+                } else if(r.accessExpiresAt && r.accessExpiresAt<=Date.now()){
+                  pillCls='expired'; pillTxt='expired';
+                }
+                return `
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span></td>
+                  <td class="center"><span class="badge ${pillCls}">${pillTxt}</span></td>
+                  <td class="right">${r.courses}</td>
+                  <td class="right">${r.subfolders}</td>
+                  <td class="right muted">${r.videos}/${r.docs}/${r.assessments}</td>
+                  <td class="right"><strong>${r.sales}</strong></td>
+                  <td class="right">${r.uniqueStudents}</td>
+                  <td class="right money">${money(r.revenue)}</td>
+                </tr>`;
+              }).join('')}</tbody>
+            </table></div>`}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: EXPRESS SHOPPING
+================================================================= */
+window.MODULES.express = {
+  render(){
+    const f = STATE.express;
+    const products = Object.values(S.expressProducts);
+    const orders   = Object.values(S.expressOrders).filter(o => inRange(o.createdAt));
+    const payments = Object.values(S.expressPayments).filter(p => inRange(p.createdAt));
+
+    let rows = [...orders];
+
+    if(f.status !== 'all') rows = rows.filter(r => r.status === f.status);
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r =>
+        (r.customerName||'').toLowerCase().includes(q) ||
+        (r.customerEmail||'').toLowerCase().includes(q) ||
+        (r.id||'').toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'date-desc': (a,b)=>(b.createdAt||0)-(a.createdAt||0),
+      'date-asc':  (a,b)=>(a.createdAt||0)-(b.createdAt||0),
+      'total-desc':(a,b)=>num(b.total)-num(a.total),
+      'total-asc': (a,b)=>num(a.total)-num(b.total),
+      'name-asc':  (a,b)=>(a.customerName||'').localeCompare(b.customerName||'')
+    };
+    rows.sort(sorters[f.sortBy] || sorters['date-desc']);
+
+    const sum = arr => arr.reduce((s,x)=>s+num(x),0);
+    const totalRevenue = sum(rows.filter(o=>o.status==='completed'||o.status==='collected').map(o=>o.total));
+    const pending = rows.filter(o=>o.status==='pending').length;
+    const cancelled = rows.filter(o=>o.status==='cancelled').length;
+
+    const paymentsApproved = payments.filter(p=>p.status==='approved');
+    const paymentsPending  = payments.filter(p=>p.status==='pending');
+    const paymentsRejected = payments.filter(p=>p.status==='rejected');
+
+    // Product sales by units
+    const prodUnits = {};
+    rows.forEach(o => {
+      (o.items||[]).forEach(it => {
+        const key = it.productId || it.name;
+        if(!prodUnits[key]) prodUnits[key] = { name: it.name||'Product', units:0, revenue:0 };
+        prodUnits[key].units += num(it.qty) || 1;
+        prodUnits[key].revenue += num(it.price)*(num(it.qty)||1);
+      });
+    });
+    const topProducts = Object.values(prodUnits).sort((a,b)=>b.units-a.units);
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-store"></i> Express Shopping Report</h2>
+        <p class="hint">Complete overview of the UTOM Express shop.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="exStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All orders</option>
+            <option value="pending" ${f.status==='pending'?'selected':''}>Pending</option>
+            <option value="confirmed" ${f.status==='confirmed'?'selected':''}>Confirmed</option>
+            <option value="ready" ${f.status==='ready'?'selected':''}>Ready for pickup</option>
+            <option value="collected" ${f.status==='collected'?'selected':''}>Collected</option>
+            <option value="completed" ${f.status==='completed'?'selected':''}>Completed</option>
+            <option value="cancelled" ${f.status==='cancelled'?'selected':''}>Cancelled</option>
+          </select>
+          <select id="exSort">
+            <option value="date-desc" ${f.sortBy==='date-desc'?'selected':''}>Sort: Newest first</option>
+            <option value="date-asc" ${f.sortBy==='date-asc'?'selected':''}>Sort: Oldest first</option>
+            <option value="total-desc" ${f.sortBy==='total-desc'?'selected':''}>Sort: Total ↓</option>
+            <option value="total-asc" ${f.sortBy==='total-asc'?'selected':''}>Sort: Total ↑</option>
+            <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Customer A–Z</option>
+          </select>
+          <input type="text" id="exSearch" placeholder="Search customer or order ID…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-shopping-cart', rows.length, 'Orders in Range', '#3b82f6')}
+        ${kpi('fa-coins', money(totalRevenue), 'Express Revenue', '#2e7d32')}
+        ${kpi('fa-hourglass-half', pending, 'Pending Orders', '#e65100')}
+        ${kpi('fa-ban', cancelled, 'Cancelled', '#c62828')}
+        ${kpi('fa-box', products.length, 'Total Products', '#d4952a')}
+        ${kpi('fa-exclamation-triangle', products.filter(p=>num(p.quantity)>0 && num(p.quantity)<=(p.lowStockThreshold||5)).length, 'Low Stock', '#f39c12')}
+        ${kpi('fa-times-circle', products.filter(p=>num(p.quantity)<=0).length, 'Out of Stock', '#e74c3c')}
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid rgba(59,130,246,.2)">
+        <h3><i class="fas fa-credit-card"></i> Payments Status</h3>
+        <div class="kpi-grid" style="margin-bottom:0">
+          ${kpi('fa-check-circle', paymentsApproved.length, 'Approved', '#2e7d32')}
+          ${kpi('fa-hourglass-half', paymentsPending.length, 'Pending', '#e65100')}
+          ${kpi('fa-times-circle', paymentsRejected.length, 'Rejected', '#c62828')}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-fire"></i> Top-Selling Products</h3>
+        ${topProducts.length === 0
+          ? `<div class="empty"><i class="fas fa-box"></i>No product sales in this period.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Product</th>
+                <th class="right">Units Sold</th>
+                <th class="right">Revenue</th>
+              </tr></thead>
+              <tbody>${topProducts.slice(0,30).map((p,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td>${esc(p.name)}</td>
+                  <td class="right"><strong>${p.units}</strong></td>
+                  <td class="right money">${money(p.revenue)}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-list"></i> Orders Detail (${rows.length})</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No orders match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>Order</th><th>Customer</th><th>Items</th>
+                <th class="right">Total</th>
+                <th class="center">Status</th>
+                <th>Date</th>
+              </tr></thead>
+              <tbody>${rows.slice(0,150).map(o=>{
+                const items = (o.items||[]).map(i=>`${i.name||'?'} ×${i.qty||1}`).join(', ');
+                return `
+                <tr>
+                  <td class="muted">#${esc((o.id||'').slice(0,8))}</td>
+                  <td><strong>${esc(o.customerName||'Guest')}</strong><br><span class="muted">${esc(o.customerEmail||'')}</span></td>
+                  <td class="muted" style="max-width:280px">${esc(items||'—')}</td>
+                  <td class="right money">${money(o.total)}</td>
+                  <td class="center"><span class="badge ${esc(o.status||'pending')}">${esc(o.status||'pending')}</span></td>
+                  <td class="muted">${fmtDate(o.createdAt)}</td>
+                </tr>`;
+              }).join('')}</tbody>
+            </table></div>`}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-receipt"></i> Payments Detail (${payments.length})</h3>
+        ${payments.length === 0
+          ? `<div class="empty"><i class="fas fa-receipt"></i>No payments in this period.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>Payment ID</th><th>Customer</th><th>Product</th>
+                <th class="right">Amount</th>
+                <th class="center">Status</th>
+                <th>Date</th>
+              </tr></thead>
+              <tbody>${payments.slice(0,100).map(p=>`
+                <tr>
+                  <td class="muted">#${esc((p.id||'').slice(0,8))}</td>
+                  <td><strong>${esc(p.customerName||'Guest')}</strong><br><span class="muted">${esc(p.customerEmail||'')}</span></td>
+                  <td class="muted" style="max-width:240px">${esc(p.productName||'—')}</td>
+                  <td class="right money">${money(p.amount)}</td>
+                  <td class="center"><span class="badge ${esc(p.status||'pending')}">${esc(p.status||'pending')}</span></td>
+                  <td class="muted">${fmtDate(p.createdAt)}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: ASSESSMENTS
+================================================================= */
+window.MODULES.assessments = {
+  render(){
+    const f = STATE.assessments;
+    const assArr = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+    const respArr = [...Object.values(S.assessmentResponses), ...Object.values(S.lecturerResponses)]
+      .filter(r => inRange(r.submittedAt || r.startedAt || r.endedAt));
+
+    let rows = assArr.map(a => {
+      const resps = respArr.filter(r => r.assessmentId === a.id);
+      const completed = resps.filter(r => r.status === 'completed' || r.status === 'ended');
+      const passed = completed.filter(r => {
+        const total = num(a.totalMarks);
+        const pct = total > 0 ? (num(r.score)/total)*100 : 0;
+        return pct >= num(a.passingScore || 50);
+      });
+      return {
+        id:a.id,
+        name:a.name||'Untitled',
+        type:a.type||'test',
+        duration:a.duration||'—',
+        totalMarks:num(a.totalMarks),
+        passingScore:num(a.passingScore||50),
+        price:num(a.price),
+        status:a.status||'draft',
+        registerIds: a.registerIds || [],
+        attempts:resps.length,
+        completed:completed.length,
+        passed:passed.length,
+        failed:completed.length - passed.length,
+        avgScore: completed.length ? Math.round(completed.reduce((s,r)=>s+num(r.score),0) / completed.length) : 0
+      };
+    });
+
+    if(f.status !== 'all'){
+      if(f.status === 'draft') rows = rows.filter(r => r.status === 'draft');
+      else if(f.status === 'published') rows = rows.filter(r => r.status === 'published');
+      else if(f.status === 'scheduled') rows = rows.filter(r => r.status === 'scheduled');
+      else if(f.status === 'ended') rows = rows.filter(r => r.status === 'ended');
+      else if(f.status === 'withAttempts') rows = rows.filter(r => r.attempts > 0);
+      else if(f.status === 'noAttempts') rows = rows.filter(r => r.attempts === 0);
+    }
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r => r.name.toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'date-desc': (a,b)=>(b.attempts||0)-(a.attempts||0),
+      'attempts-desc': (a,b)=>b.attempts - a.attempts,
+      'attempts-asc': (a,b)=>a.attempts - b.attempts,
+      'passed-desc': (a,b)=>b.passed - a.passed,
+      'name-asc': (a,b)=>a.name.localeCompare(b.name),
+      'avg-desc': (a,b)=>b.avgScore - a.avgScore
+    };
+    rows.sort(sorters[f.sortBy] || sorters['attempts-desc']);
+
+    const totalAttempts = rows.reduce((s,r)=>s+r.attempts,0);
+    const totalCompleted = rows.reduce((s,r)=>s+r.completed,0);
+    const totalPassed = rows.reduce((s,r)=>s+r.passed,0);
+    const totalFailed = rows.reduce((s,r)=>s+r.failed,0);
+    const passRate = totalCompleted > 0 ? Math.round((totalPassed/totalCompleted)*100) : 0;
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-graduation-cap"></i> Assessments Report</h2>
+        <p class="hint">Complete analysis of every test, quiz, exam and assignment.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="asStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All statuses</option>
+            <option value="draft" ${f.status==='draft'?'selected':''}>Draft</option>
+            <option value="published" ${f.status==='published'?'selected':''}>Published</option>
+            <option value="scheduled" ${f.status==='scheduled'?'selected':''}>Scheduled</option>
+            <option value="ended" ${f.status==='ended'?'selected':''}>Ended</option>
+            <option value="withAttempts" ${f.status==='withAttempts'?'selected':''}>With attempts</option>
+            <option value="noAttempts" ${f.status==='noAttempts'?'selected':''}>No attempts</option>
+          </select>
+          <select id="asSort">
+            <option value="attempts-desc" ${f.sortBy==='attempts-desc'?'selected':''}>Sort: Most attempts</option>
+            <option value="attempts-asc" ${f.sortBy==='attempts-asc'?'selected':''}>Sort: Fewest attempts</option>
+            <option value="passed-desc" ${f.sortBy==='passed-desc'?'selected':''}>Sort: Most passes</option>
+            <option value="avg-desc" ${f.sortBy==='avg-desc'?'selected':''}>Sort: Highest avg score</option>
+            <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+          </select>
+          <input type="text" id="asSearch" placeholder="Search assessment name…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-file-alt', rows.length, 'Assessments', '#d4952a')}
+        ${kpi('fa-play', totalAttempts, 'Attempts', '#3b82f6')}
+        ${kpi('fa-flag-checkered', totalCompleted, 'Completed', '#7c3aed')}
+        ${kpi('fa-check-circle', totalPassed, 'Passed', '#2ecc71')}
+        ${kpi('fa-times-circle', totalFailed, 'Failed', '#e74c3c')}
+        ${kpi('fa-percentage', passRate + '%', 'Pass Rate', '#f39c12')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Assessment Breakdown</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No assessments match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Assessment</th><th class="center">Type</th>
+                <th class="center">Status</th>
+                <th class="right">Marks</th>
+                <th class="right">Attempts</th>
+                <th class="right">Passed</th>
+                <th class="right">Failed</th>
+                <th class="right">Avg</th>
+                <th class="right">Price</th>
+              </tr></thead>
+              <tbody>${rows.map((r,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.duration)}</span></td>
+                  <td class="center"><span class="badge pending" style="text-transform:uppercase">${esc(r.type)}</span></td>
+                  <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+                  <td class="right">${r.totalMarks}</td>
+                  <td class="right"><strong>${r.attempts}</strong></td>
+                  <td class="right" style="color:#2e7d32;font-weight:700">${r.passed}</td>
+                  <td class="right" style="color:#c62828;font-weight:700">${r.failed}</td>
+                  <td class="right">${r.avgScore}</td>
+                  <td class="right money">${r.price>0?money(r.price):'FREE'}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: STUDENTS
+================================================================= */
+window.MODULES.students = {
+  render(){
+    const f = STATE.students;
+    const usersArr = Object.entries(S.users).map(([id,d])=>({id,...d}));
+    const banned = Object.entries(S.bannedUsers).filter(([,v])=>v).map(([id])=>id);
+
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved');
+
+    const txAll = dedupeTx(buildAllTx());
+
+    const byStudent = {};
+    usersArr.forEach(u => {
+      byStudent[u.id] = {
+        id:u.id,
+        name: `${u.firstName||''} ${u.lastName||''}`.trim() || u.email || 'Unknown',
+        email: u.email || '',
+        phone: u.phone || '',
+        banned: banned.includes(u.id),
+        purchases: 0,
+        spend: 0,
+        courses: 0,
+        subfolders: 0,
+        shopItems: 0,
+        items: []
+      };
+    });
+
+    txApproved.forEach(t => {
+      const s = byStudent[t.userId];
+      if(!s) return;
+      s.purchases += 1;
+      s.spend += num(t.amount);
+      const type = (t.itemType||'course').toLowerCase();
+      if(type === 'course') s.courses += 1;
+      else if(type === 'subfolder') s.subfolders += 1;
+      else if(type === 'shop') s.shopItems += 1;
+      s.items.push({ title:t.itemTitle||'—', type, amount:num(t.amount), date:t.timestamp });
+    });
+
+    let rows = Object.values(byStudent);
+
+    if(f.status === 'buyers')     rows = rows.filter(r => r.purchases > 0);
+    else if(f.status === 'nonBuyers') rows = rows.filter(r => r.purchases === 0);
+    else if(f.status === 'banned') rows = rows.filter(r => r.banned);
+    else if(f.status === 'active') rows = rows.filter(r => !r.banned && r.purchases > 0);
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.phone.toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'spend-desc': (a,b)=>b.spend - a.spend,
+      'spend-asc': (a,b)=>a.spend - b.spend,
+      'purchase-desc': (a,b)=>b.purchases - a.purchases,
+      'purchase-asc': (a,b)=>a.purchases - b.purchases,
+      'name-asc': (a,b)=>a.name.localeCompare(b.name),
+      'name-desc': (a,b)=>b.name.localeCompare(a.name)
+    };
+    rows.sort(sorters[f.sortBy] || sorters['spend-desc']);
+
+    const totalSpend = rows.reduce((s,r)=>s+r.spend,0);
+    const totalPurch = rows.reduce((s,r)=>s+r.purchases,0);
+    const buyersCount = rows.filter(r => r.purchases > 0).length;
+    const bannedCount = rows.filter(r => r.banned).length;
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-user-graduate"></i> Students Report</h2>
+        <p class="hint">Every registered student, their purchases, spend and status.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="stStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All students</option>
+            <option value="buyers" ${f.status==='buyers'?'selected':''}>Buyers only</option>
+            <option value="nonBuyers" ${f.status==='nonBuyers'?'selected':''}>Non-buyers</option>
+            <option value="active" ${f.status==='active'?'selected':''}>Active (buyers)</option>
+            <option value="banned" ${f.status==='banned'?'selected':''}>Banned</option>
+          </select>
+          <select id="stSort">
+            <option value="spend-desc" ${f.sortBy==='spend-desc'?'selected':''}>Sort: Spend ↓</option>
+            <option value="spend-asc" ${f.sortBy==='spend-asc'?'selected':''}>Sort: Spend ↑</option>
+            <option value="purchase-desc" ${f.sortBy==='purchase-desc'?'selected':''}>Sort: Purchases ↓</option>
+            <option value="purchase-asc" ${f.sortBy==='purchase-asc'?'selected':''}>Sort: Purchases ↑</option>
+            <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+            <option value="name-desc" ${f.sortBy==='name-desc'?'selected':''}>Sort: Name Z–A</option>
+          </select>
+          <input type="text" id="stSearch" placeholder="Search name, email or phone…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-users', rows.length, 'Students Shown', '#3b82f6')}
+        ${kpi('fa-user-check', buyersCount, 'Buyers', '#2ecc71')}
+        ${kpi('fa-shopping-bag', totalPurch, 'Total Purchases', '#7c3aed')}
+        ${kpi('fa-coins', money(totalSpend), 'Total Spend', '#d4952a')}
+        ${kpi('fa-user-slash', bannedCount, 'Banned', '#e74c3c')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Student Details</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No students match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Student</th><th>Email</th><th>Phone</th>
+                <th class="right">Courses</th>
+                <th class="right">Subfolders</th>
+                <th class="right">Shop</th>
+                <th class="right">Spend</th>
+                <th class="center">Status</th>
+              </tr></thead>
+              <tbody>${rows.slice(0,250).map((r,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong></td>
+                  <td class="muted">${esc(r.email)}</td>
+                  <td class="muted">${esc(r.phone||'—')}</td>
+                  <td class="right">${r.courses}</td>
+                  <td class="right">${r.subfolders}</td>
+                  <td class="right">${r.shopItems}</td>
+                  <td class="right money">${money(r.spend)}</td>
+                  <td class="center"><span class="badge ${r.banned?'banned':'active'}">${r.banned?'banned':'active'}</span></td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-list"></i> Purchase History by Student</h3>
+        ${rows.filter(r=>r.items.length).length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No purchases in this period.</div>`
+          : rows.filter(r=>r.items.length).slice(0,30).map(r=>`
+            <div style="margin-bottom:14px;">
+              <div style="font-weight:700;font-size:13px;margin-bottom:6px;">
+                ${esc(r.name)} — <span class="muted">${esc(r.email)}</span>
+                <span class="badge approved">${r.items.length} purchase${r.items.length!==1?'s':''}</span>
+                <span class="badge pending" style="margin-left:4px">${money(r.spend)}</span>
+              </div>
+              <div class="tbl-wrap"><table class="rpt">
+                <thead><tr><th>#</th><th>Item</th><th>Type</th><th class="right">Amount</th><th>Date</th></tr></thead>
+                <tbody>${r.items.map((it,i)=>`
+                  <tr>
+                    <td class="rank">${i+1}</td>
+                    <td>${esc(it.title)}</td>
+                    <td style="text-transform:capitalize">${esc(it.type)}</td>
+                    <td class="right money">${money(it.amount)}</td>
+                    <td class="muted">${fmtDate(it.date)}</td>
+                  </tr>`).join('')}</tbody>
+              </table></div>
+            </div>`).join('')}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   MODULE: LECTURERS
+================================================================= */
+window.MODULES.lecturers = {
+  render(){
+    const f = STATE.lecturers;
+    const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+    const now = Date.now();
+
+    let rows = lectArr.map(l => {
+      let status = l.status || 'pending';
+      if(l.banned) status = 'banned';
+      else if(l.status === 'approved' && (!l.accessExpiresAt || l.accessExpiresAt > now)) status = 'active';
+      else if(l.status === 'approved' && l.accessExpiresAt && l.accessExpiresAt <= now) status = 'expired';
+      return {
+        id:l.id,
+        name:l.name||'Unnamed',
+        email:l.email||'',
+        phone:l.phone||'',
+        nrc:l.nrcNumber||'',
+        college:l.collegeName||'',
+        city:l.city||'',
+        town:l.town||'',
+        status,
+        rawStatus: l.status||'pending',
+        banned: !!l.banned,
+        accessExpiresAt: l.accessExpiresAt||null,
+        approvedAt: l.approvedAt||0,
+        appliedAt: l.appliedAt||0,
+        paidAmount: num(l.paidAmount),
+        courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
+        videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
+        docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
+        assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length
+      };
+    });
+
+    if(f.status !== 'all') rows = rows.filter(r => r.status === f.status);
+
+    if(f.search){
+      const q = f.search.toLowerCase();
+      rows = rows.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.college.toLowerCase().includes(q) ||
+        r.city.toLowerCase().includes(q));
+    }
+
+    const sorters = {
+      'date-desc': (a,b)=>(b.approvedAt||b.appliedAt)-(a.approvedAt||a.appliedAt),
+      'date-asc':  (a,b)=>(a.approvedAt||a.appliedAt)-(b.approvedAt||b.appliedAt),
+      'name-asc':  (a,b)=>a.name.localeCompare(b.name),
+      'name-desc': (a,b)=>b.name.localeCompare(a.name),
+      'courses-desc': (a,b)=>b.courses - a.courses,
+      'paid-desc': (a,b)=>b.paidAmount - a.paidAmount
+    };
+    rows.sort(sorters[f.sortBy] || sorters['date-desc']);
+
+    const statusCounts = {
+      active: rows.filter(r=>r.status==='active').length,
+      pending: rows.filter(r=>r.status==='pending').length,
+      rejected: rows.filter(r=>r.status==='rejected').length,
+      expired: rows.filter(r=>r.status==='expired').length,
+      banned: rows.filter(r=>r.status==='banned').length
+    };
+    const totalPaid = rows.reduce((s,r)=>s+r.paidAmount,0);
+
+    return `
+      <div class="card">
+        <h2><i class="fas fa-users"></i> Lecturers Report</h2>
+        <p class="hint">Applications, approvals, access status and payment history.</p>
+        ${rangeControlsHTML()}
+
+        <div class="filters">
+          <select id="lcStatus">
+            <option value="all" ${f.status==='all'?'selected':''}>All lecturers</option>
+            <option value="active" ${f.status==='active'?'selected':''}>Active</option>
+            <option value="pending" ${f.status==='pending'?'selected':''}>Pending approval</option>
+            <option value="expired" ${f.status==='expired'?'selected':''}>Expired</option>
+            <option value="rejected" ${f.status==='rejected'?'selected':''}>Rejected</option>
+            <option value="banned" ${f.status==='banned'?'selected':''}>Banned</option>
+          </select>
+          <select id="lcSort">
+            <option value="date-desc" ${f.sortBy==='date-desc'?'selected':''}>Sort: Newest first</option>
+            <option value="date-asc" ${f.sortBy==='date-asc'?'selected':''}>Sort: Oldest first</option>
+            <option value="name-asc" ${f.sortBy==='name-asc'?'selected':''}>Sort: Name A–Z</option>
+            <option value="name-desc" ${f.sortBy==='name-desc'?'selected':''}>Sort: Name Z–A</option>
+            <option value="courses-desc" ${f.sortBy==='courses-desc'?'selected':''}>Sort: Most courses</option>
+            <option value="paid-desc" ${f.sortBy==='paid-desc'?'selected':''}>Sort: Paid most</option>
+          </select>
+          <input type="text" id="lcSearch" placeholder="Search name, email, college, city…" value="${esc(f.search)}" />
+        </div>
+
+        ${downloadControlsHTML()}
+      </div>
+
+      <div class="kpi-grid">
+        ${kpi('fa-users', rows.length, 'Lecturers Shown', '#7c3aed')}
+        ${kpi('fa-bolt', statusCounts.active, 'Active', '#2ecc71')}
+        ${kpi('fa-hourglass-half', statusCounts.pending, 'Pending', '#f39c12')}
+        ${kpi('fa-clock', statusCounts.expired, 'Expired', '#c62828')}
+        ${kpi('fa-ban', statusCounts.banned, 'Banned', '#7f1d1d')}
+        ${kpi('fa-coins', money(totalPaid), 'Total Subscriptions', '#d4952a')}
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-table"></i> Lecturer Details</h3>
+        ${rows.length === 0
+          ? `<div class="empty"><i class="fas fa-inbox"></i>No lecturers match your filters.</div>`
+          : `<div class="tbl-wrap"><table class="rpt">
+              <thead><tr>
+                <th>#</th><th>Lecturer</th><th>College / Location</th>
+                <th class="center">Status</th>
+                <th class="right">Courses</th>
+                <th class="right">Videos</th>
+                <th class="right">Docs</th>
+                <th class="right">Assess.</th>
+                <th class="right">Paid</th>
+                <th>Expires</th>
+              </tr></thead>
+              <tbody>${rows.map((r,i)=>`
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td><strong>${esc(r.name)}</strong><br><span class="muted">${esc(r.email)}</span><br><span class="muted">${esc(r.phone)}</span></td>
+                  <td>${esc(r.college||'—')}<br><span class="muted">${esc([r.city,r.town].filter(Boolean).join(', '))||'—'}</span></td>
+                  <td class="center"><span class="badge ${esc(r.status)}">${esc(r.status)}</span></td>
+                  <td class="right">${r.courses}</td>
+                  <td class="right">${r.videos}</td>
+                  <td class="right">${r.docs}</td>
+                  <td class="right">${r.assessments}</td>
+                  <td class="right money">${money(r.paidAmount)}</td>
+                  <td class="muted">${r.accessExpiresAt ? fmtDay(r.accessExpiresAt) : 'Lifetime'}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`}
+      </div>
+    `;
+  }
+};
+
+/* =================================================================
+   EVENTS
+================================================================= */
+function attachModuleEvents(){
+  // Range buttons
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      STATE.range = btn.dataset.range;
+      document.getElementById('customBox')?.classList.toggle('show', STATE.range === 'custom');
+      if(STATE.range !== 'custom'){
+        computeRange();
+        render();
+      } else {
+        document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  // Custom range apply
+  document.getElementById('applyCustomBtn')?.addEventListener('click', () => {
+    const f = document.getElementById('fromDate').value;
+    const t = document.getElementById('toDate').value;
+    if(!f || !t){ toast('Pick both dates','error'); return; }
+    const sTs = new Date(f + 'T00:00:00').getTime();
+    const eTs = new Date(t + 'T23:59:59').getTime();
+    if(eTs < sTs){ toast('End date must be after start date','error'); return; }
+    STATE.startTs = sTs; STATE.endTs = eTs;
+    render();
+  });
+
+  // Download buttons
+  document.querySelectorAll('[data-dl]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.dl;
+      if(k === 'pdf') downloadPDF();
+      else if(k === 'excel') downloadExcel();
+      else if(k === 'refresh'){ computeRange(); render(); toast('Refreshed','info'); }
+    });
+  });
+
+  // Module-specific filters
+  const bind = (id, key, valKey) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('change', () => {
+      STATE[STATE.module][key] = el.value;
+      render();
+    });
+    if(el.tagName === 'INPUT'){
+      let t;
+      el.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          STATE[STATE.module][key] = el.value;
+          // preserve focus
+          const pos = el.selectionStart;
+          render();
+          const n = document.getElementById(id);
+          if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} }
+        }, 350);
+      });
+    }
+  };
+
+  bind('crsStatus','status'); bind('crsSort','sortBy'); bind('crsSearch','search');
+  bind('sfStatus','status');  bind('sfSort','sortBy');  bind('sfSearch','search');
+  bind('ldStatus','status');  bind('ldSort','sortBy');  bind('ldSearch','search');
+  bind('exStatus','status');  bind('exSort','sortBy');  bind('exSearch','search');
+  bind('asStatus','status');  bind('asSort','sortBy');  bind('asSearch','search');
+  bind('stStatus','status');  bind('stSort','sortBy');  bind('stSearch','search');
+  bind('lcStatus','status');  bind('lcSort','sortBy');  bind('lcSearch','search');
+}
+
+/* =================================================================
+   SIDEBAR NAV
+================================================================= */
+document.getElementById('sbBody').addEventListener('click', e => {
+  const n = e.target.closest('.nav[data-module]');
+  if(!n) return;
+  document.querySelectorAll('.nav[data-module]').forEach(x=>x.classList.remove('active'));
+  n.classList.add('active');
+  STATE.module = n.dataset.module;
+  closeSidebar();
+  document.getElementById('content').scrollTop = 0;
+  render();
+});
+
+function openSidebar(){
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('sidebar').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sidebar').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('menuBtn').onclick = openSidebar;
+document.getElementById('sbClose').onclick = closeSidebar;
+document.getElementById('overlay').onclick = closeSidebar;
+
+/* =================================================================
+   PDF DOWNLOAD (per module)
 ================================================================= */
 async function downloadPDF(){
-  const d = buildReport();
   const root = document.getElementById('reportRoot');
+  if(!root) return;
 
-  // build a print-friendly container
+  const moduleNames = {
+    overview:'Platform Overview', courses:'Courses Report', subfolders:'Subfolders Report',
+    lectureDash:'Lecture Dashboard Report', express:'Express Shopping Report',
+    assessments:'Assessments Report', students:'Students Report', lecturers:'Lecturers Report'
+  };
+
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:24px 20px;background:#fff;color:#1a1d28;font-family:Inter,Arial,sans-serif;';
   wrap.innerHTML = `
     <div style="text-align:center;padding:16px 12px 18px;border-bottom:3px solid #F5B042;margin-bottom:18px;">
-      <h1 style="font-size:26px;font-weight:900;margin:0;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">UTOM · Admin Report</h1>
-      <div style="font-size:12px;color:#5f6377;margin-top:6px;">Range: <strong>${esc(d.range.label)}</strong></div>
+      <h1 style="font-size:24px;font-weight:900;margin:0;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">UTOM · ${moduleNames[STATE.module]}</h1>
+      <div style="font-size:12px;color:#5f6377;margin-top:6px;">Range: <strong>${esc(rangeLabel())}</strong></div>
       <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">Generated: ${new Date().toLocaleString()}</div>
       <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">By: ${esc(currentAdmin?.email||'admin')}</div>
     </div>
   `;
-  // clone report content
+
   const cloned = root.cloneNode(true);
-  // convert inline styles for print
-  cloned.querySelectorAll('.card').forEach(c=>{
-    c.style.background = '#fff';
-    c.style.boxShadow = 'none';
-    c.style.border = '1px solid #e5e8ed';
+  cloned.querySelectorAll('.card, .kpi').forEach(el => {
+    el.style.background = '#fff';
+    el.style.boxShadow = 'none';
+    el.style.border = '1px solid #e5e8ed';
   });
-  cloned.querySelectorAll('.kpi').forEach(k=>{
-    k.style.background = '#fff';
-    k.style.boxShadow = 'none';
-    k.style.border = '1px solid #e5e8ed';
-  });
+  cloned.querySelectorAll('.range-btns, .custom-box, .action-btns, .filters').forEach(el => el.remove());
   wrap.appendChild(cloned);
   document.body.appendChild(wrap);
 
-  const btn = document.getElementById('dlPdfBtn');
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+  const btn = document.querySelector('[data-dl="pdf"]');
+  const orig = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…'; }
 
   try{
     await html2pdf().set({
       margin:[6,6,10,6],
-      filename:`UTOM-Report-${new Date().toISOString().slice(0,10)}.pdf`,
-      image:{type:'jpeg',quality:0.95},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['css','legacy']}
+      filename:`UTOM-${STATE.module}-${new Date().toISOString().slice(0,10)}.pdf`,
+      image:{ type:'jpeg', quality:0.95 },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff' },
+      jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak:{ mode:['css','legacy'] }
     }).from(wrap).save();
     toast('PDF downloaded','success');
   }catch(e){
     console.error(e);
-    toast('PDF error: '+e.message,'error');
+    toast('PDF error: ' + e.message,'error');
   }finally{
     document.body.removeChild(wrap);
-    btn.disabled = false;
-    btn.innerHTML = orig;
+    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
   }
 }
 
 /* =================================================================
-   EXCEL DOWNLOAD
+   EXCEL DOWNLOAD (per module)
 ================================================================= */
 function downloadExcel(){
   if(typeof XLSX === 'undefined'){ toast('Excel library not loaded','error'); return; }
-  const d = buildReport();
   const wb = XLSX.utils.book_new();
 
   const addSheet = (name, rows) => {
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    // column widths
-    const widths = [];
-    rows.forEach(r => {
-      (r || []).forEach((c,i) => {
-        const len = String(c==null?'':c).length;
-        widths[i] = Math.max(widths[i]||8, Math.min(len+2, 45));
-      });
-    });
-    ws['!cols'] = widths.map(w=>({wch:w}));
+    const w = [];
+    rows.forEach(r => (r||[]).forEach((c,i)=>{
+      const len = String(c==null?'':c).length;
+      w[i] = Math.max(w[i]||8, Math.min(len+2, 45));
+    }));
+    ws['!cols'] = w.map(x=>({wch:x}));
     XLSX.utils.book_append_sheet(wb, ws, name);
   };
 
-  /* 1) OVERVIEW */
-  addSheet('Overview', [
-    ['UTOM ADMIN REPORT'],
-    ['Range', d.range.label],
+  /* INFO */
+  const infoRows = [
+    ['UTOM REPORT'],
+    ['Module', STATE.module],
+    ['Range', rangeLabel()],
     ['Generated', new Date().toLocaleString()],
     ['By', currentAdmin?.email||'admin'],
-    [],
-    ['LIBRARY TOTALS',''],
-    ['Courses', d.totals.courses],
-    ['Subfolders', d.totals.subfolders],
-    ['Videos', d.totals.videos],
-    ['Documents', d.totals.docs],
-    ['Students', d.totals.students],
-    ['Registers', d.totals.registers],
-    ['Assessments', d.totals.assessments],
-    ['Promo Items', d.totals.promos],
-    ['Lecturers', d.totals.lecturers],
-    ['Banned Users', d.totals.banned],
-    [],
-    ['PURCHASES','Count','ZMW'],
-    ['Approved', d.tx.approved, d.money.approved.toFixed(2)],
-    ['Pending',  d.tx.pending,  d.money.pending.toFixed(2)],
-    ['Rejected', d.tx.rejected, d.money.rejected.toFixed(2)],
-    ['TOTAL',    d.tx.total,    d.money.total.toFixed(2)],
-    [],
-    ['EXPRESS SHOP','Value'],
-    ['Orders in Range', d.express.ordersCount],
-    ['Revenue (ZMW)', d.express.revenue.toFixed(2)],
-    ['Pending Payments', d.express.pending],
-    ['Approved Payments', d.express.approved],
-    ['Rejected Payments', d.express.rejected],
-    ['Total Products', d.express.products],
-    ['Low Stock', d.express.lowStock],
-    ['Out of Stock', d.express.outOfStock],
-    [],
-    ['EXPRESS ORDER STATUS','Count'],
-    ['Pending', d.express.orders.pending],
-    ['Confirmed', d.express.orders.confirmed],
-    ['Ready', d.express.orders.ready],
-    ['Collected', d.express.orders.collected],
-    ['Completed', d.express.orders.completed],
-    ['Cancelled', d.express.orders.cancelled],
-    [],
-    ['ASSESSMENTS','Value'],
-    ['Total', d.assessmentStats.total],
-    ['Attempts', d.assessmentStats.attempts],
-    ['Completed', d.assessmentStats.completed],
-    ['Passed', d.assessmentStats.passed],
-    ['Failed', d.assessmentStats.failed],
-    [],
-    ['LECTURERS','Value'],
-    ['Total', d.lecturerStats.total],
-    ['Approved', d.lecturerStats.approved],
-    ['Pending', d.lecturerStats.pending],
-    ['Rejected', d.lecturerStats.rejected],
-    ['Banned', d.lecturerStats.banned],
-    ['Active', d.lecturerStats.active],
-    ['Expired', d.lecturerStats.expired]
-  ]);
+    []
+  ];
 
-  /* 2) BEST SELLING */
-  addSheet('Best Selling', [
-    ['Rank','Item','Type','Sales Count','Revenue (ZMW)'],
-    ...d.bestSelling.map((s,i)=>[
-      i+1, s.title, s.type, s.count, s.revenue.toFixed(2)
-    ])
-  ]);
+  if(STATE.module === 'overview'){
+    const courses = Object.values(S.courses);
+    const subs    = Object.values(S.subfolders);
+    const vids    = Object.values(S.videos);
+    const docs    = Object.values(S.docs);
+    const users   = Object.values(S.users);
+    const lectArr = Object.entries(S.lecturerData);
 
-  /* 3) MOST ENROLLED */
-  addSheet('Most Enrolled', [
-    ['Rank','Course / Subfolder','Type','Enrollments'],
-    ...d.mostEnrolled.map((s,i)=>[i+1, s.title, s.type, s.enrollments])
-  ]);
+    const allTx = dedupeTx(buildAllTx()).filter(t => inRange(t.timestamp));
+    const approved = allTx.filter(t => t.status==='approved');
+    const pending  = allTx.filter(t => t.status==='pending');
+    const rejected = allTx.filter(t => t.status==='rejected');
+    const sum = a => a.reduce((s,t)=>s+num(t.amount),0);
 
-  /* 4) TOP STUDENTS */
-  addSheet('Top Students', [
-    ['Rank','Name','Email','Purchases','Total Spend (ZMW)'],
-    ...d.topStudents.map((s,i)=>[
-      i+1, s.name, s.email, s.count, s.spend.toFixed(2)
-    ])
-  ]);
+    addSheet('Overview', [
+      ...infoRows,
+      ['LIBRARY TOTALS',''],
+      ['Courses', courses.length],
+      ['Subfolders', subs.length],
+      ['Videos', vids.length],
+      ['Documents', docs.length],
+      ['Students', users.length],
+      ['Lecturers', lectArr.length],
+      [],
+      ['TRANSACTIONS','Count','ZMW'],
+      ['Approved', approved.length, sum(approved).toFixed(2)],
+      ['Pending', pending.length, sum(pending).toFixed(2)],
+      ['Rejected', rejected.length, sum(rejected).toFixed(2)],
+      ['Total', allTx.length, (sum(approved)+sum(pending)+sum(rejected)).toFixed(2)],
+      [],
+      ['RECENT ACTIVITY (Top 50)','','','',''],
+      ['User','Email','Item','Type','Amount','Status','Date'],
+      ...allTx.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,50).map(t=>[
+        t.userName||'', t.userEmail||'', t.itemTitle||'',
+        t.itemType||'', num(t.amount).toFixed(2),
+        t.status||'', fmtDate(t.timestamp)
+      ])
+    ]);
+  }
 
-  /* 5) EXPRESS ORDERS */
-  const ordersRows = [['Order ID','Customer','Email','Phone','Total (ZMW)','Status','Created']];
-  Object.values(S.expressOrders)
-    .filter(o => inRange(o.createdAt))
-    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
-    .forEach(o => {
-      ordersRows.push([
-        o.id, o.customerName||'Guest',
-        o.customerEmail||'', o.customerPhone||'',
-        num(o.total).toFixed(2), o.status||'',
-        fmtDate(o.createdAt)
-      ]);
+  else if(STATE.module === 'courses'){
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'course' || !t.itemType);
+
+    const byCourse = {};
+    Object.values(S.courses).forEach(c => {
+      byCourse[c.id] = {
+        id:c.id, name:c.name||'', price:num(c.price),
+        priceType: num(c.price) > 0 ? 'paid' : 'free',
+        subfolders: Object.values(S.subfolders).filter(s=>s.courseId===c.id).length,
+        videos: Object.values(S.videos).filter(v=>v.courseId===c.id).length,
+        docs: Object.values(S.docs).filter(d=>d.courseId===c.id).length,
+        enrollments:0, revenue:0, students:[]
+      };
     });
-  addSheet('Express Orders', ordersRows);
+    txApproved.forEach(t => {
+      const c = byCourse[t.itemId];
+      if(!c) return;
+      c.enrollments += 1;
+      c.revenue += num(t.amount);
+      c.students.push({ name:t.userName||'', email:t.userEmail||'', amount:num(t.amount) });
+    });
+    const rows = Object.values(byCourse).sort((a,b)=>b.revenue-a.revenue);
 
-  /* 6) TOP EXPRESS PRODUCTS */
-  addSheet('Top Express Products', [
-    ['Rank','Product','Units Sold','Revenue (ZMW)'],
-    ...d.express.topProducts.map((p,i)=>[
-      i+1, p.name, p.units, p.revenue.toFixed(2)
-    ])
-  ]);
-
-  /* 7) TRANSACTIONS */
-  addSheet('Transactions', [
-    ['ID','User','Email','Item','Type','Amount (ZMW)','Status','Date'],
-    ...d.txList.map(t=>[
-      t.id, t.userName||'', t.userEmail||'',
-      t.itemTitle||'', t.itemType||'course',
-      num(t.amount).toFixed(2), t.status||'pending',
-      fmtDate(t.timestamp)
-    ])
-  ]);
-
-  /* 8) LECTURERS */
-  const lectRows = [['ID','Name','Email','Phone','Status','Banned','Access Expires','Paid (ZMW)']];
-  Object.entries(S.lecturerData).forEach(([id,l])=>{
-    lectRows.push([
-      id, l.name||'', l.email||'', l.phone||'',
-      l.status||'pending', l.banned?'Yes':'No',
-      l.accessExpiresAt ? new Date(l.accessExpiresAt).toLocaleString() : 'Never',
-      num(l.paidAmount).toFixed(2)
+    addSheet('Overview', [
+      ...infoRows,
+      ['Courses', rows.length],
+      ['Total Enrollments', rows.reduce((s,r)=>s+r.enrollments,0)],
+      ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
     ]);
-  });
-  addSheet('Lecturers', lectRows);
-
-  /* 9) ALL TRANSACTIONS (raw) */
-  const rawRows = [['ID','Source','User ID','Item ID','Item Title','Type','Amount','Status','Date']];
-  const allTx = buildAllTransactions();
-  allTx.forEach(t=>{
-    rawRows.push([
-      t.id, t._src||'', t.userId||'', t.itemId||'',
-      t.itemTitle||'', t.itemType||'',
-      num(t.amount).toFixed(2), t.status||'',
-      fmtDate(t.timestamp)
+    addSheet('Courses', [
+      ['#','Course','Type','Price','Enrollments','Revenue','Subfolders','Videos','Docs'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.priceType, r.price.toFixed(2),
+        r.enrollments, r.revenue.toFixed(2),
+        r.subfolders, r.videos, r.docs
+      ])
     ]);
-  });
-  addSheet('All Transactions (raw)', rawRows);
+    const stRows = [['Course','Student','Email','Amount (ZMW)']];
+    rows.forEach(r => r.students.forEach(s =>
+      stRows.push([r.name, s.name, s.email, s.amount.toFixed(2)])));
+    addSheet('Students per Course', stRows);
+  }
 
-  /* 10) COURSE CATALOG */
-  addSheet('Course Catalog', [
-    ['Course','Price Type','Price','Duration Type','Duration Value','Subfolders','Videos','Docs'],
-    ...Object.entries(S.courses).map(([id,c])=>{
-      const subs = Object.values(S.subfolders).filter(s=>s.courseId===id);
-      return [
-        c.name||'',
-        num(c.price) > 0 ? 'Paid' : 'Free',
-        num(c.price).toFixed(2),
-        c.durationType||'lifetime',
-        num(c.durationValue),
-        subs.length,
-        Object.values(S.videos).filter(v=>v.courseId===id).length,
-        Object.values(S.docs).filter(d=>d.courseId===id).length
-      ];
-    })
-  ]);
+  else if(STATE.module === 'subfolders'){
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'subfolder');
 
-  XLSX.writeFile(wb, `UTOM-Report-${new Date().toISOString().slice(0,10)}.xlsx`);
+    const bySub = {};
+    Object.values(S.subfolders).forEach(sf => {
+      const parent = S.courses[sf.courseId];
+      bySub[sf.id] = {
+        id:sf.id, name:sf.name||'',
+        courseName: parent?.name||'',
+        price:num(sf.price),
+        priceType: num(sf.price) > 0 ? 'paid' : 'free',
+        videos: Object.values(S.videos).filter(v=>v.subfolderId===sf.id).length,
+        docs: Object.values(S.docs).filter(d=>d.subfolderId===sf.id).length,
+        purchases:0, revenue:0, students:[]
+      };
+    });
+    txApproved.forEach(t => {
+      const s = bySub[t.itemId];
+      if(!s) return;
+      s.purchases += 1;
+      s.revenue += num(t.amount);
+      s.students.push({ name:t.userName||'', email:t.userEmail||'', amount:num(t.amount) });
+    });
+    const rows = Object.values(bySub).sort((a,b)=>b.revenue-a.revenue);
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Subfolders', rows.length],
+      ['Total Purchases', rows.reduce((s,r)=>s+r.purchases,0)],
+      ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
+    ]);
+    addSheet('Subfolders', [
+      ['#','Subfolder','Parent Course','Type','Price','Purchases','Revenue','Videos','Docs'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.courseName, r.priceType,
+        r.price.toFixed(2), r.purchases, r.revenue.toFixed(2),
+        r.videos, r.docs
+      ])
+    ]);
+    const stRows = [['Subfolder','Course','Student','Email','Amount (ZMW)']];
+    rows.forEach(r => r.students.forEach(s =>
+      stRows.push([r.name, r.courseName, s.name, s.email, s.amount.toFixed(2)])));
+    addSheet('Students per Subfolder', stRows);
+  }
+
+  else if(STATE.module === 'lectureDash'){
+    const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved')
+      .filter(t => t.itemType === 'course' || t.itemType === 'subfolder');
+
+    const ownerIdx = {};
+    Object.entries(S.courses).forEach(([id,c])=>{ if(c.lecturerId) ownerIdx[id]=c.lecturerId; });
+    Object.entries(S.subfolders).forEach(([id,s])=>{ if(s.lecturerId) ownerIdx[id]=s.lecturerId; });
+
+    const byL = {};
+    lectArr.forEach(l => {
+      byL[l.id] = {
+        id:l.id, name:l.name||'', email:l.email||'',
+        status:l.status||'pending', banned:!!l.banned,
+        accessExpiresAt:l.accessExpiresAt||null,
+        courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
+        videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
+        docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
+        assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length,
+        sales:0, revenue:0, students:new Set()
+      };
+    });
+    txApproved.forEach(t => {
+      const owner = ownerIdx[t.itemId];
+      if(!owner || !byL[owner]) return;
+      byL[owner].sales += 1;
+      byL[owner].revenue += num(t.amount);
+      if(t.userId) byL[owner].students.add(t.userId);
+    });
+    const rows = Object.values(byL).map(r => ({...r, uniqueStudents:r.students.size}))
+      .sort((a,b)=>b.revenue-a.revenue);
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Lecturers', rows.length],
+      ['Total Sales', rows.reduce((s,r)=>s+r.sales,0)],
+      ['Total Revenue', rows.reduce((s,r)=>s+r.revenue,0).toFixed(2)]
+    ]);
+    addSheet('Lecturers', [
+      ['#','Lecturer','Email','Status','Banned','Courses','Videos','Docs','Assessments','Sales','Unique Students','Revenue'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.email, r.status,
+        r.banned?'Yes':'No',
+        r.courses, r.videos, r.docs, r.assessments,
+        r.sales, r.uniqueStudents, r.revenue.toFixed(2)
+      ])
+    ]);
+  }
+
+  else if(STATE.module === 'express'){
+    const orders = Object.values(S.expressOrders).filter(o => inRange(o.createdAt));
+    const payments = Object.values(S.expressPayments).filter(p => inRange(p.createdAt));
+
+    const prodUnits = {};
+    orders.forEach(o => {
+      (o.items||[]).forEach(it => {
+        const key = it.productId || it.name;
+        if(!prodUnits[key]) prodUnits[key] = { name: it.name||'', units:0, revenue:0 };
+        prodUnits[key].units += num(it.qty) || 1;
+        prodUnits[key].revenue += num(it.price)*(num(it.qty)||1);
+      });
+    });
+    const topProducts = Object.values(prodUnits).sort((a,b)=>b.units-a.units);
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Orders', orders.length],
+      ['Revenue', orders.filter(o=>o.status==='completed'||o.status==='collected').reduce((s,o)=>s+num(o.total),0).toFixed(2)],
+      ['Pending Payments', payments.filter(p=>p.status==='pending').length],
+      ['Approved Payments', payments.filter(p=>p.status==='approved').length],
+      ['Rejected Payments', payments.filter(p=>p.status==='rejected').length]
+    ]);
+    addSheet('Orders', [
+      ['Order ID','Customer','Email','Phone','Items','Total','Status','Date'],
+      ...orders.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(o=>[
+        o.id, o.customerName||'', o.customerEmail||'', o.customerPhone||'',
+        (o.items||[]).map(i=>`${i.name} x${i.qty}`).join(' | '),
+        num(o.total).toFixed(2), o.status||'', fmtDate(o.createdAt)
+      ])
+    ]);
+    addSheet('Payments', [
+      ['Payment ID','Customer','Email','Product','Amount','Status','Date'],
+      ...payments.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(p=>[
+        p.id, p.customerName||'', p.customerEmail||'',
+        p.productName||'', num(p.amount).toFixed(2),
+        p.status||'', fmtDate(p.createdAt)
+      ])
+    ]);
+    addSheet('Top Products', [
+      ['#','Product','Units Sold','Revenue'],
+      ...topProducts.map((p,i)=>[i+1, p.name, p.units, p.revenue.toFixed(2)])
+    ]);
+  }
+
+  else if(STATE.module === 'assessments'){
+    const assArr = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+    const respArr = [...Object.values(S.assessmentResponses), ...Object.values(S.lecturerResponses)]
+      .filter(r => inRange(r.submittedAt || r.startedAt || r.endedAt));
+
+    const rows = assArr.map(a => {
+      const resps = respArr.filter(r => r.assessmentId === a.id);
+      const completed = resps.filter(r => r.status==='completed'||r.status==='ended');
+      const passed = completed.filter(r => {
+        const total = num(a.totalMarks);
+        const pct = total > 0 ? (num(r.score)/total)*100 : 0;
+        return pct >= num(a.passingScore||50);
+      });
+      return {
+        name:a.name||'', type:a.type||'test', status:a.status||'draft',
+        duration:a.duration||'', totalMarks:num(a.totalMarks),
+        attempts: resps.length, completed: completed.length,
+        passed: passed.length, failed: completed.length - passed.length
+      };
+    }).sort((a,b)=>b.attempts-a.attempts);
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Assessments', rows.length],
+      ['Total Attempts', rows.reduce((s,r)=>s+r.attempts,0)],
+      ['Total Completed', rows.reduce((s,r)=>s+r.completed,0)],
+      ['Total Passed', rows.reduce((s,r)=>s+r.passed,0)],
+      ['Total Failed', rows.reduce((s,r)=>s+r.failed,0)]
+    ]);
+    addSheet('Assessments', [
+      ['#','Name','Type','Status','Duration','Marks','Attempts','Completed','Passed','Failed'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.type, r.status, r.duration,
+        r.totalMarks, r.attempts, r.completed, r.passed, r.failed
+      ])
+    ]);
+  }
+
+  else if(STATE.module === 'students'){
+    const usersArr = Object.entries(S.users).map(([id,d])=>({id,...d}));
+    const banned = Object.entries(S.bannedUsers).filter(([,v])=>v).map(([id])=>id);
+    const txApproved = dedupeTx(buildAllTx())
+      .filter(t => inRange(t.timestamp) && t.status === 'approved');
+
+    const byStudent = {};
+    usersArr.forEach(u => {
+      byStudent[u.id] = {
+        name: `${u.firstName||''} ${u.lastName||''}`.trim() || u.email || 'Unknown',
+        email: u.email||'', phone: u.phone||'',
+        banned: banned.includes(u.id),
+        purchases:0, spend:0, courses:0, subfolders:0, shop:0
+      };
+    });
+    txApproved.forEach(t => {
+      const s = byStudent[t.userId];
+      if(!s) return;
+      s.purchases += 1;
+      s.spend += num(t.amount);
+      const type = (t.itemType||'course').toLowerCase();
+      if(type === 'course') s.courses += 1;
+      else if(type === 'subfolder') s.subfolders += 1;
+      else if(type === 'shop') s.shop += 1;
+    });
+    const rows = Object.values(byStudent).sort((a,b)=>b.spend-a.spend);
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Students', rows.length],
+      ['Total Purchases', rows.reduce((s,r)=>s+r.purchases,0)],
+      ['Total Spend', rows.reduce((s,r)=>s+r.spend,0).toFixed(2)]
+    ]);
+    addSheet('Students', [
+      ['#','Name','Email','Phone','Purchases','Courses','Subfolders','Shop','Spend','Banned'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.email, r.phone,
+        r.purchases, r.courses, r.subfolders, r.shop,
+        r.spend.toFixed(2), r.banned?'Yes':'No'
+      ])
+    ]);
+  }
+
+  else if(STATE.module === 'lecturers'){
+    const now = Date.now();
+    const lectArr = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+
+    const rows = lectArr.map(l => {
+      let status = l.status||'pending';
+      if(l.banned) status = 'banned';
+      else if(l.status === 'approved' && (!l.accessExpiresAt || l.accessExpiresAt > now)) status = 'active';
+      else if(l.status === 'approved' && l.accessExpiresAt && l.accessExpiresAt <= now) status = 'expired';
+      return {
+        name:l.name||'', email:l.email||'', phone:l.phone||'',
+        nrc:l.nrcNumber||'', college:l.collegeName||'',
+        city:l.city||'', town:l.town||'', address:l.address||'',
+        status, banned: !!l.banned,
+        accessExpiresAt: l.accessExpiresAt||null,
+        paidAmount: num(l.paidAmount),
+        courses: Object.values(S.courses).filter(c=>c.lecturerId===l.id).length,
+        videos: Object.values(S.videos).filter(v=>v.lecturerId===l.id).length,
+        docs: Object.values(S.docs).filter(d=>d.lecturerId===l.id).length,
+        assessments: Object.values(S.assessments).filter(a=>a.lecturerId===l.id).length
+      };
+    });
+
+    addSheet('Overview', [
+      ...infoRows,
+      ['Lecturers', rows.length],
+      ['Active', rows.filter(r=>r.status==='active').length],
+      ['Pending', rows.filter(r=>r.status==='pending').length],
+      ['Expired', rows.filter(r=>r.status==='expired').length],
+      ['Banned', rows.filter(r=>r.status==='banned').length],
+      ['Total Subscriptions', rows.reduce((s,r)=>s+r.paidAmount,0).toFixed(2)]
+    ]);
+    addSheet('Lecturers', [
+      ['#','Name','Email','Phone','NRC','College','City','Town','Status','Banned','Expires','Paid','Courses','Videos','Docs','Assessments'],
+      ...rows.map((r,i)=>[
+        i+1, r.name, r.email, r.phone, r.nrc,
+        r.college, r.city, r.town, r.status,
+        r.banned?'Yes':'No',
+        r.accessExpiresAt ? new Date(r.accessExpiresAt).toLocaleString() : 'Lifetime',
+        r.paidAmount.toFixed(2),
+        r.courses, r.videos, r.docs, r.assessments
+      ])
+    ]);
+  }
+
+  XLSX.writeFile(wb, `UTOM-${STATE.module}-${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('Excel downloaded','success');
 }
 
-/* =================================================================
-   UI EVENTS
-================================================================= */
-document.getElementById('rangeBtns').addEventListener('click', e => {
-  const btn = e.target.closest('.range-btn');
-  if(!btn) return;
-  document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  rangeType = btn.dataset.range;
-  document.getElementById('customBox').classList.toggle('show', rangeType === 'custom');
-  if(rangeType !== 'custom'){
-    computeRange();
-    renderEverything();
-  }
-});
-
-document.getElementById('applyCustomBtn').addEventListener('click', () => {
-  const f = document.getElementById('fromDate').value;
-  const t = document.getElementById('toDate').value;
-  if(!f || !t){ toast('Pick both dates','error'); return; }
-  const sTs = new Date(f + 'T00:00:00').getTime();
-  const eTs = new Date(t + 'T23:59:59').getTime();
-  if(eTs < sTs){ toast('End date must be after start date','error'); return; }
-  startTs = sTs; endTs = eTs;
-  renderEverything();
-});
-
-document.getElementById('dlPdfBtn').addEventListener('click', downloadPDF);
-document.getElementById('dlExcelBtn').addEventListener('click', downloadExcel);
-document.getElementById('refreshBtn').addEventListener('click', () => {
-  computeRange();
-  renderEverything();
-  toast('Refreshed','info');
-});
-document.getElementById('refreshAllBtn').addEventListener('click', () => {
-  computeRange();
-  renderEverything();
-  toast('Refreshed','info');
-});
-
-console.log('✅ UTOM Reports page loaded.');
+console.log('✅ UTOM Reports Studio loaded.');
 </script>
 </body>
 </html>
