@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+<title>UTOM · Reports & Analytics</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --gold:#F5B042;--gold-d:#c47f1a;--orange:#ff6b00;
+  --bg:#f2f4f8;--text:#1a1d28;--sub:#5f6377;--muted:#8b8fa3;
+  --line:rgba(229,232,237,.8);--card:rgba(255,255,255,.92);
+  --green:#2ecc71;--red:#e63946;--yellow:#f39c12;--blue:#3b82f6;
+  --purple:#7c3aed;--pink:#ec4899;--cyan:#0891b2;
+  --sh-sm:0 2px 10px rgba(16,20,40,.05);
+  --sh-md:0 10px 30px rgba(16,20,40,.08);
+  --sh-lg:0 24px 60px rgba(16,20,40,.14);
+  --r-sm:12px;--r-md:18px;--r-lg:24px;
+  --t:.22s cubic-bezier(.25,.46,.45,.94);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font:15px/1.5 Inter,-apple-system,BlinkMacSystemFont,sans-serif}
+input,select,textarea,button{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:rgba(245,176,66,.4);border-radius:20px}
+::-webkit-scrollbar-track{background:transparent}
+
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:14px;z-index:9999;transition:opacity .5s}
+#loader.hidden{opacity:0;pointer-events:none}
+.spinner{width:48px;height:48px;border:5px solid #e5e7eb;border-top-color:var(--gold);
+  border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader p{font-weight:700;color:var(--sub);font-size:14px}
+
+.app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 16px;height:62px;flex-shrink:0;background:var(--bg);
+  border-bottom:1px solid rgba(0,0,0,.04);z-index:10}
+.header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.icon-btn{width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:1px solid rgba(255,255,255,.6);
+  background:rgba(255,255,255,.75);backdrop-filter:blur(8px);display:flex;align-items:center;
+  justify-content:center;font-size:16px;cursor:pointer;box-shadow:var(--sh-sm);transition:var(--t);color:var(--text);
+  text-decoration:none}
+.icon-btn:hover{transform:scale(1.06)}
+.header-title{font-size:19px;font-weight:900;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header-title small{font-size:11px;-webkit-text-fill-color:var(--sub);
+  color:var(--sub);font-weight:600;background:none;margin-left:6px;letter-spacing:0}
+
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 90px}
+
+.card{background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.6);
+  border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-sm);margin-bottom:14px}
+.card h2{font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.card h2 i{background:linear-gradient(135deg,#d4952a,#f5b042);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card h3{font-size:13.5px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card p.hint{font-size:11px;color:var(--muted);margin-bottom:12px}
+
+.range-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.range-btn{padding:8px 18px;border-radius:30px;border:1.5px solid rgba(229,232,237,.8);
+  background:rgba(255,255,255,.85);font-weight:700;font-size:11.5px;color:var(--sub);
+  cursor:pointer;transition:var(--t);display:inline-flex;align-items:center;gap:6px}
+.range-btn:hover{border-color:var(--gold);color:var(--gold-d);transform:translateY(-2px)}
+.range-btn.active{background:linear-gradient(135deg,#f5b042,#ff6b00);color:#fff;
+  border-color:transparent;box-shadow:0 4px 18px rgba(245,176,66,.32)}
+
+.custom-box{display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.custom-box.show{display:flex}
+.custom-box input{flex:1;min-width:130px;padding:9px 14px;border-radius:30px;
+  border:1.5px solid rgba(229,232,237,.8);background:rgba(250,251,252,.85);font-size:12px;
+  color:var(--text);outline:none;transition:var(--t)}
+.custom-box input:focus{border-color:var(--gold);background:#fff;
+  box-shadow:0 0 0 4px rgba(245,176,66,.10)}
+
+.action-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:none;cursor:pointer;
+  font-weight:700;border-radius:40px;transition:var(--t);white-space:nowrap;font-size:11.5px;padding:10px 20px}
+.btn:active{transform:scale(.96)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-primary{background:linear-gradient(135deg,#f5b042,#ff6b00);color:#fff;
+  box-shadow:0 4px 18px rgba(245,176,66,.28)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(245,176,66,.34)}
+.btn-green{background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff;
+  box-shadow:0 4px 18px rgba(46,204,113,.28)}
+.btn-green:hover{transform:translateY(-2px)}
+.btn-red{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;
+  box-shadow:0 4px 18px rgba(231,76,60,.28)}
+.btn-red:hover{transform:translateY(-2px)}
+.btn-outline{background:transparent;border:2px solid rgba(224,216,200,.55);color:var(--sub)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold-d);background:rgba(255,253,247,.5)}
+
+.range-display{font-size:11.5px;color:var(--muted);margin-top:12px;text-align:center;
+  background:rgba(245,176,66,.08);padding:8px 14px;border-radius:30px;
+  display:inline-block;width:100%;font-weight:600}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.6);border-radius:var(--r-md);padding:14px 14px;
+  box-shadow:var(--sh-sm);text-align:center;position:relative;overflow:hidden;
+  transition:var(--t);min-width:0}
+.kpi::after{content:'';position:absolute;inset:0 0 auto 0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--orange));opacity:0;transition:var(--t)}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.kpi:hover::after{opacity:1}
+.kpi .icon{font-size:20px;margin-bottom:6px}
+.kpi .num{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.15;
+  word-break:break-word;color:var(--text)}
+.kpi .lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;margin-top:4px}
+
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+table.rpt{width:100%;border-collapse:collapse;font-size:12px;min-width:520px;background:#fff}
+table.rpt th{background:rgba(245,176,66,.10);padding:10px 12px;text-align:left;
+  font-weight:700;color:var(--gold-d);font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.5px;border-bottom:1.5px solid rgba(245,176,66,.22);white-space:nowrap}
+table.rpt td{padding:9px 12px;border-bottom:1px solid rgba(240,240,245,.8);color:var(--text)}
+table.rpt tr:last-child td{border-bottom:none}
+table.rpt tr:hover td{background:rgba(245,176,66,.04)}
+table.rpt td.right,table.rpt th.right{text-align:right}
+table.rpt td.center,table.rpt th.center{text-align:center}
+table.rpt .money{font-weight:800;color:var(--gold-d)}
+table.rpt .muted{color:var(--muted);font-size:11px}
+table.rpt .badge{display:inline-block;padding:3px 11px;border-radius:30px;
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.badge.approved{background:#e8f5e9;color:#2e7d32}
+.badge.pending{background:#fff3e0;color:#e65100}
+.badge.rejected{background:#fde8e8;color:#c62828}
+.badge.cancelled{background:#f5f5f5;color:#616161}
+.badge.completed{background:#e0f7fa;color:#00695c}
+.badge.active{background:#d1ecf1;color:#0c5460}
+.badge.banned{background:#721c24;color:#fff}
+.badge.unpaid{background:#fff3cd;color:#856404}
+.badge.expired{background:#f8d7da;color:#721c24}
+
+.empty{text-align:center;padding:26px 16px;color:var(--muted);font-size:12.5px}
+.empty i{font-size:32px;display:block;margin-bottom:8px;opacity:.25}
+
+.row-flex{display:flex;gap:10px;flex-wrap:wrap}
+.col-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:720px){.col-2{grid-template-columns:1fr}}
+
+.gradient-gold{background:linear-gradient(135deg,#fff8ed,#fef3e2)!important;
+  border:1px solid rgba(245,176,66,.25)!important}
+.gradient-blue{background:linear-gradient(135deg,#f0f9ff,#e0f2fe)!important;
+  border:1px solid rgba(59,130,246,.2)!important}
+.gradient-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7)!important;
+  border:1px solid rgba(46,204,113,.2)!important}
+.gradient-purple{background:linear-gradient(135deg,#f5f3ff,#ede9fe)!important;
+  border:1px solid rgba(124,58,237,.2)!important}
+.gradient-rose{background:linear-gradient(135deg,#fff1f2,#ffe4e6)!important;
+  border:1px solid rgba(230,57,70,.2)!important}
+
+.bar-row{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid rgba(240,240,245,.6);font-size:12px}
+.bar-row:last-child{border-bottom:none}
+.bar-row .label{flex:0 0 140px;font-weight:600;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.bar-row .bar-wrap{flex:1;height:8px;background:rgba(240,240,245,.9);
+  border-radius:30px;overflow:hidden;min-width:80px}
+.bar-row .bar-fill{height:100%;background:linear-gradient(90deg,#f5b042,#ff6b00);
+  border-radius:30px;transition:width .5s cubic-bezier(.25,.46,.45,.94)}
+.bar-row .value{flex:0 0 90px;text-align:right;font-weight:700;color:var(--gold-d)}
+
+@media (max-width:520px){
+  .header{padding:0 12px;height:56px}
+  .header-title{font-size:16px}
+  .header-title small{font-size:9px}
+  .content{padding:12px 11px 90px}
+  .card{padding:14px}
+  .kpi{padding:12px}
+  .kpi .num{font-size:18px}
+  .kpi .lbl{font-size:9px}
+  .range-btn{padding:7px 14px;font-size:11px}
+  .btn{padding:9px 16px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Loading reports…</p>
+</div>
+
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <a href="admin.html" class="icon-btn" title="Back to admin">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <span class="header-title">UTOM Reports <small>Analytics Studio</small></span>
+    </div>
+    <button class="icon-btn" id="refreshAllBtn" title="Refresh">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+  </header>
+
+  <main class="content" id="content">
+
+    <!-- CONTROLS -->
+    <div class="card">
+      <h2><i class="fas fa-chart-bar"></i> Reports &amp; Analytics</h2>
+      <p class="hint">Full breakdown of activity across the entire UTOM platform.</p>
+
+      <div class="range-btns" id="rangeBtns">
+        <button class="range-btn active" data-range="today"><i class="fas fa-calendar-day"></i> Today</button>
+        <button class="range-btn" data-range="week"><i class="fas fa-calendar-week"></i> This Week</button>
+        <button class="range-btn" data-range="month"><i class="fas fa-calendar-alt"></i> This Month</button>
+        <button class="range-btn" data-range="year"><i class="fas fa-calendar"></i> This Year</button>
+        <button class="range-btn" data-range="all"><i class="fas fa-infinity"></i> All Time</button>
+        <button class="range-btn" data-range="custom"><i class="fas fa-sliders-h"></i> Custom…</button>
+      </div>
+
+      <div class="custom-box" id="customBox">
+        <input type="date" id="fromDate" />
+        <input type="date" id="toDate" />
+        <button class="btn btn-primary" id="applyCustomBtn">
+          <i class="fas fa-check"></i> Apply
+        </button>
+      </div>
+
+      <div class="action-btns">
+        <button class="btn btn-red" id="dlPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        <button class="btn btn-green" id="dlExcelBtn"><i class="fas fa-file-excel"></i> Download Excel</button>
+        <button class="btn btn-outline" id="refreshBtn"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+
+      <div class="range-display" id="rangeDisplay">Range: Loading…</div>
+    </div>
+
+    <!-- RENDER TARGET -->
+    <div id="reportRoot"></div>
+
+  </main>
+</div>
+
+<script type="module">
+/* =================================================================
+   FIREBASE
+================================================================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { getDatabase, ref, onValue, get }
+  from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+  authDomain: "utom-c4003.firebaseapp.com",
+  databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+  projectId: "utom-c4003",
+  storageBucket: "utom-c4003.firebasestorage.app",
+  messagingSenderId: "878225874050",
+  appId: "1:878225874050:web:643626906bfd233eeae89b"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+/* =================================================================
+   STATE
+================================================================= */
+const S = {
+  courses:{}, subfolders:{}, videos:{}, docs:{}, users:{}, promos:{},
+  registers:{}, assessments:{}, assessmentResponses:{},
+  lecturerRegisters:{}, lecturerAssessments:{}, lecturerResponses:{},
+  transactions:{}, pendingPurchases:{}, approvedPurchases:{},
+  lecturerPendingPurchases:{}, lecturerApprovedPurchases:{},
+  bannedUsers:{},
+  expressProducts:{}, expressOrders:{}, expressPayments:{},
+  expressCategories:{}, expressPickupLocations:{},
+  lecturerData:{},
+  notifications:{}
+};
+
+let currentAdmin = null;
+let rangeType = 'today';
+let startTs = 0, endTs = Date.now();
+let readyCount = 0;
+const TOTAL_LISTENERS = 20;
+
+/* =================================================================
+   HELPERS
+================================================================= */
+const _ESC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const _RE = /[&<>"']/g;
+const esc = s => s == null ? '' : String(s).replace(_RE, c => _ESC[c]);
+const num = v => Number(v) || 0;
+const fmtMoney = v => 'ZMW ' + (Number(v)||0).toFixed(2);
+const fmtDate = ts => ts ? new Date(ts).toLocaleString() : '—';
+const fmtShort = ts => ts ? new Date(ts).toLocaleDateString() : '—';
+
+function toast(msg, type){
+  const c = document.createElement('div');
+  c.style.cssText = `position:fixed;top:76px;right:16px;z-index:9999;
+    background:rgba(26,29,40,.95);color:#fff;padding:11px 20px;border-radius:30px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);font-size:12px;font-weight:600;
+    border-left:3px solid ${type==='error'?'#e74c3c':type==='success'?'#2ecc71':'#f5b042'};
+    animation:fadeIn .3s ease;max-width:340px`;
+  c.textContent = msg;
+  document.body.appendChild(c);
+  setTimeout(()=>c.remove(), 3000);
+}
+
+/* =================================================================
+   AUTH
+================================================================= */
+onAuthStateChanged(auth, user => {
+  if(!user){ window.location.href = 'index.html'; return; }
+  if(!user.email?.startsWith('admin@')){ alert('Admin only.'); signOut(auth); return; }
+  currentAdmin = user;
+  attachListeners();
+});
+
+/* =================================================================
+   REALTIME LISTENERS
+================================================================= */
+function attachListeners(){
+  const paths = [
+    ['courses','courses'],
+    ['subfolders','subfolders'],
+    ['videos','videos'],
+    ['docs','docs'],
+    ['users','users'],
+    ['promos','promos'],
+    ['registers','registers'],
+    ['assessments','assessments'],
+    ['assessmentResponses','assessmentResponses'],
+    ['lecturerRegisters','lecturerRegisters'],
+    ['lecturerAssessments','lecturerAssessments'],
+    ['lecturerResponses','lecturerResponses'],
+    ['transactions','transactions'],
+    ['pendingPurchases','pendingPurchases'],
+    ['approvedPurchases','approvedPurchases'],
+    ['lecturerPendingPurchases','lecturerPendingPurchases'],
+    ['lecturerApprovedPurchases','lecturerApprovedPurchases'],
+    ['bannedUsers','bannedUsers'],
+    ['expressProducts','expressProducts'],
+    ['expressOrders','expressOrders'],
+    ['expressPayments','expressPayments'],
+    ['expressCategories','expressCategories'],
+    ['expressPickupLocations','expressPickupLocations'],
+    ['lecturers','lecturerData'],
+    ['notifications','notifications']
+  ];
+  const total = paths.length;
+
+  paths.forEach(([path,key]) => {
+    onValue(ref(db, path), snap => {
+      S[key] = snap.val() || {};
+      readyCount++;
+      if(readyCount >= total || readyCount >= 15){
+        document.getElementById('loader').classList.add('hidden');
+        renderEverything();
+      }
+    }, ()=>{});
+  });
+
+  // Fallback: show UI after 3s regardless
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    renderEverything();
+  }, 3000);
+}
+
+/* =================================================================
+   RANGE HELPERS
+================================================================= */
+function computeRange(){
+  const now = new Date();
+  switch(rangeType){
+    case 'today':
+      startTs = new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+      endTs = now.getTime();
+      break;
+    case 'week': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      startTs = new Date(now.getFullYear(),now.getMonth(),diff,0,0,0).getTime();
+      endTs = now.getTime();
+      break;
+    }
+    case 'month':
+      startTs = new Date(now.getFullYear(),now.getMonth(),1).getTime();
+      endTs = now.getTime();
+      break;
+    case 'year':
+      startTs = new Date(now.getFullYear(),0,1).getTime();
+      endTs = now.getTime();
+      break;
+    case 'all':
+      startTs = 0;
+      endTs = now.getTime();
+      break;
+  }
+}
+function inRange(ts){
+  if(!ts) return rangeType === 'all';
+  return ts >= startTs && ts <= endTs;
+}
+function rangeLabel(){
+  if(rangeType === 'all') return 'All Time';
+  const a = new Date(startTs).toLocaleDateString();
+  const b = new Date(endTs).toLocaleDateString();
+  return `${a} → ${b}`;
+}
+
+/* =================================================================
+   DATA AGGREGATION
+================================================================= */
+function buildAllTransactions(){
+  const out = [];
+  // transactions
+  Object.entries(S.transactions).forEach(([id,tx]) => {
+    out.push({ id, ...tx, _src:'transactions' });
+  });
+  // pendingPurchases (nested by uid)
+  Object.entries(S.pendingPurchases).forEach(([uid,map]) => {
+    Object.entries(map||{}).forEach(([tid,tx]) => {
+      out.push({ id:tid, userId:uid, ...tx, _src:'pendingPurchases' });
+    });
+  });
+  // lecturerPendingPurchases
+  Object.entries(S.lecturerPendingPurchases).forEach(([uid,map]) => {
+    Object.entries(map||{}).forEach(([tid,tx]) => {
+      out.push({ id:tid, userId:uid, ...tx, _src:'lecturerPendingPurchases' });
+    });
+  });
+  // approvedPurchases (as approved transactions)
+  Object.entries(S.approvedPurchases).forEach(([uid,map]) => {
+    Object.entries(map||{}).forEach(([iid,info]) => {
+      out.push({
+        id:'AP-'+uid+'-'+iid, userId:uid,
+        itemId:iid, itemTitle:info.itemTitle||info.title||'—',
+        itemType:info.itemType||'course',
+        amount:num(info.amount), status:'approved',
+        timestamp:info.approvedAt||info.timestamp||null,
+        userEmail:'', userName:'', _src:'approvedPurchases'
+      });
+    });
+  });
+  // lecturerApprovedPurchases
+  Object.entries(S.lecturerApprovedPurchases).forEach(([uid,map]) => {
+    Object.entries(map||{}).forEach(([iid,info]) => {
+      out.push({
+        id:'LAP-'+uid+'-'+iid, userId:uid,
+        itemId:iid, itemTitle:info.itemTitle||info.title||'—',
+        itemType:info.itemType||'course',
+        amount:num(info.amount), status:'approved',
+        timestamp:info.approvedAt||info.timestamp||null,
+        userEmail:'', userName:'', _src:'lecturerApprovedPurchases'
+      });
+    });
+  });
+  // express payments (as shop transactions)
+  Object.entries(S.expressPayments).forEach(([id,p]) => {
+    out.push({
+      id, userId:p.userId||'', itemId:p.orderId||id,
+      itemTitle:p.productName||'Express Order',
+      itemType:'shop',
+      amount:num(p.amount), status:p.status||'pending',
+      timestamp:p.createdAt||null,
+      userEmail:p.customerEmail||'', userName:p.customerName||'',
+      userPhone:p.customerPhone||'',
+      screenshot:p.screenshot||'',
+      provider:'MTN/Airtel',
+      quantity:p.quantity||0,
+      pickupLocationId:p.pickupLocationId||'',
+      _src:'express'
+    });
+  });
+  return out;
+}
+
+function buildReport(){
+  const now = Date.now();
+  const coursesArr = Object.values(S.courses);
+  const subsArr    = Object.values(S.subfolders);
+  const vidsArr    = Object.values(S.videos);
+  const docsArr    = Object.values(S.docs);
+  const usersArr   = Object.values(S.users);
+  const regsArr    = [...Object.values(S.registers), ...Object.values(S.lecturerRegisters)];
+  const assArr     = [...Object.values(S.assessments), ...Object.values(S.lecturerAssessments)];
+  const respArr    = [...Object.values(S.assessmentResponses), ...Object.values(S.lecturerResponses)];
+  const promosArr  = Object.values(S.promos);
+  const bannedArr  = Object.entries(S.bannedUsers).filter(([,v])=>v);
+  const lectArr    = Object.entries(S.lecturerData).map(([id,d])=>({id,...d}));
+
+  /* ---- Library Totals ---- */
+  const totals = {
+    courses:coursesArr.length,
+    subfolders:subsArr.length,
+    videos:vidsArr.length,
+    docs:docsArr.length,
+    students:usersArr.length,
+    registers:regsArr.length,
+    assessments:assArr.length,
+    promos:promosArr.length,
+    banned:bannedArr.length,
+    lecturers:lectArr.length
+  };
+
+  /* ---- All transactions ---- */
+  const allTx = buildAllTransactions();
+  const txInRange = allTx.filter(t => inRange(t.timestamp));
+
+  // dedupe: if a transaction exists both as approvedPurchases and pendingPurchases/transactions, prefer pending/transactions
+  const dedup = new Map();
+  txInRange.forEach(t => {
+    const key = t.id;
+    if(!dedup.has(key)) dedup.set(key, t);
+  });
+  const txs = [...dedup.values()];
+
+  const approved = txs.filter(t => t.status === 'approved');
+  const pending  = txs.filter(t => t.status === 'pending');
+  const rejected = txs.filter(t => t.status === 'rejected');
+
+  const sum = a => a.reduce((s,t) => s + num(t.amount), 0);
+
+  const money = {
+    approved: sum(approved),
+    pending:  sum(pending),
+    rejected: sum(rejected),
+    total:    sum(txs)
+  };
+
+  /* ---- Course & Subfolder Sales (only course/subfolder types) ---- */
+  const itemSales = {};
+  approved.forEach(t => {
+    const it = (t.itemType||'').toLowerCase();
+    if(it !== 'course' && it !== 'subfolder') return;
+    const key = t.itemId || t.itemTitle;
+    if(!itemSales[key]){
+      itemSales[key] = {
+        itemId:key,
+        title:t.itemTitle||'Unknown',
+        type:it,
+        count:0, revenue:0
+      };
+    }
+    itemSales[key].count += 1;
+    itemSales[key].revenue += num(t.amount);
+  });
+  const bestSelling = Object.values(itemSales)
+    .sort((a,b)=>b.revenue-a.revenue);
+
+  /* ---- Top Students ---- */
+  const byStudent = {};
+  approved.forEach(t => {
+    const key = t.userId || t.userEmail || t.userName || 'unknown';
+    if(!byStudent[key]){
+      const u = S.users[key] || {};
+      byStudent[key] = {
+        userId:key,
+        name: t.userName || ((u.firstName||'')+' '+(u.lastName||'')).trim() || 'Unknown',
+        email: t.userEmail || u.email || '',
+        count:0, spend:0, items:[]
+      };
+    }
+    byStudent[key].count += 1;
+    byStudent[key].spend += num(t.amount);
+    byStudent[key].items.push(t.itemTitle || '—');
+  });
+  const topStudents = Object.values(byStudent).sort((a,b)=>b.spend-a.spend);
+
+  /* ---- Course Enrollments ---- */
+  const courseEnrollments = {};
+  approved.forEach(t => {
+    const key = t.itemId;
+    if(!key) return;
+    const c = S.courses[key] || S.subfolders[key];
+    if(!courseEnrollments[key]){
+      courseEnrollments[key] = {
+        itemId:key,
+        title: t.itemTitle || c?.name || '—',
+        type: t.itemType || 'course',
+        enrollments:0
+      };
+    }
+    courseEnrollments[key].enrollments += 1;
+  });
+  const mostEnrolled = Object.values(courseEnrollments)
+    .sort((a,b)=>b.enrollments-a.enrollments);
+
+  /* ---- Express Shop ---- */
+  const products = Object.values(S.expressProducts);
+  const orders   = Object.values(S.expressOrders);
+  const payments = Object.values(S.expressPayments);
+  const ordersInRange = orders.filter(o => inRange(o.createdAt));
+  const paymentsInRange = payments.filter(p => inRange(p.createdAt));
+
+  const orderStatuses = {
+    pending: ordersInRange.filter(o=>o.status==='pending').length,
+    confirmed: ordersInRange.filter(o=>o.status==='confirmed').length,
+    ready: ordersInRange.filter(o=>o.status==='ready').length,
+    collected: ordersInRange.filter(o=>o.status==='collected').length,
+    completed: ordersInRange.filter(o=>o.status==='completed').length,
+    cancelled: ordersInRange.filter(o=>o.status==='cancelled').length
+  };
+  const expressRevenue = ordersInRange
+    .filter(o=>o.status==='completed'||o.status==='collected')
+    .reduce((s,o)=>s+num(o.total),0);
+  const expressPending = paymentsInRange.filter(p=>p.status==='pending').length;
+  const expressApproved = paymentsInRange.filter(p=>p.status==='approved').length;
+  const expressRejected = paymentsInRange.filter(p=>p.status==='rejected').length;
+  const lowStock = products.filter(p => num(p.quantity)>0 && num(p.quantity) <= (p.lowStockThreshold||5));
+  const outOfStock = products.filter(p => num(p.quantity) <= 0);
+
+  /* Top express products */
+  const prodUnits = {};
+  ordersInRange.forEach(o => {
+    (o.items || []).forEach(it => {
+      const key = it.productId || it.name;
+      if(!prodUnits[key]){
+        prodUnits[key] = { name: it.name||'Product', units:0, revenue:0 };
+      }
+      prodUnits[key].units += num(it.qty) || 1;
+      prodUnits[key].revenue += num(it.price) * (num(it.qty)||1);
+    });
+  });
+  const topExpressProducts = Object.values(prodUnits)
+    .sort((a,b)=>b.units-a.units);
+
+  /* ---- Assessments ---- */
+  const respsInRange = respArr.filter(r => inRange(r.submittedAt || r.startedAt || r.endedAt));
+  const completed = respsInRange.filter(r => r.status==='completed'||r.status==='ended');
+  const passed = completed.filter(r => {
+    const a = assArr.find(x => x.id === r.assessmentId);
+    if(!a) return false;
+    const total = num(a.totalMarks);
+    if(total <= 0) return num(r.score) >= num(a.passingScore);
+    return (num(r.score)/total)*100 >= num(a.passingScore||50);
+  });
+  const assessmentStats = {
+    total: assArr.length,
+    attempts: respsInRange.length,
+    completed: completed.length,
+    passed: passed.length,
+    failed: completed.length - passed.length
+  };
+
+  /* ---- Lecturers ---- */
+  const lecturerStats = {
+    total: lectArr.length,
+    approved: lectArr.filter(l=>l.status==='approved').length,
+    pending:  lectArr.filter(l=>(l.status||'pending')==='pending').length,
+    rejected: lectArr.filter(l=>l.status==='rejected').length,
+    banned:   lectArr.filter(l=>l.banned).length,
+    active:   lectArr.filter(l=>{
+      const exp = l.accessExpiresAt;
+      return l.status==='approved' && !l.banned && (!exp || exp > now);
+    }).length,
+    expired:  lectArr.filter(l=>l.accessExpiresAt && l.accessExpiresAt<=now).length
+  };
+
+  /* ---- Detail lists (limited) ---- */
+  const txList = txs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,150);
+
+  return {
+    totals, money,
+    tx: {
+      approved: approved.length, pending: pending.length,
+      rejected: rejected.length, total: txs.length
+    },
+    txList,
+    bestSelling,
+    topStudents,
+    mostEnrolled,
+    express: {
+      orders: orderStatuses,
+      ordersCount: ordersInRange.length,
+      revenue: expressRevenue,
+      pending: expressPending,
+      approved: expressApproved,
+      rejected: expressRejected,
+      products: products.length,
+      lowStock: lowStock.length,
+      outOfStock: outOfStock.length,
+      topProducts: topExpressProducts
+    },
+    assessmentStats,
+    lecturerStats,
+    range: { label: rangeLabel(), start: startTs, end: endTs }
+  };
+}
+
+/* =================================================================
+   RENDER
+================================================================= */
+function kpi(icon, num, label, color){
+  return `<div class="kpi">
+    <div class="icon" style="color:${color}"><i class="fas ${icon}"></i></div>
+    <div class="num">${esc(num)}</div>
+    <div class="lbl">${esc(label)}</div>
+  </div>`;
+}
+
+function statusBadge(s){
+  const k = (s||'pending').toLowerCase();
+  return `<span class="badge ${k}">${esc(s||'pending')}</span>`;
+}
+
+function renderEverything(){
+  computeRange();
+  const d = buildReport();
+  document.getElementById('rangeDisplay').innerHTML =
+    `<i class="fas fa-calendar-alt"></i> Range: <strong>${esc(d.range.label)}</strong>`;
+
+  let html = '';
+
+  /* ---- LIBRARY KPIs ---- */
+  html += `
+    <div class="kpi-grid">
+      ${kpi('fa-book-open',       d.totals.courses,    'Courses',     '#d4952a')}
+      ${kpi('fa-folder',          d.totals.subfolders, 'Subfolders',  '#3b82f6')}
+      ${kpi('fa-video',           d.totals.videos,     'Videos',      '#7c3aed')}
+      ${kpi('fa-file-alt',        d.totals.docs,       'Documents',   '#0891b2')}
+      ${kpi('fa-user-graduate',   d.totals.students,   'Students',    '#2ecc71')}
+      ${kpi('fa-graduation-cap',  d.totals.assessments,'Assessments', '#f39c12')}
+      ${kpi('fa-address-book',    d.totals.registers,  'Registers',   '#e11d48')}
+      ${kpi('fa-images',          d.totals.promos,     'Promo Items', '#ec4899')}
+      ${kpi('fa-chalkboard-teacher', d.totals.lecturers,'Lecturers',  '#7c3aed')}
+      ${kpi('fa-user-slash',      d.totals.banned,     'Banned Users','#e74c3c')}
+    </div>
+  `;
+
+  /* ---- PURCHASE MONEY ---- */
+  html += `
+    <div class="card gradient-gold">
+      <h3><i class="fas fa-coins" style="color:#d4952a"></i>
+          Purchase Overview — ${esc(d.range.label)}</h3>
+      <div class="kpi-grid" style="margin-bottom:0">
+        ${kpi('fa-check-circle','ZMW '+d.money.approved.toFixed(2),'Approved Revenue','#2e7d32')}
+        ${kpi('fa-hourglass-half','ZMW '+d.money.pending.toFixed(2),'Pending Value','#e65100')}
+        ${kpi('fa-times-circle','ZMW '+d.money.rejected.toFixed(2),'Rejected Value','#c62828')}
+        ${kpi('fa-receipt','ZMW '+d.money.total.toFixed(2),'Total Value','#d4952a')}
+        ${kpi('fa-check',d.tx.approved,'Approved Count','#2e7d32')}
+        ${kpi('fa-clock',d.tx.pending,'Pending Count','#e65100')}
+        ${kpi('fa-ban',d.tx.rejected,'Rejected Count','#c62828')}
+        ${kpi('fa-list',d.tx.total,'Total Transactions','#3b82f6')}
+      </div>
+    </div>
+  `;
+
+  /* ---- BEST SELLING ---- */
+  const bestRows = d.bestSelling.length
+    ? d.bestSelling.map((s,i)=>`
+      <tr>
+        <td style="font-weight:800;width:36px">${i+1}</td>
+        <td>${esc(s.title)}</td>
+        <td style="text-transform:capitalize">${esc(s.type)}</td>
+        <td class="right">${s.count}</td>
+        <td class="right money">${fmtMoney(s.revenue)}</td>
+      </tr>`).join('')
+    : '';
+  html += `
+    <div class="card">
+      <h3><i class="fas fa-fire" style="color:#e74c3c"></i> Best-Selling Courses &amp; Subfolders</h3>
+      ${bestRows
+        ? `<div class="tbl-wrap"><table class="rpt">
+            <thead><tr>
+              <th>#</th><th>Item</th><th>Type</th>
+              <th class="right">Sales</th><th class="right">Revenue</th>
+            </tr></thead>
+            <tbody>${bestRows}</tbody>
+          </table></div>`
+        : `<div class="empty"><i class="fas fa-inbox"></i>No sales in this period.</div>`}
+    </div>
+  `;
+
+  /* ---- MOST ENROLLED ---- */
+  const enrollRows = d.mostEnrolled.length
+    ? d.mostEnrolled.map((s,i)=>`
+      <tr>
+        <td style="font-weight:800;width:36px">${i+1}</td>
+        <td>${esc(s.title)}</td>
+        <td style="text-transform:capitalize">${esc(s.type)}</td>
+        <td class="right"><strong>${s.enrollments}</strong> student${s.enrollments!==1?'s':''}</td>
+      </tr>`).join('')
+    : '';
+  html += `
+    <div class="card gradient-blue">
+      <h3><i class="fas fa-users" style="color:#3b82f6"></i> Courses With Most Students Enrolled</h3>
+      ${enrollRows
+        ? `<div class="tbl-wrap"><table class="rpt">
+            <thead><tr>
+              <th>#</th><th>Course / Subfolder</th><th>Type</th>
+              <th class="right">Enrollments</th>
+            </tr></thead>
+            <tbody>${enrollRows}</tbody>
+          </table></div>`
+        : `<div class="empty"><i class="fas fa-users"></i>No enrollments in this period.</div>`}
+    </div>
+  `;
+
+  /* ---- TOP STUDENTS ---- */
+  const studentRows = d.topStudents.length
+    ? d.topStudents.slice(0,25).map((s,i)=>`
+      <tr>
+        <td style="font-weight:800;width:36px">${i+1}</td>
+        <td>${esc(s.name||'Unknown')}</td>
+        <td class="muted">${esc(s.email||'—')}</td>
+        <td class="right">${s.count}</td>
+        <td class="right money">${fmtMoney(s.spend)}</td>
+      </tr>`).join('')
+    : '';
+  html += `
+    <div class="card gradient-green">
+      <h3><i class="fas fa-trophy" style="color:#2ecc71"></i> Top Students (by Spend)</h3>
+      ${studentRows
+        ? `<div class="tbl-wrap"><table class="rpt">
+            <thead><tr>
+              <th>#</th><th>Student</th><th>Email</th>
+              <th class="right">Purchases</th><th class="right">Spend</th>
+            </tr></thead>
+            <tbody>${studentRows}</tbody>
+          </table></div>`
+        : `<div class="empty"><i class="fas fa-trophy"></i>No student activity in this period.</div>`}
+    </div>
+  `;
+
+  /* ---- EXPRESS SHOP ---- */
+  const topProdRows = d.express.topProducts.length
+    ? d.express.topProducts.slice(0,20).map((p,i)=>`
+      <tr>
+        <td style="font-weight:800;width:36px">${i+1}</td>
+        <td>${esc(p.name)}</td>
+        <td class="right"><strong>${p.units}</strong></td>
+        <td class="right money">${fmtMoney(p.revenue)}</td>
+      </tr>`).join('')
+    : '';
+
+  html += `
+    <div class="card gradient-blue">
+      <h3><i class="fas fa-store" style="color:#3b82f6"></i> UTOM Express Shop</h3>
+      <div class="kpi-grid" style="margin-bottom:12px">
+        ${kpi('fa-shopping-cart', d.express.ordersCount, 'Orders in Range', '#3b82f6')}
+        ${kpi('fa-coins','ZMW '+d.express.revenue.toFixed(2),'Express Revenue','#2e7d32')}
+        ${kpi('fa-box',d.express.products,'Products','#d4952a')}
+        ${kpi('fa-exclamation-triangle',d.express.lowStock,'Low Stock','#f39c12')}
+        ${kpi('fa-ban',d.express.outOfStock,'Out of Stock','#e74c3c')}
+        ${kpi('fa-hourglass-half',d.express.pending,'Pending Payments','#e65100')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#e65100">${d.express.orders.pending}</strong>Pending</div>
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#0d47a1">${d.express.orders.confirmed}</strong>Confirmed</div>
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#2e7d32">${d.express.orders.ready}</strong>Ready</div>
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#283593">${d.express.orders.collected}</strong>Collected</div>
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#00695c">${d.express.orders.completed}</strong>Completed</div>
+        <div style="background:rgba(255,255,255,.85);border-radius:10px;padding:10px;text-align:center;font-size:11px"><strong style="font-size:16px;display:block;color:#c62828">${d.express.orders.cancelled}</strong>Cancelled</div>
+      </div>
+      ${topProdRows ? `
+        <h4 style="font-size:12px;font-weight:800;margin:0 0 8px 0;color:#3b82f6"><i class="fas fa-fire"></i> Top-Selling Express Products</h4>
+        <div class="tbl-wrap"><table class="rpt">
+          <thead><tr>
+            <th>#</th><th>Product</th>
+            <th class="right">Units Sold</th>
+            <th class="right">Revenue</th>
+          </tr></thead>
+          <tbody>${topProdRows}</tbody>
+        </table></div>
+      ` : ''}
+    </div>
+  `;
+
+  /* ---- ASSESSMENTS ---- */
+  html += `
+    <div class="card gradient-rose">
+      <h3><i class="fas fa-graduation-cap" style="color:#e63946"></i> Assessments</h3>
+      <div class="kpi-grid" style="margin-bottom:0">
+        ${kpi('fa-file-alt', d.assessmentStats.total,'Assessments','#d4952a')}
+        ${kpi('fa-play', d.assessmentStats.attempts,'Attempts','#3b82f6')}
+        ${kpi('fa-flag-checkered', d.assessmentStats.completed,'Completed','#7c3aed')}
+        ${kpi('fa-check-circle', d.assessmentStats.passed,'Passed','#2ecc71')}
+        ${kpi('fa-times-circle', d.assessmentStats.failed,'Failed','#e74c3c')}
+      </div>
+    </div>
+  `;
+
+  /* ---- LECTURERS ---- */
+  html += `
+    <div class="card gradient-purple">
+      <h3><i class="fas fa-chalkboard-teacher" style="color:#7c3aed"></i> Lecturer Applications &amp; Access</h3>
+      <div class="kpi-grid" style="margin-bottom:0">
+        ${kpi('fa-users', d.lecturerStats.total,'Total Lecturers','#7c3aed')}
+        ${kpi('fa-check-circle', d.lecturerStats.approved,'Approved','#2ecc71')}
+        ${kpi('fa-hourglass-half', d.lecturerStats.pending,'Pending Approval','#f39c12')}
+        ${kpi('fa-times-circle', d.lecturerStats.rejected,'Rejected','#e74c3c')}
+        ${kpi('fa-ban', d.lecturerStats.banned,'Banned','#7f1d1d')}
+        ${kpi('fa-bolt', d.lecturerStats.active,'Active Access','#d4952a')}
+        ${kpi('fa-clock', d.lecturerStats.expired,'Expired Access','#c62828')}
+      </div>
+    </div>
+  `;
+
+  /* ---- DETAILED TRANSACTIONS ---- */
+  const txRows = d.txList.length
+    ? d.txList.map(t=>`
+      <tr>
+        <td>${esc(t.userName||'—')}<br><span class="muted">${esc(t.userEmail||'')}</span></td>
+        <td>${esc(t.itemTitle||'—')}<br><span class="muted" style="text-transform:capitalize">${esc(t.itemType||'course')}</span></td>
+        <td class="right money">${fmtMoney(t.amount)}</td>
+        <td class="center">${statusBadge(t.status)}</td>
+        <td class="muted">${fmtDate(t.timestamp)}</td>
+      </tr>`).join('')
+    : '';
+  html += `
+    <div class="card">
+      <h3><i class="fas fa-list-ul" style="color:#d4952a"></i> Recent Transactions in Range (${d.txList.length})</h3>
+      ${txRows
+        ? `<div class="tbl-wrap"><table class="rpt">
+            <thead><tr>
+              <th>User</th><th>Item</th>
+              <th class="right">Amount</th>
+              <th class="center">Status</th>
+              <th>Date</th>
+            </tr></thead>
+            <tbody>${txRows}</tbody>
+          </table></div>`
+        : `<div class="empty"><i class="fas fa-inbox"></i>No transactions in this period.</div>`}
+    </div>
+  `;
+
+  document.getElementById('reportRoot').innerHTML = html;
+}
+
+/* =================================================================
+   PDF DOWNLOAD
+================================================================= */
+async function downloadPDF(){
+  const d = buildReport();
+  const root = document.getElementById('reportRoot');
+
+  // build a print-friendly container
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:24px 20px;background:#fff;color:#1a1d28;font-family:Inter,Arial,sans-serif;';
+  wrap.innerHTML = `
+    <div style="text-align:center;padding:16px 12px 18px;border-bottom:3px solid #F5B042;margin-bottom:18px;">
+      <h1 style="font-size:26px;font-weight:900;margin:0;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">UTOM · Admin Report</h1>
+      <div style="font-size:12px;color:#5f6377;margin-top:6px;">Range: <strong>${esc(d.range.label)}</strong></div>
+      <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">Generated: ${new Date().toLocaleString()}</div>
+      <div style="font-size:11px;color:#8b8fa3;margin-top:2px;">By: ${esc(currentAdmin?.email||'admin')}</div>
+    </div>
+  `;
+  // clone report content
+  const cloned = root.cloneNode(true);
+  // convert inline styles for print
+  cloned.querySelectorAll('.card').forEach(c=>{
+    c.style.background = '#fff';
+    c.style.boxShadow = 'none';
+    c.style.border = '1px solid #e5e8ed';
+  });
+  cloned.querySelectorAll('.kpi').forEach(k=>{
+    k.style.background = '#fff';
+    k.style.boxShadow = 'none';
+    k.style.border = '1px solid #e5e8ed';
+  });
+  wrap.appendChild(cloned);
+  document.body.appendChild(wrap);
+
+  const btn = document.getElementById('dlPdfBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+
+  try{
+    await html2pdf().set({
+      margin:[6,6,10,6],
+      filename:`UTOM-Report-${new Date().toISOString().slice(0,10)}.pdf`,
+      image:{type:'jpeg',quality:0.95},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['css','legacy']}
+    }).from(wrap).save();
+    toast('PDF downloaded','success');
+  }catch(e){
+    console.error(e);
+    toast('PDF error: '+e.message,'error');
+  }finally{
+    document.body.removeChild(wrap);
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+/* =================================================================
+   EXCEL DOWNLOAD
+================================================================= */
+function downloadExcel(){
+  if(typeof XLSX === 'undefined'){ toast('Excel library not loaded','error'); return; }
+  const d = buildReport();
+  const wb = XLSX.utils.book_new();
+
+  const addSheet = (name, rows) => {
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // column widths
+    const widths = [];
+    rows.forEach(r => {
+      (r || []).forEach((c,i) => {
+        const len = String(c==null?'':c).length;
+        widths[i] = Math.max(widths[i]||8, Math.min(len+2, 45));
+      });
+    });
+    ws['!cols'] = widths.map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+
+  /* 1) OVERVIEW */
+  addSheet('Overview', [
+    ['UTOM ADMIN REPORT'],
+    ['Range', d.range.label],
+    ['Generated', new Date().toLocaleString()],
+    ['By', currentAdmin?.email||'admin'],
+    [],
+    ['LIBRARY TOTALS',''],
+    ['Courses', d.totals.courses],
+    ['Subfolders', d.totals.subfolders],
+    ['Videos', d.totals.videos],
+    ['Documents', d.totals.docs],
+    ['Students', d.totals.students],
+    ['Registers', d.totals.registers],
+    ['Assessments', d.totals.assessments],
+    ['Promo Items', d.totals.promos],
+    ['Lecturers', d.totals.lecturers],
+    ['Banned Users', d.totals.banned],
+    [],
+    ['PURCHASES','Count','ZMW'],
+    ['Approved', d.tx.approved, d.money.approved.toFixed(2)],
+    ['Pending',  d.tx.pending,  d.money.pending.toFixed(2)],
+    ['Rejected', d.tx.rejected, d.money.rejected.toFixed(2)],
+    ['TOTAL',    d.tx.total,    d.money.total.toFixed(2)],
+    [],
+    ['EXPRESS SHOP','Value'],
+    ['Orders in Range', d.express.ordersCount],
+    ['Revenue (ZMW)', d.express.revenue.toFixed(2)],
+    ['Pending Payments', d.express.pending],
+    ['Approved Payments', d.express.approved],
+    ['Rejected Payments', d.express.rejected],
+    ['Total Products', d.express.products],
+    ['Low Stock', d.express.lowStock],
+    ['Out of Stock', d.express.outOfStock],
+    [],
+    ['EXPRESS ORDER STATUS','Count'],
+    ['Pending', d.express.orders.pending],
+    ['Confirmed', d.express.orders.confirmed],
+    ['Ready', d.express.orders.ready],
+    ['Collected', d.express.orders.collected],
+    ['Completed', d.express.orders.completed],
+    ['Cancelled', d.express.orders.cancelled],
+    [],
+    ['ASSESSMENTS','Value'],
+    ['Total', d.assessmentStats.total],
+    ['Attempts', d.assessmentStats.attempts],
+    ['Completed', d.assessmentStats.completed],
+    ['Passed', d.assessmentStats.passed],
+    ['Failed', d.assessmentStats.failed],
+    [],
+    ['LECTURERS','Value'],
+    ['Total', d.lecturerStats.total],
+    ['Approved', d.lecturerStats.approved],
+    ['Pending', d.lecturerStats.pending],
+    ['Rejected', d.lecturerStats.rejected],
+    ['Banned', d.lecturerStats.banned],
+    ['Active', d.lecturerStats.active],
+    ['Expired', d.lecturerStats.expired]
+  ]);
+
+  /* 2) BEST SELLING */
+  addSheet('Best Selling', [
+    ['Rank','Item','Type','Sales Count','Revenue (ZMW)'],
+    ...d.bestSelling.map((s,i)=>[
+      i+1, s.title, s.type, s.count, s.revenue.toFixed(2)
+    ])
+  ]);
+
+  /* 3) MOST ENROLLED */
+  addSheet('Most Enrolled', [
+    ['Rank','Course / Subfolder','Type','Enrollments'],
+    ...d.mostEnrolled.map((s,i)=>[i+1, s.title, s.type, s.enrollments])
+  ]);
+
+  /* 4) TOP STUDENTS */
+  addSheet('Top Students', [
+    ['Rank','Name','Email','Purchases','Total Spend (ZMW)'],
+    ...d.topStudents.map((s,i)=>[
+      i+1, s.name, s.email, s.count, s.spend.toFixed(2)
+    ])
+  ]);
+
+  /* 5) EXPRESS ORDERS */
+  const ordersRows = [['Order ID','Customer','Email','Phone','Total (ZMW)','Status','Created']];
+  Object.values(S.expressOrders)
+    .filter(o => inRange(o.createdAt))
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
+    .forEach(o => {
+      ordersRows.push([
+        o.id, o.customerName||'Guest',
+        o.customerEmail||'', o.customerPhone||'',
+        num(o.total).toFixed(2), o.status||'',
+        fmtDate(o.createdAt)
+      ]);
+    });
+  addSheet('Express Orders', ordersRows);
+
+  /* 6) TOP EXPRESS PRODUCTS */
+  addSheet('Top Express Products', [
+    ['Rank','Product','Units Sold','Revenue (ZMW)'],
+    ...d.express.topProducts.map((p,i)=>[
+      i+1, p.name, p.units, p.revenue.toFixed(2)
+    ])
+  ]);
+
+  /* 7) TRANSACTIONS */
+  addSheet('Transactions', [
+    ['ID','User','Email','Item','Type','Amount (ZMW)','Status','Date'],
+    ...d.txList.map(t=>[
+      t.id, t.userName||'', t.userEmail||'',
+      t.itemTitle||'', t.itemType||'course',
+      num(t.amount).toFixed(2), t.status||'pending',
+      fmtDate(t.timestamp)
+    ])
+  ]);
+
+  /* 8) LECTURERS */
+  const lectRows = [['ID','Name','Email','Phone','Status','Banned','Access Expires','Paid (ZMW)']];
+  Object.entries(S.lecturerData).forEach(([id,l])=>{
+    lectRows.push([
+      id, l.name||'', l.email||'', l.phone||'',
+      l.status||'pending', l.banned?'Yes':'No',
+      l.accessExpiresAt ? new Date(l.accessExpiresAt).toLocaleString() : 'Never',
+      num(l.paidAmount).toFixed(2)
+    ]);
+  });
+  addSheet('Lecturers', lectRows);
+
+  /* 9) ALL TRANSACTIONS (raw) */
+  const rawRows = [['ID','Source','User ID','Item ID','Item Title','Type','Amount','Status','Date']];
+  const allTx = buildAllTransactions();
+  allTx.forEach(t=>{
+    rawRows.push([
+      t.id, t._src||'', t.userId||'', t.itemId||'',
+      t.itemTitle||'', t.itemType||'',
+      num(t.amount).toFixed(2), t.status||'',
+      fmtDate(t.timestamp)
+    ]);
+  });
+  addSheet('All Transactions (raw)', rawRows);
+
+  /* 10) COURSE CATALOG */
+  addSheet('Course Catalog', [
+    ['Course','Price Type','Price','Duration Type','Duration Value','Subfolders','Videos','Docs'],
+    ...Object.entries(S.courses).map(([id,c])=>{
+      const subs = Object.values(S.subfolders).filter(s=>s.courseId===id);
+      return [
+        c.name||'',
+        num(c.price) > 0 ? 'Paid' : 'Free',
+        num(c.price).toFixed(2),
+        c.durationType||'lifetime',
+        num(c.durationValue),
+        subs.length,
+        Object.values(S.videos).filter(v=>v.courseId===id).length,
+        Object.values(S.docs).filter(d=>d.courseId===id).length
+      ];
+    })
+  ]);
+
+  XLSX.writeFile(wb, `UTOM-Report-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel downloaded','success');
+}
+
+/* =================================================================
+   UI EVENTS
+================================================================= */
+document.getElementById('rangeBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.range-btn');
+  if(!btn) return;
+  document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  rangeType = btn.dataset.range;
+  document.getElementById('customBox').classList.toggle('show', rangeType === 'custom');
+  if(rangeType !== 'custom'){
+    computeRange();
+    renderEverything();
+  }
+});
+
+document.getElementById('applyCustomBtn').addEventListener('click', () => {
+  const f = document.getElementById('fromDate').value;
+  const t = document.getElementById('toDate').value;
+  if(!f || !t){ toast('Pick both dates','error'); return; }
+  const sTs = new Date(f + 'T00:00:00').getTime();
+  const eTs = new Date(t + 'T23:59:59').getTime();
+  if(eTs < sTs){ toast('End date must be after start date','error'); return; }
+  startTs = sTs; endTs = eTs;
+  renderEverything();
+});
+
+document.getElementById('dlPdfBtn').addEventListener('click', downloadPDF);
+document.getElementById('dlExcelBtn').addEventListener('click', downloadExcel);
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  computeRange();
+  renderEverything();
+  toast('Refreshed','info');
+});
+document.getElementById('refreshAllBtn').addEventListener('click', () => {
+  computeRange();
+  renderEverything();
+  toast('Refreshed','info');
+});
+
+console.log('✅ UTOM Reports page loaded.');
+</script>
+</body>
+</html>
