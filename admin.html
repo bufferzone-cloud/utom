@@ -12623,7 +12623,9 @@ function loadCommentsForVideo(videoId, onChange) {
 
             // ---- SAVE AS QUESTION PAPER DRAFT (NEW) ----
             const previewBtn = document.getElementById(`${type}PreviewFullBtn`);
+                        const previewBtn = document.getElementById(`${type}PreviewFullBtn`);
             if (previewBtn && !previewBtn.parentElement.querySelector('.save-as-draft-btn')) {
+                // ---------- Save as Draft ----------
                 const saveAsPaperDraftBtn = document.createElement('button');
                 saveAsPaperDraftBtn.type = 'button';
                 saveAsPaperDraftBtn.className = 'btn-outline save-as-draft-btn';
@@ -12631,6 +12633,18 @@ function loadCommentsForVideo(videoId, onChange) {
                 saveAsPaperDraftBtn.innerHTML = '<i class="fas fa-file-pen"></i> Save as Draft';
                 saveAsPaperDraftBtn.addEventListener('click', () => saveAsQuestionDraft(type));
                 previewBtn.parentElement.insertBefore(saveAsPaperDraftBtn, previewBtn);
+
+                // ---------- Delete Draft (visible only when a draft is loaded) ----------
+                const deleteDraftBtn = document.createElement('button');
+                deleteDraftBtn.type = 'button';
+                deleteDraftBtn.id = `${type}DeleteDraftBtn`;
+                deleteDraftBtn.className = 'btn-outline delete-draft-btn';
+                deleteDraftBtn.style.cssText =
+                    'padding:10px 24px;font-size:12px;color:#c62828;' +
+                    'border-color:#f8d7da;display:none;';
+                deleteDraftBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Draft';
+                deleteDraftBtn.addEventListener('click', () => deleteCurrentDraft(type));
+                previewBtn.parentElement.insertBefore(deleteDraftBtn, previewBtn);
             }
 
             // ---- MULTI-REGISTER SELECT ----
@@ -15652,7 +15666,8 @@ function renderPopupRegisterList(searchTerm = '') {
                     try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
                     catch (e) { console.warn('Could not delete draft:', e); }
                     window._pendingDraftId = null;
-                    window._draftBeingPublished = null;
+                window._draftBeingPublished = null;
+                updateDraftButtonsVisibility();
                 }
 
                 showSection('ongoing');
@@ -15729,7 +15744,8 @@ function renderPopupRegisterList(searchTerm = '') {
                     try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
                     catch (e) { console.warn('Could not delete draft:', e); }
                     window._pendingDraftId = null;
-                    window._draftBeingPublished = null;
+                window._draftBeingPublished = null;
+                updateDraftButtonsVisibility();
                 }
 
                 showSection('ongoing');
@@ -15806,7 +15822,8 @@ function renderPopupRegisterList(searchTerm = '') {
                     try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
                     catch (e) { console.warn('Could not delete draft:', e); }
                     window._pendingDraftId = null;
-                    window._draftBeingPublished = null;
+                window._draftBeingPublished = null;
+                updateDraftButtonsVisibility();
                 }
 
                 showSection('ongoing');
@@ -15879,7 +15896,8 @@ function renderPopupRegisterList(searchTerm = '') {
                     try { await remove(ref(db, `paperDrafts/${window._pendingDraftId}`)); }
                     catch (e) { console.warn('Could not delete draft:', e); }
                     window._pendingDraftId = null;
-                    window._draftBeingPublished = null;
+                window._draftBeingPublished = null;
+                updateDraftButtonsVisibility();
                 }
 
                 showSection('ongoing');
@@ -19023,9 +19041,9 @@ function renderDraftsList() {
                                 style="padding:7px 16px;font-size:10px;">
                             <i class="fas fa-arrow-right"></i> Add Details &amp; Publish
                         </button>
-                        <button class="btn-outline draft-delete-btn" data-draftid="${d.id}"
+                                                <button class="btn-outline draft-delete-btn" data-draftid="${d.id}"
                                 style="padding:7px 14px;font-size:10px;color:#c62828;border-color:#f8d7da;">
-                            <i class="fas fa-trash"></i>
+                            <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 </div>
@@ -19079,8 +19097,19 @@ function openDraftInCreateForm(draftId) {
     };
     const target = sectionMap[type] || 'createTest';
     showToast(`Loaded draft "${draft.name}" — add cover & details to publish.`, 'info');
+    updateDraftButtonsVisibility();
     showSection(target);
 }
+
+/* -------- Show / hide the "Delete Draft" buttons inside the create forms -------- */
+function updateDraftButtonsVisibility() {
+    const hasDraft = !!window._pendingDraftId;
+    ['test', 'quiz', 'exam', 'assignment'].forEach(type => {
+        const btn = document.getElementById(`${type}DeleteDraftBtn`);
+        if (btn) btn.style.display = hasDraft ? 'inline-flex' : 'none';
+    });
+}
+window.updateDraftButtonsVisibility = updateDraftButtonsVisibility;
 
 /* -------- Extract ONLY the questions/sections (no cover, no register, no schedule) -------- */
 function collectQuestionsData(type) {
@@ -19224,13 +19253,25 @@ async function saveAsQuestionDraft(type) {
             savedBy: currentAdmin?.email || 'admin'
         };
 
-        if (window._pendingDraftId) {
-            await update(ref(db, `paperDrafts/${window._pendingDraftId}`), draftData);
+                const loadedDraft   = window._draftBeingPublished;
+        const loadedDraftId = window._pendingDraftId;
+        const nameChanged   = loadedDraft ? (loadedDraft.name !== name) : false;
+
+        if (loadedDraftId && !nameChanged) {
+            // Same name → update the loaded draft in place
+            await update(ref(db, `paperDrafts/${loadedDraftId}`), draftData);
             showToast('Draft updated!', 'success');
         } else {
+            // Either a brand-new draft, or the name was changed.
+            // In both cases we save a NEW draft and leave the original untouched.
             const newRef = push(paperDraftsRef);
             await set(newRef, draftData);
-            showToast('Draft saved! Open it from the Drafts tab to publish.', 'success');
+            showToast(
+                nameChanged
+                    ? `Saved as new draft "${name}" — original draft preserved.`
+                    : 'Draft saved! Open it from the Drafts tab to publish.',
+                'success'
+            );
         }
 
         push(notificationsRef, {
@@ -19249,6 +19290,40 @@ async function saveAsQuestionDraft(type) {
     }
 }
 
+/* -------- Delete the draft currently loaded into the create form -------- */
+async function deleteCurrentDraft(type) {
+    if (!window._pendingDraftId) {
+        showToast('No draft is currently loaded.', 'error');
+        return;
+    }
+    const draftName = (window._draftBeingPublished && window._draftBeingPublished.name) || 'this draft';
+
+    const confirmed = await showConfirmPopup({
+        icon: '🗑️',
+        type: 'danger',
+        title: 'Delete Draft?',
+        message:
+            `Permanently delete the draft "<strong>${escapeHtml(draftName)}</strong>"?<br><br>` +
+            `This will not affect any assessment that was already published from it. This cannot be undone.`,
+        okText: 'Delete Draft',
+        okClass: 'btn-confirm-danger'
+    });
+    if (!confirmed) return;
+
+    try {
+        await remove(ref(db, `paperDrafts/${window._pendingDraftId}`));
+        showToast('Draft deleted.', 'info');
+
+        window._pendingDraftId = null;
+        window._draftBeingPublished = null;
+        updateDraftButtonsVisibility();
+
+        showSection('drafts');
+    } catch (err) {
+        showToast('Error deleting draft: ' + err.message, 'error');
+    }
+}
+window.deleteCurrentDraft = deleteCurrentDraft;
         /* =================================================================
    BULK ADD / REMOVE MARKS — apply to every submitted script
    ================================================================= */
