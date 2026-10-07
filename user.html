@@ -13250,6 +13250,7 @@ function renderAllCourses() {
     let searchTerm = currentSearch.toLowerCase();
     let filtered = allCourses.filter(c => c.name.toLowerCase().includes(searchTerm));
     filtered.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
     const nameContainer = document.getElementById('allCoursesNameContainer');
     nameContainer.innerHTML = filtered.map(c => {
         const subfolderCount = allSubfolders.filter(sf => sf.courseId === c.id).length;
@@ -13257,7 +13258,9 @@ function renderAllCourses() {
             ` · ${c.durationValue} ${c.durationType}` : '';
         return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount}${durationLabel}</span></span>`;
     }).join('') || '<span class="empty-state" style="padding:0.6rem;">No courses found</span>';
+
     document.getElementById('totalCourseCount').innerText = filtered.length;
+
     nameContainer.querySelectorAll('.course-name-item').forEach(el => {
         el.addEventListener('click', () => {
             const courseId = el.dataset.id;
@@ -13275,16 +13278,10 @@ function renderAllCourses() {
             }
         });
     });
-    const free = filtered.filter(c => c.price === 0);
-    const paid = filtered.filter(c => c.price > 0);
-    renderCourseGrid('freeCoursesGrid', free);
-    renderCourseGrid('paidCoursesGrid', paid);
-    document.getElementById('freeCourseCount').innerText = free.length;
-    document.getElementById('paidCourseCount').innerText = paid.length;
-        const free = filtered.filter(c => c.price === 0);
-    const paid = filtered.filter(c => c.price > 0);
 
-    // NEW: Enrolled courses (any course the user has approved access to)
+    // ---- Declare each bucket ONCE ----
+    const free     = filtered.filter(c => c.price === 0);
+    const paid     = filtered.filter(c => c.price > 0);
     const enrolled = filtered.filter(c => approvedCourses.has(c.id));
 
     renderCourseGrid('freeCoursesGrid', free);
