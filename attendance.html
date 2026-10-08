@@ -6,7 +6,7 @@
     <title>UTOM · Attendance</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <!-- Leaflet -->
+    <!-- Leaflet for the map preview + register cards -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- PDF / Excel -->
@@ -27,16 +27,13 @@
             --header-height: 70px;
         }
         html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; width: 100%; }
-        /* ===== LOADER ===== */
         #appLoader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.6s ease; }
         #appLoader.hidden { opacity: 0; pointer-events: none; }
         .loader-spinner { width: 48px; height: 48px; border: 5px solid #e5e7eb; border-top: 5px solid var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         #appLoader p { margin-top: 18px; font-weight: 700; color: var(--text-secondary); font-size: 15px; }
         #appLoader .sub { font-size: 12px; color: #b0b4c0; margin-top: 4px; font-weight: 500; }
-        /* ===== APP ROOT ===== */
         .app-root { display: flex; flex-direction: column; height: 100vh; width: 100%; background: var(--bg); overflow: hidden; position: relative; }
-        /* ===== HEADER ===== */
         .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px 20px; background: var(--bg); flex-shrink: 0; position: relative; z-index: 10; border-bottom: 1px solid rgba(0,0,0,0.04); height: var(--header-height); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .header-left { display: flex; align-items: center; gap: 14px; }
         .back-btn { width: 44px; height: 44px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); color: var(--text); font-size: 17px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
@@ -46,11 +43,10 @@
         .header-right { display: flex; align-items: center; gap: 12px; }
         .icon-btn { width: 44px; height: 44px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); color: var(--text); font-size: 17px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
         .icon-btn:hover { transform: scale(1.05); border-color: rgba(245,176,66,0.2); }
-        /* ===== CONTENT ===== */
         .app-content { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 0 16px 100px 16px; -webkit-overflow-scrolling: touch; width: 100%; }
         .app-content::-webkit-scrollbar { width: 4px; }
         .app-content::-webkit-scrollbar-thumb { background: rgba(245,176,66,0.35); border-radius: 20px; }
-        /* ===== CARDS / FORM ===== */
+
         .form-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 20px 22px; margin-bottom: 16px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); }
         .form-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
         .form-card h4 i { background: linear-gradient(135deg,#d4952a,#f5b042); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -63,19 +59,65 @@
         .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
             outline: none; border-color: #f5b042; box-shadow: 0 0 0 4px rgba(245,176,66,0.08); background: #fff;
         }
+        .form-row input:disabled, .form-row select:disabled {
+            background: rgba(240, 240, 245, 0.7); color: #8b8fa3; cursor: not-allowed;
+        }
         .field-group { margin-bottom: 12px; }
         .field-group > label { display: block; font-weight: 700; font-size: 12px; margin-bottom: 6px; color: var(--text); }
+
+        /* Register selector block */
+        .reg-selector-wrap {
+            background: linear-gradient(135deg, rgba(245,176,66,0.08), rgba(255,107,0,0.05));
+            border: 2px dashed rgba(245,176,66,0.4);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .reg-selector-wrap label { display: block; font-weight: 800; font-size: 12px; color: var(--gold-dark); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .reg-selector-wrap select {
+            width: 100%; padding: 12px 18px; border-radius: 40px;
+            border: 1.5px solid rgba(245,176,66,0.4); font-size: 13px; font-weight: 600;
+            background: #fff; color: var(--text); cursor: pointer;
+        }
+        .reg-selector-wrap select:focus { outline: none; border-color: #f5b042; box-shadow: 0 0 0 4px rgba(245,176,66,0.15); }
+        .reg-meta {
+            margin-top: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--text);
+            display: none;
+        }
+        .reg-meta.show { display: block; }
+        .reg-meta .row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+        .reg-meta .row i { color: var(--gold-dark); width: 16px; }
+        .reg-meta .members-preview {
+            margin-top: 8px;
+            display: flex; flex-wrap: wrap; gap: 4px;
+            max-height: 100px; overflow-y: auto;
+        }
+        .reg-meta .member-chip {
+            background: rgba(46,204,113,0.12);
+            color: #1e6f42;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 30px;
+        }
+
+        /* Location preview */
+        .location-preview { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(46,204,113,0.10); border-radius: 30px; border: 1.5px solid rgba(46,204,113,0.25); font-size: 11px; font-weight: 600; color: #1e6f42; margin-top: 6px; }
+        .location-preview i { color: #2ecc71; font-size: 15px; }
+        .location-preview.error { background: rgba(231,76,60,0.10); border-color: rgba(231,76,60,0.25); color: #a6201a; }
+        .location-preview.error i { color: #e74c3c; }
+
         .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 4px; }
         .check-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(250,251,252,0.8); border-radius: 30px; border: 1.5px solid rgba(229,232,237,0.6); cursor: pointer; transition: var(--transition); font-size: 12px; font-weight: 600; }
         .check-item:hover { border-color: #f5b042; }
         .check-item input[type="checkbox"] { accent-color: #f5b042; width: 16px; height: 16px; cursor: pointer; }
         .check-item.checked { background: rgba(245,176,66,0.10); border-color: #f5b042; }
-        /* ===== LOCATION PREVIEW ===== */
-        .location-preview { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(46,204,113,0.10); border-radius: 30px; border: 1.5px solid rgba(46,204,113,0.25); font-size: 11px; font-weight: 600; color: #1e6f42; margin-top: 6px; }
-        .location-preview i { color: #2ecc71; font-size: 15px; }
-        .location-preview.error { background: rgba(231,76,60,0.10); border-color: rgba(231,76,60,0.25); color: #a6201a; }
-        .location-preview.error i { color: #e74c3c; }
-        /* ===== BUTTONS ===== */
+
         .btn-primary { background: linear-gradient(135deg,#f5b042,#ff6b00); border: none; padding: 12px 28px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; transition: var(--transition); box-shadow: 0 4px 20px rgba(245,176,66,0.25); font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(245,176,66,0.30); }
         .btn-primary:active { transform: scale(0.96); }
@@ -90,7 +132,8 @@
         .btn-success:hover { transform: translateY(-2px); }
         .btn-map { background: linear-gradient(135deg,#3b82f6,#2563eb); border: none; padding: 8px 20px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; font-size: 11px; transition: var(--transition); box-shadow: 0 3px 12px rgba(59,130,246,0.25); display: inline-flex; align-items: center; gap: 6px; }
         .btn-map:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
-        /* ===== FOLDER / REGISTER CARDS ===== */
+        .btn-map:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
         .folder-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); cursor: pointer; transition: var(--transition); }
         .folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(245,176,66,0.2); }
         .folder-icon { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg,#f5b042,#ff6b00); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(245,176,66,0.25); }
@@ -98,6 +141,7 @@
         .folder-name { font-weight: 800; font-size: 15px; color: var(--text); }
         .folder-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
         .folder-count { background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 4px 14px; border-radius: 30px; font-size: 11px; font-weight: 800; }
+
         .register-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
         .register-card:hover { box-shadow: var(--shadow-md); }
         .register-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
@@ -108,7 +152,7 @@
         .status-active { background: #d4edda; color: #155724; }
         .status-expired { background: #fde8e8; color: #721c24; }
         .register-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-        /* ===== MODAL ===== */
+
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(12px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.open { display: flex; }
         .modal-box { background: rgba(255,255,255,0.97); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 26px 24px; box-shadow: var(--shadow-lg); animation: modalIn 0.3s cubic-bezier(0.25,0.46,0.45,0.94); border: 1px solid rgba(255,255,255,0.2); position: relative; }
@@ -117,7 +161,7 @@
         .modal-close:hover { background: rgba(231,76,60,0.05); color: #e74c3c; transform: rotate(90deg); }
         .modal-box h3 { font-size: 17px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
         .modal-box h3 i { background: linear-gradient(135deg,#d4952a,#f5b042); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        /* ===== MAP MODAL ===== */
+
         .map-modal-box { max-width: 900px; padding: 0; overflow: hidden; background: #fff; }
         .map-modal-header { padding: 16px 22px; background: linear-gradient(135deg,#d4952a,#f5b042,#ff6b00); color: #fff; display: flex; justify-content: space-between; align-items: center; }
         .map-modal-header h3 { color: #fff; margin: 0; font-size: 15px; }
@@ -134,36 +178,39 @@
         .map-legend .dot.lecturer { background: #3b82f6; border: 2px solid #fff; box-shadow: 0 0 0 1px #3b82f6; }
         .map-legend .dot.student { background: #2ecc71; border: 2px solid #fff; box-shadow: 0 0 0 1px #2ecc71; }
         .map-legend .dot.ring { background: transparent; border: 2px dashed #f5b042; }
-        /* ===== SUBMISSION TABLE ===== */
+        .map-legend .dot.outsider { background: #e74c3c; border: 2px solid #fff; box-shadow: 0 0 0 1px #e74c3c; }
+
         .sub-table-wrap { overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid var(--border-color); }
         .sub-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 540px; }
         .sub-table th { background: linear-gradient(135deg,#d4952a,#f5b042); color: #fff; padding: 10px 12px; text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
         .sub-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); color: var(--text); }
         .sub-table tr:last-child td { border-bottom: none; }
         .sub-table tr:hover td { background: rgba(245,176,66,0.04); }
-        /* ===== EMPTY ===== */
+
         .empty-state { text-align: center; padding: 44px 20px; color: #8b8fa3; font-size: 13px; }
         .empty-state i { font-size: 46px; opacity: 0.25; display: block; margin-bottom: 12px; }
         .empty-state h3 { font-size: 15px; color: #888; margin-bottom: 4px; }
-        /* ===== TOAST ===== */
+
         .toast-container { position: fixed; top: 76px; right: 16px; z-index: 4000; display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
         .toast { background: rgba(26,29,40,0.92); backdrop-filter: blur(16px); color: #fff; padding: 12px 22px; border-radius: 30px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideInToast 0.4s cubic-bezier(0.25,0.46,0.45,0.94); font-weight: 500; font-size: 12px; border-left: 3px solid var(--gold); }
         @keyframes slideInToast { from { opacity: 0; transform: translateX(30px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
-        /* ===== CHIPS ===== */
+
         .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 4px 12px 4px 14px; border-radius: 30px; font-size: 11px; font-weight: 700; margin: 3px 3px 0 0; }
         .chip .chip-x { cursor: pointer; opacity: 0.7; font-weight: 900; padding: 0 2px; }
         .chip .chip-x:hover { opacity: 1; color: #e74c3c; }
-        /* ===== SECTION TITLE ===== */
+
         .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 10px 0; padding: 0 2px; }
         .section-title h2 { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .section-title h2 i { color: var(--gold); }
         .section-title .count-badge { font-size: 11px; background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 3px 12px; border-radius: 30px; font-weight: 800; }
-        /* ===== LEAFLET FIXES ===== */
+
         .leaflet-container { font-family: inherit !important; }
         .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important; }
         .leaflet-popup-tip { box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important; }
         .map-pin-icon { background: #3b82f6; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; }
         .student-pin-icon { background: #2ecc71; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+        .outsider-pin-icon { background: #e74c3c; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+
         @media (max-width: 520px) {
             .app-content { padding: 0 10px 90px 10px; }
             .header { padding: 10px 12px 8px 12px; height: 62px; }
@@ -182,11 +229,10 @@
     <div id="appLoader">
         <div class="loader-spinner"></div>
         <p>Loading Attendance…</p>
-        <div class="sub">Preparing registers and folders</div>
+        <div class="sub">Fetching registers & class data</div>
     </div>
 
     <div class="app-root">
-        <!-- ===== TOAST ===== -->
         <div class="toast-container" id="toastContainer"></div>
 
         <!-- ===== HEADER ===== -->
@@ -213,16 +259,30 @@
             <!-- ============ CREATE REGISTER FORM ============ -->
             <div id="createFormContainer">
                 <div class="form-card">
-                    <h4><i class="fas fa-plus-circle"></i> Create Attendance Register</h4>
+                    <h4><i class="fas fa-plus-circle"></i> Open Attendance for a Register</h4>
 
-                    <div class="form-row">
-                        <input type="text" id="classNameInput" placeholder="Class Name (becomes folder) *" required />
-                    </div>
-                    <div class="form-row">
-                        <input type="text" id="lectureNameInput" placeholder="Lecture Name *" required />
-                        <input type="text" id="courseNameInput" placeholder="Course Name *" required />
+                    <!-- ★ REGISTER SELECTOR ★ -->
+                    <div class="reg-selector-wrap">
+                        <label for="registerSelector"><i class="fas fa-address-book"></i> Select Register</label>
+                        <select id="registerSelector">
+                            <option value="">— Loading registers… —</option>
+                        </select>
+                        <div class="reg-meta" id="regMeta"></div>
                     </div>
 
+                    <!-- Auto-filled class / lecture / course (read-only) -->
+                    <div class="field-group">
+                        <label>Class & Lecture Details (auto-filled from register)</label>
+                        <div class="form-row">
+                            <input type="text" id="classNameInput" placeholder="Class Name" readonly disabled />
+                        </div>
+                        <div class="form-row">
+                            <input type="text" id="lectureNameInput" placeholder="Lecture Name" readonly disabled />
+                            <input type="text" id="courseNameInput" placeholder="Course Name" readonly disabled />
+                        </div>
+                    </div>
+
+                    <!-- Required fields -->
                     <div class="field-group">
                         <label>What should students submit?</label>
                         <div class="check-grid" id="requiredFieldsGrid">
@@ -234,16 +294,17 @@
                         </div>
                     </div>
 
+                    <!-- Custom fields -->
                     <div class="field-group">
                         <label>Custom fields (optional)</label>
                         <div class="form-row" style="margin-bottom:6px;">
-                            <input type="text" id="customFieldInput" placeholder="e.g. Programme, Year of Study, Department" />
+                            <input type="text" id="customFieldInput" placeholder="e.g. Programme, Year of Study" />
                             <button type="button" class="btn-primary btn-small" id="addCustomFieldBtn"><i class="fas fa-plus"></i> Add</button>
                         </div>
                         <div id="customFieldsList"></div>
                     </div>
 
-                    <!-- Radius with live map preview -->
+                    <!-- Radius -->
                     <div class="field-group">
                         <label><i class="fas fa-map-marker-alt" style="color:var(--gold);"></i> Allowed Radius</label>
                         <div class="form-row">
@@ -254,16 +315,15 @@
                             </select>
                         </div>
 
-                        <!-- Location capture block -->
                         <div id="locationStatus">
                             <div class="location-preview" id="locationPreview">
                                 <i class="fas fa-satellite-dish"></i>
-                                <span id="locationPreviewText">Ready to capture your precise GPS location when you post.</span>
+                                <span id="locationPreviewText">Ready to capture your precise GPS location.</span>
                             </div>
                         </div>
                         <div style="display:flex;gap:8px;margin-top:8px;">
                             <button type="button" class="btn-outline btn-small" id="captureLocationBtn">
-                                <i class="fas fa-crosshairs"></i> Capture Precise Location Now
+                                <i class="fas fa-crosshairs"></i> Capture Precise Location
                             </button>
                             <button type="button" class="btn-map btn-small" id="previewMapBtn" disabled>
                                 <i class="fas fa-map"></i> Preview on Map
@@ -274,6 +334,7 @@
                         <input type="hidden" id="capturedAccuracy" />
                     </div>
 
+                    <!-- Duration -->
                     <div class="field-group">
                         <label><i class="fas fa-clock" style="color:var(--gold);"></i> Register Accessible For</label>
                         <div class="form-row">
@@ -286,7 +347,7 @@
                     </div>
 
                     <button class="btn-primary full" id="createRegisterBtn" style="margin-top:12px;">
-                        <i class="fas fa-bullhorn"></i> Post Attendance Register
+                        <i class="fas fa-bullhorn"></i> Send Class to Register Members
                     </button>
                 </div>
             </div>
@@ -338,13 +399,14 @@
             <div class="map-legend">
                 <div class="legend-item"><span class="dot lecturer"></span> Lecturer (you)</div>
                 <div class="legend-item"><span class="dot ring"></span> Allowed radius</div>
-                <div class="legend-item"><span class="dot student"></span> Students</div>
+                <div class="legend-item"><span class="dot student"></span> Students (in zone)</div>
+                <div class="legend-item"><span class="dot outsider"></span> Students (outside)</div>
             </div>
             <div class="map-info-bar">
                 <div class="info-item"><strong>Radius:</strong> <span id="mapRadiusText">—</span></div>
                 <div class="info-item"><strong>Precision:</strong> <span id="mapAccuracyText">—</span></div>
                 <div class="info-item"><strong>Coordinates:</strong> <span id="mapCoordsText">—</span></div>
-                <div class="info-item"><strong>Submissions in zone:</strong> <span id="mapStudentsInZone">—</span></div>
+                <div class="info-item"><strong>In zone:</strong> <span id="mapStudentsInZone">—</span></div>
             </div>
         </div>
     </div>
@@ -376,10 +438,12 @@
         // STATE
         // =================================================================
         let currentAdmin = null;
-        let allRegisters = [];
+        let allRegisters = [];               // registers from admin Test/Exams module
+        let allAttendanceRegisters = [];     // attendance registers created here
         let currentFolderClass = null;
         let customFields = [];
         let currentSubmissionsRegister = null;
+        let selectedRegister = null;         // full object of the currently-selected register
         let leafletMap = null;
         let leafletCircle = null;
         let leafletMarker = null;
@@ -428,7 +492,6 @@
             return `${radius} ${unit}`;
         }
 
-        // Haversine distance in meters between two {lat, lng}
         function distanceMeters(a, b) {
             const R = 6371000;
             const toRad = x => x * Math.PI / 180;
@@ -440,7 +503,7 @@
             return 2 * R * Math.asin(Math.sqrt(x));
         }
 
-        // High-accuracy GPS capture — averages 3 readings for extra precision
+        // High-accuracy averaged GPS (3 best readings)
         function getBrowserLocation() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
@@ -475,15 +538,13 @@
                     err => {
                         if (readings.length > 0) { finish(); return; }
                         let msg = 'Could not get your location.';
-                        if (err.code === 1) msg = 'Location permission denied. Please enable it in browser settings.';
-                        if (err.code === 2) msg = 'GPS signal unavailable. Move near a window or outside and try again.';
+                        if (err.code === 1) msg = 'Location permission denied. Enable it in browser settings.';
+                        if (err.code === 2) msg = 'GPS signal unavailable. Move near a window or outside.';
                         if (err.code === 3) msg = 'Location request timed out. Please try again.';
                         reject(new Error(msg));
                     },
                     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
-
-                // Hard cap — return whatever we have after 12 s
                 setTimeout(() => { if (readings.length > 0) finish(); }, 12000);
             });
         }
@@ -500,19 +561,107 @@
             }
             currentAdmin = user;
             loadRegisters();
+            loadAttendanceRegisters();
             setTimeout(() => document.getElementById('appLoader').classList.add('hidden'), 400);
         });
 
         // =================================================================
-        // REALTIME LOAD
+        // LOAD EXISTING REGISTERS (from Test/Exams module)
         // =================================================================
         function loadRegisters() {
-            onValue(ref(db, 'attendanceRegisters'), (snap) => {
+            onValue(ref(db, 'registers'), (snap) => {
                 const data = snap.val();
                 allRegisters = data
                     ? Object.entries(data).map(([id, r]) => ({ id, ...r }))
                     : [];
-                allRegisters.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                allRegisters.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                populateRegisterSelector();
+            });
+        }
+
+        function populateRegisterSelector() {
+            const sel = document.getElementById('registerSelector');
+            if (!sel) return;
+            const currentVal = sel.value;
+
+            if (allRegisters.length === 0) {
+                sel.innerHTML = '<option value="">— No registers available —</option>';
+                return;
+            }
+
+            sel.innerHTML = '<option value="">— Select a register —</option>' +
+                allRegisters.map(r => {
+                    const memberCount = (r.members || []).length;
+                    return `<option value="${r.id}">${escapeHtml(r.name || 'Register')} · ${escapeHtml(r.lecture || '')} · ${memberCount} members</option>`;
+                }).join('');
+
+            // Preserve the current selection if it still exists
+            if (currentVal && allRegisters.some(r => r.id === currentVal)) {
+                sel.value = currentVal;
+                handleRegisterSelect(currentVal);
+            }
+        }
+
+        // When a register is picked → auto-fill the class/lecture/course and show member preview
+        function handleRegisterSelect(registerId) {
+            const meta = document.getElementById('regMeta');
+            const classInp = document.getElementById('classNameInput');
+            const lectureInp = document.getElementById('lectureNameInput');
+            const courseInp = document.getElementById('courseNameInput');
+
+            if (!registerId) {
+                selectedRegister = null;
+                classInp.value = '';
+                lectureInp.value = '';
+                courseInp.value = '';
+                meta.classList.remove('show');
+                meta.innerHTML = '';
+                return;
+            }
+
+            const reg = allRegisters.find(r => r.id === registerId);
+            if (!reg) {
+                selectedRegister = null;
+                return;
+            }
+            selectedRegister = reg;
+
+            classInp.value = reg.name || '';
+            lectureInp.value = reg.lecture || '';
+            // Course: use whatever the register stored, otherwise leave blank
+            courseInp.value = reg.course || reg.courseName || reg.name || '';
+
+            // Build member preview
+            const members = (reg.memberDetails && reg.memberDetails.length)
+                ? reg.memberDetails
+                : (reg.members || []).map(uid => ({ uid, name: uid.slice(0, 8), email: '' }));
+
+            meta.innerHTML = `
+                <div class="row"><i class="fas fa-users"></i> <strong>${members.length}</strong> member(s) will receive this class</div>
+                <div class="row"><i class="fas fa-chalkboard-teacher"></i> Lecturer: <strong>${escapeHtml(reg.lecture || 'N/A')}</strong></div>
+                <div class="row"><i class="fas fa-hashtag"></i> Register ID: <code style="font-size:10px;background:#f0f0f5;padding:1px 8px;border-radius:20px;">${escapeHtml(reg.id)}</code></div>
+                ${members.length > 0 ? `
+                    <div class="members-preview">
+                        ${members.slice(0, 30).map(m => `
+                            <span class="member-chip">${escapeHtml(m.name || 'Member')}</span>
+                        `).join('')}
+                        ${members.length > 30 ? `<span class="member-chip">+${members.length - 30} more</span>` : ''}
+                    </div>
+                ` : '<div style="font-size:11px;color:#c62828;margin-top:4px;"><i class="fas fa-exclamation-triangle"></i> This register has no members</div>'}
+            `;
+            meta.classList.add('show');
+        }
+
+        // =================================================================
+        // LOAD ATTENDANCE REGISTERS (created here)
+        // =================================================================
+        function loadAttendanceRegisters() {
+            onValue(ref(db, 'attendanceRegisters'), (snap) => {
+                const data = snap.val();
+                allAttendanceRegisters = data
+                    ? Object.entries(data).map(([id, r]) => ({ id, ...r }))
+                    : [];
+                allAttendanceRegisters.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 renderFolders();
                 if (currentFolderClass) renderFolderView(currentFolderClass);
             });
@@ -523,7 +672,7 @@
         // =================================================================
         function groupByClass() {
             const groups = {};
-            allRegisters.forEach(r => {
+            allAttendanceRegisters.forEach(r => {
                 const key = (r.className || 'Uncategorised').trim();
                 if (!groups[key]) groups[key] = [];
                 groups[key].push(r);
@@ -543,7 +692,7 @@
                     <div class="empty-state">
                         <i class="fas fa-folder-open"></i>
                         <h3>No attendance registers yet</h3>
-                        <p>Create your first register using the form above.</p>
+                        <p>Pick a register above and send the first class.</p>
                     </div>`;
                 return;
             }
@@ -573,9 +722,6 @@
             });
         }
 
-        // =================================================================
-        // SINGLE FOLDER VIEW
-        // =================================================================
         function openFolder(className) {
             currentFolderClass = className;
             document.getElementById('foldersView').style.display = 'none';
@@ -588,7 +734,7 @@
 
         function renderFolderView(className) {
             const container = document.getElementById('folderRegistersList');
-            const regs = allRegisters.filter(r => (r.className || 'Uncategorised').trim() === className);
+            const regs = allAttendanceRegisters.filter(r => (r.className || 'Uncategorised').trim() === className);
 
             document.getElementById('folderRegistersCount').textContent = regs.length;
 
@@ -607,12 +753,14 @@
                     return labels[f] || f;
                 }).concat(r.customFields || []);
                 const hasLocation = r.latitude != null && r.longitude != null;
+                const memberCount = (r.memberUids || []).length;
                 return `
                     <div class="register-card" data-id="${r.id}">
                         <div class="register-header">
                             <div>
                                 <div class="register-title">${escapeHtml(r.lectureName || 'Lecture')} — ${escapeHtml(r.courseName || 'Course')}</div>
                                 <div class="register-meta">
+                                    <div><i class="fas fa-users"></i> Sent to <strong>${memberCount}</strong> register member(s)</div>
                                     <div><i class="fas fa-clock"></i> Created: ${formatDate(r.createdAt)}</div>
                                     <div><i class="fas fa-hourglass-half"></i> ${isActive ? timeRemaining(r.expiresAt) : 'Expired ' + formatDate(r.expiresAt)}</div>
                                     <div><i class="fas fa-map-marker-alt"></i> Radius: ${formatRadius(r.radius, r.radiusUnit)}${hasLocation ? ' · 📍 ' + r.latitude.toFixed(5) + ', ' + r.longitude.toFixed(5) : ''}${r.locationAccuracy ? ' (±' + Math.round(r.locationAccuracy) + 'm)' : ''}</div>
@@ -623,11 +771,12 @@
                         </div>
                         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                             <span class="chip" style="background:rgba(46,204,113,0.12);color:#2e7d32;font-weight:800;">
-                                <i class="fas fa-users"></i> ${subs} submission${subs !== 1 ? 's' : ''}
+                                <i class="fas fa-check-circle"></i> ${subs} submission${subs !== 1 ? 's' : ''}
                             </span>
+                            ${r.registerName ? `<span class="chip" style="background:rgba(59,130,246,0.12);color:#2563eb;font-weight:800;"><i class="fas fa-address-book"></i> ${escapeHtml(r.registerName)}</span>` : ''}
                         </div>
                         <div class="register-actions">
-                            <button class="btn-map btn-small" data-action="map" data-id="${r.id}" ${hasLocation ? '' : 'disabled style="opacity:0.5;cursor:not-allowed;"'}>
+                            <button class="btn-map btn-small" data-action="map" data-id="${r.id}" ${hasLocation ? '' : 'disabled'}>
                                 <i class="fas fa-map-marked-alt"></i> Show on Map
                             </button>
                             <button class="btn-primary btn-small" data-action="view" data-id="${r.id}">
@@ -711,7 +860,14 @@
         }
 
         // =================================================================
-        // LOCATION CAPTURE (before creating a register)
+        // REGISTER SELECTOR EVENTS
+        // =================================================================
+        document.getElementById('registerSelector').addEventListener('change', function () {
+            handleRegisterSelect(this.value);
+        });
+
+        // =================================================================
+        // LOCATION CAPTURE
         // =================================================================
         const captureBtn      = document.getElementById('captureLocationBtn');
         const previewMapBtn   = document.getElementById('previewMapBtn');
@@ -759,11 +915,10 @@
                 showToast(err.message, 'error');
             } finally {
                 captureBtn.disabled = false;
-                captureBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Capture Precise Location Now';
+                captureBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Capture Precise Location';
             }
         });
 
-        // Preview map with the currently-selected radius
         previewMapBtn.addEventListener('click', () => {
             const lat = parseFloat(latInput.value);
             const lng = parseFloat(lngInput.value);
@@ -781,10 +936,22 @@
         });
 
         // =================================================================
-        // CREATE REGISTER
+        // CREATE REGISTER — sends to selected register members ONLY
         // =================================================================
         document.getElementById('createRegisterBtn').addEventListener('click', async () => {
             const btn = document.getElementById('createRegisterBtn');
+
+            if (!selectedRegister) {
+                showToast('Please select a register first.', 'error');
+                return;
+            }
+
+            const memberUids = selectedRegister.members || [];
+            if (memberUids.length === 0) {
+                showToast('The selected register has no members.', 'error');
+                return;
+            }
+
             const className   = document.getElementById('classNameInput').value.trim();
             const lectureName = document.getElementById('lectureNameInput').value.trim();
             const courseName  = document.getElementById('courseNameInput').value.trim();
@@ -796,16 +963,16 @@
             const requiredFields = [];
             document.querySelectorAll('#requiredFieldsGrid input:checked').forEach(cb => requiredFields.push(cb.value));
 
-            if (!className)   { showToast('Please enter the class name.', 'error'); return; }
-            if (!lectureName) { showToast('Please enter the lecture name.', 'error'); return; }
-            if (!courseName)  { showToast('Please enter the course name.', 'error'); return; }
+            if (!className)   { showToast('Class name missing.', 'error'); return; }
+            if (!lectureName) { showToast('Lecture name missing.', 'error'); return; }
+            if (!courseName)  { showToast('Course name missing.', 'error'); return; }
             if (requiredFields.length === 0 && customFields.length === 0) {
                 showToast('Select at least one field for students to submit.', 'error'); return;
             }
             if (!radius || radius <= 0) { showToast('Please set a valid radius.', 'error'); return; }
             if (!duration || duration <= 0) { showToast('Please set a valid duration.', 'error'); return; }
 
-            // Prefer the already-captured location; otherwise capture now
+            // Capture location if not already done
             let loc;
             if (latInput.value && lngInput.value) {
                 loc = {
@@ -823,45 +990,60 @@
                 } catch (err) {
                     showToast(err.message, 'error');
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-bullhorn"></i> Post Attendance Register';
+                    btn.innerHTML = '<i class="fas fa-bullhorn"></i> Send Class to Register Members';
                     return;
                 }
             }
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
 
             const now = Date.now();
             const durationMs = durationUnit === 'hours' ? duration * 3600 * 1000 : duration * 60 * 1000;
             const expiresAt = now + durationMs;
 
             try {
+                // 1. Write the attendance register with register + member data
                 const newRef = push(ref(db, 'attendanceRegisters'));
                 await set(newRef, {
+                    // Target register info
+                    registerId:   selectedRegister.id,
+                    registerName: selectedRegister.name || '',
+                    memberUids:   memberUids,
+                    memberCount:  memberUids.length,
+
+                    // Class info
                     className, lectureName, courseName,
+
+                    // Fields
                     requiredFields,
                     customFields: [...customFields],
+
+                    // Geo-fence
                     radius, radiusUnit,
                     latitude:  loc.lat,
                     longitude: loc.lng,
                     locationAccuracy: loc.accuracy || null,
+
+                    // Timing
                     duration, durationUnit,
                     createdAt: now,
                     expiresAt,
                     active: true,
                     submissionCount: 0,
+
                     createdBy: currentAdmin.email,
                     createdByUid: currentAdmin.uid
                 });
 
-                // Fan-out notification to all students
+                // 2. Send the popup ONLY to register members
                 const notifRef = push(ref(db, 'inAppNotifications'));
                 await set(notifRef, {
                     title: `📋 Attendance: ${lectureName}`,
                     message: `${courseName} — Check in now. You have ${duration} ${durationUnit} to submit.`,
                     mediaUrl: '',
                     mediaType: 'image',
-                    recipientType: 'all',
-                    userIds: 'all',
+                    recipientType: 'specific',          // ← targeted
+                    userIds: memberUids,                // ← only register members
                     createdAt: serverTimestamp(),
                     read: false,
                     startDate: null,
@@ -872,7 +1054,6 @@
                     occurrencesShown: 0,
                     active: true,
                     attendanceRegisterId: newRef.key,
-                    // Geo-fence data → student app uses this to filter by distance
                     geofence: {
                         latitude: loc.lat,
                         longitude: loc.lng,
@@ -881,12 +1062,11 @@
                     }
                 });
 
-                showToast(`Register "${lectureName}" created for ${className}!`, 'success');
+                showToast(`Class sent to ${memberUids.length} member(s) of "${selectedRegister.name}".`, 'success');
 
-                // Reset form
-                document.getElementById('classNameInput').value = '';
-                document.getElementById('lectureNameInput').value = '';
-                document.getElementById('courseNameInput').value = '';
+                // Reset form (keep register selection cleared so admin can pick next one)
+                document.getElementById('registerSelector').value = '';
+                handleRegisterSelect('');
                 document.getElementById('customFieldInput').value = '';
                 customFields = [];
                 renderCustomFieldsChips();
@@ -896,17 +1076,16 @@
                     cb.checked = defaults.includes(cb.value);
                     item.classList.toggle('checked', cb.checked);
                 });
-                // Clear captured location so next post re-captures
                 latInput.value = ''; lngInput.value = ''; accInput.value = '';
                 previewMapBtn.disabled = true;
                 resetLocationPreview();
-                locationText.textContent = 'Ready to capture your precise GPS location when you post.';
+                locationText.textContent = 'Ready to capture your precise GPS location.';
 
             } catch (err) {
                 showToast('Error creating register: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-bullhorn"></i> Post Attendance Register';
+                btn.innerHTML = '<i class="fas fa-bullhorn"></i> Send Class to Register Members';
             }
         });
 
@@ -914,7 +1093,7 @@
         // TOGGLE / DELETE
         // =================================================================
         async function toggleRegister(id) {
-            const r = allRegisters.find(x => x.id === id);
+            const r = allAttendanceRegisters.find(x => x.id === id);
             if (!r) return;
             await update(ref(db, `attendanceRegisters/${id}`), { active: !r.active });
             showToast(!r.active ? 'Register activated' : 'Register deactivated', 'info');
@@ -932,7 +1111,7 @@
         }
 
         // =================================================================
-        // MAP MODAL — OpenStreetMap + Leaflet + Perimeter Circle
+        // MAP MODAL — OSM + Perimeter
         // =================================================================
         const mapModal    = document.getElementById('mapModal');
         const mapCloseBtn = document.getElementById('mapCloseBtn');
@@ -949,21 +1128,18 @@
         }
 
         async function showLocationMap(registerId) {
-            const r = allRegisters.find(x => x.id === registerId);
+            const r = allAttendanceRegisters.find(x => x.id === registerId);
             if (!r) { showToast('Register not found.', 'error'); return; }
             if (r.latitude == null || r.longitude == null) {
                 showToast('No location saved for this register.', 'warning');
                 return;
             }
-
-            // Load submissions first so we can plot student pins
             let subs = [];
             try {
                 const snap = await get(ref(db, `attendanceSubmissions/${registerId}`));
                 const data = snap.val() || {};
                 subs = Object.entries(data).map(([id, s]) => ({ id, ...s }));
-            } catch (e) { /* non-fatal */ }
-
+            } catch (e) {}
             openMapModal({
                 title: `${r.lectureName} — ${r.className}`,
                 lat: r.latitude,
@@ -984,10 +1160,7 @@
                 accuracy ? `±${Math.round(accuracy)} m` : 'unknown';
             document.getElementById('mapCoordsText').textContent =
                 `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-
             const radiusMeters = radiusToMeters(radius, radiusUnit);
-
-            // Count students inside the ring
             const inZone = (students || []).filter(s =>
                 s.latitude != null && s.longitude != null &&
                 distanceMeters({ lat, lng }, { lat: s.latitude, lng: s.longitude }) <= radiusMeters
@@ -997,44 +1170,31 @@
 
             mapModal.classList.add('open');
 
-            // Leaflet needs a small delay after the modal becomes visible
             setTimeout(() => {
                 destroyMap();
-                leafletMap = L.map(mapEl, {
-                    zoomControl: true,
-                    attributionControl: true
-                }).setView([lat, lng], 16);
+                leafletMap = L.map(mapEl, { zoomControl: true, attributionControl: true })
+                    .setView([lat, lng], 16);
 
-                // OpenStreetMap tiles
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(leafletMap);
 
-                // Perimeter ring (the geo-fence)
                 leafletCircle = L.circle([lat, lng], {
                     radius: radiusMeters,
-                    color: '#f5b042',
-                    weight: 3,
-                    opacity: 0.9,
-                    fillColor: '#f5b042',
-                    fillOpacity: 0.15,
+                    color: '#f5b042', weight: 3, opacity: 0.9,
+                    fillColor: '#f5b042', fillOpacity: 0.15,
                     dashArray: '8,8'
                 }).addTo(leafletMap);
 
-                // Optional accuracy halo (smaller, subtle)
                 if (accuracy && accuracy > 0 && accuracy < radiusMeters) {
                     L.circle([lat, lng], {
                         radius: accuracy,
-                        color: '#3b82f6',
-                        weight: 1,
-                        opacity: 0.6,
-                        fillColor: '#3b82f6',
-                        fillOpacity: 0.08
+                        color: '#3b82f6', weight: 1, opacity: 0.6,
+                        fillColor: '#3b82f6', fillOpacity: 0.08
                     }).addTo(leafletMap);
                 }
 
-                // Lecturer pin (custom blue dot)
                 const lecturerIcon = L.divIcon({
                     className: '',
                     html: '<div class="map-pin-icon"><i class="fas fa-chalkboard-teacher"></i></div>',
@@ -1055,29 +1215,25 @@
                     </div>
                 `);
 
-                // Student pins (green dots)
-                const studentIcon = L.divIcon({
-                    className: '',
-                    html: '<div class="student-pin-icon"></div>',
-                    iconSize: [18, 18],
-                    iconAnchor: [9, 9]
-                });
-
                 (students || []).forEach(s => {
                     if (s.latitude == null || s.longitude == null) return;
                     const dist = distanceMeters({ lat, lng }, { lat: s.latitude, lng: s.longitude });
                     const inside = dist <= radiusMeters;
-                    const marker = L.marker([s.latitude, s.longitude], { icon: studentIcon }).addTo(leafletMap);
-                    const name = s.name || 'Student';
-                    const email = s.email || '';
+                    const icon = L.divIcon({
+                        className: '',
+                        html: `<div class="${inside ? 'student-pin-icon' : 'outsider-pin-icon'}"></div>`,
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    });
+                    const marker = L.marker([s.latitude, s.longitude], { icon }).addTo(leafletMap);
                     marker.bindPopup(`
                         <div style="font-family:Inter,sans-serif;font-size:12px;">
                             <strong style="color:${inside ? '#2ecc71' : '#e74c3c'};">
                                 ${inside ? '✅ Inside zone' : '❌ Outside zone'}
                             </strong><br>
-                            <strong>${escapeHtml(name)}</strong><br>
+                            <strong>${escapeHtml(s.name || 'Student')}</strong><br>
                             <span style="color:#5f6377;font-size:11px;">
-                                ${escapeHtml(email)}<br>
+                                ${escapeHtml(s.email || '')}<br>
                                 Distance: ${dist.toFixed(1)} m
                             </span>
                         </div>
@@ -1085,15 +1241,12 @@
                     leafletStudentMarkers.push(marker);
                 });
 
-                // Fit the view to include the ring (and any outlier students)
                 try {
                     const group = L.featureGroup([leafletCircle, leafletMarker, ...leafletStudentMarkers]);
                     leafletMap.fitBounds(group.getBounds().pad(0.25));
                 } catch (e) {
                     leafletMap.setView([lat, lng], 16);
                 }
-
-                // Ensure tiles render fully (modal layout shift)
                 setTimeout(() => leafletMap.invalidateSize(), 250);
             }, 120);
         }
@@ -1109,14 +1262,14 @@
         // SUBMISSIONS MODAL
         // =================================================================
         function showSubmissionsModal(registerId) {
-            const r = allRegisters.find(x => x.id === registerId);
+            const r = allAttendanceRegisters.find(x => x.id === registerId);
             if (!r) return;
             currentSubmissionsRegister = r;
 
             document.getElementById('submissionsTitle').textContent =
                 `${r.lectureName} — ${r.courseName}`;
             document.getElementById('submissionsMeta').innerHTML =
-                `Class: <strong>${escapeHtml(r.className)}</strong> · Radius: <strong>${formatRadius(r.radius, r.radiusUnit)}</strong> · ${formatDate(r.createdAt)}`;
+                `Class: <strong>${escapeHtml(r.className)}</strong> · Target: <strong>${(r.memberUids || []).length} members</strong> · Radius: <strong>${formatRadius(r.radius, r.radiusUnit)}</strong>`;
 
             const content = document.getElementById('submissionsContent');
             content.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
@@ -1139,12 +1292,11 @@
 
                 const fields = [...(r.requiredFields || []), ...(r.customFields || [])];
                 const labelMap = { name:'Name', email:'Email', nrc:'NRC', phone:'Phone', studentId:'Student ID' };
-
                 subs.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
 
                 content.innerHTML = `
                     <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
-                        <strong>${subs.length}</strong> submission${subs.length !== 1 ? 's' : ''}
+                        <strong>${subs.length}</strong> / ${(r.memberUids || []).length} member(s) checked in
                     </div>
                     <div class="sub-table-wrap">
                         <table class="sub-table">
@@ -1181,7 +1333,7 @@
         });
 
         // =================================================================
-        // DOWNLOAD HELPERS
+        // EXPORTS
         // =================================================================
         async function fetchSubmissions(registerId) {
             const snap = await get(ref(db, `attendanceSubmissions/${registerId}`));
@@ -1200,26 +1352,26 @@
                 s.distance != null ? s.distance.toFixed(1) : '',
                 formatDate(s.submittedAt)
             ]);
-            return { headers, rows, fields, labelMap };
+            return { headers, rows };
         }
 
         async function downloadRegisterExcel(registerId) {
-            const r = allRegisters.find(x => x.id === registerId);
+            const r = allAttendanceRegisters.find(x => x.id === registerId);
             if (!r) return;
             const subs = await fetchSubmissions(registerId);
             if (subs.length === 0) { showToast('No submissions to export.', 'warning'); return; }
 
             const { headers, rows } = buildTableData(r, subs);
-
             const wb = XLSX.utils.book_new();
             const sheetData = [
                 [`Attendance Register`],
+                [`Register: ${r.registerName || '—'}`],
                 [`Class: ${r.className}`],
                 [`Lecture: ${r.lectureName}`],
                 [`Course: ${r.courseName}`],
+                [`Target Members: ${(r.memberUids || []).length}`],
                 [`Radius: ${formatRadius(r.radius, r.radiusUnit)}`],
                 [`Location: ${r.latitude?.toFixed(6) ?? '—'}, ${r.longitude?.toFixed(6) ?? '—'}`],
-                [`Precision: ${r.locationAccuracy ? '±' + Math.round(r.locationAccuracy) + ' m' : 'unknown'}`],
                 [`Created: ${formatDate(r.createdAt)}`],
                 [`Expires: ${formatDate(r.expiresAt)}`],
                 [],
@@ -1228,20 +1380,18 @@
             ];
             const ws = XLSX.utils.aoa_to_sheet(sheetData);
             ws['!cols'] = headers.map((h, i) => ({ wch: i === 0 ? 5 : Math.max(12, String(h).length + 4) }));
-
             XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
             XLSX.writeFile(wb, `Attendance_${r.className}_${r.lectureName}.xlsx`.replace(/\s+/g, '_'));
             showToast('Excel downloaded!', 'success');
         }
 
         async function downloadRegisterPDF(registerId) {
-            const r = allRegisters.find(x => x.id === registerId);
+            const r = allAttendanceRegisters.find(x => x.id === registerId);
             if (!r) return;
             const subs = await fetchSubmissions(registerId);
             if (subs.length === 0) { showToast('No submissions to export.', 'warning'); return; }
 
             const { headers, rows } = buildTableData(r, subs);
-
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
@@ -1255,15 +1405,15 @@
             doc.setTextColor(26, 29, 40);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(11);
-            doc.text(`Class: ${r.className}`, 14, 32);
-            doc.text(`Lecture: ${r.lectureName}`, 14, 38);
-            doc.text(`Course: ${r.courseName}`, 14, 44);
-            doc.text(`Radius: ${formatRadius(r.radius, r.radiusUnit)}`, 14, 50);
-            doc.text(`Location: ${r.latitude?.toFixed(6) ?? '—'}, ${r.longitude?.toFixed(6) ?? '—'}`, 14, 56);
-            doc.text(`Created: ${formatDate(r.createdAt)}`, 150, 32);
-            doc.text(`Expires: ${formatDate(r.expiresAt)}`, 150, 38);
-            doc.text(`Total submissions: ${subs.length}`, 150, 44);
-            doc.text(`Precision: ${r.locationAccuracy ? '±' + Math.round(r.locationAccuracy) + ' m' : 'unknown'}`, 150, 50);
+            doc.text(`Register: ${r.registerName || '—'}`, 14, 32);
+            doc.text(`Class: ${r.className}`, 14, 38);
+            doc.text(`Lecture: ${r.lectureName}`, 14, 44);
+            doc.text(`Course: ${r.courseName}`, 14, 50);
+            doc.text(`Radius: ${formatRadius(r.radius, r.radiusUnit)}`, 14, 56);
+            doc.text(`Target Members: ${(r.memberUids || []).length}`, 150, 32);
+            doc.text(`Created: ${formatDate(r.createdAt)}`, 150, 38);
+            doc.text(`Expires: ${formatDate(r.expiresAt)}`, 150, 44);
+            doc.text(`Total submissions: ${subs.length}`, 150, 50);
 
             doc.autoTable({
                 head: [headers],
@@ -1293,9 +1443,9 @@
         document.getElementById('backToAdminBtn').addEventListener('click', () => {
             window.location.href = 'admin.html';
         });
-
         document.getElementById('refreshBtn').addEventListener('click', () => {
             loadRegisters();
+            loadAttendanceRegisters();
             showToast('Refreshed', 'info');
         });
 
@@ -1304,7 +1454,7 @@
             renderFolders();
         }, 60000);
 
-        console.log('✅ UTOM Attendance ready — precise GPS + OpenStreetMap perimeter.');
+        console.log('✅ UTOM Attendance ready — register-scoped classes.');
     </script>
 </body>
 </html>
