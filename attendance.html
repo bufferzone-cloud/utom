@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>UTOM · Attendance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- PDF / Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --gold: #F5B042; --gold-dark: #c47f1a; --gold-light: #fff8ed; --orange: #ff6b00;
+            --bg: #f2f4f8; --card-bg: #ffffff; --text: #1a1d28; --text-secondary: #5f6377; --border-color: #e5e8ed;
+            --green: #2ecc71; --red: #e63946; --yellow: #f39c12; --blue: #3b82f6;
+            --shadow-sm: 0 2px 12px rgba(0,0,0,0.04);
+            --shadow-md: 0 8px 30px rgba(0,0,0,0.06);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.10);
+            --radius-sm: 12px; --radius-md: 18px; --radius-lg: 24px;
+            --transition: 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+            --header-height: 70px;
+        }
+        html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; width: 100%; }
+        /* ===== LOADER ===== */
+        #appLoader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.6s ease; }
+        #appLoader.hidden { opacity: 0; pointer-events: none; }
+        .loader-spinner { width: 48px; height: 48px; border: 5px solid #e5e7eb; border-top: 5px solid var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #appLoader p { margin-top: 18px; font-weight: 700; color: var(--text-secondary); font-size: 15px; }
+        #appLoader .sub { font-size: 12px; color: #b0b4c0; margin-top: 4px; font-weight: 500; }
+        /* ===== APP ROOT ===== */
+        .app-root { display: flex; flex-direction: column; height: 100vh; width: 100%; background: var(--bg); overflow: hidden; position: relative; }
+        /* ===== HEADER ===== */
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px 20px; background: var(--bg); flex-shrink: 0; position: relative; z-index: 10; border-bottom: 1px solid rgba(0,0,0,0.04); height: var(--header-height); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .back-btn { width: 44px; height: 44px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); color: var(--text); font-size: 17px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
+        .back-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-md); border-color: rgba(245,176,66,0.2); }
+        .header-title { font-size: 20px; font-weight: 900; background: linear-gradient(135deg, #d4952a, #f5b042, #ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
+        .header-sub { font-size: 10px; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; margin-top: -2px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .icon-btn { width: 44px; height: 44px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); color: var(--text); font-size: 17px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
+        .icon-btn:hover { transform: scale(1.05); border-color: rgba(245,176,66,0.2); }
+        /* ===== CONTENT ===== */
+        .app-content { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 0 16px 100px 16px; -webkit-overflow-scrolling: touch; width: 100%; }
+        .app-content::-webkit-scrollbar { width: 4px; }
+        .app-content::-webkit-scrollbar-thumb { background: rgba(245,176,66,0.35); border-radius: 20px; }
+        /* ===== CARDS / FORM ===== */
+        .form-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 20px 22px; margin-bottom: 16px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); }
+        .form-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .form-card h4 i { background: linear-gradient(135deg,#d4952a,#f5b042); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .form-row input, .form-row select, .form-row textarea {
+            flex: 1; min-width: 120px; padding: 10px 18px; border-radius: 40px;
+            border: 1.5px solid rgba(229,232,237,0.6); font-size: 12px; font-family: inherit;
+            background: rgba(250,251,252,0.8); color: var(--text); transition: var(--transition);
+        }
+        .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+            outline: none; border-color: #f5b042; box-shadow: 0 0 0 4px rgba(245,176,66,0.08); background: #fff;
+        }
+        .field-group { margin-bottom: 12px; }
+        .field-group > label { display: block; font-weight: 700; font-size: 12px; margin-bottom: 6px; color: var(--text); }
+        .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 4px; }
+        .check-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(250,251,252,0.8); border-radius: 30px; border: 1.5px solid rgba(229,232,237,0.6); cursor: pointer; transition: var(--transition); font-size: 12px; font-weight: 600; }
+        .check-item:hover { border-color: #f5b042; }
+        .check-item input[type="checkbox"] { accent-color: #f5b042; width: 16px; height: 16px; cursor: pointer; }
+        .check-item.checked { background: rgba(245,176,66,0.10); border-color: #f5b042; }
+        /* ===== LOCATION PREVIEW ===== */
+        .location-preview { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(46,204,113,0.10); border-radius: 30px; border: 1.5px solid rgba(46,204,113,0.25); font-size: 11px; font-weight: 600; color: #1e6f42; margin-top: 6px; }
+        .location-preview i { color: #2ecc71; font-size: 15px; }
+        .location-preview.error { background: rgba(231,76,60,0.10); border-color: rgba(231,76,60,0.25); color: #a6201a; }
+        .location-preview.error i { color: #e74c3c; }
+        /* ===== BUTTONS ===== */
+        .btn-primary { background: linear-gradient(135deg,#f5b042,#ff6b00); border: none; padding: 12px 28px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; transition: var(--transition); box-shadow: 0 4px 20px rgba(245,176,66,0.25); font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(245,176,66,0.30); }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-primary.full { width: 100%; }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none !important; }
+        .btn-outline { background: transparent; border: 2px solid rgba(224,216,200,0.4); padding: 10px 24px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: var(--transition); color: #5f6377; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-outline:hover { border-color: #f5b042; color: #d4952a; background: rgba(255,253,247,0.4); transform: translateY(-2px); }
+        .btn-small { padding: 6px 14px; font-size: 10px; }
+        .btn-danger { background: linear-gradient(135deg,#e74c3c,#c0392b); border: none; padding: 8px 20px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; font-size: 11px; transition: var(--transition); box-shadow: 0 3px 12px rgba(231,76,60,0.2); display: inline-flex; align-items: center; gap: 6px; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(231,76,60,0.25); }
+        .btn-success { background: linear-gradient(135deg,#2ecc71,#27ae60); border: none; padding: 8px 20px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; font-size: 11px; transition: var(--transition); box-shadow: 0 3px 12px rgba(46,204,113,0.2); display: inline-flex; align-items: center; gap: 6px; }
+        .btn-success:hover { transform: translateY(-2px); }
+        .btn-map { background: linear-gradient(135deg,#3b82f6,#2563eb); border: none; padding: 8px 20px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #fff; font-size: 11px; transition: var(--transition); box-shadow: 0 3px 12px rgba(59,130,246,0.25); display: inline-flex; align-items: center; gap: 6px; }
+        .btn-map:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
+        /* ===== FOLDER / REGISTER CARDS ===== */
+        .folder-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); cursor: pointer; transition: var(--transition); }
+        .folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(245,176,66,0.2); }
+        .folder-icon { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg,#f5b042,#ff6b00); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(245,176,66,0.25); }
+        .folder-info { flex: 1; min-width: 0; }
+        .folder-name { font-weight: 800; font-size: 15px; color: var(--text); }
+        .folder-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .folder-count { background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 4px 14px; border-radius: 30px; font-size: 11px; font-weight: 800; }
+        .register-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.5); transition: var(--transition); }
+        .register-card:hover { box-shadow: var(--shadow-md); }
+        .register-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+        .register-title { font-weight: 800; font-size: 15px; color: var(--text); }
+        .register-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.7; }
+        .register-meta i { color: var(--gold-dark); width: 14px; }
+        .register-status { padding: 3px 14px; border-radius: 30px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-expired { background: #fde8e8; color: #721c24; }
+        .register-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+        /* ===== MODAL ===== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(12px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: rgba(255,255,255,0.97); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 26px 24px; box-shadow: var(--shadow-lg); animation: modalIn 0.3s cubic-bezier(0.25,0.46,0.45,0.94); border: 1px solid rgba(255,255,255,0.2); position: relative; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 22px; color: #8b8fa3; cursor: pointer; padding: 4px; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; transition: var(--transition); z-index: 5; }
+        .modal-close:hover { background: rgba(231,76,60,0.05); color: #e74c3c; transform: rotate(90deg); }
+        .modal-box h3 { font-size: 17px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .modal-box h3 i { background: linear-gradient(135deg,#d4952a,#f5b042); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        /* ===== MAP MODAL ===== */
+        .map-modal-box { max-width: 900px; padding: 0; overflow: hidden; background: #fff; }
+        .map-modal-header { padding: 16px 22px; background: linear-gradient(135deg,#d4952a,#f5b042,#ff6b00); color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .map-modal-header h3 { color: #fff; margin: 0; font-size: 15px; }
+        .map-modal-header h3 i { -webkit-text-fill-color: #fff; color: #fff; }
+        .map-modal-header .close-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+        .map-modal-header .close-btn:hover { background: rgba(231,76,60,0.75); transform: rotate(90deg); }
+        #locationMap { width: 100%; height: 460px; background: #e5e8ed; }
+        .map-info-bar { padding: 12px 22px; background: rgba(250,251,252,0.9); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--border-color); }
+        .map-info-bar .info-item { font-size: 11px; color: var(--text-secondary); }
+        .map-info-bar .info-item strong { color: var(--text); font-weight: 700; }
+        .map-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; padding: 8px 22px; background: rgba(250,251,252,0.9); border-top: 1px solid var(--border-color); }
+        .map-legend .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-weight: 600; }
+        .map-legend .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .map-legend .dot.lecturer { background: #3b82f6; border: 2px solid #fff; box-shadow: 0 0 0 1px #3b82f6; }
+        .map-legend .dot.student { background: #2ecc71; border: 2px solid #fff; box-shadow: 0 0 0 1px #2ecc71; }
+        .map-legend .dot.ring { background: transparent; border: 2px dashed #f5b042; }
+        /* ===== SUBMISSION TABLE ===== */
+        .sub-table-wrap { overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .sub-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 540px; }
+        .sub-table th { background: linear-gradient(135deg,#d4952a,#f5b042); color: #fff; padding: 10px 12px; text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .sub-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); color: var(--text); }
+        .sub-table tr:last-child td { border-bottom: none; }
+        .sub-table tr:hover td { background: rgba(245,176,66,0.04); }
+        /* ===== EMPTY ===== */
+        .empty-state { text-align: center; padding: 44px 20px; color: #8b8fa3; font-size: 13px; }
+        .empty-state i { font-size: 46px; opacity: 0.25; display: block; margin-bottom: 12px; }
+        .empty-state h3 { font-size: 15px; color: #888; margin-bottom: 4px; }
+        /* ===== TOAST ===== */
+        .toast-container { position: fixed; top: 76px; right: 16px; z-index: 4000; display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
+        .toast { background: rgba(26,29,40,0.92); backdrop-filter: blur(16px); color: #fff; padding: 12px 22px; border-radius: 30px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideInToast 0.4s cubic-bezier(0.25,0.46,0.45,0.94); font-weight: 500; font-size: 12px; border-left: 3px solid var(--gold); }
+        @keyframes slideInToast { from { opacity: 0; transform: translateX(30px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+        /* ===== CHIPS ===== */
+        .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 4px 12px 4px 14px; border-radius: 30px; font-size: 11px; font-weight: 700; margin: 3px 3px 0 0; }
+        .chip .chip-x { cursor: pointer; opacity: 0.7; font-weight: 900; padding: 0 2px; }
+        .chip .chip-x:hover { opacity: 1; color: #e74c3c; }
+        /* ===== SECTION TITLE ===== */
+        .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 10px 0; padding: 0 2px; }
+        .section-title h2 { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .section-title h2 i { color: var(--gold); }
+        .section-title .count-badge { font-size: 11px; background: rgba(245,176,66,0.12); color: var(--gold-dark); padding: 3px 12px; border-radius: 30px; font-weight: 800; }
+        /* ===== LEAFLET FIXES ===== */
+        .leaflet-container { font-family: inherit !important; }
+        .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important; }
+        .leaflet-popup-tip { box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important; }
+        .map-pin-icon { background: #3b82f6; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; }
+        .student-pin-icon { background: #2ecc71; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+        @media (max-width: 520px) {
+            .app-content { padding: 0 10px 90px 10px; }
+            .header { padding: 10px 12px 8px 12px; height: 62px; }
+            .header-title { font-size: 17px; }
+            .back-btn, .icon-btn { width: 38px; height: 38px; font-size: 15px; }
+            .form-card { padding: 16px; }
+            .modal-box { padding: 22px 18px; }
+            .map-modal-box { padding: 0; }
+            #locationMap { height: 360px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOADER ===== -->
+    <div id="appLoader">
+        <div class="loader-spinner"></div>
+        <p>Loading Attendance…</p>
+        <div class="sub">Preparing registers and folders</div>
+    </div>
+
+    <div class="app-root">
+        <!-- ===== TOAST ===== -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="header-left">
+                <div class="back-btn" id="backToAdminBtn" title="Back to Admin">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div>
+                    <div class="header-title">Attendance</div>
+                    <div class="header-sub">UTOM · Admin</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="icon-btn" id="refreshBtn" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CONTENT ===== -->
+        <div class="app-content" id="appContent">
+
+            <!-- ============ CREATE REGISTER FORM ============ -->
+            <div id="createFormContainer">
+                <div class="form-card">
+                    <h4><i class="fas fa-plus-circle"></i> Create Attendance Register</h4>
+
+                    <div class="form-row">
+                        <input type="text" id="classNameInput" placeholder="Class Name (becomes folder) *" required />
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="lectureNameInput" placeholder="Lecture Name *" required />
+                        <input type="text" id="courseNameInput" placeholder="Course Name *" required />
+                    </div>
+
+                    <div class="field-group">
+                        <label>What should students submit?</label>
+                        <div class="check-grid" id="requiredFieldsGrid">
+                            <label class="check-item checked"><input type="checkbox" value="name" checked /> Name</label>
+                            <label class="check-item checked"><input type="checkbox" value="email" checked /> Email</label>
+                            <label class="check-item"><input type="checkbox" value="nrc" /> NRC</label>
+                            <label class="check-item"><input type="checkbox" value="phone" /> Phone Number</label>
+                            <label class="check-item"><input type="checkbox" value="studentId" /> Student ID</label>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Custom fields (optional)</label>
+                        <div class="form-row" style="margin-bottom:6px;">
+                            <input type="text" id="customFieldInput" placeholder="e.g. Programme, Year of Study, Department" />
+                            <button type="button" class="btn-primary btn-small" id="addCustomFieldBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div id="customFieldsList"></div>
+                    </div>
+
+                    <!-- Radius with live map preview -->
+                    <div class="field-group">
+                        <label><i class="fas fa-map-marker-alt" style="color:var(--gold);"></i> Allowed Radius</label>
+                        <div class="form-row">
+                            <input type="number" id="radiusInput" placeholder="Radius" value="200" min="1" step="any" />
+                            <select id="radiusUnitInput" style="flex:0 0 130px;">
+                                <option value="meters" selected>Meters</option>
+                                <option value="kilometers">Kilometers</option>
+                            </select>
+                        </div>
+
+                        <!-- Location capture block -->
+                        <div id="locationStatus">
+                            <div class="location-preview" id="locationPreview">
+                                <i class="fas fa-satellite-dish"></i>
+                                <span id="locationPreviewText">Ready to capture your precise GPS location when you post.</span>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button type="button" class="btn-outline btn-small" id="captureLocationBtn">
+                                <i class="fas fa-crosshairs"></i> Capture Precise Location Now
+                            </button>
+                            <button type="button" class="btn-map btn-small" id="previewMapBtn" disabled>
+                                <i class="fas fa-map"></i> Preview on Map
+                            </button>
+                        </div>
+                        <input type="hidden" id="capturedLat" />
+                        <input type="hidden" id="capturedLng" />
+                        <input type="hidden" id="capturedAccuracy" />
+                    </div>
+
+                    <div class="field-group">
+                        <label><i class="fas fa-clock" style="color:var(--gold);"></i> Register Accessible For</label>
+                        <div class="form-row">
+                            <input type="number" id="durationInput" placeholder="Duration" value="30" min="1" step="any" />
+                            <select id="durationUnitInput" style="flex:0 0 130px;">
+                                <option value="minutes" selected>Minutes</option>
+                                <option value="hours">Hours</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary full" id="createRegisterBtn" style="margin-top:12px;">
+                        <i class="fas fa-bullhorn"></i> Post Attendance Register
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============ FOLDERS VIEW ============ -->
+            <div id="foldersView">
+                <div class="section-title">
+                    <h2><i class="fas fa-folder-open"></i> Class Folders</h2>
+                    <span class="count-badge" id="foldersCount">0</span>
+                </div>
+                <div id="foldersList"></div>
+            </div>
+
+            <!-- ============ SINGLE FOLDER VIEW ============ -->
+            <div id="folderView" style="display:none;">
+                <div class="section-title">
+                    <button class="btn-outline btn-small" id="backToFoldersBtn"><i class="fas fa-arrow-left"></i> Folders</button>
+                    <h2 id="folderViewTitle" style="flex:1;justify-content:center;"><i class="fas fa-folder"></i> Folder</h2>
+                    <span class="count-badge" id="folderRegistersCount">0</span>
+                </div>
+                <div id="folderRegistersList"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== MODAL: SUBMISSIONS ===== -->
+    <div class="modal-overlay" id="submissionsModal">
+        <div class="modal-box">
+            <button class="modal-close" id="submissionsCloseBtn">&times;</button>
+            <h3><i class="fas fa-user-check"></i> <span id="submissionsTitle">Submissions</span></h3>
+            <div id="submissionsMeta" style="font-size:11px;color:#8b8fa3;margin-bottom:10px;"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                <button class="btn-success btn-small" id="downloadExcelBtn"><i class="fas fa-file-excel"></i> Download Excel</button>
+                <button class="btn-danger btn-small" id="downloadPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            </div>
+            <div id="submissionsContent"></div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: LOCATION MAP ===== -->
+    <div class="modal-overlay" id="mapModal">
+        <div class="modal-box map-modal-box">
+            <div class="map-modal-header">
+                <h3><i class="fas fa-map-marked-alt"></i> <span id="mapModalTitle">Lecturer Location & Radius</span></h3>
+                <button class="close-btn" id="mapCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="locationMap"></div>
+            <div class="map-legend">
+                <div class="legend-item"><span class="dot lecturer"></span> Lecturer (you)</div>
+                <div class="legend-item"><span class="dot ring"></span> Allowed radius</div>
+                <div class="legend-item"><span class="dot student"></span> Students</div>
+            </div>
+            <div class="map-info-bar">
+                <div class="info-item"><strong>Radius:</strong> <span id="mapRadiusText">—</span></div>
+                <div class="info-item"><strong>Precision:</strong> <span id="mapAccuracyText">—</span></div>
+                <div class="info-item"><strong>Coordinates:</strong> <span id="mapCoordsText">—</span></div>
+                <div class="info-item"><strong>Submissions in zone:</strong> <span id="mapStudentsInZone">—</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // =================================================================
+        // FIREBASE
+        // =================================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+        import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp } from
+        "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+            authDomain: "utom-c4003.firebaseapp.com",
+            databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+            projectId: "utom-c4003",
+            storageBucket: "utom-c4003.firebasestorage.app",
+            messagingSenderId: "878225874050",
+            appId: "1:878225874050:web:643626906bfd233eeae89b"
+        };
+
+        const app  = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db   = getDatabase(app);
+
+        // =================================================================
+        // STATE
+        // =================================================================
+        let currentAdmin = null;
+        let allRegisters = [];
+        let currentFolderClass = null;
+        let customFields = [];
+        let currentSubmissionsRegister = null;
+        let leafletMap = null;
+        let leafletCircle = null;
+        let leafletMarker = null;
+        let leafletStudentMarkers = [];
+
+        // =================================================================
+        // HELPERS
+        // =================================================================
+        const _ESC = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+        function escapeHtml(t) { return t == null ? '' : String(t).replace(/[&<>"']/g, c => _ESC[c]); }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            const icon = type === 'success' ? 'fa-check-circle'
+                       : type === 'error'   ? 'fa-exclamation-circle'
+                       : type === 'warning' ? 'fa-exclamation-triangle'
+                       : 'fa-bell';
+            toast.innerHTML = `<i class="fas ${icon}"></i> ${escapeHtml(msg)}`;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '—';
+            return new Date(ts).toLocaleString();
+        }
+
+        function timeRemaining(expiresAt) {
+            const diff = expiresAt - Date.now();
+            if (diff <= 0) return 'Expired';
+            const mins = Math.floor(diff / 60000);
+            const hrs  = Math.floor(mins / 60);
+            const days = Math.floor(hrs / 24);
+            if (days > 0) return `${days}d ${hrs % 24}h left`;
+            if (hrs > 0)  return `${hrs}h ${mins % 60}m left`;
+            if (mins > 0) return `${mins}m left`;
+            return `${Math.floor(diff / 1000)}s left`;
+        }
+
+        function radiusToMeters(radius, unit) {
+            return unit === 'kilometers' ? radius * 1000 : radius;
+        }
+
+        function formatRadius(radius, unit) {
+            return `${radius} ${unit}`;
+        }
+
+        // Haversine distance in meters between two {lat, lng}
+        function distanceMeters(a, b) {
+            const R = 6371000;
+            const toRad = x => x * Math.PI / 180;
+            const dLat = toRad(b.lat - a.lat);
+            const dLng = toRad(b.lng - a.lng);
+            const φ1 = toRad(a.lat);
+            const φ2 = toRad(b.lat);
+            const x = Math.sin(dLat/2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dLng/2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(x));
+        }
+
+        // High-accuracy GPS capture — averages 3 readings for extra precision
+        function getBrowserLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported by this browser.'));
+                    return;
+                }
+                const readings = [];
+                const TARGET = 3;
+                let watchId;
+
+                const finish = () => {
+                    if (watchId != null) navigator.geolocation.clearWatch(watchId);
+                    readings.sort((a, b) => a.accuracy - b.accuracy);
+                    const best = readings[0];
+                    resolve({
+                        lat: best.latitude,
+                        lng: best.longitude,
+                        accuracy: best.accuracy,
+                        samples: readings.length
+                    });
+                };
+
+                watchId = navigator.geolocation.watchPosition(
+                    pos => {
+                        readings.push({
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy || 9999
+                        });
+                        if (readings.length >= TARGET) finish();
+                    },
+                    err => {
+                        if (readings.length > 0) { finish(); return; }
+                        let msg = 'Could not get your location.';
+                        if (err.code === 1) msg = 'Location permission denied. Please enable it in browser settings.';
+                        if (err.code === 2) msg = 'GPS signal unavailable. Move near a window or outside and try again.';
+                        if (err.code === 3) msg = 'Location request timed out. Please try again.';
+                        reject(new Error(msg));
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+
+                // Hard cap — return whatever we have after 12 s
+                setTimeout(() => { if (readings.length > 0) finish(); }, 12000);
+            });
+        }
+
+        // =================================================================
+        // AUTH GUARD
+        // =================================================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            if (!user.email?.startsWith('admin@')) {
+                alert('Admin only.');
+                window.location.href = 'index.html';
+                return;
+            }
+            currentAdmin = user;
+            loadRegisters();
+            setTimeout(() => document.getElementById('appLoader').classList.add('hidden'), 400);
+        });
+
+        // =================================================================
+        // REALTIME LOAD
+        // =================================================================
+        function loadRegisters() {
+            onValue(ref(db, 'attendanceRegisters'), (snap) => {
+                const data = snap.val();
+                allRegisters = data
+                    ? Object.entries(data).map(([id, r]) => ({ id, ...r }))
+                    : [];
+                allRegisters.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderFolders();
+                if (currentFolderClass) renderFolderView(currentFolderClass);
+            });
+        }
+
+        // =================================================================
+        // FOLDERS
+        // =================================================================
+        function groupByClass() {
+            const groups = {};
+            allRegisters.forEach(r => {
+                const key = (r.className || 'Uncategorised').trim();
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(r);
+            });
+            return groups;
+        }
+
+        function renderFolders() {
+            const container = document.getElementById('foldersList');
+            const groups = groupByClass();
+            const keys = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+
+            document.getElementById('foldersCount').textContent = keys.length;
+
+            if (keys.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No attendance registers yet</h3>
+                        <p>Create your first register using the form above.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = keys.map(name => {
+                const regs = groups[name];
+                const activeCount = regs.filter(r => r.active && Date.now() < r.expiresAt).length;
+                const totalSubs = regs.reduce((s, r) => s + (r.submissionCount || 0), 0);
+                return `
+                    <div class="folder-card" data-class="${escapeHtml(name)}">
+                        <div class="folder-icon"><i class="fas fa-folder"></i></div>
+                        <div class="folder-info">
+                            <div class="folder-name">${escapeHtml(name)}</div>
+                            <div class="folder-meta">
+                                ${regs.length} register${regs.length !== 1 ? 's' : ''}
+                                · ${activeCount} active
+                                · ${totalSubs} submission${totalSubs !== 1 ? 's' : ''}
+                            </div>
+                        </div>
+                        <div class="folder-count">${regs.length}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.folder-card').forEach(card => {
+                card.addEventListener('click', () => openFolder(card.dataset.class));
+            });
+        }
+
+        // =================================================================
+        // SINGLE FOLDER VIEW
+        // =================================================================
+        function openFolder(className) {
+            currentFolderClass = className;
+            document.getElementById('foldersView').style.display = 'none';
+            document.getElementById('folderView').style.display = 'block';
+            document.getElementById('folderViewTitle').innerHTML =
+                `<i class="fas fa-folder"></i> ${escapeHtml(className)}`;
+            renderFolderView(className);
+            document.getElementById('appContent').scrollTop = 0;
+        }
+
+        function renderFolderView(className) {
+            const container = document.getElementById('folderRegistersList');
+            const regs = allRegisters.filter(r => (r.className || 'Uncategorised').trim() === className);
+
+            document.getElementById('folderRegistersCount').textContent = regs.length;
+
+            if (regs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>No registers</h3></div>';
+                return;
+            }
+
+            container.innerHTML = regs.map(r => {
+                const isActive = r.active && Date.now() < r.expiresAt;
+                const status = isActive ? 'Active' : 'Expired';
+                const statusCls = isActive ? 'status-active' : 'status-expired';
+                const subs = r.submissionCount || 0;
+                const requiredFields = (r.requiredFields || []).map(f => {
+                    const labels = { name:'Name', email:'Email', nrc:'NRC', phone:'Phone', studentId:'Student ID' };
+                    return labels[f] || f;
+                }).concat(r.customFields || []);
+                const hasLocation = r.latitude != null && r.longitude != null;
+                return `
+                    <div class="register-card" data-id="${r.id}">
+                        <div class="register-header">
+                            <div>
+                                <div class="register-title">${escapeHtml(r.lectureName || 'Lecture')} — ${escapeHtml(r.courseName || 'Course')}</div>
+                                <div class="register-meta">
+                                    <div><i class="fas fa-clock"></i> Created: ${formatDate(r.createdAt)}</div>
+                                    <div><i class="fas fa-hourglass-half"></i> ${isActive ? timeRemaining(r.expiresAt) : 'Expired ' + formatDate(r.expiresAt)}</div>
+                                    <div><i class="fas fa-map-marker-alt"></i> Radius: ${formatRadius(r.radius, r.radiusUnit)}${hasLocation ? ' · 📍 ' + r.latitude.toFixed(5) + ', ' + r.longitude.toFixed(5) : ''}${r.locationAccuracy ? ' (±' + Math.round(r.locationAccuracy) + 'm)' : ''}</div>
+                                    <div><i class="fas fa-list-check"></i> Fields: ${requiredFields.join(', ') || 'None'}</div>
+                                </div>
+                            </div>
+                            <span class="register-status ${statusCls}">${status}</span>
+                        </div>
+                        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            <span class="chip" style="background:rgba(46,204,113,0.12);color:#2e7d32;font-weight:800;">
+                                <i class="fas fa-users"></i> ${subs} submission${subs !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div class="register-actions">
+                            <button class="btn-map btn-small" data-action="map" data-id="${r.id}" ${hasLocation ? '' : 'disabled style="opacity:0.5;cursor:not-allowed;"'}>
+                                <i class="fas fa-map-marked-alt"></i> Show on Map
+                            </button>
+                            <button class="btn-primary btn-small" data-action="view" data-id="${r.id}">
+                                <i class="fas fa-eye"></i> Submissions
+                            </button>
+                            <button class="btn-success btn-small" data-action="excel" data-id="${r.id}">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btn-danger btn-small" data-action="pdf" data-id="${r.id}">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn-outline btn-small" data-action="toggle" data-id="${r.id}">
+                                <i class="fas fa-power-off"></i> ${r.active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button class="btn-danger btn-small" data-action="delete" data-id="${r.id}" style="background:#fff;color:#c62828;border:1.5px solid #f8d7da;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('button[data-action]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    const action = btn.dataset.action;
+                    if (action === 'map')    showLocationMap(id);
+                    if (action === 'view')   showSubmissionsModal(id);
+                    if (action === 'excel')  downloadRegisterExcel(id);
+                    if (action === 'pdf')    downloadRegisterPDF(id);
+                    if (action === 'toggle') toggleRegister(id);
+                    if (action === 'delete') deleteRegister(id);
+                });
+            });
+        }
+
+        document.getElementById('backToFoldersBtn').addEventListener('click', () => {
+            currentFolderClass = null;
+            document.getElementById('foldersView').style.display = 'block';
+            document.getElementById('folderView').style.display = 'none';
+        });
+
+        // =================================================================
+        // CUSTOM FIELDS
+        // =================================================================
+        document.querySelectorAll('#requiredFieldsGrid .check-item').forEach(item => {
+            const cb = item.querySelector('input');
+            item.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'INPUT') cb.checked = !cb.checked;
+                item.classList.toggle('checked', cb.checked);
+            });
+        });
+
+        document.getElementById('addCustomFieldBtn').addEventListener('click', () => {
+            const inp = document.getElementById('customFieldInput');
+            const val = inp.value.trim();
+            if (!val) return;
+            if (customFields.includes(val)) { showToast('Field already added', 'warning'); return; }
+            customFields.push(val);
+            inp.value = '';
+            renderCustomFieldsChips();
+        });
+
+        document.getElementById('customFieldInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addCustomFieldBtn').click(); }
+        });
+
+        function renderCustomFieldsChips() {
+            const list = document.getElementById('customFieldsList');
+            if (customFields.length === 0) { list.innerHTML = ''; return; }
+            list.innerHTML = customFields.map(f =>
+                `<span class="chip">${escapeHtml(f)}<span class="chip-x" data-field="${escapeHtml(f)}">×</span></span>`
+            ).join('');
+            list.querySelectorAll('.chip-x').forEach(x => {
+                x.addEventListener('click', () => {
+                    customFields = customFields.filter(f => f !== x.dataset.field);
+                    renderCustomFieldsChips();
+                });
+            });
+        }
+
+        // =================================================================
+        // LOCATION CAPTURE (before creating a register)
+        // =================================================================
+        const captureBtn      = document.getElementById('captureLocationBtn');
+        const previewMapBtn   = document.getElementById('previewMapBtn');
+        const locationPreview = document.getElementById('locationPreview');
+        const locationText    = document.getElementById('locationPreviewText');
+        const latInput        = document.getElementById('capturedLat');
+        const lngInput        = document.getElementById('capturedLng');
+        const accInput        = document.getElementById('capturedAccuracy');
+
+        function resetLocationPreview() {
+            locationPreview.classList.remove('error');
+            locationPreview.querySelector('i').className = 'fas fa-satellite-dish';
+        }
+
+        function setLocationSuccess(loc) {
+            latInput.value = loc.lat;
+            lngInput.value = loc.lng;
+            accInput.value = loc.accuracy;
+            locationPreview.classList.remove('error');
+            locationPreview.querySelector('i').className = 'fas fa-check-circle';
+            const accLabel = loc.accuracy ? `±${Math.round(loc.accuracy)} m precision` : 'precision unknown';
+            locationText.innerHTML = `📍 <strong>Locked:</strong> ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)} · <span style="opacity:0.85;">${accLabel}</span>${loc.samples > 1 ? ` · averaged ${loc.samples} readings` : ''}`;
+            previewMapBtn.disabled = false;
+        }
+
+        function setLocationError(msg) {
+            locationPreview.classList.add('error');
+            locationPreview.querySelector('i').className = 'fas fa-exclamation-triangle';
+            locationText.textContent = msg;
+            previewMapBtn.disabled = true;
+            latInput.value = ''; lngInput.value = ''; accInput.value = '';
+        }
+
+        captureBtn.addEventListener('click', async () => {
+            captureBtn.disabled = true;
+            captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Acquiring GPS…';
+            resetLocationPreview();
+            locationText.textContent = 'Locking onto satellites… please stay still.';
+            try {
+                const loc = await getBrowserLocation();
+                setLocationSuccess(loc);
+                showToast('Precise location captured!', 'success');
+            } catch (err) {
+                setLocationError(err.message);
+                showToast(err.message, 'error');
+            } finally {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Capture Precise Location Now';
+            }
+        });
+
+        // Preview map with the currently-selected radius
+        previewMapBtn.addEventListener('click', () => {
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            if (isNaN(lat) || isNaN(lng)) { showToast('Capture your location first.', 'warning'); return; }
+            const radius = parseFloat(document.getElementById('radiusInput').value) || 200;
+            const unit   = document.getElementById('radiusUnitInput').value;
+
+            openMapModal({
+                title: 'Radius Preview (Not Yet Saved)',
+                lat, lng,
+                accuracy: parseFloat(accInput.value) || null,
+                radius, radiusUnit: unit,
+                students: []
+            });
+        });
+
+        // =================================================================
+        // CREATE REGISTER
+        // =================================================================
+        document.getElementById('createRegisterBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('createRegisterBtn');
+            const className   = document.getElementById('classNameInput').value.trim();
+            const lectureName = document.getElementById('lectureNameInput').value.trim();
+            const courseName  = document.getElementById('courseNameInput').value.trim();
+            const radius      = parseFloat(document.getElementById('radiusInput').value);
+            const radiusUnit  = document.getElementById('radiusUnitInput').value;
+            const duration    = parseFloat(document.getElementById('durationInput').value);
+            const durationUnit = document.getElementById('durationUnitInput').value;
+
+            const requiredFields = [];
+            document.querySelectorAll('#requiredFieldsGrid input:checked').forEach(cb => requiredFields.push(cb.value));
+
+            if (!className)   { showToast('Please enter the class name.', 'error'); return; }
+            if (!lectureName) { showToast('Please enter the lecture name.', 'error'); return; }
+            if (!courseName)  { showToast('Please enter the course name.', 'error'); return; }
+            if (requiredFields.length === 0 && customFields.length === 0) {
+                showToast('Select at least one field for students to submit.', 'error'); return;
+            }
+            if (!radius || radius <= 0) { showToast('Please set a valid radius.', 'error'); return; }
+            if (!duration || duration <= 0) { showToast('Please set a valid duration.', 'error'); return; }
+
+            // Prefer the already-captured location; otherwise capture now
+            let loc;
+            if (latInput.value && lngInput.value) {
+                loc = {
+                    lat: parseFloat(latInput.value),
+                    lng: parseFloat(lngInput.value),
+                    accuracy: parseFloat(accInput.value) || null,
+                    samples: 1
+                };
+            } else {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing precise location…';
+                try {
+                    loc = await getBrowserLocation();
+                    setLocationSuccess(loc);
+                } catch (err) {
+                    showToast(err.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-bullhorn"></i> Post Attendance Register';
+                    return;
+                }
+            }
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
+
+            const now = Date.now();
+            const durationMs = durationUnit === 'hours' ? duration * 3600 * 1000 : duration * 60 * 1000;
+            const expiresAt = now + durationMs;
+
+            try {
+                const newRef = push(ref(db, 'attendanceRegisters'));
+                await set(newRef, {
+                    className, lectureName, courseName,
+                    requiredFields,
+                    customFields: [...customFields],
+                    radius, radiusUnit,
+                    latitude:  loc.lat,
+                    longitude: loc.lng,
+                    locationAccuracy: loc.accuracy || null,
+                    duration, durationUnit,
+                    createdAt: now,
+                    expiresAt,
+                    active: true,
+                    submissionCount: 0,
+                    createdBy: currentAdmin.email,
+                    createdByUid: currentAdmin.uid
+                });
+
+                // Fan-out notification to all students
+                const notifRef = push(ref(db, 'inAppNotifications'));
+                await set(notifRef, {
+                    title: `📋 Attendance: ${lectureName}`,
+                    message: `${courseName} — Check in now. You have ${duration} ${durationUnit} to submit.`,
+                    mediaUrl: '',
+                    mediaType: 'image',
+                    recipientType: 'all',
+                    userIds: 'all',
+                    createdAt: serverTimestamp(),
+                    read: false,
+                    startDate: null,
+                    endDate: null,
+                    repeatInterval: 0,
+                    repeatUnit: 'minutes',
+                    maxOccurrences: 1,
+                    occurrencesShown: 0,
+                    active: true,
+                    attendanceRegisterId: newRef.key,
+                    // Geo-fence data → student app uses this to filter by distance
+                    geofence: {
+                        latitude: loc.lat,
+                        longitude: loc.lng,
+                        radius,
+                        radiusUnit
+                    }
+                });
+
+                showToast(`Register "${lectureName}" created for ${className}!`, 'success');
+
+                // Reset form
+                document.getElementById('classNameInput').value = '';
+                document.getElementById('lectureNameInput').value = '';
+                document.getElementById('courseNameInput').value = '';
+                document.getElementById('customFieldInput').value = '';
+                customFields = [];
+                renderCustomFieldsChips();
+                document.querySelectorAll('#requiredFieldsGrid .check-item').forEach(item => {
+                    const cb = item.querySelector('input');
+                    const defaults = ['name', 'email'];
+                    cb.checked = defaults.includes(cb.value);
+                    item.classList.toggle('checked', cb.checked);
+                });
+                // Clear captured location so next post re-captures
+                latInput.value = ''; lngInput.value = ''; accInput.value = '';
+                previewMapBtn.disabled = true;
+                resetLocationPreview();
+                locationText.textContent = 'Ready to capture your precise GPS location when you post.';
+
+            } catch (err) {
+                showToast('Error creating register: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bullhorn"></i> Post Attendance Register';
+            }
+        });
+
+        // =================================================================
+        // TOGGLE / DELETE
+        // =================================================================
+        async function toggleRegister(id) {
+            const r = allRegisters.find(x => x.id === id);
+            if (!r) return;
+            await update(ref(db, `attendanceRegisters/${id}`), { active: !r.active });
+            showToast(!r.active ? 'Register activated' : 'Register deactivated', 'info');
+        }
+
+        async function deleteRegister(id) {
+            if (!confirm('Delete this attendance register and all its submissions?')) return;
+            try {
+                await remove(ref(db, `attendanceRegisters/${id}`));
+                await remove(ref(db, `attendanceSubmissions/${id}`));
+                showToast('Register deleted.', 'info');
+            } catch (err) {
+                showToast('Error deleting: ' + err.message, 'error');
+            }
+        }
+
+        // =================================================================
+        // MAP MODAL — OpenStreetMap + Leaflet + Perimeter Circle
+        // =================================================================
+        const mapModal    = document.getElementById('mapModal');
+        const mapCloseBtn = document.getElementById('mapCloseBtn');
+        const mapEl       = document.getElementById('locationMap');
+
+        function destroyMap() {
+            if (leafletMap) {
+                leafletMap.remove();
+                leafletMap = null;
+                leafletCircle = null;
+                leafletMarker = null;
+                leafletStudentMarkers = [];
+            }
+        }
+
+        async function showLocationMap(registerId) {
+            const r = allRegisters.find(x => x.id === registerId);
+            if (!r) { showToast('Register not found.', 'error'); return; }
+            if (r.latitude == null || r.longitude == null) {
+                showToast('No location saved for this register.', 'warning');
+                return;
+            }
+
+            // Load submissions first so we can plot student pins
+            let subs = [];
+            try {
+                const snap = await get(ref(db, `attendanceSubmissions/${registerId}`));
+                const data = snap.val() || {};
+                subs = Object.entries(data).map(([id, s]) => ({ id, ...s }));
+            } catch (e) { /* non-fatal */ }
+
+            openMapModal({
+                title: `${r.lectureName} — ${r.className}`,
+                lat: r.latitude,
+                lng: r.longitude,
+                accuracy: r.locationAccuracy || null,
+                radius: r.radius,
+                radiusUnit: r.radiusUnit,
+                students: subs,
+                expiresAt: r.expiresAt,
+                createdAt: r.createdAt
+            });
+        }
+
+        function openMapModal({ title, lat, lng, accuracy, radius, radiusUnit, students, expiresAt, createdAt }) {
+            document.getElementById('mapModalTitle').textContent = title || 'Lecturer Location & Radius';
+            document.getElementById('mapRadiusText').textContent = formatRadius(radius, radiusUnit);
+            document.getElementById('mapAccuracyText').textContent =
+                accuracy ? `±${Math.round(accuracy)} m` : 'unknown';
+            document.getElementById('mapCoordsText').textContent =
+                `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+            const radiusMeters = radiusToMeters(radius, radiusUnit);
+
+            // Count students inside the ring
+            const inZone = (students || []).filter(s =>
+                s.latitude != null && s.longitude != null &&
+                distanceMeters({ lat, lng }, { lat: s.latitude, lng: s.longitude }) <= radiusMeters
+            );
+            document.getElementById('mapStudentsInZone').textContent =
+                `${inZone.length} / ${students ? students.length : 0}`;
+
+            mapModal.classList.add('open');
+
+            // Leaflet needs a small delay after the modal becomes visible
+            setTimeout(() => {
+                destroyMap();
+                leafletMap = L.map(mapEl, {
+                    zoomControl: true,
+                    attributionControl: true
+                }).setView([lat, lng], 16);
+
+                // OpenStreetMap tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(leafletMap);
+
+                // Perimeter ring (the geo-fence)
+                leafletCircle = L.circle([lat, lng], {
+                    radius: radiusMeters,
+                    color: '#f5b042',
+                    weight: 3,
+                    opacity: 0.9,
+                    fillColor: '#f5b042',
+                    fillOpacity: 0.15,
+                    dashArray: '8,8'
+                }).addTo(leafletMap);
+
+                // Optional accuracy halo (smaller, subtle)
+                if (accuracy && accuracy > 0 && accuracy < radiusMeters) {
+                    L.circle([lat, lng], {
+                        radius: accuracy,
+                        color: '#3b82f6',
+                        weight: 1,
+                        opacity: 0.6,
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.08
+                    }).addTo(leafletMap);
+                }
+
+                // Lecturer pin (custom blue dot)
+                const lecturerIcon = L.divIcon({
+                    className: '',
+                    html: '<div class="map-pin-icon"><i class="fas fa-chalkboard-teacher"></i></div>',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+                leafletMarker = L.marker([lat, lng], { icon: lecturerIcon }).addTo(leafletMap);
+                leafletMarker.bindPopup(`
+                    <div style="font-family:Inter,sans-serif;">
+                        <strong style="color:#3b82f6;">🎓 Lecturer Location</strong><br>
+                        <span style="font-size:11px;color:#5f6377;">
+                            ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
+                            Precision: ${accuracy ? '±' + Math.round(accuracy) + ' m' : 'unknown'}<br>
+                            Radius: ${formatRadius(radius, radiusUnit)} (${Math.round(radiusMeters)} m)
+                            ${createdAt ? '<br>Created: ' + formatDate(createdAt) : ''}
+                            ${expiresAt ? '<br>Expires: ' + formatDate(expiresAt) : ''}
+                        </span>
+                    </div>
+                `);
+
+                // Student pins (green dots)
+                const studentIcon = L.divIcon({
+                    className: '',
+                    html: '<div class="student-pin-icon"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                });
+
+                (students || []).forEach(s => {
+                    if (s.latitude == null || s.longitude == null) return;
+                    const dist = distanceMeters({ lat, lng }, { lat: s.latitude, lng: s.longitude });
+                    const inside = dist <= radiusMeters;
+                    const marker = L.marker([s.latitude, s.longitude], { icon: studentIcon }).addTo(leafletMap);
+                    const name = s.name || 'Student';
+                    const email = s.email || '';
+                    marker.bindPopup(`
+                        <div style="font-family:Inter,sans-serif;font-size:12px;">
+                            <strong style="color:${inside ? '#2ecc71' : '#e74c3c'};">
+                                ${inside ? '✅ Inside zone' : '❌ Outside zone'}
+                            </strong><br>
+                            <strong>${escapeHtml(name)}</strong><br>
+                            <span style="color:#5f6377;font-size:11px;">
+                                ${escapeHtml(email)}<br>
+                                Distance: ${dist.toFixed(1)} m
+                            </span>
+                        </div>
+                    `);
+                    leafletStudentMarkers.push(marker);
+                });
+
+                // Fit the view to include the ring (and any outlier students)
+                try {
+                    const group = L.featureGroup([leafletCircle, leafletMarker, ...leafletStudentMarkers]);
+                    leafletMap.fitBounds(group.getBounds().pad(0.25));
+                } catch (e) {
+                    leafletMap.setView([lat, lng], 16);
+                }
+
+                // Ensure tiles render fully (modal layout shift)
+                setTimeout(() => leafletMap.invalidateSize(), 250);
+            }, 120);
+        }
+
+        function closeMap() {
+            mapModal.classList.remove('open');
+            destroyMap();
+        }
+        mapCloseBtn.addEventListener('click', closeMap);
+        mapModal.addEventListener('click', (e) => { if (e.target === mapModal) closeMap(); });
+
+        // =================================================================
+        // SUBMISSIONS MODAL
+        // =================================================================
+        function showSubmissionsModal(registerId) {
+            const r = allRegisters.find(x => x.id === registerId);
+            if (!r) return;
+            currentSubmissionsRegister = r;
+
+            document.getElementById('submissionsTitle').textContent =
+                `${r.lectureName} — ${r.courseName}`;
+            document.getElementById('submissionsMeta').innerHTML =
+                `Class: <strong>${escapeHtml(r.className)}</strong> · Radius: <strong>${formatRadius(r.radius, r.radiusUnit)}</strong> · ${formatDate(r.createdAt)}`;
+
+            const content = document.getElementById('submissionsContent');
+            content.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
+
+            document.getElementById('submissionsModal').classList.add('open');
+
+            get(ref(db, `attendanceSubmissions/${registerId}`)).then(snap => {
+                const data = snap.val() || {};
+                const subs = Object.entries(data).map(([id, s]) => ({ id, ...s }));
+
+                if (subs.length === 0) {
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-user-clock"></i>
+                            <h3>No submissions yet</h3>
+                            <p>Students within the radius will appear here after they check in.</p>
+                        </div>`;
+                    return;
+                }
+
+                const fields = [...(r.requiredFields || []), ...(r.customFields || [])];
+                const labelMap = { name:'Name', email:'Email', nrc:'NRC', phone:'Phone', studentId:'Student ID' };
+
+                subs.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+
+                content.innerHTML = `
+                    <div style="font-size:11px;color:#8b8fa3;margin-bottom:8px;">
+                        <strong>${subs.length}</strong> submission${subs.length !== 1 ? 's' : ''}
+                    </div>
+                    <div class="sub-table-wrap">
+                        <table class="sub-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    ${fields.map(f => `<th>${escapeHtml(labelMap[f] || f)}</th>`).join('')}
+                                    <th>Distance</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subs.map((s, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        ${fields.map(f => `<td>${escapeHtml(s[f] ?? '—')}</td>`).join('')}
+                                        <td>${s.distance != null ? s.distance.toFixed(1) + ' m' : '—'}</td>
+                                        <td>${formatDate(s.submittedAt)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            }).catch(err => {
+                content.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>${escapeHtml(err.message)}</p></div>`;
+            });
+        }
+
+        document.getElementById('submissionsCloseBtn').addEventListener('click', () => {
+            document.getElementById('submissionsModal').classList.remove('open');
+        });
+        document.getElementById('submissionsModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+        });
+
+        // =================================================================
+        // DOWNLOAD HELPERS
+        // =================================================================
+        async function fetchSubmissions(registerId) {
+            const snap = await get(ref(db, `attendanceSubmissions/${registerId}`));
+            const data = snap.val() || {};
+            return Object.entries(data).map(([id, s]) => ({ id, ...s }))
+                .sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+        }
+
+        function buildTableData(register, subs) {
+            const fields = [...(register.requiredFields || []), ...(register.customFields || [])];
+            const labelMap = { name:'Name', email:'Email', nrc:'NRC', phone:'Phone', studentId:'Student ID' };
+            const headers = ['#', ...fields.map(f => labelMap[f] || f), 'Distance (m)', 'Submitted At'];
+            const rows = subs.map((s, i) => [
+                i + 1,
+                ...fields.map(f => s[f] ?? ''),
+                s.distance != null ? s.distance.toFixed(1) : '',
+                formatDate(s.submittedAt)
+            ]);
+            return { headers, rows, fields, labelMap };
+        }
+
+        async function downloadRegisterExcel(registerId) {
+            const r = allRegisters.find(x => x.id === registerId);
+            if (!r) return;
+            const subs = await fetchSubmissions(registerId);
+            if (subs.length === 0) { showToast('No submissions to export.', 'warning'); return; }
+
+            const { headers, rows } = buildTableData(r, subs);
+
+            const wb = XLSX.utils.book_new();
+            const sheetData = [
+                [`Attendance Register`],
+                [`Class: ${r.className}`],
+                [`Lecture: ${r.lectureName}`],
+                [`Course: ${r.courseName}`],
+                [`Radius: ${formatRadius(r.radius, r.radiusUnit)}`],
+                [`Location: ${r.latitude?.toFixed(6) ?? '—'}, ${r.longitude?.toFixed(6) ?? '—'}`],
+                [`Precision: ${r.locationAccuracy ? '±' + Math.round(r.locationAccuracy) + ' m' : 'unknown'}`],
+                [`Created: ${formatDate(r.createdAt)}`],
+                [`Expires: ${formatDate(r.expiresAt)}`],
+                [],
+                headers,
+                ...rows
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+            ws['!cols'] = headers.map((h, i) => ({ wch: i === 0 ? 5 : Math.max(12, String(h).length + 4) }));
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+            XLSX.writeFile(wb, `Attendance_${r.className}_${r.lectureName}.xlsx`.replace(/\s+/g, '_'));
+            showToast('Excel downloaded!', 'success');
+        }
+
+        async function downloadRegisterPDF(registerId) {
+            const r = allRegisters.find(x => x.id === registerId);
+            if (!r) return;
+            const subs = await fetchSubmissions(registerId);
+            if (subs.length === 0) { showToast('No submissions to export.', 'warning'); return; }
+
+            const { headers, rows } = buildTableData(r, subs);
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            doc.setFillColor(245, 176, 66);
+            doc.rect(0, 0, 297, 22, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('UTOM Attendance Register', 14, 14);
+
+            doc.setTextColor(26, 29, 40);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text(`Class: ${r.className}`, 14, 32);
+            doc.text(`Lecture: ${r.lectureName}`, 14, 38);
+            doc.text(`Course: ${r.courseName}`, 14, 44);
+            doc.text(`Radius: ${formatRadius(r.radius, r.radiusUnit)}`, 14, 50);
+            doc.text(`Location: ${r.latitude?.toFixed(6) ?? '—'}, ${r.longitude?.toFixed(6) ?? '—'}`, 14, 56);
+            doc.text(`Created: ${formatDate(r.createdAt)}`, 150, 32);
+            doc.text(`Expires: ${formatDate(r.expiresAt)}`, 150, 38);
+            doc.text(`Total submissions: ${subs.length}`, 150, 44);
+            doc.text(`Precision: ${r.locationAccuracy ? '±' + Math.round(r.locationAccuracy) + ' m' : 'unknown'}`, 150, 50);
+
+            doc.autoTable({
+                head: [headers],
+                body: rows.map(row => row.map(c => String(c ?? ''))),
+                startY: 64,
+                styles: { fontSize: 9, cellPadding: 2, textColor: [26,29,40] },
+                headStyles: { fillColor: [245, 176, 66], textColor: [255,255,255], fontStyle: 'bold', halign: 'left' },
+                alternateRowStyles: { fillColor: [255, 248, 237] },
+                margin: { left: 14, right: 14 },
+                theme: 'grid'
+            });
+
+            doc.save(`Attendance_${r.className}_${r.lectureName}.pdf`.replace(/\s+/g, '_'));
+            showToast('PDF downloaded!', 'success');
+        }
+
+        document.getElementById('downloadExcelBtn').addEventListener('click', () => {
+            if (currentSubmissionsRegister) downloadRegisterExcel(currentSubmissionsRegister.id);
+        });
+        document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+            if (currentSubmissionsRegister) downloadRegisterPDF(currentSubmissionsRegister.id);
+        });
+
+        // =================================================================
+        // NAV
+        // =================================================================
+        document.getElementById('backToAdminBtn').addEventListener('click', () => {
+            window.location.href = 'admin.html';
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            loadRegisters();
+            showToast('Refreshed', 'info');
+        });
+
+        setInterval(() => {
+            if (currentFolderClass) renderFolderView(currentFolderClass);
+            renderFolders();
+        }, 60000);
+
+        console.log('✅ UTOM Attendance ready — precise GPS + OpenStreetMap perimeter.');
+    </script>
+</body>
+</html>
