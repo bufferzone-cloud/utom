@@ -10966,6 +10966,32 @@ function getAssessmentCover(ass) {
 }
 
 // =================================================================
+// ===== HELPER: reveal correct answers ONLY after the deadline =====
+// =================================================================
+function canRevealCorrectAnswers(ass) {
+    if (!ass) return false;
+    const now = Date.now();
+
+    // Deadline (assignments, fixed-schedule exams, self-paced availability)
+    const deadlineTs = getAssignmentDeadline(ass);
+    const hasDeadline = typeof deadlineTs === 'number' && !isNaN(deadlineTs) && deadlineTs > 0;
+
+    // Explicit availability end (whichever field exists)
+    const availabilityEndRaw = ass.availabilityEnd || ass.availableUntil || ass.endTime;
+    const availabilityEnd = availabilityEndRaw ? new Date(availabilityEndRaw).getTime() : null;
+    const hasAvailability = typeof availabilityEnd === 'number'
+        && !isNaN(availabilityEnd) && availabilityEnd > 0;
+
+    // If there's no deadline AND no availability, never reveal.
+    if (!hasDeadline && !hasAvailability) return false;
+
+    const pastDeadline     = hasDeadline     && now > deadlineTs;
+    const pastAvailability = hasAvailability && now > availabilityEnd;
+
+    return pastDeadline || pastAvailability;
+}
+
+// =================================================================
 // ===== SHOP ======================================================
 // =================================================================
 let shopProducts = [];
@@ -17335,14 +17361,13 @@ function renderScriptFullPage(responseId) {
     const passingScorePercent = (typeof ass.passingScore === 'number' && ass.passingScore > 0) ?
         ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
     const passed = total > 0 && percent >= passingScorePercent;
-    const now = Date.now();
+       const now = Date.now();
     const assignmentDeadlineTs = getAssignmentDeadline(ass);
     const deadline = assignmentDeadlineTs;
     const isPastDue = deadline ? now > deadline : false;
     const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
     const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
-    const canShowAnswers = (isPastDue || isPastAvailability) && (ass.type === 'exam' || ass.type === 'test' || ass
-        .type === 'quiz');
+    const canShowAnswers = canRevealCorrectAnswers(ass);
 
     let correctCount = 0, wrongCount = 0, partialCount = 0, manualCount = 0;
     allQuestions.forEach((q, idx) => {
@@ -17480,8 +17505,8 @@ function renderScriptFullPage(responseId) {
             }
         }
 
-        let wrongHint = '';
-        if (res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer') {
+                let wrongHint = '';
+        if (canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer') {
             wrongHint = `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><i class="fas fa-info-circle"></i> Correct answer: <strong>${escapeHtml(res.correctAnswer)}</strong></div>`;
         }
 
@@ -17491,7 +17516,7 @@ function renderScriptFullPage(responseId) {
                 <div class="part-row ${p.isCorrect ? 'correct' : 'wrong'}">
                     <span class="part-label">${escapeHtml(p.label)}</span>
                     <span class="part-user">You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
-                    ${!p.isCorrect && p.correctValue ? `<span class="part-correct">Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
+                                       ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span class="part-correct">Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
                     <span class="part-status">${p.isCorrect ? '✓' : '✗'}</span>
                 </div>`).join('')}</div>`;
         }
@@ -17604,14 +17629,8 @@ window.downloadAssessmentHTML = async function(responseId) {
         'No rules provided.'
     ];
 
-    const now = Date.now();
-    const assignmentDeadlineTs = getAssignmentDeadline(ass);
-    const deadline = assignmentDeadlineTs;
-    const isPastDue = deadline ? now > deadline : false;
-    const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
-    const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
-    const canShowAnswers = (isPastDue || isPastAvailability) && (ass.type === 'exam' || ass.type === 'test' || ass
-        .type === 'quiz');
+           const assignmentDeadlineTs = getAssignmentDeadline(ass);
+    const canShowAnswers = canRevealCorrectAnswers(ass);
 
     const chunkSize = 5;
     const pages = [];
@@ -17772,7 +17791,7 @@ window.downloadAssessmentHTML = async function(responseId) {
                                 <div class="part-row ${p.isCorrect ? 'correct' : 'wrong'}">
                                     <span class="part-label">${escapeHtml(p.label)}</span>
                                     <span>You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
-                                    ${!p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
+                                    ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
                                     <span class="part-status">${p.isCorrect ? '✓' : '✗'}</span>
                                 </div>`).join('')}</div>`;
                         }
@@ -17783,7 +17802,7 @@ window.downloadAssessmentHTML = async function(responseId) {
 <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtmlWithLineBreaks(answerDisplay)}</div>
                                 <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}/${q.marks}${isAuto ? '' : ' (manual grading)'}</div>
                                 ${partBreakdownHtml}
-                                ${res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
+                                ${canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
                                 ${canShowAnswers && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
                                 ${scratch ? `<div class="scratch-image"><img src="${scratch}" alt="Scratch" /></div>` : ''}
                                 ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
@@ -17847,14 +17866,8 @@ window.downloadAssessmentPNG = async function(responseId) {
         'No rules provided.'
     ];
 
-    const now = Date.now();
-    const assignmentDeadlineTs = getAssignmentDeadline(ass);
-    const deadline = assignmentDeadlineTs;
-    const isPastDue = deadline ? now > deadline : false;
-    const availabilityEnd = ass.availabilityEnd ? new Date(ass.availabilityEnd).getTime() : null;
-    const isPastAvailability = availabilityEnd ? now > availabilityEnd : false;
-    const canShowAnswers = (isPastDue || isPastAvailability) && (ass.type === 'exam' || ass.type === 'test' || ass
-        .type === 'quiz');
+           const assignmentDeadlineTs = getAssignmentDeadline(ass);
+    const canShowAnswers = canRevealCorrectAnswers(ass);
 
     const chunkSize = 5;
     const pages = [];
@@ -17950,7 +17963,7 @@ window.downloadAssessmentPNG = async function(responseId) {
                                 <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:13px;flex-wrap:wrap;margin-bottom:4px;background:${p.isCorrect ? '#e8f5e9' : '#fde8e8'};border-left:3px solid ${p.isCorrect ? '#2ecc71' : '#e74c3c'};">
                                     <strong>${escapeHtml(p.label)}</strong>
                                     <span>You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
-                                    ${!p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
+                                    ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
                                     <span style="margin-left:auto;font-weight:800;">${p.isCorrect ? '✓' : '✗'}</span>
                                 </div>`).join('')}</div>`;
                         }
@@ -17961,7 +17974,7 @@ window.downloadAssessmentPNG = async function(responseId) {
 <div style="font-size:0.8rem;color:#5f6377;margin:4px 0;white-space:pre-wrap;">Answer: ${escapeHtmlWithLineBreaks(answerDisplay)}</div>
                                 <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}/${q.marks}${isAuto ? '' : ' (manual grading)'}</div>
                                 ${partBreakdownHtml}
-                                ${res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
+                                ${canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
                                 ${canShowAnswers && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
                                 ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:140px;object-fit:contain;" /></div>` : ''}
                                 ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
