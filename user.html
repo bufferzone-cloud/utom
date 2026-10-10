@@ -17305,10 +17305,9 @@ function renderAssessmentHistory() {
             </div>
             ${deadlineHtml}
             <div class="h-actions">
-                <button class="btn-download" onclick="downloadAssessmentPNG('${r.id}')"><i class="fas fa-download"></i> Download PNG</button>
-                <button class="btn-download" onclick="downloadAssessmentHTML('${r.id}')"><i class="fas fa-file-code"></i> Download HTML</button>
-                <button class="btn-download" onclick="viewAssessmentScriptFull('${r.id}')"><i class="fas fa-eye"></i> View Script</button>
-            </div>
+    <button class="btn-download" onclick="viewAssessmentScriptFull('${r.id}')"><i class="fas fa-eye"></i> View Script</button>
+    <button class="btn-download" onclick="downloadAssessmentPDFWithSpinner('${r.id}')"><i class="fas fa-file-pdf"></i> Download PDF</button>
+</div>
         </div>
         `;
     }).join('');
@@ -17540,13 +17539,12 @@ function renderScriptFullPage(responseId) {
         `;
     });
 
-    html += `
-        </div>
-        <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-            <button class="btn-download-script" onclick="downloadAssessmentPNGWithSpinner('${responseId}')"><i class="fas fa-download"></i> Download PNG</button>
-            <button class="btn-download-script green" onclick="downloadAssessmentHTMLWithSpinner('${responseId}')"><i class="fas fa-file-code"></i> Download HTML</button>
-        </div>
-    `;
+   html += `
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn-download-script" onclick="downloadAssessmentPDFWithSpinner('${responseId}')"><i class="fas fa-file-pdf"></i> Download PDF</button>
+    </div>
+`;
 
     container.innerHTML = html;
 
@@ -17566,22 +17564,9 @@ function renderScriptFullPage(responseId) {
     }
 }
 
-window.downloadAssessmentHTMLWithSpinner = function(responseId) {
-    showSpinner('Generating HTML...');
-    setTimeout(() => {
-        downloadAssessmentHTML(responseId);
-        hideSpinner();
-    }, 100);
-};
-
-window.downloadAssessmentPNGWithSpinner = function(responseId) {
-    showSpinner('Generating PNG...');
-    setTimeout(() => {
-        downloadAssessmentPNG(responseId);
-        hideSpinner();
-    }, 100);
-};
-
+// =================================================================
+// ===== SPINNER (used by PDF download) ============================
+// =================================================================
 function showSpinner(text) {
     const overlay = document.getElementById('downloadSpinnerOverlay');
     document.querySelector('.spinner-text').textContent = text || 'Generating download...';
@@ -17592,248 +17577,21 @@ function hideSpinner() {
     document.getElementById('downloadSpinnerOverlay').classList.remove('open');
 }
 
-window.downloadAssessmentHTML = async function(responseId) {
-    const response = allAssessmentResponses.find(r => r.id === responseId);
-    if (!response) { addNotification('danger', 'Response not found.'); return; }
-    const ass = allAssessments.find(a => a.id === response.assessmentId);
-    if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
-
-    let allQuestions = [];
-    if (ass.sections) {
-        ass.sections.forEach(sec => {
-            sec.questions.forEach(q => {
-                allQuestions.push({ ...q, section: sec.name });
-            });
-        });
-    } else if (ass.questions) {
-        allQuestions = ass.questions.map(q => ({ ...q, section: 'General' }));
-    }
-
-    const answers = response.answers || {};
-    const scratchData = response.scratchData || {};
-    const marks = response.marks || {};
-    const questionResults = response.questionResults || {};
-    const score = response.score || 0;
-    const total = ass.totalMarks || 0;
-    const studentInfo = response.studentInfo || {};
-    const percent = total > 0 ? (score / total) * 100 : 0;
-    const passingScorePercent = (typeof ass.passingScore === 'number' && ass.passingScore > 0) ?
-        ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
-    const passed = total > 0 && percent >= passingScorePercent;
-    const _cv = getAssessmentCover(ass);
-    const coverImage = _cv.coverImage;
-    const logo = _cv.logoUrl;
-    const institutionName = _cv.institutionName;
-    const instructions = _cv.instructions;
-    const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : [
-        'No rules provided.'
-    ];
-
-           const assignmentDeadlineTs = getAssignmentDeadline(ass);
-    const canShowAnswers = canRevealCorrectAnswers(ass);
-
-    const chunkSize = 5;
-    const pages = [];
-    for (let i = 0; i < allQuestions.length; i += chunkSize) {
-        pages.push(allQuestions.slice(i, i + chunkSize));
-    }
-
-    let htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${escapeHtml(ass.name)} - Script</title>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-            body { background: #f4f5f8; padding: 20px; }
-            .a4-page { background: #ffffff; width: 100%; max-width: 820px; min-height: auto; margin: 0 auto 18px auto; padding: 24px; box-shadow: 0 3px 16px rgba(0,0,0,0.1); position: relative; border-radius: 14px; page-break-after: always; break-after: page; }
-            .a4-page:last-child { page-break-after: auto; break-after: auto; }
-            .cover-page { margin-bottom: 0; }
-            .cover-header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #f5b042; padding-bottom: 10px; }
-            .cover-header .cover-logo { max-width: 90px; max-height: 90px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; margin-bottom: 10px; }
-            .cover-header h1 { font-size: 26px; font-weight: 800; color: #1a1d28; }
-            .cover-body { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center; }
-            .cover-body .assessment-type { font-size: 36px; font-weight: 900; color: #1a1d28; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
-            .cover-body .assessment-name { font-size: 20px; font-weight: 700; color: #1a1d28; margin-bottom: 16px; }
-            .cover-body .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; max-width: 440px; margin: 0 auto 16px; text-align: left; font-size: 14px; color: #5f6377; }
-            .cover-body .details-grid .label { font-weight: 600; color: #1a1d28; }
-            .cover-body .rules-section { margin-top: 16px; padding-top: 16px; border-top: 2px solid #f5b042; text-align: left; }
-            .cover-body .rules-section h4 { font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #1a1d28; text-align: center; }
-            .cover-body .rules-section ol { padding-left: 20px; font-size: 14px; color: #5f6377; line-height: 1.6; }
-            .cover-footer { margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #8b8fa3; text-align: center; }
-            .cover-image-section { margin-bottom: 0; width: 100%; max-width: 820px; height: auto; padding: 0; overflow: hidden; border-radius: 14px; }
-            .cover-image-section img { width: 100%; height: auto; display: block; }
-            .questions-header { border-bottom: 2px solid #f5b042; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-            .questions-header h3 { font-size: 0.95rem; font-weight: 700; }
-            .questions-header .page-num { font-size: 0.8rem; color: #8b8fa3; }
-            .question-block { margin-bottom: 16px; }
-            .question-block .q-number { font-weight: 700; font-size: 0.9rem; color: #d4952a; margin-bottom: 4px; }
-            .question-block .q-text { font-size: 0.95rem; margin-bottom: 8px; line-height: 1.5; }
-            .question-block .q-image { max-width: 100%; max-height: 140px; border-radius: 8px; margin: 4px 0; object-fit: contain; }
-            .question-block .q-options { display: flex; flex-direction: column; gap: 4px; }
-            .question-block .q-options label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; background: #f8f9fc; }
-            .question-block .q-options input[type="radio"] { accent-color: #f5b042; }
-            .question-block .q-textarea { width: 100%; border-radius: 12px; border: 1.5px solid #e5e8ed; padding: 10px; font-size: 0.85rem; resize: vertical; min-height: 56px; font-family: inherit; }
-            .question-block .q-matching { display: flex; flex-direction: column; gap: 4px; }
-            .question-block .q-matching-row { display: flex; align-items: center; gap: 8px; }
-            .question-block .q-matching-row select { flex: 1; padding: 4px 8px; border-radius: 30px; border: 1.5px solid #e5e8ed; font-size: 0.8rem; }
-            .question-block .q-fillblank { width: 100%; padding: 6px 12px; border-radius: 30px; border: 1.5px solid #e5e8ed; font-size: 0.85rem; }
-            .question-block .q-ordering { display: flex; flex-direction: column; gap: 4px; }
-            .question-block .q-ordering-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #f8f9fc; border-radius: 8px; border: 1px solid #e5e8ed; }
-            .question-block .q-ordering-item .handle { color: #8b8fa3; font-size: 0.95rem; }
-            .question-block .q-ordering-item span { font-size: 0.85rem; }
-            .scratch-toggle-btn { display: none; }
-            .scratchpad-wrapper { display: none; }
-            .student-info { margin-bottom: 14px; padding: 12px 16px; background: #f8f9fc; border-radius: 12px; border-left: 4px solid #F5B042; }
-            .student-info strong { font-weight: 700; }
-            .student-info .score { float: right; }
-            .student-info .score span { font-weight: 700; }
-            .scratch-image { margin-top: 4px; border: 1px solid #e5e8ed; border-radius: 8px; padding: 4px; background: #f8f9fc; max-width: 100%; }
-            .scratch-image img { max-width: 100%; max-height: 140px; object-fit: contain; }
-            .q-correct { font-size: 0.85rem; color: #2ecc71; font-weight: 600; margin-top: 4px; padding: 4px 12px; background: #e8f5e9; border-radius: 30px; display: inline-block; }
-            .part-breakdown { margin-top: 8px; padding: 8px 12px; background: #fafbfc; border-radius: 12px; border: 1px solid #e5e8ed; }
-            .part-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; flex-wrap: wrap; margin-bottom: 4px; }
-            .part-row.correct { background: #e8f5e9; border-left: 3px solid #2ecc71; }
-            .part-row.wrong { background: #fde8e8; border-left: 3px solid #e74c3c; }
-            .part-label { font-weight: 800; min-width: 24px; }
-            .part-status { margin-left: auto; font-weight: 800; }
-            @media print { body { background: #fff; padding: 0; } .a4-page { box-shadow: none; border: none; padding: 16px; margin: 0; } }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            ${coverImage ? `<div class="a4-page cover-image-section"><img src="${coverImage}" alt="Cover Page" /></div>` : ''}
-            
-            <div class="a4-page cover-page">
-                <div class="cover-header">
-                    ${logo ? `<img src="${logo}" alt="Logo" class="cover-logo" />` : ''}
-                    <h1>${escapeHtml(institutionName)}</h1>
-                </div>
-                <div class="cover-body">
-                    <div class="assessment-type">${ass.type.toUpperCase()}</div>
-                    <div class="assessment-name">${escapeHtml(ass.name)}</div>
-                    <div class="details-grid">
-                        <div><span class="label">Duration:</span> ${ass.duration ? ass.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
-                        <div><span class="label">Passing Score:</span> ${ass.passingScore || 0}%</div>
-                        ${ass.paid ? `<div><span class="label">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : '<div><span class="label">Price:</span> Free</div>'}
-                        <div><span class="label">Total Marks:</span> ${ass.totalMarks || 0}</div>
-                        ${assignmentDeadlineTs ? `<div><span class="label">Deadline:</span> ${new Date(assignmentDeadlineTs).toLocaleString()}</div>` : ''}
-                    </div>
-                    <div class="rules-section">
-                        <h4>Instructions / Rules</h4>
-                        <ol>
-                            ${instructionsList.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
-                        </ol>
-                    </div>
-                    <div class="cover-footer">${escapeHtml(institutionName)}</div>
-                </div>
-            </div>
-            
-            ${pages.map((questions, pageIdx) => `
-                <div class="a4-page">
-                    <div class="questions-header">
-                        <h3>${escapeHtml(ass.name)}</h3>
-                        <span class="page-num">Page ${pageIdx + 1} of ${pages.length}</span>
-                    </div>
-                    <div class="student-info">
-                        <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || currentUser?.email || 'N/A')}
-                        <span class="score"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};">${score}/${total} (${total>0?Math.round(percent):0}%)</span></span>
-                        <br /><span style="font-size:11px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
-                    </div>
-                    ${questions.map((q, idx) => {
-                        const qKey = `q${idx}`;
-                        const answer = answers[qKey];
-                        let answerDisplay = 'Not answered';
-                        if (q.type === 'multi-answer' && Array.isArray(answer)) {
-                            answerDisplay = q.options.map((part, idx) => {
-                                const val = answer[idx] || '';
-                                return `${part.label}: ${val}`;
-                            }).join('; ');
-                        } else if (q.type === 'matching' && typeof answer === 'object' && answer !== null) {
-                            answerDisplay = Object.entries(answer).map(([k, v]) => `${q.options[k]?.left || k} → ${q.options[v]?.right || v}`).join('; ');
-                        } else if (q.type === 'ordering' && Array.isArray(answer)) {
-                            answerDisplay = answer.map((i, pos) => `${pos+1}. ${q.options[i]}`).join('; ');
-                        } else {
-                            answerDisplay = answer || 'Not answered';
-                        }
-                        const scratch = scratchData[qKey] || null;
-                        const mark = marks[qKey] !== undefined ? marks[qKey] : 0;
-                        const res = questionResults[qKey] || null;
-                        const isAuto = res ? res.isAuto : (q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range');
-                        const markColor = res ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c')) : (isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6');
-                        
-                        let correctDisplay = '';
-                        if (canShowAnswers && q.type !== 'multi-answer') {
-                            if (q.type === 'range') {
-                                correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
-                            } else if (q.correct !== undefined && q.correct !== null) {
-                                if (typeof q.correct === 'number') {
-                                    correctDisplay = q.options[q.correct] || 'N/A';
-                                } else {
-                                    correctDisplay = q.correct;
-                                }
-                            }
-                        }
-                        
-                        let statusBadge = '';
-                        if (res) {
-                            if (res.isAuto && res.isCorrect) statusBadge = '<span style="color:#2ecc71;font-weight:700;">✅</span>';
-                            else if (res.isAuto && res.isPartial) statusBadge = '<span style="color:#f39c12;font-weight:700;">◐</span>';
-                            else if (res.isAuto) statusBadge = '<span style="color:#e74c3c;font-weight:700;">❌</span>';
-                            else statusBadge = '<span style="color:#3b82f6;font-weight:700;">✎</span>';
-                        }
-
-                        let partBreakdownHtml = '';
-                        if (res && res.partResults && res.partResults.length > 0) {
-                            partBreakdownHtml = `<div class="part-breakdown">${res.partResults.map(p => `
-                                <div class="part-row ${p.isCorrect ? 'correct' : 'wrong'}">
-                                    <span class="part-label">${escapeHtml(p.label)}</span>
-                                    <span>You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
-                                    ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
-                                    <span class="part-status">${p.isCorrect ? '✓' : '✗'}</span>
-                                </div>`).join('')}</div>`;
-                        }
-                        
-                        return `
-                            <div class="question-block" style="border-bottom:1px solid #e5e8ed;padding:12px 0;border-left:4px solid ${res && res.isAuto ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c')) : '#3b82f6'};padding-left:10px;">
-                                <div class="q-number" style="white-space:normal;">${statusBadge} Q${idx+1}: ${escapeHtmlWithLineBreaks(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
-<div style="font-size:0.8rem;color:#5f6377;margin:4px 0;">Answer: ${escapeHtmlWithLineBreaks(answerDisplay)}</div>
-                                <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}/${q.marks}${isAuto ? '' : ' (manual grading)'}</div>
-                                ${partBreakdownHtml}
-                                ${canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
-                                ${canShowAnswers && correctDisplay ? `<div class="q-correct"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
-                                ${scratch ? `<div class="scratch-image"><img src="${scratch}" alt="Scratch" /></div>` : ''}
-                                ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `).join('')}
-        </div>
-    </body>
-    </html>
-    `;
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Script_${ass.name}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    addNotification('success', 'Script HTML downloaded!');
-    hideSpinner();
+// =================================================================
+// ===== PDF SCRIPT DOWNLOAD (replaces PNG + HTML) =================
+// =================================================================
+window.downloadAssessmentPDFWithSpinner = function(responseId) {
+    showSpinner('Generating PDF...');
+    setTimeout(() => {
+        downloadAssessmentPDF(responseId);
+    }, 100);
 };
 
-window.downloadAssessmentPNG = async function(responseId) {
+function buildAssessmentScriptHTML(responseId) {
     const response = allAssessmentResponses.find(r => r.id === responseId);
-    if (!response) { addNotification('danger', 'Response not found.'); return; }
+    if (!response) return null;
     const ass = allAssessments.find(a => a.id === response.assessmentId);
-    if (!ass) { addNotification('danger', 'Assessment not found.'); return; }
+    if (!ass) return null;
 
     let allQuestions = [];
     if (ass.sections) {
@@ -17857,16 +17615,17 @@ window.downloadAssessmentPNG = async function(responseId) {
     const passingScorePercent = (typeof ass.passingScore === 'number' && ass.passingScore > 0) ?
         ass.passingScore : (ass.passingScore ? parseFloat(ass.passingScore) : 50);
     const passed = total > 0 && percent >= passingScorePercent;
+
     const _cv = getAssessmentCover(ass);
     const coverImage = _cv.coverImage;
     const logo = _cv.logoUrl;
     const institutionName = _cv.institutionName;
     const instructions = _cv.instructions;
-    const instructionsList = instructions ? instructions.split('\n').filter(line => line.trim() !== '') : [
-        'No rules provided.'
-    ];
+    const instructionsList = instructions
+        ? instructions.split('\n').filter(line => line.trim() !== '')
+        : ['No rules provided.'];
 
-           const assignmentDeadlineTs = getAssignmentDeadline(ass);
+    const assignmentDeadlineTs = getAssignmentDeadline(ass);
     const canShowAnswers = canRevealCorrectAnswers(ass);
 
     const chunkSize = 5;
@@ -17875,142 +17634,203 @@ window.downloadAssessmentPNG = async function(responseId) {
         pages.push(allQuestions.slice(i, i + chunkSize));
     }
 
-    let htmlContent = `
-        <div id="scriptReport" style="background:#ffffff;padding:0;max-width:820px;margin:0 auto;">
-            ${coverImage ? `<div class="a4-page cover-image-section" style="width:100%;max-width:820px;height:auto;padding:0;margin:0 auto 18px auto;background:#fff;border-radius:14px;overflow:hidden;"><img src="${coverImage}" style="width:100%;height:auto;display:block;" /></div>` : ''}
-            
-            <div class="a4-page" style="width:100%;max-width:820px;min-height:auto;padding:24px;margin:0 auto 18px auto;background:#fff;border-radius:14px;box-shadow:0 3px 16px rgba(0,0,0,0.1);">
-                <div class="cover-header" style="text-align:center;border-bottom:2px solid #f5b042;padding-bottom:10px;">
-                    ${logo ? `<img src="${logo}" style="max-width:90px;max-height:90px;background:#fff;border-radius:8px;padding:4px;margin-bottom:10px;" />` : ''}
-                    <h1 style="font-size:26px;font-weight:800;color:#1a1d28;">${escapeHtml(institutionName)}</h1>
+    const styleBlock = `
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .utom-pdf-root { background: #ffffff; padding: 0; max-width: 820px; margin: 0 auto; }
+        .a4-page { background: #ffffff; width: 100%; max-width: 820px; min-height: auto; margin: 0 auto 18px auto; padding: 22px; box-shadow: none; position: relative; border-radius: 10px; }
+        .cover-header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #f5b042; padding-bottom: 10px; }
+        .cover-header .cover-logo { max-width: 90px; max-height: 90px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; margin-bottom: 10px; }
+        .cover-header h1 { font-size: 24px; font-weight: 800; color: #1a1d28; }
+        .cover-body { text-align: center; }
+        .cover-body .assessment-type { font-size: 32px; font-weight: 900; color: #1a1d28; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+        .cover-body .assessment-name { font-size: 19px; font-weight: 700; color: #1a1d28; margin-bottom: 14px; }
+        .cover-body .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; max-width: 440px; margin: 0 auto 14px; text-align: left; font-size: 13px; color: #5f6377; }
+        .cover-body .details-grid .label { font-weight: 600; color: #1a1d28; }
+        .cover-body .rules-section { margin-top: 14px; padding-top: 14px; border-top: 2px solid #f5b042; text-align: left; }
+        .cover-body .rules-section h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #1a1d28; text-align: center; }
+        .cover-body .rules-section ol { padding-left: 20px; font-size: 13px; color: #5f6377; line-height: 1.55; }
+        .questions-header { border-bottom: 2px solid #f5b042; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .questions-header h3 { font-size: 0.9rem; font-weight: 700; }
+        .questions-header .page-num { font-size: 0.75rem; color: #8b8fa3; }
+        .student-info { margin-bottom: 14px; padding: 10px 14px; background: #f8f9fc; border-radius: 10px; border-left: 4px solid #F5B042; font-size: 13px; }
+        .student-info strong { font-weight: 700; }
+        .question-block { padding: 10px 0 10px 10px; border-bottom: 1px solid #e5e8ed; }
+        .q-head { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; line-height: 1.5; }
+        .q-answer { font-size: 0.82rem; color: #5f6377; margin: 4px 0; white-space: pre-wrap; }
+        .q-mark { font-size: 0.8rem; font-weight: 700; }
+        .q-correct { font-size: 0.8rem; color: #2ecc71; font-weight: 600; margin-top: 4px; padding: 3px 10px; background: #e8f5e9; border-radius: 30px; display: inline-block; }
+        .part-breakdown { margin-top: 6px; padding: 6px 10px; background: #fafbfc; border-radius: 10px; border: 1px solid #e5e8ed; }
+        .part-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: 12px; flex-wrap: wrap; margin-bottom: 3px; }
+        .part-row.correct { background: #e8f5e9; border-left: 3px solid #2ecc71; }
+        .part-row.wrong { background: #fde8e8; border-left: 3px solid #e74c3c; }
+        .part-label { font-weight: 800; min-width: 22px; }
+        .part-status { margin-left: auto; font-weight: 800; }
+        img.q-scratch-img { max-width: 100%; max-height: 140px; border: 1px solid #e5e8ed; border-radius: 8px; padding: 3px; background: #f8f9fc; }
+    </style>`;
+
+    let html = `<div class="utom-pdf-root">${styleBlock}`;
+
+    if (coverImage) {
+        html += `<div class="a4-page"><img src="${coverImage}" style="width:100%;height:auto;display:block;border-radius:10px;" /></div>`;
+    }
+
+    html += `
+        <div class="a4-page">
+            <div class="cover-header">
+                ${logo ? `<img src="${logo}" alt="Logo" class="cover-logo" />` : ''}
+                <h1>${escapeHtml(institutionName)}</h1>
+            </div>
+            <div class="cover-body">
+                <div class="assessment-type">${ass.type.toUpperCase()}</div>
+                <div class="assessment-name">${escapeHtml(ass.name)}</div>
+                <div class="details-grid">
+                    <div><span class="label">Duration:</span> ${ass.duration ? ass.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
+                    <div><span class="label">Passing Score:</span> ${ass.passingScore || 0}%</div>
+                    ${ass.paid ? `<div><span class="label">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : '<div><span class="label">Price:</span> Free</div>'}
+                    <div><span class="label">Total Marks:</span> ${ass.totalMarks || 0}</div>
+                    ${assignmentDeadlineTs ? `<div style="grid-column:span 2;"><span class="label">Deadline:</span> ${new Date(assignmentDeadlineTs).toLocaleString()}</div>` : ''}
                 </div>
-                <div class="cover-body" style="display:flex;flex-direction:column;justify-content:center;text-align:center;">
-                    <div style="font-size:36px;font-weight:900;color:#1a1d28;text-transform:uppercase;letter-spacing:1.5px;">${ass.type.toUpperCase()}</div>
-                    <div style="font-size:20px;font-weight:700;color:#1a1d28;margin-bottom:16px;">${escapeHtml(ass.name)}</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;max-width:440px;margin:0 auto 16px;text-align:left;font-size:14px;color:#5f6377;">
-                        <div><span style="font-weight:600;color:#1a1d28;">Duration:</span> ${ass.duration ? ass.duration.replace(':', 'h ') + 'm' : 'N/A'}</div>
-                        <div><span style="font-weight:600;color:#1a1d28;">Passing Score:</span> ${ass.passingScore || 0}%</div>
-                        ${ass.paid ? `<div><span style="font-weight:600;color:#1a1d28;">Price:</span> ZMW ${ass.price} (${ass.gateway})</div>` : '<div><span style="font-weight:600;color:#1a1d28;">Price:</span> Free</div>'}
-                        <div><span style="font-weight:600;color:#1a1d28;">Total Marks:</span> ${ass.totalMarks || 0}</div>
-                        ${assignmentDeadlineTs ? `<div><span style="font-weight:600;color:#1a1d28;">Deadline:</span> ${new Date(assignmentDeadlineTs).toLocaleString()}</div>` : ''}
-                    </div>
-                    <div style="margin-top:16px;padding-top:16px;border-top:2px solid #f5b042;text-align:left;">
-                        <h4 style="font-size:16px;font-weight:700;margin-bottom:10px;color:#1a1d28;text-align:center;">Instructions / Rules</h4>
-                        <ol style="padding-left:20px;font-size:14px;color:#5f6377;line-height:1.6;">
-                            ${instructionsList.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
-                        </ol>
-                    </div>
+                <div class="rules-section">
+                    <h4>Instructions / Rules</h4>
+                    <ol>${instructionsList.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ol>
                 </div>
             </div>
-            
-            ${pages.map((questions, pageIdx) => `
-                <div class="a4-page" style="width:100%;max-width:820px;min-height:auto;padding:24px;margin:0 auto 18px auto;background:#fff;border-radius:14px;box-shadow:0 3px 16px rgba(0,0,0,0.1);">
-                    <div style="border-bottom:2px solid #f5b042;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-                        <h3 style="font-size:0.95rem;font-weight:700;">${escapeHtml(ass.name)}</h3>
-                        <span style="font-size:0.8rem;color:#8b8fa3;">Page ${pageIdx + 1} of ${pages.length}</span>
-                    </div>
-                    <div style="margin-bottom:14px;padding:12px 16px;background:#f8f9fc;border-radius:12px;border-left:4px solid #F5B042;">
-                        <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || currentUser?.email || 'N/A')}
-                        <span style="float:right;"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${score}/${total} (${total>0?Math.round(percent):0}%)</span></span>
-                        <br /><span style="font-size:11px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k!=='fullName').map(([k,v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
-                    </div>
-                    ${questions.map((q, idx) => {
-                        const qKey = `q${idx}`;
-                        const answer = answers[qKey];
-                        let answerDisplay = 'Not answered';
-                        if (q.type === 'multi-answer' && Array.isArray(answer)) {
-                            answerDisplay = q.options.map((part, idx) => {
-                                const val = answer[idx] || '';
-                                return `${part.label}: ${val}`;
-                            }).join('; ');
-                        } else if (q.type === 'matching' && typeof answer === 'object' && answer !== null) {
-                            answerDisplay = Object.entries(answer).map(([k, v]) => `${q.options[k]?.left || k} → ${q.options[v]?.right || v}`).join('; ');
-                        } else if (q.type === 'ordering' && Array.isArray(answer)) {
-                            answerDisplay = answer.map((i, pos) => `${pos+1}. ${q.options[i]}`).join('; ');
-                        } else {
-                            answerDisplay = answer || 'Not answered';
-                        }
-                        const scratch = scratchData[qKey] || null;
-                        const mark = marks[qKey] !== undefined ? marks[qKey] : 0;
-                        const res = questionResults[qKey] || null;
-                        const isAuto = res ? res.isAuto : (q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' || q.type === 'matching' || q.type === 'ordering' || q.type === 'multi-answer' || q.type === 'range');
-                        const markColor = res ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c')) : (isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6');
-                        
-                        let correctDisplay = '';
-                        if (canShowAnswers && q.type !== 'multi-answer') {
-                            if (q.type === 'range') {
-                                correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
-                            } else if (q.correct !== undefined && q.correct !== null) {
-                                if (typeof q.correct === 'number') {
-                                    correctDisplay = q.options[q.correct] || 'N/A';
-                                } else {
-                                    correctDisplay = q.correct;
-                                }
-                            }
-                        }
-                        
-                        let statusBadge = '';
-                        if (res) {
-                            if (res.isAuto && res.isCorrect) statusBadge = '<span style="color:#2ecc71;font-weight:700;">✅</span>';
-                            else if (res.isAuto && res.isPartial) statusBadge = '<span style="color:#f39c12;font-weight:700;">◐</span>';
-                            else if (res.isAuto) statusBadge = '<span style="color:#e74c3c;font-weight:700;">❌</span>';
-                            else statusBadge = '<span style="color:#3b82f6;font-weight:700;">✎</span>';
-                        }
+        </div>`;
 
-                        let partBreakdownHtml = '';
-                        if (res && res.partResults && res.partResults.length > 0) {
-                            partBreakdownHtml = `<div style="margin-top:8px;padding:8px 12px;background:#fafbfc;border-radius:12px;border:1px solid #e5e8ed;">${res.partResults.map(p => `
-                                <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:13px;flex-wrap:wrap;margin-bottom:4px;background:${p.isCorrect ? '#e8f5e9' : '#fde8e8'};border-left:3px solid ${p.isCorrect ? '#2ecc71' : '#e74c3c'};">
-                                    <strong>${escapeHtml(p.label)}</strong>
-                                    <span>You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
-                                    ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
-                                    <span style="margin-left:auto;font-weight:800;">${p.isCorrect ? '✓' : '✗'}</span>
-                                </div>`).join('')}</div>`;
-                        }
-                        
-                        return `
-                            <div style="border-bottom:1px solid #e5e8ed;padding:12px 0;border-left:4px solid ${res && res.isAuto ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c')) : '#3b82f6'};padding-left:10px;">
-                                <div style="font-weight:600;font-size:0.9rem;white-space:normal;">${statusBadge} Q${idx+1}: ${escapeHtmlWithLineBreaks(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
-<div style="font-size:0.8rem;color:#5f6377;margin:4px 0;white-space:pre-wrap;">Answer: ${escapeHtmlWithLineBreaks(answerDisplay)}</div>
-                                <div style="font-size:0.8rem;font-weight:600;color:${markColor};">Marks: ${mark}/${q.marks}${isAuto ? '' : ' (manual grading)'}</div>
-                                ${partBreakdownHtml}
-                                ${canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer' ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:4px 12px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
-                                ${canShowAnswers && correctDisplay ? `<div style="font-size:0.85rem;color:#2ecc71;font-weight:600;margin-top:4px;padding:4px 12px;background:#e8f5e9;border-radius:30px;display:inline-block;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> ${escapeHtml(correctDisplay)}</div>` : ''}
-                                ${scratch ? `<div style="margin-top:4px;border:1px solid #e5e8ed;border-radius:8px;padding:4px;background:#f8f9fc;"><img src="${scratch}" alt="Scratch" style="max-width:100%;max-height:140px;object-fit:contain;" /></div>` : ''}
-                                ${response.remarks && response.remarks[qKey] ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
+    pages.forEach((questions, pageIdx) => {
+        html += `
+            <div class="a4-page">
+                <div class="questions-header">
+                    <h3>${escapeHtml(ass.name)}</h3>
+                    <span class="page-num">Page ${pageIdx + 1} of ${pages.length}</span>
                 </div>
-            `).join('')}
-        </div>
-    `;
+                <div class="student-info">
+                    <strong>Student:</strong> ${escapeHtml(studentInfo.fullName || currentUser?.email || 'N/A')}
+                    <span style="float:right;"><strong>Score:</strong> <span style="color:${passed ? '#2ecc71' : '#e74c3c'};font-weight:700;">${score}/${total} (${total > 0 ? Math.round(percent) : 0}%)</span></span>
+                    <br /><span style="font-size:11px;color:#8b8fa3;">${Object.entries(studentInfo).filter(([k]) => k !== 'fullName').map(([k, v]) => `${k}: ${escapeHtml(v)}`).join(' · ')}</span>
+                </div>`;
+
+        questions.forEach((q, idx) => {
+            const globalIdx = pageIdx * chunkSize + idx;
+            const qKey = `q${globalIdx}`;
+            const answer = answers[qKey];
+            let answerDisplay = 'Not answered';
+            if (q.type === 'multi-answer' && Array.isArray(answer)) {
+                answerDisplay = q.options.map((part, i) => `${part.label}: ${answer[i] || ''}`).join('; ');
+            } else if (q.type === 'matching' && typeof answer === 'object' && answer !== null) {
+                answerDisplay = Object.entries(answer).map(([k, v]) => `${q.options[k]?.left || k} → ${q.options[v]?.right || v}`).join('; ');
+            } else if (q.type === 'ordering' && Array.isArray(answer)) {
+                answerDisplay = answer.map((i, pos) => `${pos + 1}. ${q.options[i]}`).join('; ');
+            } else {
+                answerDisplay = answer || 'Not answered';
+            }
+            const scratch = scratchData[qKey] || null;
+            const mark = marks[qKey] !== undefined ? marks[qKey] : 0;
+            const res = questionResults[qKey] || null;
+            const isAuto = res ? res.isAuto :
+                (q.type === 'mcq' || q.type === 'tf' || q.type === 'fillblank' ||
+                 q.type === 'matching' || q.type === 'ordering' ||
+                 q.type === 'multi-answer' || q.type === 'range');
+            const markColor = res
+                ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c'))
+                : (isAuto ? (mark == q.marks ? '#2ecc71' : '#e74c3c') : '#3b82f6');
+
+            let correctDisplay = '';
+            if (canShowAnswers && q.type !== 'multi-answer') {
+                if (q.type === 'range') {
+                    correctDisplay = `Correct range: ${q.rangeMin !== undefined ? q.rangeMin : '?'} – ${q.rangeMax !== undefined ? q.rangeMax : '?'}`;
+                } else if (q.correct !== undefined && q.correct !== null) {
+                    correctDisplay = typeof q.correct === 'number' ? (q.options[q.correct] || 'N/A') : q.correct;
+                }
+            }
+
+            let statusBadge = '';
+            if (res) {
+                if (res.isAuto && res.isCorrect) statusBadge = '<span style="color:#2ecc71;font-weight:700;">✅</span>';
+                else if (res.isAuto && res.isPartial) statusBadge = '<span style="color:#f39c12;font-weight:700;">◐</span>';
+                else if (res.isAuto) statusBadge = '<span style="color:#e74c3c;font-weight:700;">❌</span>';
+                else statusBadge = '<span style="color:#3b82f6;font-weight:700;">✎</span>';
+            }
+
+            let partBreakdownHtml = '';
+            if (res && res.partResults && res.partResults.length > 0) {
+                partBreakdownHtml = `<div class="part-breakdown">${res.partResults.map(p => `
+                    <div class="part-row ${p.isCorrect ? 'correct' : 'wrong'}">
+                        <span class="part-label">${escapeHtml(p.label)}</span>
+                        <span>You: ${p.userValue ? escapeHtml(p.userValue) : '<em>blank</em>'}</span>
+                        ${canShowAnswers && !p.isCorrect && p.correctValue ? `<span>Correct: <strong>${escapeHtml(p.correctValue)}</strong></span>` : ''}
+                        <span class="part-status">${p.isCorrect ? '✓' : '✗'}</span>
+                    </div>`).join('')}</div>`;
+            }
+
+            html += `
+                <div class="question-block" style="border-left:4px solid ${res && res.isAuto ? (res.isCorrect ? '#2ecc71' : (res.isPartial ? '#f39c12' : '#e74c3c')) : '#3b82f6'};">
+                    <div class="q-head">${statusBadge} Q${globalIdx + 1}: ${escapeHtmlWithLineBreaks(q.text)} (${q.marks} marks) <span style="font-size:0.7rem;color:#8b8fa3;">${q.section}</span></div>
+                    <div class="q-answer">Answer: ${escapeHtmlWithLineBreaks(answerDisplay)}</div>
+                    <div class="q-mark" style="color:${markColor};">Marks: ${mark}/${q.marks}${isAuto ? '' : ' (manual grading)'}</div>
+                    ${partBreakdownHtml}
+                    ${canShowAnswers && res && res.isAuto && !res.isCorrect && !res.isPartial && res.correctAnswer && q.type !== 'multi-answer'
+                        ? `<div style="font-size:0.8rem;color:#c62828;margin-top:4px;padding:3px 10px;background:#fde8e8;border-radius:30px;display:inline-block;"><strong>Correct answer:</strong> ${escapeHtml(res.correctAnswer)}</div>` : ''}
+                    ${canShowAnswers && correctDisplay
+                        ? `<div class="q-correct">✓ ${escapeHtml(correctDisplay)}</div>` : ''}
+                    ${scratch ? `<div style="margin-top:4px;"><img class="q-scratch-img" src="${scratch}" alt="Scratch" /></div>` : ''}
+                    ${response.remarks && response.remarks[qKey]
+                        ? `<div style="margin-top:4px;font-size:0.75rem;color:#5f6377;"><strong>Remark:</strong> ${escapeHtml(response.remarks[qKey])}</div>` : ''}
+                </div>`;
+        });
+
+        html += `</div>`;
+    });
+
+    html += `</div>`;
+    return { html, ass };
+}
+
+window.downloadAssessmentPDF = async function(responseId) {
+    const built = buildAssessmentScriptHTML(responseId);
+    if (!built) {
+        hideSpinner();
+        addNotification('danger', 'Could not build script PDF.');
+        return;
+    }
+    const { html, ass } = built;
 
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = html;
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-99999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.background = '#ffffff';
     document.body.appendChild(tempDiv);
-    const reportEl = document.getElementById('scriptReport');
 
-   try {
-    addNotification('info', 'Generating PNG... Please wait.');
-    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    const canvas = await html2canvas(reportEl, {
-            scale: 1.5,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false
-        });
-        const link = document.createElement('a');
-        link.download = `Script_${ass.name}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        addNotification('success', 'Script PNG downloaded!');
+    try {
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+
+        const safeName = (ass.name || 'Assessment').replace(/[^a-z0-9\-_ ]/gi, '').trim() || 'Assessment';
+
+        await html2pdf().set({
+            margin: [8, 8, 8, 8],
+            filename: `Script_${safeName}.pdf`,
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                windowWidth: tempDiv.scrollWidth
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['.question-block'] }
+        }).from(tempDiv.firstElementChild).save();
+
+        addNotification('success', 'Script PDF downloaded!');
     } catch (err) {
-        addNotification('danger', 'Failed to generate PNG: ' + err.message);
+        addNotification('danger', 'Failed to generate PDF: ' + err.message);
     } finally {
         document.body.removeChild(tempDiv);
+        hideSpinner();
     }
-    hideSpinner();
 };
 
 // ===== PROMO CAROUSEL =====
