@@ -9273,6 +9273,8 @@ body.dark-mode .cr-field input:focus { background: #222; }
                         <!-- Rendered by JS -->
                     </div>
                 </div>
+                <!-- NEW: Promotion banner -->
+<div id="promoBannerContainer" style="padding: 6px 12px 0 12px;"></div>
                 <div class="courses-section">
                     <div class="grid-title"><h3><i class="fas fa-list-ul" style="color:var(--gold);"></i> All Courses</h3><span class="badge-count" id="totalCourseCount">0</span></div>
                     <div id="allCoursesNameContainer" class="all-courses-name-scroll"></div>
@@ -9368,6 +9370,14 @@ body.dark-mode .cr-field input:focus { background: #222; }
                                     </div>
                                 </div>
                                 <div class="course-amount" id="paymentAmountDisplay">ZMW 0</div>
+                                <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+    <input type="text" id="promoCodeInput" placeholder="Enter promo code (optional)"
+           style="flex:1;padding:10px 16px;border-radius:30px;border:1.5px solid var(--border-color);font-size:13px;text-transform:uppercase;">
+    <button type="button" id="applyPromoCodeBtn"
+            style="padding:10px 20px;border-radius:30px;border:none;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;font-weight:700;font-size:13px;cursor:pointer;">
+        Apply
+    </button>
+</div>
                             </div>
                             <div class="payment-instruction-box">
                                 <div class="inst-title"><i class="fas fa-info-circle"></i> Payment Instructions</div>
@@ -10010,6 +10020,69 @@ let currentPaymentSettings = {
     accountName: '', mtnAccountName: '', airtelAccountName: '', zamtelAccountName: ''
 };
 
+let activePromotions = [];
+
+function loadPromotions() {
+    return new Promise((resolve) => {
+        onValue(ref(db, 'promotions'), (snap) => {
+            const data = snap.val() || {};
+            const now = Date.now();
+            activePromotions = Object.entries(data)
+                .map(([id, p]) => ({ id, ...p }))
+                .filter(p => {
+                    if (p.status !== 'active') return false;
+                    if (p.startDate && now < p.startDate) return false;
+                    if (p.endDate   && now > p.endDate)   return false;
+                    if (p.maxUsers > 0 && (p.usageCount || 0) >= p.maxUsers) return false;
+                    return true;
+                });
+            renderPromoBanner();
+            applyPromoToPaymentPage();
+            resolve();
+        });
+    });
+}
+
+function isPromoForCurrentUser(p) {
+    if (!currentUser) return false;
+    if (p.targetType === 'all') return true;
+    if (p.targetType === 'selected') return (p.targetUserIds || []).includes(currentUser.uid);
+    if (p.targetType === 'register') {
+        return (p.targetRegisterIds || []).some(rid => userRegisterIds.has(rid));
+    }
+    return false;
+}
+
+function promoAppliesToItem(p, item, itemType) {
+    if (!item) return false;
+    if (p.applicableTo === 'courses'    && itemType !== 'course')    return false;
+    if (p.applicableTo === 'subfolders' && itemType !== 'subfolder') return false;
+    return true;
+}
+
+function computePromoDiscount(p, originalPrice) {
+    if (p.type === 'free') return originalPrice;
+    if (p.discountType === 'percentage') {
+        const d = (originalPrice * p.discountValue) / 100;
+        return Math.min(d, originalPrice);
+    }
+    return Math.min(p.discountValue, originalPrice);
+}
+
+function getBestPromoForItem(item, itemType) {
+    const candidates = activePromotions
+        .filter(p => isPromoForCurrentUser(p) && promoAppliesToItem(p, item, itemType));
+    if (candidates.length === 0) return null;
+
+    // Pick the one with the largest discount
+    let best = null, bestDiscount = 0;
+    candidates.forEach(p => {
+        const d = computePromoDiscount(p, item.price || 0);
+        if (d > bestDiscount) { bestDiscount = d; best = p; }
+    });
+    return best ? { promo: best, discount: bestDiscount } : null;
+}
+
 // ── DUAL-SOURCE STORAGE: admin + lecturer combined ──
 let _adminAssessments = [];
 let _lecturerAssessments = [];
@@ -10376,6 +10449,40 @@ function getVideoThumbnail(video) {
     return UTOM_THUMBNAIL;
 }
 
+function renderPromoBanner() {
+    const wrap = document.getElementById('promoBannerContainer');
+    if (!wrap) return;
+
+    const mine = activePromotions.filter(isPromoForCurrentUser);
+    if (mine.length === 0) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = mine.map(p => {
+        const isFree = p.type === 'free';
+        const headline = isFree ? '🎁 FREE ACCESS!' : `💸 ${p.discountValue}${p.discountType === 'percentage' ? '%' : ' ZMW'} OFF`;
+        const scope = p.applicableTo === 'all' ? 'Courses & Subfolders'
+                    : p.applicableTo === 'courses' ? 'All Courses'
+                    : 'All Subfolders';
+        const codeLine = p.promoCode
+            ? `<div style="font-size:11px;margin-top:3px;color:rgba(255,255,255,0.9);">Use code <strong style="background:rgba(255,255,255,0.25);padding:1px 8px;border-radius:20px;">${escapeHtml(p.promoCode)}</strong></div>`
+            : '';
+        const endLine = p.endDate ? `<div style="font-size:10px;margin-top:2px;color:rgba(255,255,255,0.75);">Ends ${new Date(p.endDate).toLocaleDateString()}</div>` : '';
+        return `
+            <div class="promo-banner" style="
+                background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);
+                color:#fff;padding:12px 16px;border-radius:16px;
+                margin-bottom:10px;box-shadow:0 6px 22px rgba(245,176,66,0.30);
+                position:relative;overflow:hidden;">
+                <div style="position:absolute;right:-20px;top:-20px;font-size:80px;opacity:0.12;">🎉</div>
+                <div style="font-size:15px;font-weight:900;letter-spacing:-0.3px;">${headline}</div>
+                <div style="font-size:12px;font-weight:700;margin-top:2px;">${escapeHtml(p.name)}</div>
+                <div style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.85);">Valid on ${scope}</div>
+                ${codeLine}
+                ${endLine}
+            </div>
+        `;
+    }).join('');
+}
+
 // ===== SCHEDULED POPUP SYSTEM =====
 let scheduledPopupCheckInterval = null;
 let currentPopupData = null;
@@ -10559,11 +10666,13 @@ onAuthStateChanged(auth, async (user) => {
     loadDocs(),
     loadPaymentSettings(),
     loadPromos(),
+    loadLecturerPaymentSettings(null),   // ensure defaults
+    loadPromotions(),                    // ⬅️ NEW
     loadLecturers(),
     loadInAppNotifications(),
     loadRegistersAndAssessments(user.uid),
-    loadShopData(),    
-    loadAttendanceRegisters()  
+    loadShopData(),
+    loadAttendanceRegisters()
 ];
 const failsafe = new Promise(r => setTimeout(r, 8000));
 await Promise.race([Promise.all(dataPromises), failsafe]);
@@ -15207,29 +15316,44 @@ function openPaymentPage(item, itemType = 'course') {
         updatePaymentNumbersDisplay();
     });
 
-    document.getElementById('paymentCourseTitle').innerText = item.name || 'Item';
-    document.getElementById('paymentAmountDisplay').innerText = `ZMW ${item.price || 0}`;
+    // ---- apply promotion (if any) ----
+    const match = getBestPromoForItem(item, itemType);
+    const originalPrice = item.price || 0;
+    let finalPrice = originalPrice;
+    let promoBadgeHtml = '';
+
+    if (match) {
+        finalPrice = Math.max(0, originalPrice - match.discount);
+        promoBadgeHtml = `
+            <div style="margin-top:6px;padding:8px 14px;background:linear-gradient(135deg,#f5b042,#ff6b00);color:#fff;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                🎉 ${escapeHtml(match.promo.name)} — <span style="text-decoration:line-through;opacity:0.7;">ZMW ${originalPrice}</span> → <span>ZMW ${finalPrice}</span>
+            </div>`;
+        window._activeAppliedPromoId = match.promo.id;
+        window._activePromoDiscount = match.discount;
+    } else {
+        window._activeAppliedPromoId = null;
+        window._activePromoDiscount = 0;
+    }
+
+    document.getElementById('paymentCourseTitle').innerHTML =
+        escapeHtml(item.name || 'Item') + promoBadgeHtml;
+    document.getElementById('paymentAmountDisplay').innerText = `ZMW ${finalPrice}`;
+    document.getElementById('paymentAmountDisplay').dataset.originalPrice = originalPrice;
+
     const durationInfo = document.getElementById('paymentDurationInfo');
     if (item.durationType && item.durationType !== 'lifetime' && item.durationValue > 0) {
-        const labels = {
-            'minutes': 'minute',
-            'hours': 'hour',
-            'days': 'day',
-            'weeks': 'week',
-            'months': 'month'
-        };
+        const labels = { minutes:'minute', hours:'hour', days:'day', weeks:'week', months:'month' };
         const label = labels[item.durationType] || item.durationType;
-        durationInfo.innerHTML =
-            `<i class="fas fa-clock"></i> ${item.durationValue} ${label}${item.durationValue > 1 ? 's' : ''} access`;
+        durationInfo.innerHTML = `<i class="fas fa-clock"></i> ${item.durationValue} ${label}${item.durationValue > 1 ? 's' : ''} access`;
     } else {
         durationInfo.innerHTML = `<i class="fas fa-infinity"></i> Lifetime access`;
     }
+
     document.getElementById('paymentScreenshotPreview').innerHTML = '';
     paymentScreenshotUrl = null;
     updatePaymentNumbersDisplay();
-    showPage('payment', { itemId: item.id, itemType: itemType });
+    showPage('payment', { itemId: item.id, itemType });
 }
-
 function showPaymentRequiredPopup(assessment) {
     const overlay = document.getElementById('paymentRequiredOverlay');
     document.getElementById('payRequiredName').textContent = assessment.name;
@@ -15252,6 +15376,39 @@ function showPaymentRequiredPopup(assessment) {
     });
 }
 
+document.getElementById('applyPromoCodeBtn')?.addEventListener('click', () => {
+    const code = (document.getElementById('promoCodeInput').value || '').trim().toUpperCase();
+    if (!code) return addNotification('warning', 'Please enter a promo code.');
+    const promo = activePromotions.find(p => p.promoCode === code);
+    if (!promo) return addNotification('danger', 'Invalid or expired promo code.');
+    if (!selectedCourse) return;
+
+    // Check scope
+    if (!promoAppliesToItem(promo, selectedCourse, selectedItemType)) {
+        return addNotification('warning', 'This code does not apply to this item.');
+    }
+
+    // Check user targeting (a code-based promo can still be all/selected/register)
+    if (!isPromoForCurrentUser(promo)) {
+        return addNotification('warning', 'This promo is not available for your account.');
+    }
+
+    // Check max users
+    if (promo.maxUsers > 0 && (promo.usageCount || 0) >= promo.maxUsers) {
+        return addNotification('warning', 'This promo has reached its usage limit.');
+    }
+
+    const original = parseFloat(document.getElementById('paymentAmountDisplay').dataset.originalPrice) || 0;
+    const discount = computePromoDiscount(promo, original);
+    const final = Math.max(0, original - discount);
+
+    window._activeAppliedPromoId = promo.id;
+    window._activePromoDiscount = discount;
+
+    document.getElementById('paymentAmountDisplay').innerText = `ZMW ${final}`;
+    addNotification('success', `Promo applied! You save ZMW ${discount}.`);
+});
+
 // =================================================================
 // ===== PAYMENT SUBMIT — write to the correct source path =========
 // =================================================================
@@ -15259,21 +15416,28 @@ document.getElementById('submitPaymentPageBtn').addEventListener('click', async 
     const btn = document.getElementById('submitPaymentPageBtn');
     if (btn.classList.contains('loading')) return;
     if (!selectedCourse || !paymentScreenshotUrl) {
-        alert("Please upload a payment screenshot before submitting.");
+        alert('Please upload a payment screenshot before submitting.');
         return;
     }
     btn.classList.add('loading');
     btn.disabled = true;
     try {
-        // Route to lecturer path if item belongs to a lecturer, else admin path
+        const originalPrice = parseFloat(document.getElementById('paymentAmountDisplay').dataset.originalPrice) || selectedCourse.price || 0;
+        const appliedDiscount = window._activePromoDiscount || 0;
+        const appliedPromoId = window._activeAppliedPromoId || null;
+        const finalAmount = Math.max(0, originalPrice - appliedDiscount);
+
         const paymentPath = pendingPurchasesPathForItem(selectedCourse);
         const pendingRef = push(ref(db, paymentPath));
         await set(pendingRef, {
             itemId: selectedCourse.id,
             itemTitle: selectedCourse.name,
             itemType: selectedItemType,
-            amount: selectedCourse.price,
-            provider: 'MTN/Airtel',
+            amount: finalAmount,
+            originalAmount: originalPrice,
+            promoId: appliedPromoId,
+            promoDiscount: appliedDiscount,
+            provider: 'MTN/Airtel/Zamtel',
             screenshot: paymentScreenshotUrl,
             status: 'pending',
             timestamp: Date.now(),
@@ -15283,9 +15447,31 @@ document.getElementById('submitPaymentPageBtn').addEventListener('click', async 
             userPhone: userData.phone || '',
             lecturerId: currentPaymentLecturerUid || ''
         });
+
+        // ---- record promo usage ----
+        if (appliedPromoId) {
+            const pSnap = await get(ref(db, `promotions/${appliedPromoId}`));
+            const promo = pSnap.val();
+            if (promo) {
+                const usedBy = promo.usedBy || {};
+                if (!usedBy[currentUser.uid]) {
+                    usedBy[currentUser.uid] = {
+                        usedAt: Date.now(),
+                        itemId: selectedCourse.id,
+                        itemTitle: selectedCourse.name,
+                        discountAmount: appliedDiscount
+                    };
+                    await update(ref(db, `promotions/${appliedPromoId}`), {
+                        usedBy,
+                        usageCount: Object.keys(usedBy).length
+                    });
+                }
+            }
+        }
+
         const typeLabel = selectedItemType === 'subfolder' ? 'Subfolder' : 'Course';
         addNotification('purchase',
-            `${typeLabel} purchase request submitted for "${selectedCourse.name}". Awaiting admin approval.`);
+            `${typeLabel} purchase submitted for "${selectedCourse.name}". Awaiting approval.`);
         btn.classList.remove('loading');
         btn.disabled = false;
         showPage('home');
@@ -15293,6 +15479,8 @@ document.getElementById('submitPaymentPageBtn').addEventListener('click', async 
         paymentScreenshotUrl = null;
         selectedItemType = 'course';
         currentPaymentLecturerUid = null;
+        window._activeAppliedPromoId = null;
+        window._activePromoDiscount = 0;
         document.getElementById('paymentScreenshotPreview').innerHTML = '';
     } catch (error) {
         addNotification('danger', 'Failed to submit payment: ' + error.message);
@@ -15300,7 +15488,6 @@ document.getElementById('submitPaymentPageBtn').addEventListener('click', async 
         btn.disabled = false;
     }
 });
-
 function showGeneralConfirm(options) {
     return new Promise((resolve) => {
         const modal = document.getElementById('generalConfirmModal');
