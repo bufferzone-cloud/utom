@@ -7112,6 +7112,172 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                 </div>
             </div>
 
+            <!-- ===== CLASS NOTES (ADMIN) ===== -->
+<div id="classNotesSection" class="section">
+    <div class="popup-notif-container">
+
+        <!-- === Selection view === -->
+        <div id="cnSelectionView" class="popup-selection-view card"
+             style="background:rgba(255,255,255,0.85);border-radius:var(--radius-md);
+                    box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);">
+            <h2><i class="fas fa-book-reader"></i> Send Class Notes</h2>
+            <p>Choose who you want to send these notes to:</p>
+            <div class="popup-choice-buttons">
+                <button id="cnAllUsersBtn" class="popup-choice-btn">
+                    <i class="fas fa-users"></i>
+                    <span class="choice-title">All Users</span>
+                    <span class="choice-desc">Send to everyone</span>
+                </button>
+                <button id="cnAllRegistersBtn" class="popup-choice-btn">
+                    <i class="fas fa-address-book"></i>
+                    <span class="choice-title">All Registers</span>
+                    <span class="choice-desc">Send to all registered students</span>
+                </button>
+                <button id="cnSpecificUserBtn" class="popup-choice-btn">
+                    <i class="fas fa-user-check"></i>
+                    <span class="choice-title">Specific User</span>
+                    <span class="choice-desc">Select individual users</span>
+                </button>
+                <button id="cnSpecificRegisterBtn" class="popup-choice-btn">
+                    <i class="fas fa-users-cog"></i>
+                    <span class="choice-title">Specific Register</span>
+                    <span class="choice-desc">Choose one or more registers</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- === User select === -->
+        <div id="cnUserSelectView" class="popup-user-select-view card"
+             style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);
+                    box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
+            <div class="user-select-header">
+                <h3><i class="fas fa-user-check"></i> Select Users</h3>
+                <span class="selected-count"><strong id="cnSelectedCount">0</strong> user(s) selected</span>
+            </div>
+            <div class="user-search-area">
+                <input type="text" id="cnUserSearch" placeholder="Search users by name or email..." />
+            </div>
+            <div class="popup-user-list" id="cnUserListContainer"></div>
+            <div class="user-select-actions">
+                <button id="cnUserBackBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
+                <button id="cnUserNextBtn" class="btn-next" disabled><i class="fas fa-arrow-right"></i> Next</button>
+            </div>
+        </div>
+
+        <!-- === Register select === -->
+        <div id="cnRegisterSelectView" class="popup-user-select-view card"
+             style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);
+                    box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
+            <div class="user-select-header">
+                <h3><i class="fas fa-users-cog"></i> Select Registers</h3>
+                <span class="selected-count">
+                    <strong id="cnSelectedRegCount">0</strong> register(s) ·
+                    <strong id="cnSelectedRegStudents">0</strong> student(s)
+                </span>
+            </div>
+            <div class="user-search-area">
+                <input type="text" id="cnRegisterSearch" placeholder="Search registers..." />
+            </div>
+            <div class="popup-user-list" id="cnRegisterListContainer"></div>
+            <div class="user-select-actions">
+                <button id="cnRegisterBackBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
+                <button id="cnRegisterNextBtn" class="btn-next" disabled><i class="fas fa-arrow-right"></i> Next</button>
+            </div>
+        </div>
+
+        <!-- === Compose === -->
+        <div id="cnComposeView" class="popup-compose-view card"
+             style="display:none;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);
+                    box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:20px 22px;">
+            <div class="compose-header">
+                <h3><i class="fas fa-pen-fancy"></i> Compose Class Notes</h3>
+                <span class="recipient-badge" id="cnRecipientBadge">👥 All Users</span>
+                <button id="cnComposeBackBtn" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
+            </div>
+
+            <form id="cnComposeForm">
+                <input type="hidden" id="cnRecipientType" value="all" />
+                <input type="hidden" id="cnUserIds" value="" />
+                <input type="hidden" id="cnRegisterIds" value="" />
+
+                <div class="form-group">
+                    <label>Course Name *</label>
+                    <input type="text" id="cnCourseName" placeholder="e.g. Mathematics 101" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="cnDescription" rows="3"
+                              placeholder="Briefly describe these notes..." required></textarea>
+                </div>
+
+                <div class="form-group"
+                     style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;
+                            padding:12px 14px;margin:10px 0;">
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;">
+                        📄 Documents (PDF, Word, Excel, PowerPoint)
+                    </label>
+                    <button type="button" id="cnUploadDocsBtn" class="btn-outline"
+                            style="padding:8px 18px;font-size:11px;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Documents
+                    </button>
+                    <div id="cnDocsList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+                </div>
+
+                <div class="form-group"
+                     style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;
+                            padding:12px 14px;margin:10px 0;">
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;">
+                        🎬 Videos & Images
+                    </label>
+                    <button type="button" id="cnUploadMediaBtn" class="btn-outline"
+                            style="padding:8px 18px;font-size:11px;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Media
+                    </button>
+                    <div id="cnMediaList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+                </div>
+
+                <div class="form-group"
+                     style="border:1px solid rgba(229,232,237,0.5);border-radius:10px;
+                            padding:12px 14px;margin:10px 0;">
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;">
+                        🎙️ Voice Note
+                    </label>
+                    <button type="button" id="cnUploadVoiceBtn" class="btn-outline"
+                            style="padding:8px 18px;font-size:11px;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Voice Note
+                    </button>
+                    <div id="cnVoiceList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                    <button type="button" id="cnCancelBtn" class="btn-outline"
+                            style="padding:10px 24px;font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Send Notes
+                    </button>
+                </div>
+            </form>
+
+            <div class="progress-area" id="cnProgress" style="display:none;">
+                <div class="spinner"></div>
+                <p>Sending class notes...</p>
+            </div>
+        </div>
+
+        <!-- === History card (always visible) === -->
+        <div class="card"
+             style="margin-top:12px;background:rgba(255,255,255,0.85);border-radius:var(--radius-md);
+                    box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.5);padding:18px 20px;">
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;">
+                <i class="fas fa-history"></i> Sent Class Notes History
+            </h3>
+            <div id="cnHistoryList"></div>
+        </div>
+
+    </div>
+</div>
+
             <!-- ============================================================= -->
             <!-- ===== TEST/EXAMS MODULE SECTIONS ===== -->
             <!-- ============================================================= -->
@@ -8134,9 +8300,15 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
             <button class="nav-link" data-section="assessments"><i class="fas fa-folder-open"></i> <span class="nav-label">Assessments</span></button>
             <button class="nav-link" onclick="window.location.href='reports.html'"><i class="fas fa-chart-bar" style="color:var(--gold);"></i> <span class="nav-label">Reports</span></button>
             <button class="nav-link" data-section="promo"><i class="fas fa-images"></i> <span class="nav-label">Promo</span></button>
+            
             <button class="nav-link" data-section="promotions">
     <i class="fas fa-tags" style="color:var(--gold);"></i>
     <span class="nav-label">Promotions</span>
+</button>
+            <!-- NEW: Class Notes -->
+<button class="nav-link" data-section="classNotes">
+    <i class="fas fa-book-reader" style="color:var(--gold);"></i>
+    <span class="nav-label">Class Notes</span>
 </button>
             <!-- ===== LECTURES DASHBOARD (NEW) ===== -->
 <button class="nav-link" onclick="window.location.href='lecture.html'">
@@ -11510,6 +11682,10 @@ function loadCommentsForVideo(videoId, onChange) {
                                 case 'history': renderHistoryList(); break;
                 case 'promotions': renderPromotionsList(); break;
                 case 'assessments': renderAssessmentsList(); break;
+                case 'classNotes':
+    setupClassNotesUI();
+    renderClassNotesHistory();
+    break;
                 case 'drafts': renderDraftsList(); break;
                 default: break;
             }
@@ -14393,6 +14569,525 @@ function loadCommentsForVideo(videoId, onChange) {
         }
 
         // =================================================================
+// ===== CLASS NOTES (admin) =======================================
+// =================================================================
+let classNotes = [];
+const classNotesRef = ref(db, 'classNotes');
+let cnSelectedUsers = new Set();
+let cnSelectedRegisters = new Set();
+let cnUploadedDocs = [];
+let cnUploadedMedia = [];
+let cnVoiceNotes = [];
+
+function setupClassNotesUI() {
+    const allUsersBtn = document.getElementById('cnAllUsersBtn');
+    if (!allUsersBtn || allUsersBtn.dataset.wired === '1') return;
+    allUsersBtn.dataset.wired = '1';
+
+    // ----- All Users -----
+    allUsersBtn.addEventListener('click', () => {
+        document.getElementById('cnSelectionView').style.display = 'none';
+        document.getElementById('cnUserSelectView').style.display = 'none';
+        document.getElementById('cnRegisterSelectView').style.display = 'none';
+        document.getElementById('cnComposeView').style.display = 'block';
+        document.getElementById('cnRecipientType').value = 'all';
+        document.getElementById('cnUserIds').value = '';
+        document.getElementById('cnRegisterIds').value = '';
+        document.getElementById('cnRecipientBadge').innerHTML = '👥 All Users';
+        cnSelectedUsers.clear();
+        cnSelectedRegisters.clear();
+        resetCnUploads();
+    });
+
+    // ----- All Registers -----
+    document.getElementById('cnAllRegistersBtn').addEventListener('click', () => {
+        if (!registers || registers.length === 0) {
+            showToast('No registers available.', 'error');
+            return;
+        }
+        const allUids = new Set();
+        registers.forEach(reg => (reg.members || []).forEach(uid => allUids.add(uid)));
+        if (allUids.size === 0) {
+            showToast('No students found in any register.', 'error');
+            return;
+        }
+        document.getElementById('cnSelectionView').style.display = 'none';
+        document.getElementById('cnComposeView').style.display = 'block';
+        document.getElementById('cnRecipientType').value = 'allRegisters';
+        document.getElementById('cnUserIds').value = JSON.stringify(Array.from(allUids));
+        document.getElementById('cnRegisterIds').value = JSON.stringify(registers.map(r => r.id));
+        document.getElementById('cnRecipientBadge').innerHTML =
+            `📚 All Registers (${registers.length} reg · ${allUids.size} students)`;
+        cnSelectedUsers = new Set(allUids);
+        resetCnUploads();
+    });
+
+    // ----- Specific User -----
+    document.getElementById('cnSpecificUserBtn').addEventListener('click', () => {
+        document.getElementById('cnSelectionView').style.display = 'none';
+        document.getElementById('cnUserSelectView').style.display = 'block';
+        cnSelectedUsers.clear();
+        document.getElementById('cnUserSearch').value = '';
+        renderCnUserList();
+        updateCnSelectedCount();
+    });
+
+    // ----- Specific Register -----
+    document.getElementById('cnSpecificRegisterBtn').addEventListener('click', () => {
+        if (!registers || registers.length === 0) {
+            showToast('No registers available.', 'error');
+            return;
+        }
+        document.getElementById('cnSelectionView').style.display = 'none';
+        document.getElementById('cnRegisterSelectView').style.display = 'block';
+        cnSelectedRegisters.clear();
+        document.getElementById('cnRegisterSearch').value = '';
+        renderCnRegisterList();
+        updateCnSelectedRegCount();
+    });
+
+    // ----- Back buttons -----
+    document.getElementById('cnUserBackBtn').addEventListener('click', resetCnFlow);
+    document.getElementById('cnRegisterBackBtn').addEventListener('click', resetCnFlow);
+    document.getElementById('cnComposeBackBtn').addEventListener('click', resetCnFlow);
+    document.getElementById('cnCancelBtn').addEventListener('click', resetCnFlow);
+
+    // ----- Next buttons -----
+    document.getElementById('cnUserNextBtn').addEventListener('click', () => {
+        if (cnSelectedUsers.size === 0) { showToast('Select at least one user.', 'error'); return; }
+        document.getElementById('cnUserSelectView').style.display = 'none';
+        document.getElementById('cnComposeView').style.display = 'block';
+        document.getElementById('cnRecipientType').value = 'specific';
+        document.getElementById('cnUserIds').value = JSON.stringify(Array.from(cnSelectedUsers));
+        document.getElementById('cnRecipientBadge').innerHTML =
+            `🎯 ${cnSelectedUsers.size} user(s) selected`;
+        resetCnUploads();
+    });
+
+    document.getElementById('cnRegisterNextBtn').addEventListener('click', () => {
+        if (cnSelectedRegisters.size === 0) { showToast('Select at least one register.', 'error'); return; }
+        const allUids = new Set();
+        cnSelectedRegisters.forEach(rid => {
+            const reg = registers.find(r => r.id === rid);
+            if (reg) (reg.members || []).forEach(uid => allUids.add(uid));
+        });
+        if (allUids.size === 0) { showToast('Selected register(s) have no members.', 'error'); return; }
+        cnSelectedUsers = new Set(allUids);
+        document.getElementById('cnRegisterSelectView').style.display = 'none';
+        document.getElementById('cnComposeView').style.display = 'block';
+        document.getElementById('cnRecipientType').value = 'register';
+        document.getElementById('cnUserIds').value = JSON.stringify(Array.from(allUids));
+        document.getElementById('cnRegisterIds').value = JSON.stringify(Array.from(cnSelectedRegisters));
+        document.getElementById('cnRecipientBadge').innerHTML =
+            `📚 ${cnSelectedRegisters.size} register(s) · ${allUids.size} students`;
+        resetCnUploads();
+    });
+
+    // ----- Search -----
+    document.getElementById('cnUserSearch').addEventListener('input',
+        debounce(function () { renderCnUserList(this.value); }, 250));
+    document.getElementById('cnRegisterSearch').addEventListener('input',
+        debounce(function () { renderCnRegisterList(this.value); }, 250));
+
+    // ----- Uploads -----
+    document.getElementById('cnUploadDocsBtn').addEventListener('click', cnUploadDocuments);
+    document.getElementById('cnUploadMediaBtn').addEventListener('click', cnUploadMedia);
+    document.getElementById('cnUploadVoiceBtn').addEventListener('click', cnUploadVoice);
+
+    // ----- Submit -----
+    document.getElementById('cnComposeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await submitClassNotes();
+    });
+}
+
+function resetCnFlow() {
+    document.getElementById('cnSelectionView').style.display = 'block';
+    document.getElementById('cnUserSelectView').style.display = 'none';
+    document.getElementById('cnRegisterSelectView').style.display = 'none';
+    document.getElementById('cnComposeView').style.display = 'none';
+    cnSelectedUsers.clear();
+    cnSelectedRegisters.clear();
+    resetCnUploads();
+}
+
+function resetCnUploads() {
+    cnUploadedDocs = [];
+    cnUploadedMedia = [];
+    cnVoiceNotes = [];
+    document.getElementById('cnDocsList').innerHTML = '';
+    document.getElementById('cnMediaList').innerHTML = '';
+    document.getElementById('cnVoiceList').innerHTML = '';
+    document.getElementById('cnCourseName').value = '';
+    document.getElementById('cnDescription').value = '';
+}
+
+// ----- Upload helper functions -----
+function cnDetectDocType(url, name) {
+    const src = (name || url || '').toLowerCase();
+    const ext = src.split('.').pop().split('?')[0];
+    if (ext === 'pdf') return 'pdf';
+    if (['doc', 'docx'].includes(ext)) return 'word';
+    if (['xls', 'xlsx', 'csv'].includes(ext)) return 'excel';
+    if (['ppt', 'pptx'].includes(ext)) return 'ppt';
+    return 'doc';
+}
+
+function cnUploadDocuments() {
+    cloudinary.openUploadWidget({
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'url'],
+        maxFileSize: 155000000,
+        resourceType: 'raw',
+        clientAllowedFormats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv'],
+        maxFiles: 10
+    }, (err, res) => {
+        if (err) { showToast('Upload error: ' + (err.message || err), 'error'); return; }
+        if (res.event === 'success') {
+            const info = res.info;
+            const type = cnDetectDocType(info.secure_url, info.original_filename || '');
+            cnUploadedDocs.push({
+                url: info.secure_url,
+                name: info.original_filename || 'Document',
+                type,
+                format: info.format
+            });
+            renderCnUploadList('cnDocsList', cnUploadedDocs, 'docs');
+            showToast('Document uploaded!', 'success');
+        }
+    });
+}
+
+function cnUploadMedia() {
+    cloudinary.openUploadWidget({
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'url'],
+        maxFileSize: 155000000,
+        resourceType: 'auto',
+        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi', 'webm'],
+        maxFiles: 10
+    }, (err, res) => {
+        if (err) { showToast('Upload error: ' + (err.message || err), 'error'); return; }
+        if (res.event === 'success') {
+            const info = res.info;
+            const type = info.resource_type === 'video' ? 'video' : 'image';
+            cnUploadedMedia.push({
+                url: info.secure_url,
+                name: info.original_filename || (type === 'video' ? 'Video' : 'Image'),
+                type
+            });
+            renderCnUploadList('cnMediaList', cnUploadedMedia, 'media');
+            showToast('Media uploaded!', 'success');
+        }
+    });
+}
+
+function cnUploadVoice() {
+    cloudinary.openUploadWidget({
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local'],
+        maxFileSize: 155000000,
+        resourceType: 'auto',
+        clientAllowedFormats: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'webm'],
+        maxFiles: 5
+    }, (err, res) => {
+        if (err) { showToast('Upload error: ' + (err.message || err), 'error'); return; }
+        if (res.event === 'success') {
+            const info = res.info;
+            cnVoiceNotes.push({
+                url: info.secure_url,
+                name: info.original_filename || 'Voice Note'
+            });
+            renderCnUploadList('cnVoiceList', cnVoiceNotes, 'voice');
+            showToast('Voice note uploaded!', 'success');
+        }
+    });
+}
+
+function renderCnUploadList(containerId, list, kind) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (list.length === 0) { el.innerHTML = ''; return; }
+
+    el.innerHTML = list.map((f, i) => {
+        const icon = kind === 'docs' ? 'file-alt'
+            : kind === 'media' ? (f.type === 'video' ? 'video' : 'image')
+            : 'microphone';
+        return `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;
+                        background:rgba(245,176,66,0.08);border-radius:30px;font-size:11px;">
+                <i class="fas fa-${icon}" style="color:#d4952a;"></i>
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    ${escapeHtml(f.name)}
+                </span>
+                <button type="button" data-kind="${kind}" data-idx="${i}" class="cn-remove-file"
+                        style="background:none;border:none;color:#e74c3c;cursor:pointer;
+                               font-size:14px;padding:0 4px;">&times;</button>
+            </div>`;
+    }).join('');
+
+    el.querySelectorAll('.cn-remove-file').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const k = btn.dataset.kind;
+            const idx = parseInt(btn.dataset.idx);
+            if (k === 'docs') cnUploadedDocs.splice(idx, 1);
+            else if (k === 'media') cnUploadedMedia.splice(idx, 1);
+            else if (k === 'voice') cnVoiceNotes.splice(idx, 1);
+            renderCnUploadList(containerId,
+                k === 'docs' ? cnUploadedDocs :
+                k === 'media' ? cnUploadedMedia : cnVoiceNotes, k);
+        });
+    });
+}
+
+// ----- User / Register selection lists -----
+function renderCnUserList(searchTerm = '') {
+    const container = document.getElementById('cnUserListContainer');
+    if (!container) return;
+    const s = (searchTerm || '').toLowerCase();
+
+    const filtered = users.filter(u =>
+        !s || (u.firstName || '').toLowerCase().includes(s) ||
+              (u.lastName  || '').toLowerCase().includes(s) ||
+              (u.email     || '').toLowerCase().includes(s)
+    );
+    if (filtered.length === 0) {
+        container.innerHTML =
+            '<div style="text-align:center;padding:12px;color:#8b8fa3;">No users found.</div>';
+        return;
+    }
+    container.innerHTML = filtered.map(u => {
+        const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User';
+        const email = u.email || '';
+        const sel = cnSelectedUsers.has(u.uid) ? 'selected' : '';
+        const initial = (u.firstName || 'U').charAt(0).toUpperCase();
+        return `
+            <div class="popup-user-item ${sel}" data-uid="${u.uid}">
+                <div class="pu-avatar">${initial}</div>
+                <div class="pu-info">
+                    <div class="pu-name">${escapeHtml(name)}</div>
+                    <div class="pu-email">${escapeHtml(email)}</div>
+                </div>
+                <div class="pu-check">
+                    <i class="fas ${sel ? 'fa-check-circle' : 'fa-circle'}"></i>
+                </div>
+            </div>`;
+    }).join('');
+
+    container.querySelectorAll('.popup-user-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const uid = this.dataset.uid;
+            if (cnSelectedUsers.has(uid)) cnSelectedUsers.delete(uid);
+            else cnSelectedUsers.add(uid);
+            renderCnUserList(searchTerm);
+            updateCnSelectedCount();
+        });
+    });
+    updateCnSelectedCount();
+}
+
+function updateCnSelectedCount() {
+    const el = document.getElementById('cnSelectedCount');
+    if (el) el.textContent = cnSelectedUsers.size;
+    const next = document.getElementById('cnUserNextBtn');
+    if (next) next.disabled = cnSelectedUsers.size === 0;
+}
+
+function renderCnRegisterList(searchTerm = '') {
+    const container = document.getElementById('cnRegisterListContainer');
+    if (!container) return;
+    const s = (searchTerm || '').toLowerCase();
+
+    const filtered = registers.filter(r =>
+        !s || (r.name    || '').toLowerCase().includes(s) ||
+              (r.lecture || '').toLowerCase().includes(s)
+    );
+    if (filtered.length === 0) {
+        container.innerHTML =
+            '<div style="text-align:center;padding:12px;color:#8b8fa3;">No registers found.</div>';
+        return;
+    }
+    container.innerHTML = filtered.map(r => {
+        const sel = cnSelectedRegisters.has(r.id) ? 'selected' : '';
+        const memberCount = (r.members || []).length;
+        const initial = (r.name || 'R').charAt(0).toUpperCase();
+        return `
+            <div class="popup-user-item ${sel}" data-regid="${r.id}">
+                <div class="pu-avatar">${initial}</div>
+                <div class="pu-info">
+                    <div class="pu-name">${escapeHtml(r.name || 'Register')}</div>
+                    <div class="pu-email">${escapeHtml(r.lecture || '')} ·
+                        ${memberCount} student${memberCount !== 1 ? 's' : ''}</div>
+                </div>
+                <div class="pu-check">
+                    <i class="fas ${sel ? 'fa-check-circle' : 'fa-circle'}"></i>
+                </div>
+            </div>`;
+    }).join('');
+
+    container.querySelectorAll('.popup-user-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const rid = this.dataset.regid;
+            if (cnSelectedRegisters.has(rid)) cnSelectedRegisters.delete(rid);
+            else cnSelectedRegisters.add(rid);
+            renderCnRegisterList(searchTerm);
+            updateCnSelectedRegCount();
+        });
+    });
+    updateCnSelectedRegCount();
+}
+
+function updateCnSelectedRegCount() {
+    const regCount = cnSelectedRegisters.size;
+    const allUids = new Set();
+    cnSelectedRegisters.forEach(rid => {
+        const reg = registers.find(r => r.id === rid);
+        if (reg) (reg.members || []).forEach(uid => allUids.add(uid));
+    });
+    const rcEl = document.getElementById('cnSelectedRegCount');
+    const scEl = document.getElementById('cnSelectedRegStudents');
+    if (rcEl) rcEl.textContent = regCount;
+    if (scEl) scEl.textContent = allUids.size;
+    const next = document.getElementById('cnRegisterNextBtn');
+    if (next) next.disabled = regCount === 0;
+}
+
+// ----- Submit -----
+async function submitClassNotes() {
+    const courseName = document.getElementById('cnCourseName').value.trim();
+    const description = document.getElementById('cnDescription').value.trim();
+    const recipientType = document.getElementById('cnRecipientType').value;
+    const userIdsRaw = document.getElementById('cnUserIds').value;
+    const registerIdsRaw = document.getElementById('cnRegisterIds').value;
+
+    if (!courseName) { showToast('Course name is required.', 'error'); return; }
+    if (!description) { showToast('Description is required.', 'error'); return; }
+    if (cnUploadedDocs.length === 0 &&
+        cnUploadedMedia.length === 0 &&
+        cnVoiceNotes.length === 0) {
+        showToast('Please upload at least one file, media, or voice note.', 'error');
+        return;
+    }
+
+    let resolvedUserIds = [];
+    try { resolvedUserIds = userIdsRaw ? JSON.parse(userIdsRaw) : []; } catch { resolvedUserIds = []; }
+    let registerIds = [];
+    try { registerIds = registerIdsRaw ? JSON.parse(registerIdsRaw) : []; } catch { registerIds = []; }
+
+    const progress = document.getElementById('cnProgress');
+    progress.style.display = 'block';
+    const submitBtn = document.querySelector('#cnComposeForm .btn-submit');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        const newRef = push(classNotesRef);
+        await set(newRef, {
+            courseName,
+            description,
+            recipientType,
+            userIds: recipientType === 'specific' ? resolvedUserIds : [],
+            registerIds: (recipientType === 'register' || recipientType === 'allRegisters') ? registerIds : [],
+            resolvedUserIds: recipientType === 'all' ? [] : resolvedUserIds,
+            docs: cnUploadedDocs,
+            media: cnUploadedMedia,
+            voiceNotes: cnVoiceNotes,
+            createdAt: Date.now(),
+            createdBy: currentAdmin?.email || 'admin'
+        });
+
+        const targetCount = recipientType === 'all' ? users.length : resolvedUserIds.length;
+        push(notificationsRef, {
+            message: `📚 Class notes "${courseName}" sent to ` +
+                     `${recipientType === 'all' ? 'all users' : targetCount + ' student(s)'}`,
+            timestamp: serverTimestamp()
+        });
+
+        showToast(`Class notes sent to ${targetCount || 'all'} student(s)!`, 'success');
+        resetCnFlow();
+    } catch (err) {
+        showToast('Error sending notes: ' + err.message, 'error');
+    } finally {
+        progress.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
+// ----- History -----
+function renderClassNotesHistory() {
+    const container = document.getElementById('cnHistoryList');
+    if (!container) return;
+
+    if (!classNotes || classNotes.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:16px;color:#8b8fa3;font-size:12px;">
+                <i class="fas fa-book-reader"
+                   style="display:block;font-size:22px;opacity:0.3;margin-bottom:6px;"></i>
+                No class notes sent yet.
+            </div>`;
+        return;
+    }
+    const sorted = [...classNotes].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    container.innerHTML = sorted.map(n => {
+        const date = n.createdAt ? new Date(n.createdAt).toLocaleString() : '';
+        const recipientLabel =
+            n.recipientType === 'all' ? '👥 All users'
+            : n.recipientType === 'allRegisters'
+                ? `📚 All registers (${(n.resolvedUserIds || []).length})`
+            : n.recipientType === 'register'
+                ? `📚 ${(n.registerIds || []).length} register(s) · ${(n.resolvedUserIds || []).length} students`
+            : `🎯 ${(n.userIds || []).length} user(s)`;
+        const fileCount = (n.docs || []).length + (n.media || []).length + (n.voiceNotes || []).length;
+
+        return `
+            <div style="background:rgba(255,255,255,0.7);border-radius:10px;
+                        padding:10px 14px;margin-bottom:8px;
+                        border:1px solid rgba(240,240,245,0.6);">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:700;font-size:13px;word-break:break-word;">
+                            ${escapeHtml(n.courseName || 'Class Notes')}
+                        </div>
+                        <div style="font-size:10px;color:#8b8fa3;">
+                            ${escapeHtml(date)} · ${fileCount} file(s)
+                        </div>
+                        <div style="font-size:10px;color:#d4952a;font-weight:600;margin-top:2px;">
+                            ${recipientLabel}
+                        </div>
+                    </div>
+                    <button type="button" class="cn-del-note-btn" data-id="${n.id}"
+                            style="background:#fde8e8;color:#c62828;border:none;padding:4px 12px;
+                                   border-radius:30px;font-size:10px;cursor:pointer;font-weight:600;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                ${n.description ? `
+                    <div style="font-size:11px;color:#5f6377;margin-top:6px;line-height:1.45;word-break:break-word;">
+                        ${escapeHtml(n.description)}
+                    </div>` : ''}
+            </div>`;
+    }).join('');
+
+    container.querySelectorAll('.cn-del-note-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const id = this.dataset.id;
+            const confirmed = await showConfirmPopup({
+                icon: '🗑️', type: 'danger',
+                title: 'Delete Notes?',
+                message: 'Delete these class notes permanently? Students will lose access.',
+                okText: 'Delete', okClass: 'btn-confirm-danger'
+            });
+            if (confirmed) {
+                await remove(ref(db, `classNotes/${id}`));
+                showToast('Notes deleted.', 'info');
+            }
+        });
+    });
+}
+
+        // =================================================================
         // PROMO PICS
         // =================================================================
         function setupPromoUI() {
@@ -15833,6 +16528,13 @@ document.getElementById('promoForm').addEventListener('submit', async (e) => {
                 scheduleRender('videos');
                 scheduleRender('courses');
             });
+
+            // ---- classNotes listener ----
+onValue(classNotesRef, (snap) => {
+    const data = snap.val();
+    classNotes = data ? Object.entries(data).map(([id, n]) => ({ id, ...n })) : [];
+    renderClassNotesHistory();
+});
 
             // ---- users listener ----
             onValue(usersRef, snap => {
