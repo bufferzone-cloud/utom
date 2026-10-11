@@ -6909,13 +6909,31 @@ body.dark-mode .folder-group-header .folder-group-count{background:rgba(245,176,
                 </div>
 
                 <div class="form-row">
-                    <label style="font-weight:600;font-size:12px;">Applies to:</label>
-                    <select id="promoApplicableTo" style="flex:1;">
-                        <option value="all">All (courses + subfolders)</option>
-                        <option value="courses">Courses only</option>
-                        <option value="subfolders">Subfolders only</option>
-                    </select>
-                </div>
+    <label style="font-weight:600;font-size:12px;">Applies to:</label>
+    <select id="promoApplicableTo" style="flex:1;">
+        <option value="all">All (courses + subfolders)</option>
+        <option value="courses">All Courses</option>
+        <option value="subfolders">All Subfolders</option>
+        <option value="specific-course">A Specific Course</option>
+        <option value="specific-subfolder">A Specific Subfolder</option>
+    </select>
+</div>
+
+<!-- NEW: Specific Course picker -->
+<div class="form-row" id="promoSpecificCourseRow" style="display:none;">
+    <label style="font-weight:600;font-size:12px;min-width:120px;">Select course:</label>
+    <select id="promoSpecificCourseId" style="flex:1;">
+        <option value="">-- Choose a course --</option>
+    </select>
+</div>
+
+<!-- NEW: Specific Subfolder picker -->
+<div class="form-row" id="promoSpecificSubfolderRow" style="display:none;">
+    <label style="font-weight:600;font-size:12px;min-width:120px;">Select subfolder:</label>
+    <select id="promoSpecificSubfolderId" style="flex:1;">
+        <option value="">-- Choose a subfolder --</option>
+    </select>
+</div>
 
                 <div class="form-row">
                     <label style="font-weight:600;font-size:12px;">Promo code (optional):</label>
@@ -15336,6 +15354,39 @@ function promoGenerateCode() {
     return code;
 }
 
+/* ---------- Specific course / subfolder pickers ---------- */
+function refreshPromoApplicableItemSelects() {
+    const courseSelect = document.getElementById('promoSpecificCourseId');
+    if (courseSelect) {
+        const prev = courseSelect.value;
+        courseSelect.innerHTML =
+            '<option value="">-- Choose a course --</option>' +
+            courses.map(c =>
+                `<option value="${c.id}">${escapeHtml(c.name)}${c.price > 0 ? ' (ZMW '+c.price+')' : ''}</option>`
+            ).join('');
+        if (prev) courseSelect.value = prev;
+    }
+
+    const sfSelect = document.getElementById('promoSpecificSubfolderId');
+    if (sfSelect) {
+        const prev = sfSelect.value;
+        sfSelect.innerHTML =
+            '<option value="">-- Choose a subfolder --</option>' +
+            subfolders.map(sf => {
+                const parent = courses.find(c => c.id === sf.courseId);
+                const label  = parent ? `${parent.name} › ${sf.name}` : sf.name;
+                return `<option value="${sf.id}">${escapeHtml(label)}${sf.price > 0 ? ' (ZMW '+sf.price+')' : ''}</option>`;
+            }).join('');
+        if (prev) sfSelect.value = prev;
+    }
+}
+
+/* Show/hide the correct picker when "Applies to" changes */
+document.getElementById('promoApplicableTo').addEventListener('change', function () {
+    document.getElementById('promoSpecificCourseRow').style.display    = this.value === 'specific-course'    ? '' : 'none';
+    document.getElementById('promoSpecificSubfolderRow').style.display = this.value === 'specific-subfolder' ? '' : 'none';
+});
+
 /* ---- render list ---- */
 function renderPromotionsList() {
     const container = document.getElementById('promotionsListContainer');
@@ -15375,8 +15426,22 @@ function renderPromotionsList() {
             : p.targetType === 'selected'
                 ? `🎯 ${(p.targetUserIds || []).length} user(s)`
                 : `📚 ${(p.targetRegisterIds || []).length} register(s)`;
-        const appliesLabel = p.applicableTo === 'all' ? 'Courses & Subfolders'
-            : p.applicableTo === 'courses' ? 'Courses only' : 'Subfolders only';
+       const appliesLabel = (() => {
+    if (p.applicableTo === 'all')              return 'Courses & Subfolders';
+    if (p.applicableTo === 'courses')          return 'All Courses';
+    if (p.applicableTo === 'subfolders')       return 'All Subfolders';
+    if (p.applicableTo === 'specific-course') {
+        const c = courses.find(x => x.id === p.applicableCourseId);
+        return `🎯 Course: ${c ? c.name : '(deleted)'}`;
+    }
+    if (p.applicableTo === 'specific-subfolder') {
+        const sf = subfolders.find(x => x.id === p.applicableSubfolderId);
+        if (!sf) return '🎯 Subfolder: (deleted)';
+        const parent = courses.find(c => c.id === sf.courseId);
+        return `🎯 Subfolder: ${parent ? parent.name + ' › ' : ''}${sf.name}`;
+    }
+    return 'N/A';
+})();
         const codeBadge = p.promoCode
             ? `<span style="background:#fff3cd;color:#856404;padding:2px 10px;border-radius:30px;font-size:10px;font-weight:700;">🏷️ ${escapeHtml(p.promoCode)}</span>`
             : '';
@@ -15476,13 +15541,14 @@ function resetPromoFlow() {
     document.getElementById('promoComposeWrap').querySelector('h3').innerHTML = '<i class="fas fa-pen-fancy"></i> Compose Promotion';
 }
 
-function openPromoForm(editId = null) {
+function openPromoForm(editId = null, preserve = false) {
     promoEditId = editId || null;
     const wrap = document.getElementById('promoComposeWrap');
     document.getElementById('promoUserSelectWrap').style.display = 'none';
     wrap.style.display = 'block';
 
     if (promoEditId) {
+        /* ---------- EDITING AN EXISTING PROMO ---------- */
         const p = promotions.find(x => x.id === promoEditId);
         if (!p) return;
         document.getElementById('promoName').value = p.name || '';
@@ -15492,15 +15558,25 @@ function openPromoForm(editId = null) {
         document.getElementById('promoApplicableTo').value = p.applicableTo || 'all';
         document.getElementById('promoCode').value = p.promoCode || '';
         document.getElementById('promoStartDate').value = p.startDate ? new Date(p.startDate).toISOString().slice(0,16) : '';
-        document.getElementById('promoEndDate').value = p.endDate ? new Date(p.endDate).toISOString().slice(0,16) : '';
+        document.getElementById('promoEndDate').value   = p.endDate   ? new Date(p.endDate).toISOString().slice(0,16)   : '';
         document.getElementById('promoMaxUsers').value = p.maxUsers || 0;
         document.getElementById('promoTargetType').value = p.targetType || 'all';
         document.getElementById('promoTargetUsers').value = JSON.stringify(p.targetUserIds || []);
         document.getElementById('promoTargetRegisters').value = JSON.stringify(p.targetRegisterIds || []);
-        document.getElementById('promoRecipientBadge').innerHTML = p.targetType === 'all' ? '👥 All Users' : '🎯 Targeted';
+        document.getElementById('promoRecipientBadge').innerHTML =
+            p.targetType === 'all' ? '👥 All Users' : '🎯 Targeted';
         document.getElementById('promoSubmitLabel').textContent = 'Save Changes';
         wrap.querySelector('h3').innerHTML = '<i class="fas fa-pen-fancy"></i> Edit Promotion';
-    } else {
+
+        // NEW: populate the specific course/subfolder pickers
+        refreshPromoApplicableItemSelects();
+        document.getElementById('promoSpecificCourseId').value    = p.applicableCourseId    || '';
+        document.getElementById('promoSpecificSubfolderId').value = p.applicableSubfolderId || '';
+        // trigger visibility
+        document.getElementById('promoApplicableTo').dispatchEvent(new Event('change'));
+
+    } else if (!preserve) {
+        /* ---------- FRESH OPEN (only when NOT coming from selection flow) ---------- */
         document.getElementById('promoForm').reset();
         document.getElementById('promoTargetType').value = 'all';
         document.getElementById('promoTargetUsers').value = '';
@@ -15509,7 +15585,11 @@ function openPromoForm(editId = null) {
         document.getElementById('promoSubmitLabel').textContent = 'Create Promotion';
         wrap.querySelector('h3').innerHTML = '<i class="fas fa-pen-fancy"></i> Compose Promotion';
         setDefaultPromoDates();
+        refreshPromoApplicableItemSelects();
+        document.getElementById('promoApplicableTo').dispatchEvent(new Event('change'));
     }
+    /* If `preserve === true`, we keep the targetType/targetUsers/badge values
+       that were just set by promoSelectNext(). */
 
     // Toggle discount fields based on type
     const pt = document.getElementById('promoType');
@@ -15633,7 +15713,7 @@ document.getElementById('promoSelectNext').addEventListener('click', () => {
         document.getElementById('promoTargetRegisters').value = JSON.stringify([...promoSelectedRegisters]);
         badge.innerHTML = `📚 ${promoSelectedRegisters.size} register(s)`;
     }
-    openPromoForm();
+    openPromoForm(null, true);   // ⬅️ preserve = true
 });
 
 document.getElementById('promoComposeBack').addEventListener('click', resetPromoFlow);
@@ -15652,12 +15732,28 @@ document.getElementById('promoForm').addEventListener('submit', async (e) => {
     const discountValue = parseFloat(document.getElementById('promoDiscountValue').value) || 0;
     if (type === 'discount' && discountValue <= 0) { showToast('Enter a discount value.', 'error'); return; }
 
+    // ---- NEW: validate specific course / subfolder ----
+    const applicableTo = document.getElementById('promoApplicableTo').value;
+    const applicableCourseId    = applicableTo === 'specific-course'
+        ? document.getElementById('promoSpecificCourseId').value : '';
+    const applicableSubfolderId = applicableTo === 'specific-subfolder'
+        ? document.getElementById('promoSpecificSubfolderId').value : '';
+
+    if (applicableTo === 'specific-course' && !applicableCourseId) {
+        showToast('Please select a course.', 'error'); return;
+    }
+    if (applicableTo === 'specific-subfolder' && !applicableSubfolderId) {
+        showToast('Please select a subfolder.', 'error'); return;
+    }
+
     const payload = {
         name,
         type,
         discountType,
         discountValue,
-        applicableTo: document.getElementById('promoApplicableTo').value,
+        applicableTo,                        // 'all' | 'courses' | 'subfolders' | 'specific-course' | 'specific-subfolder'
+        applicableCourseId,                  // NEW
+        applicableSubfolderId,               // NEW
         promoCode: (document.getElementById('promoCode').value || '').trim().toUpperCase(),
         startDate: document.getElementById('promoStartDate').value ? new Date(document.getElementById('promoStartDate').value).getTime() : null,
         endDate:   document.getElementById('promoEndDate').value   ? new Date(document.getElementById('promoEndDate').value).getTime()   : null,
@@ -15764,6 +15860,7 @@ document.getElementById('promoForm').addEventListener('submit', async (e) => {
                 scheduleRender('home');
                 scheduleRender('courses');
                 scheduleRender('account');
+                refreshPromoApplicableItemSelects();
             });
 
             // ---- subfolders listener ----
@@ -15772,6 +15869,7 @@ document.getElementById('promoForm').addEventListener('submit', async (e) => {
                 scheduleRender('home');
                 scheduleRender('courses');
                 updateSubfolderSelects();
+                refreshPromoApplicableItemSelects();
             });
 
             // ---- docs listener ----
