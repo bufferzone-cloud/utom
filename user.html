@@ -9380,17 +9380,37 @@ body.dark-mode .cr-field input:focus { background: #222; }
                                 </div>
                             </div>
                             <div id="paymentNumbersBox">
-                                <div class="payment-number-row" id="mtnNumberRow">
-                                    <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
-                                    <span class="number-value" id="mtnNumberDisplay">Not set</span>
-                                    <button class="copy-num-btn" id="copyMtnBtn"><i class="fas fa-copy"></i> Copy</button>
-                                </div>
-                                <div class="payment-number-row" id="airtelNumberRow">
-                                    <span class="number-label"><i class="fas fa-mobile-alt" style="color:#e74c3c;"></i> Airtel:</span>
-                                    <span class="number-value" id="airtelNumberDisplay">Not set</span>
-                                    <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
-                                </div>
-                            </div>
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-mobile-alt" style="color:#F5B042;"></i> MTN:</span>
+        <span class="number-value" id="mtnNumberDisplay">Not set</span>
+        <button class="copy-num-btn" id="copyMtnBtn"><i class="fas fa-copy"></i> Copy</button>
+    </div>
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-user" style="color:#F5B042;"></i> Name:</span>
+        <span class="number-value" id="mtnAccountNameDisplay">—</span>
+    </div>
+
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-mobile-alt" style="color:#e74c3c;"></i> Airtel:</span>
+        <span class="number-value" id="airtelNumberDisplay">Not set</span>
+        <button class="copy-num-btn" id="copyAirtelBtn"><i class="fas fa-copy"></i> Copy</button>
+    </div>
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-user" style="color:#e74c3c;"></i> Name:</span>
+        <span class="number-value" id="airtelAccountNameDisplay">—</span>
+    </div>
+
+    <!-- ⬇️ NEW: ZAMTEL -->
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-mobile-alt" style="color:#8e44ad;"></i> Zamtel:</span>
+        <span class="number-value" id="zamtelNumberDisplay">Not set</span>
+        <button class="copy-num-btn" id="copyZamtelBtn"><i class="fas fa-copy"></i> Copy</button>
+    </div>
+    <div class="payment-number-row">
+        <span class="number-label"><i class="fas fa-user" style="color:#8e44ad;"></i> Name:</span>
+        <span class="number-value" id="zamtelAccountNameDisplay">—</span>
+    </div>
+</div>
                             <div class="payment-upload-area" id="paymentUploadBox">
                                 <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                                 <div class="upload-text">Tap to upload payment screenshot</div>
@@ -9977,11 +9997,18 @@ let selectedCourse = null;
 let selectedItemType = 'course';
 let paymentScreenshotUrl = null;
 let currentSearch = '';
-let paymentSettings = { mtnNumber: '', airtelNumber: '', paymentMethod: 'MTN Mobile Money' };
+let paymentSettings = {
+    mtnNumber: '', airtelNumber: '', zamtelNumber: '',
+    mtnAccountName: '', airtelAccountName: '', zamtelAccountName: '',
+    paymentMethod: 'MTN Mobile Money'
+};
 
 // ── Track which lecturer's payment numbers to show on the payment page ──
 let currentPaymentLecturerUid = null;
-let currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+let currentPaymentSettings = {
+    mtnNumber: '', airtelNumber: '', zamtelNumber: '',
+    accountName: '', mtnAccountName: '', airtelAccountName: '', zamtelAccountName: ''
+};
 
 // ── DUAL-SOURCE STORAGE: admin + lecturer combined ──
 let _adminAssessments = [];
@@ -12931,39 +12958,57 @@ function updateUserInterface() {
 }
 
 function updatePaymentNumbersDisplay() {
-    const mtnDisplay = document.getElementById('mtnNumberDisplay');
-    const airtelDisplay = document.getElementById('airtelNumberDisplay');
-
     const mtn    = currentPaymentSettings.mtnNumber    || paymentSettings.mtnNumber    || '';
     const airtel = currentPaymentSettings.airtelNumber || paymentSettings.airtelNumber || '';
+    const zamtel = currentPaymentSettings.zamtelNumber || paymentSettings.zamtelNumber || '';
 
-    if (mtnDisplay) mtnDisplay.innerText = mtn || 'Not set';
-    if (airtelDisplay) airtelDisplay.innerText = airtel || 'Not set';
+    const mtnName    = currentPaymentSettings.mtnAccountName    || paymentSettings.mtnAccountName    || '';
+    const airtelName = currentPaymentSettings.airtelAccountName || paymentSettings.airtelAccountName || '';
+    const zamtelName = currentPaymentSettings.zamtelAccountName || paymentSettings.zamtelAccountName || '';
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val || 'Not set'; };
+
+    set('mtnNumberDisplay', mtn);
+    set('airtelNumberDisplay', airtel);
+    set('zamtelNumberDisplay', zamtel);
+
+    set('mtnAccountNameDisplay', mtnName || '—');
+    set('airtelAccountNameDisplay', airtelName || '—');
+    set('zamtelAccountNameDisplay', zamtelName || '—');
+
+    // Express shop copies
+    set('shopMtnNumberDisplay', mtn);
+    set('shopAirtelNumberDisplay', airtel);
+    set('shopZamtelNumberDisplay', zamtel);
 }
 
 async function loadLecturerPaymentSettings(lecturerUid) {
     if (!lecturerUid) {
-        currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+        currentPaymentSettings = {
+            mtnNumber: '', airtelNumber: '', zamtelNumber: '',
+            accountName: '', mtnAccountName: '', airtelAccountName: '', zamtelAccountName: ''
+        };
         return;
     }
     try {
         const snap = await get(ref(db, `lecturers/${lecturerUid}`));
-        if (snap.exists()) {
-            const d = snap.val();
-            currentPaymentSettings = {
-                mtnNumber:    d.mtnNumber    || '',
-                airtelNumber: d.airtelNumber || '',
-                accountName:  d.accountName  || d.name || ''
-            };
-        } else {
-            currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
-        }
-    } catch (e) {
-        console.warn('loadLecturerPaymentSettings failed:', e);
-        currentPaymentSettings = { mtnNumber: '', airtelNumber: '', accountName: '' };
+        const d = snap.val() || {};
+        currentPaymentSettings = {
+            mtnNumber:         d.mtnNumber         || '',
+            airtelNumber:      d.airtelNumber      || '',
+            zamtelNumber:      d.zamtelNumber      || '',
+            accountName:       d.accountName       || d.name || '',
+            mtnAccountName:    d.mtnAccountName    || d.accountName || d.name || '',
+            airtelAccountName: d.airtelAccountName || d.accountName || d.name || '',
+            zamtelAccountName: d.zamtelAccountName || d.accountName || d.name || ''
+        };
+    } catch {
+        currentPaymentSettings = {
+            mtnNumber: '', airtelNumber: '', zamtelNumber: '',
+            accountName: '', mtnAccountName: '', airtelAccountName: '', zamtelAccountName: ''
+        };
     }
 }
-
 function addNotification(type, msg) {
     const iconMap = {
         'success': 'fa-check-circle notif-icon-success',
@@ -15957,6 +16002,29 @@ function setupUI() {
             addNotification('warning', 'This lecturer has not set an Airtel number yet.');
         }
     });
+    document.getElementById('copyZamtelBtn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const num = currentPaymentSettings.zamtelNumber || paymentSettings.zamtelNumber || '';
+    if (num && num !== 'Not set') {
+        navigator.clipboard.writeText(num)
+            .then(() => addNotification('copy', 'Zamtel number copied to clipboard.'))
+            .catch(() => addNotification('danger', 'Failed to copy.'));
+    } else {
+        addNotification('warning', 'No Zamtel number set yet.');
+    }
+});
+
+document.getElementById('shopCopyZamtelBtn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const num = paymentSettings.zamtelNumber || '';
+    if (num) {
+        navigator.clipboard.writeText(num)
+            .then(() => addNotification('copy', 'Zamtel number copied.'))
+            .catch(() => addNotification('danger', 'Copy failed.'));
+    } else {
+        addNotification('warning', 'No Zamtel number set by admin yet.');
+    }
+});
 
     const uploadBox = document.getElementById('paymentUploadBox');
 uploadBox.addEventListener('click', async () => {
