@@ -9129,6 +9129,10 @@ body.dark-mode .cr-field input:focus { background: #222; }
                 <button class="nav-item" id="navSupportChat"><i class="fas fa-headset"></i> UTOM Support</button>
                 <!-- NEW: Testimonies (public reviews) -->
                 <!-- NEW: Testimonies (public reviews) -->
+                <!-- NEW: Class Notes -->
+<button class="nav-item" data-page="classNotes">
+    <i class="fas fa-book-reader"></i> Class Notes
+</button>
 <button class="nav-item" id="navTestimonies"><i class="fas fa-star"></i> Testimonies</button>
 
 <!-- CLASS REGISTER -->
@@ -9570,6 +9574,36 @@ body.dark-mode .cr-field input:focus { background: #222; }
                     </div>
                 </div>
             </div>
+
+            <!-- ===== CLASS NOTES PAGE ===== -->
+<div id="classNotesPage" class="page-container full-page-container">
+    <div style="max-width:820px;margin:0 auto;padding:0 0 2rem;">
+        <h2 style="font-size:1.3rem;font-weight:800;color:var(--text);margin:0.4rem 0 1rem;border-left:3px solid var(--gold);padding-left:12px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-book-reader" style="color:var(--gold);"></i> Class Notes
+        </h2>
+        <div id="classNotesGrid"></div>
+        <div id="classNotesEmpty" class="empty-state" style="display:none;">
+            <i class="fas fa-book-reader"></i> No class notes yet.<br>
+            <small>Your lecturer's shared notes will appear here.</small>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CLASS NOTE FULL DOC VIEWER ===== -->
+<div id="classNoteDocPage" class="page-container full-page-container">
+    <button id="backFromClassNoteDocBtn" class="btn-outline" style="margin-bottom:0.6rem;font-size:0.8rem;padding:8px 20px;">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <div id="classNoteDocContent"></div>
+</div>
+
+<!-- ===== CLASS NOTE MEDIA VIEWER ===== -->
+<div id="classNoteMediaPage" class="page-container full-page-container">
+    <button id="backFromClassNoteMediaBtn" class="btn-outline" style="margin-bottom:0.6rem;font-size:0.8rem;padding:8px 20px;">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <div id="classNoteMediaContent"></div>
+</div>
 
             <!-- ===== CLASS REGISTER PAGE ===== -->
 <div id="classRegisterPage" class="page-container full-page-container">
@@ -10710,6 +10744,241 @@ document.getElementById('appLoader').classList.add('hidden');
         // start realtime listeners for support & testimonies
         startSupportChatListener();
         startTestimoniesListener();
+        startClassNotesListener(); 
+
+        // =================================================================
+// ===== CLASS NOTES (student view) ================================
+// =================================================================
+let classNotes = [];
+let classNotesUnsub = null;
+
+function startClassNotesListener() {
+    if (classNotesUnsub) classNotesUnsub();
+    classNotesUnsub = onValue(ref(db, 'classNotes'), (snap) => {
+        const data = snap.val() || {};
+        classNotes = Object.entries(data).map(([id, n]) => ({ id, ...n }));
+        classNotes.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const pg = document.getElementById('classNotesPage');
+        if (pg && pg.classList.contains('active-page')) renderClassNotes();
+    });
+}
+
+function isClassNoteForCurrentUser(note) {
+    if (!note || !currentUser) return false;
+    const uid = currentUser.uid;
+    if (note.recipientType === 'all') return true;
+    if (note.recipientType === 'specific') {
+        return Array.isArray(note.userIds) && note.userIds.includes(uid);
+    }
+    if (note.recipientType === 'allRegisters' || note.recipientType === 'register') {
+        return Array.isArray(note.resolvedUserIds) && note.resolvedUserIds.includes(uid);
+    }
+    return false;
+}
+
+function renderClassNotes() {
+    const grid  = document.getElementById('classNotesGrid');
+    const empty = document.getElementById('classNotesEmpty');
+    if (!grid) return;
+
+    const visible = classNotes.filter(isClassNoteForCurrentUser);
+
+    if (visible.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = visible.map(n => {
+        const date = n.createdAt ? new Date(n.createdAt).toLocaleString() : '';
+        const docs  = n.docs || [];
+        const media = n.media || [];
+        const voice = n.voiceNotes || [];
+        const total = docs.length + media.length + voice.length;
+
+        const docBtns = docs.map((d, i) =>
+            `<button class="btn-primary cn-doc-btn" data-noteid="${n.id}" data-idx="${i}"
+                     style="padding:6px 14px;font-size:0.7rem;border-radius:30px;border:none;cursor:pointer;">
+                <i class="fas fa-file-alt"></i> ${escapeHtml(d.name || 'Document')}
+            </button>`
+        ).join('');
+
+        const mediaBtns = media.map((m, i) =>
+            `<button class="btn-outline cn-media-btn" data-noteid="${n.id}" data-idx="${i}"
+                     style="padding:6px 14px;font-size:0.7rem;border-radius:30px;cursor:pointer;">
+                <i class="fas fa-${m.type === 'video' ? 'video' : 'image'}"></i>
+                ${escapeHtml(m.name || (m.type === 'video' ? 'Video' : 'Image'))}
+            </button>`
+        ).join('');
+
+        const voiceBtns = voice.map((v, i) =>
+            `<button class="btn-outline cn-voice-btn" data-noteid="${n.id}" data-idx="${i}"
+                     style="padding:6px 14px;font-size:0.7rem;border-radius:30px;cursor:pointer;">
+                <i class="fas fa-microphone"></i> Voice Note ${voice.length > 1 ? (i + 1) : ''}
+            </button>`
+        ).join('');
+
+        return `
+            <div class="class-note-card" style="background:var(--card-bg);border-radius:var(--radius-md);
+                padding:1rem 1.2rem;margin-bottom:12px;box-shadow:var(--shadow-sm);
+                border:1px solid var(--border-color);border-left:4px solid var(--gold);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:800;font-size:1rem;color:var(--text);word-break:break-word;">
+                            ${escapeHtml(n.courseName || 'Class Notes')}
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:2px;">
+                            <i class="far fa-clock"></i> ${escapeHtml(date)}
+                        </div>
+                    </div>
+                    <span style="background:rgba(245,176,66,0.12);color:var(--gold-dark);
+                                 padding:2px 12px;border-radius:30px;font-size:0.65rem;font-weight:700;white-space:nowrap;">
+                        ${total} file${total !== 1 ? 's' : ''}
+                    </span>
+                </div>
+                <div style="font-size:0.85rem;color:var(--text);line-height:1.55;margin:8px 0 4px;
+                            white-space:pre-wrap;word-break:break-word;">
+                    ${escapeHtml(n.description || '')}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                    ${docBtns}${mediaBtns}${voiceBtns}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    grid.querySelectorAll('.cn-doc-btn').forEach(btn => btn.addEventListener('click', () =>
+        openClassNoteDoc(btn.dataset.noteid, parseInt(btn.dataset.idx))
+    ));
+    grid.querySelectorAll('.cn-media-btn').forEach(btn => btn.addEventListener('click', () =>
+        openClassNoteMedia(btn.dataset.noteid, parseInt(btn.dataset.idx))
+    ));
+    grid.querySelectorAll('.cn-voice-btn').forEach(btn => btn.addEventListener('click', () =>
+        openClassNoteVoice(btn.dataset.noteid, parseInt(btn.dataset.idx))
+    ));
+}
+
+// ----- Document (Google Docs viewer, full page, no download) -----
+function openClassNoteDoc(noteId, idx) {
+    showPage('classNoteDoc', { noteId, idx: String(idx) });
+}
+
+function renderClassNoteDocContent(noteId, idx) {
+    const note = classNotes.find(n => n.id === noteId);
+    if (!note) { document.getElementById('classNoteDocContent').innerHTML =
+        '<div class="empty-state">Notes not found.</div>'; return; }
+    const file = (note.docs || [])[idx];
+    if (!file) { document.getElementById('classNoteDocContent').innerHTML =
+        '<div class="empty-state">File not found.</div>'; return; }
+
+    const googleViewer = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(file.url)}`;
+    document.getElementById('classNoteDocContent').innerHTML = `
+        <div style="background:var(--card-bg);border-radius:var(--radius-md);overflow:hidden;
+                    box-shadow:var(--shadow-sm);border:1px solid var(--border-color);">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);
+                        display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <i class="fas fa-file-alt" style="color:var(--gold);"></i>
+                <strong style="font-size:0.9rem;word-break:break-word;">${escapeHtml(file.name || 'Document')}</strong>
+                <span style="margin-left:auto;font-size:0.68rem;color:var(--text-secondary);
+                             background:var(--bg);padding:2px 10px;border-radius:30px;">
+                    🔒 Preview only
+                </span>
+            </div>
+            <iframe src="${googleViewer}"
+                    style="width:100%;height:calc(100vh - var(--topbar-height) - 180px);
+                           min-height:520px;border:none;display:block;background:var(--bg);"
+                    oncontextmenu="return false;"></iframe>
+        </div>
+    `;
+}
+
+// ----- Videos / Images (no download) -----
+function openClassNoteMedia(noteId, idx) {
+    showPage('classNoteMedia', { noteId, idx: String(idx) });
+}
+
+function renderClassNoteMediaContent(noteId, idx) {
+    const note = classNotes.find(n => n.id === noteId);
+    if (!note) { document.getElementById('classNoteMediaContent').innerHTML =
+        '<div class="empty-state">Notes not found.</div>'; return; }
+    const file = (note.media || [])[idx];
+    if (!file) { document.getElementById('classNoteMediaContent').innerHTML =
+        '<div class="empty-state">File not found.</div>'; return; }
+
+    const container = document.getElementById('classNoteMediaContent');
+
+    if (file.type === 'video') {
+        container.innerHTML = `
+            <div style="background:#000;border-radius:var(--radius-md);overflow:hidden;
+                        box-shadow:var(--shadow-lg);">
+                <video src="${escapeHtml(file.url)}" controls playsinline
+                       controlsList="nodownload noplaybackrate noremoteplayback"
+                       disablePictureInPicture
+                       oncontextmenu="return false;"
+                       style="width:100%;max-height:calc(100vh - var(--topbar-height) - 140px);
+                              display:block;background:#000;">
+                </video>
+            </div>`;
+    } else {
+        container.innerHTML = `
+            <div style="background:var(--card-bg);border-radius:var(--radius-md);overflow:hidden;
+                        box-shadow:var(--shadow-md);">
+                <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name || 'Image')}"
+                     oncontextmenu="return false;" draggable="false"
+                     style="width:100%;max-height:calc(100vh - var(--topbar-height) - 140px);
+                            object-fit:contain;display:block;background:#000;" />
+            </div>`;
+    }
+}
+
+// ----- Voice Notes (modal + no download) -----
+function openClassNoteVoice(noteId, idx) {
+    const note = classNotes.find(n => n.id === noteId);
+    if (!note) return;
+    const file = (note.voiceNotes || [])[idx];
+    if (!file) return;
+
+    const existing = document.getElementById('classNoteVoiceModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'classNoteVoiceModal';
+    modal.style.cssText =
+        'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);' +
+        '-webkit-backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;' +
+        'justify-content:center;padding:20px;';
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:24px;padding:24px 22px;max-width:420px;
+                    width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.3);
+                    border:1px solid rgba(245,176,66,0.12);">
+            <div style="width:64px;height:64px;border-radius:50%;
+                        background:linear-gradient(135deg,var(--gold),var(--orange));
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 12px;
+                        color:#fff;font-size:26px;box-shadow:0 8px 24px rgba(245,176,66,0.30);">
+                <i class="fas fa-microphone"></i>
+            </div>
+            <h3 style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:4px;">
+                Voice Note from ${escapeHtml(note.courseName || 'Class Notes')}
+            </h3>
+            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:16px;
+                      word-break:break-word;">${escapeHtml(file.name || 'Audio')}</p>
+            <audio src="${escapeHtml(file.url)}" controls controlsList="nodownload noplaybackrate"
+                   oncontextmenu="return false;" style="width:100%;"></audio>
+            <button type="button"
+                    style="margin-top:18px;padding:11px 30px;border-radius:40px;border:none;
+                           background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;
+                           font-weight:700;font-size:0.85rem;cursor:pointer;
+                           box-shadow:0 4px 14px rgba(245,176,66,0.30);"
+                    onclick="document.getElementById('classNoteVoiceModal').remove()">
+                Close
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
 
         // WATCH MAINTENANCE + BAN REALTIME
         onValue(ref(db, 'system/maintenance'), (snap) => {
@@ -16078,6 +16347,12 @@ function setupUI() {
         document.getElementById('sideNotif').classList.add('open');
         markAllNotificationsRead();
     });
+    document.getElementById('backFromClassNoteDocBtn').addEventListener('click', () => {
+    showPage('classNotes');
+});
+document.getElementById('backFromClassNoteMediaBtn').addEventListener('click', () => {
+    showPage('classNotes');
+});
     document.getElementById('closeNotif').addEventListener('click', () => {
         document.getElementById('sideNotif').classList.remove('open');
     });
@@ -18492,6 +18767,21 @@ function renderPageContent(pageId, params) {
         case 'profile':
             updateUserInterface();
             break;
+        case 'classNotes':
+    renderClassNotes();
+    break;
+case 'classNoteDoc':
+    if (params && params.noteId)
+        renderClassNoteDocContent(params.noteId, parseInt(params.idx) || 0);
+    else
+        showPage('classNotes');
+    break;
+case 'classNoteMedia':
+    if (params && params.noteId)
+        renderClassNoteMediaContent(params.noteId, parseInt(params.idx) || 0);
+    else
+        showPage('classNotes');
+    break;
         case 'courseDetail':
             if (params && params.courseId) {
                 const course = allCourses.find(c => c.id === params.courseId);
