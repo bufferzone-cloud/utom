@@ -9370,13 +9370,16 @@ body.dark-mode .cr-field input:focus { background: #222; }
                                     </div>
                                 </div>
                                 <div class="course-amount" id="paymentAmountDisplay">ZMW 0</div>
-                                <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
-    <input type="text" id="promoCodeInput" placeholder="Enter promo code (optional)"
-           style="flex:1;padding:10px 16px;border-radius:30px;border:1.5px solid var(--border-color);font-size:13px;text-transform:uppercase;">
-    <button type="button" id="applyPromoCodeBtn"
-            style="padding:10px 20px;border-radius:30px;border:none;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;font-weight:700;font-size:13px;cursor:pointer;">
-        Apply
-    </button>
+                                <div id="promoCodeSection" style="display:none;margin-top:10px;">
+    <div id="promoScopeInfo" style="margin-bottom:8px;"></div>
+    <div id="promoCodeInputRow" style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="promoCodeInput" placeholder="Enter promo code (optional)"
+               style="flex:1;padding:10px 16px;border-radius:30px;border:1.5px solid var(--border-color);font-size:13px;text-transform:uppercase;">
+        <button type="button" id="applyPromoCodeBtn"
+                style="padding:10px 20px;border-radius:30px;border:none;background:linear-gradient(135deg,var(--gold),var(--orange));color:#fff;font-weight:700;font-size:13px;cursor:pointer;">
+            Apply
+        </button>
+    </div>
 </div>
                             </div>
                             <div class="payment-instruction-box">
@@ -10036,8 +10039,15 @@ function loadPromotions() {
                     if (p.maxUsers > 0 && (p.usageCount || 0) >= p.maxUsers) return false;
                     return true;
                 });
-            renderPromoBanner();
+                        renderPromoBanner();
             applyPromoToPaymentPage();
+
+            // If the student is already on the payment page, refresh the promo box
+            const payPage = document.getElementById('paymentPage');
+            if (payPage && payPage.classList.contains('active-page') && selectedCourse) {
+                updatePromoCodeSection(selectedCourse, selectedItemType);
+            }
+
             resolve();
         });
     });
@@ -15305,6 +15315,91 @@ container.innerHTML = offlineSorted.map(v => `
 }
 
 // =================================================================
+// ===== PROMO CODE SECTION VISIBILITY + SCOPE INFO ================
+// =================================================================
+function updatePromoCodeSection(item, itemType) {
+    const section  = document.getElementById('promoCodeSection');
+    const scopeEl  = document.getElementById('promoScopeInfo');
+    const inputRow = document.getElementById('promoCodeInputRow');
+    const inputEl  = document.getElementById('promoCodeInput');
+    if (!section || !scopeEl || !inputRow) return;
+
+    // Always reset the input value when the page is (re)opened
+    if (inputEl) inputEl.value = '';
+
+    // Promotions only apply to courses & subfolders
+    if (!item || (itemType !== 'course' && itemType !== 'subfolder')) {
+        section.style.display = 'none';
+        return;
+    }
+
+    // Find every active promo that (a) targets this user and (b) applies to this item
+    const applicable = (activePromotions || []).filter(p =>
+        isPromoForCurrentUser(p) && promoAppliesToItem(p, item, itemType)
+    );
+
+    if (applicable.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    // Build one line per applicable promo showing its scope
+    const scopeLines = applicable.map(p => {
+        let scopeLabel = '';
+        if (p.applicableTo === 'all') {
+            scopeLabel = 'All courses & subfolders';
+        } else if (p.applicableTo === 'courses') {
+            scopeLabel = 'All courses';
+        } else if (p.applicableTo === 'subfolders') {
+            scopeLabel = 'All subfolders';
+        } else if (p.applicableTo === 'specific-course') {
+            const c = allCourses.find(x => x.id === p.applicableCourseId);
+            scopeLabel = `Course: ${c ? c.name : '(deleted)'}`;
+        } else if (p.applicableTo === 'specific-subfolder') {
+            const sf = allSubfolders.find(x => x.id === p.applicableSubfolderId);
+            if (sf) {
+                const parent = allCourses.find(c => c.id === sf.courseId);
+                scopeLabel = `Subfolder: ${parent ? parent.name + ' › ' : ''}${sf.name}`;
+            } else {
+                scopeLabel = 'Subfolder: (deleted)';
+            }
+        } else {
+            scopeLabel = 'N/A';
+        }
+
+        const discount = p.type === 'free'
+            ? 'FREE ACCESS'
+            : (p.discountType === 'percentage'
+                ? `${p.discountValue}% OFF`
+                : `ZMW ${p.discountValue} OFF`);
+
+        const codeHint = (p.promoCode && p.promoCode.trim() !== '')
+            ? `Use code: <strong style="background:rgba(245,176,66,0.18);padding:1px 8px;border-radius:20px;">${escapeHtml(p.promoCode)}</strong>`
+            : '<em style="color:var(--green);">Auto-applied at checkout</em>';
+
+        return `<div style="display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.55;color:var(--text);margin-top:4px;">
+            <span style="color:var(--gold-dark);flex-shrink:0;">•</span>
+            <span><strong>${escapeHtml(p.name)}</strong> — ${escapeHtml(discount)} on <em style="color:var(--gold-dark);">${escapeHtml(scopeLabel)}</em><br>${codeHint}</span>
+        </div>`;
+    }).join('');
+
+    scopeEl.innerHTML = `
+        <div style="background:linear-gradient(135deg,rgba(245,176,66,0.10),rgba(255,107,0,0.05));
+                    padding:10px 12px;border-radius:12px;border-left:3px solid var(--gold);">
+            <div style="font-weight:800;color:var(--gold-dark);font-size:11.5px;
+                        display:flex;align-items:center;gap:6px;letter-spacing:0.2px;">
+                <i class="fas fa-tags"></i> Promotions available for you
+            </div>
+            ${scopeLines}
+        </div>`;
+
+    // Show the input row only if at least one promo actually has a code to enter
+    const hasCodeBased = applicable.some(p => p.promoCode && p.promoCode.trim() !== '');
+    inputRow.style.display = hasCodeBased ? 'flex' : 'none';
+
+    section.style.display = 'block';
+}
+// =================================================================
 // ===== OPEN PAYMENT PAGE — fetch the OWNING lecturer's numbers ===
 // =================================================================
 function openPaymentPage(item, itemType = 'course') {
@@ -15356,9 +15451,13 @@ function openPaymentPage(item, itemType = 'course') {
         durationInfo.innerHTML = `<i class="fas fa-infinity"></i> Lifetime access`;
     }
 
-    document.getElementById('paymentScreenshotPreview').innerHTML = '';
+        document.getElementById('paymentScreenshotPreview').innerHTML = '';
     paymentScreenshotUrl = null;
     updatePaymentNumbersDisplay();
+
+    // 🔽 Show / hide the promo-code block based on what applies to this item
+    updatePromoCodeSection(item, itemType);
+
     showPage('payment', { itemId: item.id, itemType });
 }
 function showPaymentRequiredPopup(assessment) {
