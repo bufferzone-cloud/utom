@@ -1635,8 +1635,9 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword }
+  from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 import { getDatabase, ref, set, push, update, remove, onValue, get, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
@@ -1663,8 +1664,8 @@ const S = {
   lecturers:{}, settings:{}, pending:{}, courses:{}, assessments:{},
   videos:{}, docs:{}, subfolders:{}, registers:{}, approved:{},
   payments:{}, users:{}, popups:{}, messages:{}, terms:{},
-  colleges:{},              // admin metadata (subscription, admins, limits, ban)
-  registrationColleges:{}   // source of truth (name, code, structure) from Registration Setup
+  colleges:{},
+  registrationColleges:{}
 };
 let currentAdmin = null;
 let currentPage  = { id:'home', params:{} };
@@ -1714,53 +1715,37 @@ const DEFAULT_TERMS = {
 /* ============================================================
    HELPERS — Registration Setup bridges
 ============================================================ */
-
-/** Look up the registration-setup college by id */
 function regCollege(id){
   if(!id) return null;
   return S.registrationColleges[id] || null;
 }
-
-/** Get the display name for a college id — always prefers Registration Setup */
 function collegeName(id, fallback){
   const rc = regCollege(id);
   if(rc && rc.name) return rc.name;
   return fallback || '—';
 }
-
-/** Get the display code (centerCode) for a college id */
 function collegeCode(id, fallback){
   const rc = regCollege(id);
   if(rc && rc.centerCode) return rc.centerCode;
   return fallback || '—';
 }
-
-/** Is this college activated (has admin metadata)? */
 function isCollegeActivated(id){
   return !!S.colleges[id];
 }
-
-/** True if admin metadata exists but registration setup is gone */
 function isOrphanCollege(id){
   return !S.registrationColleges[id] && !!S.colleges[id];
 }
-
-/** Merge a registration-setup college + admin metadata */
 function mergedCollege(id){
   const reg = regCollege(id) || {};
   const admin = S.colleges[id] || {};
   return {
     id,
-    // identity from registration setup (overrides admin copy)
     name: reg.name || admin.name || '',
     uniqueCode: reg.centerCode || admin.uniqueCode || '',
-    // structure counts
     programsCount: Object.keys(reg.programs || {}).length,
     intakesCount: Object.keys(reg.intakes || {}).length,
     classesCount: Object.values(reg.programs || {}).reduce((n,p) => n + Object.keys(p.classes || {}).length, 0),
-    // admin metadata
     ...admin,
-    // keep raw reg for structure rendering
     _reg: reg,
     _admin: admin,
     _activated: !!S.colleges[id],
@@ -2060,7 +2045,6 @@ function renderHome(){
 
   earningsMap();
 
-  // Count registration setup colleges (source of truth)
   const totalColleges = Object.keys(S.registrationColleges).length;
 
   document.getElementById('kTotal').textContent   = list.length;
@@ -2199,7 +2183,6 @@ function lecturerCardHTML(l, opt = {}){
       </div>`;
   }
 
-  // College display — always prefer registration setup lookup
   const linkedCollegeName = l.collegeId ? collegeName(l.collegeId, l.collegeName) : (l.collegeName || '');
   const collegeLine = linkedCollegeName ? `<div class="lc-meta">🏫 ${esc(linkedCollegeName)}</div>` : '';
   const locationLine = (l.city || l.town) ? `<div class="lc-meta">📍 ${esc([l.city, l.town].filter(Boolean).join(', '))}</div>` : '';
@@ -2361,7 +2344,6 @@ function renderLecturerDetail(uid){
       </div>`;
   }
 
-  // College display — from registration setup
   const linkedCollegeId = l.collegeId || '';
   const linkedCollegeName = linkedCollegeId ? collegeName(linkedCollegeId, l.collegeName) : (l.collegeName || '');
   const linkedCollegeCode = linkedCollegeId ? collegeCode(linkedCollegeId, '') : '';
@@ -2659,7 +2641,7 @@ function maxCollegeAdmins(){
 }
 
 /* ============================================================
-   COLLEGE CARD — merges Registration Setup + Admin Metadata
+   COLLEGE CARD
 ============================================================ */
 function collegeCardHTML(c){
   const now = Date.now();
@@ -2767,30 +2749,25 @@ function collegeCardHTML(c){
 }
 
 /* ============================================================
-   COLLEGES LIST — primary source: Registration Setup
+   COLLEGES LIST
 ============================================================ */
 function renderColleges(){
   const q = (document.getElementById('colSearch')?.value || '').toLowerCase();
   const f = document.getElementById('colFilter')?.value || 'all';
   const now = Date.now();
 
-  // 1. Build the base list from registration setup
   const regIds = new Set(Object.keys(S.registrationColleges));
   const arr = [];
 
-  // Registration-setup colleges
   for(const id of regIds){
     arr.push(mergedCollege(id));
   }
-
-  // Orphan admin records (exist in `colleges/` but not in registration setup)
   for(const id of Object.keys(S.colleges)){
     if(!regIds.has(id)){
       arr.push(mergedCollege(id));
     }
   }
 
-  // 2. Apply filter
   let filtered = arr;
   if(f === 'active')       filtered = arr.filter(c => c._activated && !c.banned && c.paymentStatus === 'paid' && (!c.accessExpiresAt || c.accessExpiresAt > now));
   else if(f === 'expired') filtered = arr.filter(c => c._activated && c.accessExpiresAt && c.accessExpiresAt <= now);
@@ -2799,7 +2776,6 @@ function renderColleges(){
   else if(f === 'unactivated') filtered = arr.filter(c => !c._activated);
   else if(f === 'orphan')  filtered = arr.filter(c => c._orphan);
 
-  // 3. Search
   if(q) filtered = filtered.filter(c => {
     const admins = Object.values(c.admins || {});
     return (c.name||'').toLowerCase().includes(q) ||
@@ -2807,7 +2783,6 @@ function renderColleges(){
       admins.some(a => (a.name||'').toLowerCase().includes(q) || (a.email||'').toLowerCase().includes(q));
   });
 
-  // 4. Sort: activated first, then alphabetical
   filtered.sort((a,b) => {
     const aa = a._activated ? 0 : 1;
     const bb = b._activated ? 0 : 1;
@@ -2826,13 +2801,12 @@ function renderColleges(){
 }
 
 /* ============================================================
-   COLLEGE CREATE — pick from Registration Setup
+   COLLEGE CREATE
 ============================================================ */
 function resetCollegeCreateForm(){
   const sel = document.getElementById('colSelectFromReg');
   if(!sel) return;
 
-  // Only unactivated colleges
   const unactivated = Object.entries(S.registrationColleges)
     .filter(([id]) => !S.colleges[id])
     .map(([id, c]) => ({id, name: c.name || id, code: c.centerCode || ''}))
@@ -2847,19 +2821,16 @@ function resetCollegeCreateForm(){
       unactivated.map(c => `<option value="${esc(c.id)}">${esc(c.name)}${c.code ? ' ('+esc(c.code)+')' : ''}</option>`).join('');
   }
 
-  // Reset subscription fields
   document.getElementById('colAccessFee').value = S.settings.collegeFee || 150;
   document.getElementById('colDurVal').value = S.settings.collegeDurValue || 1;
   document.getElementById('colDurType').value = S.settings.collegeDurType || 'months';
   document.getElementById('colLecturerLimit').value = S.settings.collegeLecturerLimit || 10;
   document.getElementById('colGrantNow').value = 'no';
 
-  // Reset admin fields
   ['colAdminName','colAdminPhone','colAdminEmail','colAdminPass'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
 
-  // Hide preview
   const preview = document.getElementById('colRegPreview');
   if(preview) preview.style.display = 'none';
 }
@@ -2927,7 +2898,7 @@ function applyCollegeAccessAction(){
 }
 
 /* ============================================================
-   COLLEGE DETAIL — merges Registration Setup + Admin Metadata
+   COLLEGE DETAIL
 ============================================================ */
 function renderCollegeDetail(id){
   const box = document.getElementById('cdBody');
@@ -3000,7 +2971,6 @@ function renderCollegeDetail(id){
         <span style="color:var(--muted);font-size:11px">${myLecturers.length} currently</span>
       </div>`;
 
-  // Build structure view from registration setup
   const reg = c._reg || {};
   const programs = Object.entries(reg.programs || {});
   const intakes = Object.entries(reg.intakes || {});
@@ -3345,7 +3315,6 @@ function resetCreateForm(){
     if(ph) ph.style.display = 'block';
   });
   populateCollegeDropdowns();
-  // Hide preview
   const preview = document.getElementById('cCollegePreview');
   if(preview) preview.style.display = 'none';
 }
@@ -4850,7 +4819,6 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
   if(Object.values(S.lecturers).some(l => (l.email||'').toLowerCase() === email)){
     toast('A lecturer with this email already exists', 'error'); return;
   }
-  // Check college lecturer limit
   if(S.colleges[collegeId]){
     const limit = parseInt(S.colleges[collegeId].lecturerLimit) || 0;
     const count = collegeLecturerCount(collegeId);
@@ -4865,7 +4833,7 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
     const data = {
       name, email, phone, nrcNumber: nrc, password: pass,
       collegeId,
-      collegeName: rc.name || '',   // denormalized for convenience
+      collegeName: rc.name || '',
       city, town, address,
       profileUrl: document.getElementById('cProfile').value || '',
       nrcFront: document.getElementById('cNrcF').value || '',
@@ -4907,7 +4875,6 @@ document.getElementById('fEdit').addEventListener('submit', async e => {
       data.collegeId = collegeId;
       data.collegeName = rc.name || '';
 
-      // Check college lecturer limit
       if(S.colleges[collegeId]){
         const limit = parseInt(S.colleges[collegeId].lecturerLimit) || 0;
         const count = collegeLecturerCount(collegeId);
@@ -5073,10 +5040,40 @@ document.getElementById('fCollegeCreate').addEventListener('submit', async e => 
   const MS = { days:86400000, weeks:604800000, months:2592000000, years:31536000000 };
   const expiry = grantNow ? now + durVal * (MS[durType] || MS.months) : null;
 
+  // 1) Create Firebase Auth account for the first admin
+  let authUid = null;
+  {
+    const secondaryName = 'coladmin-create-' + Date.now();
+    let secondaryApp = null;
+    let authError = null;
+    try {
+      secondaryApp = initializeApp(firebaseConfig, secondaryName);
+      const secondaryAuth = getAuth(secondaryApp);
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, adminEmail, adminPass);
+      authUid = cred.user.uid;
+      try { await signOut(secondaryAuth); } catch(_) {}
+    } catch (err) {
+      authError = err;
+    } finally {
+      if (secondaryApp) { try { await deleteApp(secondaryApp); } catch(_) {} }
+    }
+    if (authError) {
+      if (authError.code === 'auth/email-already-in-use') {
+        toast('This email is already registered as an account.', 'error');
+      } else if (authError.code === 'auth/weak-password') {
+        toast('Admin password must be at least 6 characters.', 'error');
+      } else {
+        toast('Auth error: ' + authError.message, 'error');
+      }
+      return;
+    }
+  }
+
   try{
     const admins = {};
     const adminKey = 'admin_' + Date.now();
     admins[adminKey] = {
+      uid: authUid,
       name: adminName,
       phone: adminPhone,
       email: adminEmail,
@@ -5085,7 +5082,6 @@ document.getElementById('fCollegeCreate').addEventListener('submit', async e => 
       createdBy: currentAdmin?.email || 'admin'
     };
 
-    // Store admin metadata only — college identity comes from Registration Setup
     await set(ref(db, `colleges/${collegeId}`), {
       lecturerLimit,
       admins,
@@ -5218,9 +5214,39 @@ document.getElementById('fAddColAdmin').addEventListener('submit', async e => {
   const pass = document.getElementById('acaPass').value;
   if(!name || !phone || !email || !pass){ toast('All admin fields required', 'error'); return; }
 
+  // 1) Create Firebase Auth account for the new admin
+  let authUid = null;
+  {
+    const secondaryName = 'coladmin-add-' + Date.now();
+    let secondaryApp = null;
+    let authError = null;
+    try {
+      secondaryApp = initializeApp(firebaseConfig, secondaryName);
+      const secondaryAuth = getAuth(secondaryApp);
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+      authUid = cred.user.uid;
+      try { await signOut(secondaryAuth); } catch(_) {}
+    } catch (err) {
+      authError = err;
+    } finally {
+      if (secondaryApp) { try { await deleteApp(secondaryApp); } catch(_) {} }
+    }
+    if (authError) {
+      if (authError.code === 'auth/email-already-in-use') {
+        toast('This email is already registered as an account.', 'error');
+      } else if (authError.code === 'auth/weak-password') {
+        toast('Admin password must be at least 6 characters.', 'error');
+      } else {
+        toast('Auth error: ' + authError.message, 'error');
+      }
+      return;
+    }
+  }
+
   try{
     const adminKey = 'admin_' + Date.now();
     await update(ref(db, `colleges/${collegeId}/admins/${adminKey}`), {
+      uid: authUid,
       name, phone, email, password: pass,
       createdAt: Date.now(),
       createdBy: currentAdmin?.email || 'admin'
@@ -5252,7 +5278,6 @@ function attachRealtime(){
   onValue(REFS.colleges,  snap => { S.colleges = snap.val() || {}; schedule(); });
   onValue(REFS.registrationColleges, snap => {
     S.registrationColleges = snap.val() || {};
-    // Refresh any college-dependent UI
     populateCollegeDropdowns();
     schedule();
   });
