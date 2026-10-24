@@ -1488,13 +1488,20 @@
 
     const SETUP_REF = ref(database, 'system/registrationSetup');
     const TERMS_REF = ref(database, 'system/lecturerTerms');
-    const BANNED_USERS_REF = ref(database, 'bannedUsers');
 
     /* ============================================================
        FALLBACK DEFAULTS (if Registration Setup has not been saved)
        ============================================================ */
     const SYSTEM_KEYS = ['email', 'password', 'confirmPassword'];
     const CORE_TOP_LEVEL_FIELDS = ['firstName', 'lastName', 'phone', 'email'];
+    const HIER_KEYS = ['college', 'program', 'class', 'intake', 'studyMode'];
+    const HIER_VALUE_KEY = {
+        college: 'collegeId',
+        program: 'programId',
+        class: 'classId',
+        intake: 'intakeId',
+        studyMode: 'studyMode'
+    };
 
     const FALLBACK_STUDENT_FIELDS = {
         firstName:  { id:'firstName',  label:'First Name',     type:'text',     required:true,  enabled:true, order:1 },
@@ -1572,6 +1579,107 @@
         }
     }
 
+    /**
+     * Normalise anything Firebase may return into [key, value] pairs.
+     * Handles objects, arrays and sparse/legacy data.
+     */
+    function toEntryList(obj) {
+        if (!obj) return [];
+        if (Array.isArray(obj)) {
+            return obj
+                .map(function(v, i) { return [String(i), v]; })
+                .filter(function(e) { return e[1] !== null && e[1] !== undefined && e[1] !== ''; });
+        }
+        if (typeof obj !== 'object') return [];
+        return Object.entries(obj).filter(function(e) {
+            return e[1] !== null && e[1] !== undefined && e[1] !== '';
+        });
+    }
+
+    /* ---------- NORMALISED COLLEGE / PROGRAM / CLASS / INTAKE ---------- */
+
+    function getColleges() {
+        return toEntryList(REG.colleges).map(function(entry) {
+            const id = entry[0];
+            const c = entry[1];
+            if (typeof c === 'string') {
+                return { id: id, name: c, centerCode: '', raw: { name: c } };
+            }
+            return {
+                id: id,
+                name: c.name || c.collegeName || c.title || '',
+                centerCode: c.centerCode || c.code || c.center || '',
+                raw: c
+            };
+        });
+    }
+
+    function getCollegeById(id) {
+        if (!id) return null;
+        const colleges = getColleges();
+        for (let i = 0; i < colleges.length; i++) {
+            if (colleges[i].id === id) return colleges[i];
+        }
+        return null;
+    }
+
+    function getProgramsOf(college) {
+        if (!college) return [];
+        return toEntryList(college.raw && college.raw.programs).map(function(entry) {
+            const id = entry[0];
+            const p = entry[1];
+            if (typeof p === 'string') {
+                return { id: id, name: p, code: '', raw: { name: p } };
+            }
+            return {
+                id: id,
+                name: p.name || p.title || p.programName || p.program || '',
+                code: p.code || p.programCode || '',
+                raw: p
+            };
+        });
+    }
+
+    function getProgramById(college, programId) {
+        if (!college || !programId) return null;
+        const programs = getProgramsOf(college);
+        for (let i = 0; i < programs.length; i++) {
+            if (programs[i].id === programId) return programs[i];
+        }
+        return null;
+    }
+
+    function getClassesOf(program) {
+        if (!program) return [];
+        return toEntryList(program.raw && program.raw.classes).map(function(entry) {
+            const id = entry[0];
+            const c = entry[1];
+            if (typeof c === 'string') {
+                return { id: id, code: c, level: '' };
+            }
+            return {
+                id: id,
+                code: c.code || c.shortCode || c.classCode || '',
+                level: c.level || c.name || c.className || ''
+            };
+        });
+    }
+
+    function getIntakesOf(college) {
+        if (!college) return [];
+        return toEntryList(college.raw && college.raw.intakes).map(function(entry) {
+            const id = entry[0];
+            const it = entry[1];
+            if (typeof it === 'string') {
+                return { id: id, name: it };
+            }
+            return {
+                id: id,
+                name: it.name || it.title || it.intake || it.label || ''
+            };
+        });
+    }
+
     /* ============================================================
        LOAD REGISTRATION CONFIG
        ============================================================ */
@@ -1596,7 +1704,7 @@
                 : FALLBACK_LECTURER_HIER;
             REG.colleges = data.colleges || {};
 
-            console.log('[UTOM] Loaded colleges:', Object.keys(REG.colleges));
+            console.log('[UTOM] Colleges loaded:', getColleges().map(function(c) { return c.name; }));
         } catch (err) {
             console.warn('[UTOM] Could not load Registration Setup, using fallback defaults.', err);
         }
@@ -1647,31 +1755,33 @@
     }
 
     /* ============================================================
-       DYNAMIC FIELD RENDERING
+       FIELD RENDERING
+       All elements use data-field / data-upload attributes so the
+       same field can safely be rendered in more than one place
+       (signup form + complete-profile overlay) without ID clashes.
        ============================================================ */
-    function renderFieldHTML(field, role, values) {
+    function renderFieldHTML(field, values) {
         values = values || {};
-        const fid = role + '_' + field.id;
-        const req = field.required ? 'required' : '';
+        const fid = field.id;
         const reqMark = field.required ? ' *' : '';
-        const val = values[field.id] || '';
+        const val = values[fid] || '';
 
         // ---- IMAGE UPLOAD ----
         if (field.type === 'image') {
             const hasImg = !!val;
             return (
-                '<div class="section-label">' + escapeHtml(field.label) + reqMark + '</div>' +
-                '<div class="upload-grid" style="grid-template-columns:1fr">' +
-                    '<div class="upload-box ' + (hasImg ? 'has-image' : '') + '" ' +
-                         'id="' + fid + '_box" data-field-id="' + field.id + '" data-role="' + role + '">' +
-                        (hasImg
-                            ? '<img src="' + escapeHtml(val) + '" alt="" />'
-                            : '<i class="fas fa-cloud-upload-alt upload-icon"></i><span class="upload-label">Tap to upload</span>') +
-                        '<span class="upload-badge">' + escapeHtml(field.label) + '</span>' +
+                '<div class="image-field">' +
+                    '<div class="section-label">' + escapeHtml(field.label) + reqMark + '</div>' +
+                    '<div class="upload-grid" style="grid-template-columns:1fr">' +
+                        '<div class="upload-box ' + (hasImg ? 'has-image' : '') + '" data-upload="' + escapeHtml(fid) + '">' +
+                            (hasImg
+                                ? '<img src="' + escapeHtml(val) + '" alt="" />'
+                                : '<i class="fas fa-cloud-upload-alt upload-icon"></i><span class="upload-label">Tap to upload</span>') +
+                            '<span class="upload-badge">' + escapeHtml(field.label) + '</span>' +
+                        '</div>' +
                     '</div>' +
-                '</div>' +
-                '<input type="hidden" id="' + fid + '" data-field="' + field.id + '" ' + req +
-                       ' value="' + escapeHtml(val) + '" />'
+                    '<input type="hidden" data-field="' + escapeHtml(fid) + '" value="' + escapeHtml(val) + '" />' +
+                '</div>'
             );
         }
 
@@ -1683,7 +1793,8 @@
             }).join('');
             return (
                 '<div class="input-icon-group">' +
-                    '<select id="' + fid + '" class="pill-input" data-field="' + field.id + '" ' + req + '>' +
+                    '<select class="pill-input" data-field="' + escapeHtml(fid) + '"' +
+                            (field.required ? ' required' : '') + '>' +
                         '<option value="">-- ' + escapeHtml(field.label) + reqMark + ' --</option>' +
                         opts +
                     '</select>' +
@@ -1713,216 +1824,424 @@
 
         return (
             '<div class="input-icon-group">' +
-                '<input type="' + inputType + '" id="' + fid + '" class="pill-input" data-field="' + field.id + '" ' +
+                '<input type="' + inputType + '" class="pill-input" data-field="' + escapeHtml(fid) + '" ' +
                        'placeholder="' + escapeHtml(field.label) + reqMark + '" ' +
-                       'autocomplete="' + autoComplete + '" ' + req + ' value="' + escapeHtml(val) + '" />' +
+                       'autocomplete="' + autoComplete + '" ' + (field.required ? 'required ' : '') +
+                       'value="' + escapeHtml(val) + '" />' +
                 '<i class="fas ' + icon + '"></i>' +
             '</div>'
         );
     }
 
     /* ============================================================
-       HIERARCHY SELECTS
-       (BUG FIX: always use Firebase KEY via Object.entries)
+       HIERARCHY BLOCK
        ============================================================ */
-    function renderHierarchySelects(role, values) {
+    function collegeOptionsHTML(colleges, selectedId) {
+        let html = '<option value="">-- Select college --</option>';
+        colleges.forEach(function(c) {
+            html += '<option value="' + escapeHtml(c.id) + '"' +
+                    (selectedId === c.id ? ' selected' : '') + '>' +
+                    escapeHtml(c.name) +
+                    (c.centerCode ? ' (' + escapeHtml(c.centerCode) + ')' : '') +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function programOptionsHTML(college, selectedId) {
+        if (!college) return '<option value="">-- Select college first --</option>';
+        const programs = getProgramsOf(college);
+        if (programs.length === 0) return '<option value="">-- No programs available --</option>';
+        let html = '<option value="">-- Select program --</option>';
+        programs.forEach(function(p) {
+            html += '<option value="' + escapeHtml(p.id) + '"' +
+                    (selectedId === p.id ? ' selected' : '') + '>' +
+                    escapeHtml(p.name) +
+                    (p.code ? ' (' + escapeHtml(p.code) + ')' : '') +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function classOptionsHTML(college, programId, selectedId) {
+        const program = getProgramById(college, programId);
+        if (!program) return '<option value="">-- Select program first --</option>';
+        const classes = getClassesOf(program);
+        if (classes.length === 0) return '<option value="">-- No classes available --</option>';
+        let html = '<option value="">-- Select class --</option>';
+        classes.forEach(function(c) {
+            const label = (c.code || '') + (c.level ? ' — ' + c.level : '');
+            html += '<option value="' + escapeHtml(c.id) + '"' +
+                    (selectedId === c.id ? ' selected' : '') + '>' +
+                    escapeHtml(label) +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function intakeOptionsHTML(college, selectedId) {
+        if (!college) return '<option value="">-- Select college first --</option>';
+        const intakes = getIntakesOf(college);
+        if (intakes.length === 0) return '<option value="">-- No intakes available --</option>';
+        let html = '<option value="">-- Select intake --</option>';
+        intakes.forEach(function(it) {
+            html += '<option value="' + escapeHtml(it.id) + '"' +
+                    (selectedId === it.id ? ' selected' : '') + '>' +
+                    escapeHtml(it.name) + '</option>';
+        });
+        return html;
+    }
+
+    function selectWrap(hierKey, required, optionsHtml, icon) {
+        return (
+            '<div class="input-icon-group">' +
+                '<select class="pill-input" data-hier="' + hierKey + '"' +
+                        (required ? ' required' : '') + '>' +
+                    optionsHtml +
+                '</select>' +
+                '<i class="fas ' + icon + '"></i>' +
+            '</div>'
+        );
+    }
+
+    function renderHierarchyBlock(role, values) {
         values = values || {};
         const hier = (REG[role] && REG[role].hierarchy) || {};
-        const collegeEntries = Object.entries(REG.colleges || {});
+        const colleges = getColleges();
 
-        const anyEnabled = ['college','program','class','intake','studyMode'].some(function(k) {
-            return hier[k] && hier[k].enabled;
-        });
-        if (!anyEnabled) return '';
+        const labelOf = function(k, fallback) {
+            return (hier[k] && hier[k].label) ? hier[k].label : fallback;
+        };
+        const isOn = function(k) { return !!(hier[k] && hier[k].enabled); };
+        const isReq = function(k) { return !!(hier[k] && hier[k].required); };
 
-        let html = '<div class="section-label">Enrollment Details</div>';
+        let html = '';
 
-        // COLLEGE
-        if (hier.college && hier.college.enabled) {
-            const opts = collegeEntries.map(function(entry) {
-                const cid = entry[0];
-                const c = entry[1];
-                const sel = values.collegeId === cid ? ' selected' : '';
-                return '<option value="' + escapeHtml(cid) + '"' + sel + '>' +
-                       escapeHtml(c.name) + (c.centerCode ? ' (' + escapeHtml(c.centerCode) + ')' : '') +
-                       '</option>';
-            }).join('');
+        // College / Program / Class / Intake only make sense when at
+        // least one college exists in the system.
+        if (colleges.length > 0) {
+            if (isOn('college')) {
+                html += selectWrap(
+                    'college',
+                    isReq('college'),
+                    collegeOptionsHTML(colleges, values.collegeId || ''),
+                    'fa-university'
+                );
+            }
+
+            if (isOn('program')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'program',
+                    isReq('program'),
+                    programOptionsHTML(college, values.programId || ''),
+                    'fa-graduation-cap'
+                );
+            }
+
+            if (isOn('class')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'class',
+                    isReq('class'),
+                    classOptionsHTML(college, values.programId || '', values.classId || ''),
+                    'fa-layer-group'
+                );
+            }
+
+            if (isOn('intake')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'intake',
+                    isReq('intake'),
+                    intakeOptionsHTML(college, values.intakeId || ''),
+                    'fa-calendar-alt'
+                );
+            }
+        }
+
+        if (isOn('studyMode')) {
+            const modes = (hier.studyMode && hier.studyMode.options && hier.studyMode.options.length)
+                ? hier.studyMode.options
+                : ['FULL TIME', 'ODFL'];
+            let opts = '<option value="">-- ' + escapeHtml(labelOf('studyMode', 'Study Mode')) +
+                       (isReq('studyMode') ? ' *' : '') + ' --</option>';
+            modes.forEach(function(m) {
+                opts += '<option value="' + escapeHtml(m) + '"' +
+                        (values.studyMode === m ? ' selected' : '') + '>' +
+                        escapeHtml(m) + '</option>';
+            });
             html += (
                 '<div class="input-icon-group">' +
-                    '<select id="' + role + '_collegeSelect" class="pill-input" data-hier="college" ' +
-                           (hier.college.required ? 'required' : '') + '>' +
-                        '<option value="">-- ' + escapeHtml(hier.college.label) +
-                        (hier.college.required ? ' *' : '') + ' --</option>' +
+                    '<select class="pill-input" data-hier="studyMode"' +
+                            (isReq('studyMode') ? ' required' : '') + '>' +
                         opts +
-                    '</select>' +
-                    '<i class="fas fa-university"></i>' +
-                '</div>'
-            );
-        }
-
-        // PROGRAM
-        if (hier.program && hier.program.enabled) {
-            html += (
-                '<div class="input-icon-group">' +
-                    '<select id="' + role + '_programSelect" class="pill-input" data-hier="program" ' +
-                           (hier.program.required ? 'required' : '') + '>' +
-                        '<option value="">-- Select college first --</option>' +
-                    '</select>' +
-                    '<i class="fas fa-graduation-cap"></i>' +
-                '</div>'
-            );
-        }
-
-        // CLASS
-        if (hier.class && hier.class.enabled) {
-            html += (
-                '<div class="input-icon-group">' +
-                    '<select id="' + role + '_classSelect" class="pill-input" data-hier="class" ' +
-                           (hier.class.required ? 'required' : '') + '>' +
-                        '<option value="">-- Select program first --</option>' +
-                    '</select>' +
-                    '<i class="fas fa-layer-group"></i>' +
-                '</div>'
-            );
-        }
-
-        // INTAKE
-        if (hier.intake && hier.intake.enabled) {
-            html += (
-                '<div class="input-icon-group">' +
-                    '<select id="' + role + '_intakeSelect" class="pill-input" data-hier="intake" ' +
-                           (hier.intake.required ? 'required' : '') + '>' +
-                        '<option value="">-- Select college first --</option>' +
-                    '</select>' +
-                    '<i class="fas fa-calendar-alt"></i>' +
-                '</div>'
-            );
-        }
-
-        // STUDY MODE
-        if (hier.studyMode && hier.studyMode.enabled) {
-            const modes = hier.studyMode.options || ['FULL TIME','ODFL'];
-            html += (
-                '<div class="input-icon-group">' +
-                    '<select id="' + role + '_studyModeSelect" class="pill-input" data-hier="studyMode" ' +
-                           (hier.studyMode.required ? 'required' : '') + '>' +
-                        '<option value="">-- ' + escapeHtml(hier.studyMode.label) +
-                        (hier.studyMode.required ? ' *' : '') + ' --</option>' +
-                        modes.map(function(m) {
-                            return '<option value="' + escapeHtml(m) + '"' +
-                                   (values.studyMode === m ? ' selected' : '') + '>' +
-                                   escapeHtml(m) + '</option>';
-                        }).join('') +
                     '</select>' +
                     '<i class="fas fa-clock"></i>' +
                 '</div>'
             );
         }
 
-        return html;
+        if (!html) return '';
+
+        return (
+            '<div class="hier-block" data-role="' + escapeHtml(role) + '">' +
+                '<div class="section-label">Enrollment Details</div>' +
+                html +
+            '</div>'
+        );
     }
 
-    function wireHierarchySelects(role) {
-        const collegeSel = document.getElementById(role + '_collegeSelect');
-        const programSel = document.getElementById(role + '_programSelect');
-        const classSel   = document.getElementById(role + '_classSelect');
-        const intakeSel  = document.getElementById(role + '_intakeSelect');
+    /* ============================================================
+       HIERARCHY CHANGE HANDLING (delegated — survives re-renders)
+       ============================================================ */
+    document.addEventListener('change', function(e) {
+        const sel = e.target;
+        if (!sel || !sel.dataset || !sel.dataset.hier) return;
 
-        if (collegeSel) {
-            collegeSel.addEventListener('change', function() {
-                const cid = collegeSel.value;
-                const college = (cid && REG.colleges && REG.colleges[cid]) ? REG.colleges[cid] : null;
+        const block = sel.closest('.hier-block');
+        if (!block) return;
 
-                if (cid && !college) {
-                    console.warn('[UTOM] College key not found:', cid,
-                        'Available keys:', Object.keys(REG.colleges || {}));
+        const collegeSel = block.querySelector('[data-hier="college"]');
+        const programSel = block.querySelector('[data-hier="program"]');
+        const classSel   = block.querySelector('[data-hier="class"]');
+        const intakeSel  = block.querySelector('[data-hier="intake"]');
+
+        const college = collegeSel ? getCollegeById(collegeSel.value) : null;
+        const which = sel.dataset.hier;
+
+        if (which === 'college') {
+            if (programSel) programSel.innerHTML = programOptionsHTML(college, '');
+            if (intakeSel)  intakeSel.innerHTML  = intakeOptionsHTML(college, '');
+            if (classSel)   classSel.innerHTML   = '<option value="">-- Select program first --</option>';
+        } else if (which === 'program') {
+            if (classSel) classSel.innerHTML = classOptionsHTML(college, sel.value, '');
+        }
+    }, true);
+
+    /* ============================================================
+       UPLOAD + NAME CAPITALISATION WIRING (container scoped)
+       ============================================================ */
+    function wireUploads(container) {
+        if (!container) return;
+        container.querySelectorAll('[data-upload]').forEach(function(box) {
+            if (box.dataset.wired === '1') return;
+            box.dataset.wired = '1';
+
+            box.addEventListener('click', async function() {
+                try {
+                    const url = await openCloudUpload({
+                        resourceType: 'image',
+                        clientAllowedFormats: ['jpg','jpeg','png','webp','gif']
+                    });
+                    const fieldId = box.dataset.upload;
+                    const wrap = box.closest('.image-field');
+                    const input = wrap ? wrap.querySelector('input[data-field="' + fieldId + '"]') : null;
+                    if (input) input.value = url;
+
+                    box.querySelectorAll('img').forEach(function(img) { img.remove(); });
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = '';
+                    box.appendChild(img);
+                    box.classList.add('has-image');
+                } catch (err) {
+                    console.warn('[UTOM] Upload failed:', err);
+                }
+            });
+        });
+    }
+
+    function wireNameCapitalization(container) {
+        if (!container) return;
+        ['firstName', 'middleName', 'lastName'].forEach(function(id) {
+            const inp = container.querySelector('input[data-field="' + id + '"]');
+            if (!inp || inp.dataset.wired === '1') return;
+            inp.dataset.wired = '1';
+            inp.addEventListener('input', function() {
+                const pos = inp.selectionStart;
+                inp.value = inp.value.toUpperCase();
+                try { inp.setSelectionRange(pos, pos); } catch (err) { /* ignore */ }
+            });
+        });
+    }
+
+    /* ============================================================
+       COLLECT VALUES (container scoped — works for signup + overlay)
+       ============================================================ */
+    function collectHierarchy(container, role) {
+        const out = {};
+        const errors = [];
+        const hier = (REG[role] && REG[role].hierarchy) || {};
+        const block = container ? container.querySelector('.hier-block') : null;
+        if (!block) return { values: out, errors: errors };
+
+        HIER_KEYS.forEach(function(k) {
+            if (!hier[k] || !hier[k].enabled) return;
+            const sel = block.querySelector('[data-hier="' + k + '"]');
+            if (!sel) return;
+
+            const v = (sel.value || '').trim();
+            out[HIER_VALUE_KEY[k]] = v;
+
+            if (hier[k].required && !v) {
+                const hasOptions = Array.prototype.some.call(sel.options, function(o) {
+                    return o.value !== '';
+                });
+                // Only complain when there is actually something to pick,
+                // so an unconfigured system never blocks registration.
+                if (hasOptions) {
+                    errors.push((hier[k].label || k) + ' is required');
+                }
+            }
+        });
+
+        return { values: out, errors: errors };
+    }
+
+    function collectFieldValues(role, container) {
+        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
+            return f.enabled;
+        });
+        const values = {};
+        const customFields = {};
+        const errors = [];
+
+        if (container) {
+            fields.forEach(function(f) {
+                const el = container.querySelector('[data-field="' + f.id + '"]');
+                if (!el) return;
+
+                let v = (el.value || '').trim();
+
+                if (f.type === 'image') {
+                    if (!v && f.required) errors.push(f.label + ' is required');
+                    if (v) customFields[f.id] = v;
+                    return;
                 }
 
-                // ---- PROGRAMS ----
-                if (programSel) {
-                    if (!college) {
-                        programSel.innerHTML = '<option value="">-- Select college first --</option>';
-                    } else {
-                        const progs = Object.entries(college.programs || {});
-                        if (progs.length === 0) {
-                            programSel.innerHTML = '<option value="">-- No programs available --</option>';
-                        } else {
-                            programSel.innerHTML = '<option value="">-- Select program --</option>' +
-                                progs.map(function(entry) {
-                                    const pid = entry[0];
-                                    const p = entry[1];
-                                    return '<option value="' + escapeHtml(pid) + '">' +
-                                           escapeHtml(p.name) +
-                                           (p.code ? ' (' + escapeHtml(p.code) + ')' : '') +
-                                           '</option>';
-                                }).join('');
-                        }
-                    }
+                if (['firstName', 'middleName', 'lastName'].indexOf(f.id) !== -1) {
+                    v = v.toUpperCase();
                 }
 
-                // ---- INTAKES ----
-                if (intakeSel) {
-                    if (!college) {
-                        intakeSel.innerHTML = '<option value="">-- Select college first --</option>';
-                    } else {
-                        const intakes = Object.entries(college.intakes || {});
-                        if (intakes.length === 0) {
-                            intakeSel.innerHTML = '<option value="">-- No intakes available --</option>';
-                        } else {
-                            intakeSel.innerHTML = '<option value="">-- Select intake --</option>' +
-                                intakes.map(function(entry) {
-                                    const iid = entry[0];
-                                    const it = entry[1];
-                                    return '<option value="' + escapeHtml(iid) + '">' +
-                                           escapeHtml(it.name) + '</option>';
-                                }).join('');
-                        }
-                    }
-                }
+                if (!v && f.required) errors.push(f.label + ' is required');
 
-                // ---- RESET CLASS ----
-                if (classSel) {
-                    classSel.innerHTML = '<option value="">-- Select program first --</option>';
+                if (CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
+                    values[f.id] = v;
+                } else {
+                    customFields[f.id] = v;
                 }
             });
         }
 
-        if (programSel) {
-            programSel.addEventListener('change', function() {
-                const cid = collegeSel ? collegeSel.value : '';
-                const pid = programSel.value;
-                if (!classSel) return;
+        const hier = collectHierarchy(container, role);
+        hier.errors.forEach(function(m) { errors.push(m); });
+        Object.keys(hier.values).forEach(function(k) {
+            customFields[k] = hier.values[k];
+        });
 
-                if (!cid || !pid) {
-                    classSel.innerHTML = '<option value="">-- Select program first --</option>';
-                    return;
-                }
+        return { values: values, customFields: customFields, errors: errors };
+    }
 
-                const college = REG.colleges[cid];
-                const program = (college && college.programs) ? college.programs[pid] : null;
+    /* ============================================================
+       FIND MISSING FIELDS (post-login gate)
+       ============================================================ */
+    function findMissingFields(userData, role) {
+        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
+            return f.enabled && f.required;
+        });
+        const hier = (REG[role] && REG[role].hierarchy) || {};
+        const custom = userData.customFields || {};
+        const missing = [];
 
-                if (!program) {
-                    classSel.innerHTML = '<option value="">-- No classes available --</option>';
-                    return;
-                }
+        fields.forEach(function(f) {
+            if (SYSTEM_KEYS.indexOf(f.id) !== -1) return;
+            if (f.type === 'email') return;
 
-                const classes = Object.entries(program.classes || {});
-                if (classes.length === 0) {
-                    classSel.innerHTML = '<option value="">-- No classes available --</option>';
-                    return;
-                }
+            let v = custom[f.id];
 
-                // Show SHORT CODE + Level as requested by admin
-                classSel.innerHTML = '<option value="">-- Select class --</option>' +
-                    classes.map(function(entry) {
-                        const clid = entry[0];
-                        const cl = entry[1];
-                        return '<option value="' + escapeHtml(clid) + '">' +
-                               escapeHtml(cl.code) + ' — ' + escapeHtml(cl.level) +
-                               '</option>';
-                    }).join('');
+            if (isBlank(v) && CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
+                v = userData[f.id];
+            }
+
+            // Legacy field-name compatibility
+            if (isBlank(v)) {
+                if (f.id === 'profilePic') v = userData.profileUrl || userData.profilePic;
+                else if (f.id === 'nrcFront') v = userData.nrcFront;
+                else if (f.id === 'nrcBack') v = userData.nrcBack;
+                else if (f.id === 'nrc') v = userData.nrcNumber || userData.nrc;
+                else if (f.id === 'certificateUrl') v = userData.certificateUrl;
+                else if (f.id === 'degreeUrl') v = userData.degreeUrl;
+            }
+
+            if (isBlank(v)) {
+                missing.push({ kind: 'field', field: f });
+            }
+        });
+
+        /* ---- hierarchy ---- */
+        const colleges = getColleges();
+
+        if (hier.college && hier.college.enabled && hier.college.required &&
+            colleges.length > 0 && isBlank(custom.collegeId)) {
+            missing.push({
+                kind: 'hier', key: 'collegeId', hierKey: 'college',
+                label: hier.college.label || 'College'
             });
         }
+
+        const college = getCollegeById(custom.collegeId);
+
+        if (college) {
+            if (hier.program && hier.program.enabled && hier.program.required &&
+                isBlank(custom.programId) && getProgramsOf(college).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'programId', hierKey: 'program',
+                    label: hier.program.label || 'Program'
+                });
+            }
+
+            if (hier.intake && hier.intake.enabled && hier.intake.required &&
+                isBlank(custom.intakeId) && getIntakesOf(college).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'intakeId', hierKey: 'intake',
+                    label: hier.intake.label || 'Intake'
+                });
+            }
+
+            const program = getProgramById(college, custom.programId);
+            if (program && hier.class && hier.class.enabled && hier.class.required &&
+                isBlank(custom.classId) && getClassesOf(program).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'classId', hierKey: 'class',
+                    label: hier.class.label || 'Class'
+                });
+            }
+        }
+
+        if (hier.studyMode && hier.studyMode.enabled && hier.studyMode.required &&
+            isBlank(custom.studyMode)) {
+            missing.push({
+                kind: 'hier', key: 'studyMode', hierKey: 'studyMode',
+                label: hier.studyMode.label || 'Study Mode'
+            });
+        }
+
+        return missing;
+    }
+
+    /* ============================================================
+       AUTO-CAPITALISE NAME UPDATES (for existing users)
+       ============================================================ */
+    function capitalizeNameUpdates(userData) {
+        const updates = {};
+        ['firstName', 'lastName', 'middleName'].forEach(function(k) {
+            const v = userData[k];
+            if (typeof v === 'string' && v && v !== v.toUpperCase()) {
+                updates[k] = v.toUpperCase();
+            }
+        });
+        return updates;
     }
 
     /* ============================================================
@@ -1949,206 +2268,33 @@
                 const nextF = fields[i + 1];
                 const isShort = shortTypes.indexOf(f.type) !== -1;
                 const nextIsShort = nextF && shortTypes.indexOf(nextF.type) !== -1;
+
                 if (isShort && nextIsShort) {
                     html += '<div class="double-row">' +
-                        renderFieldHTML(f, role) +
-                        renderFieldHTML(nextF, role) +
-                    '</div>';
+                                renderFieldHTML(f) +
+                                renderFieldHTML(nextF) +
+                            '</div>';
                     i += 2;
                 } else {
-                    html += renderFieldHTML(f, role);
+                    html += renderFieldHTML(f);
                     i++;
                 }
             }
 
-            html += renderHierarchySelects(role);
+            html += renderHierarchyBlock(role, {});
             container.innerHTML = html;
 
-            // Wire image uploads
-            container.querySelectorAll('.upload-box').forEach(function(box) {
-                box.addEventListener('click', async function() {
-                    try {
-                        const url = await openCloudUpload({
-                            resourceType: 'image',
-                            clientAllowedFormats: ['jpg','jpeg','png','webp','gif']
-                        });
-                        const fieldId = box.dataset.fieldId;
-                        const roleAttr = box.dataset.role;
-                        const hidden = document.getElementById(roleAttr + '_' + fieldId);
-                        if (hidden) hidden.value = url;
-                        box.querySelectorAll('img').forEach(function(img) { img.remove(); });
-                        const img = document.createElement('img');
-                        img.src = url;
-                        box.appendChild(img);
-                        box.classList.add('has-image');
-                    } catch (e) {
-                        console.warn('[UTOM] Upload failed:', e);
-                    }
-                });
-            });
-
-            wireHierarchySelects(role);
+            wireUploads(container);
+            wireNameCapitalization(container);
         } catch (err) {
             console.error('[UTOM] renderSignupForm error for', role, err);
         }
-    }
-
-    function wireNameCapitalization(role) {
-        try {
-            const container = document.getElementById(
-                role === 'student' ? 'studentSignupFields' : 'lecturerSignupFields'
-            );
-            if (!container) return;
-            ['firstName', 'middleName', 'lastName'].forEach(function(id) {
-                const inp = document.getElementById(role + '_' + id);
-                if (!inp) return;
-                inp.addEventListener('input', function() {
-                    const pos = inp.selectionStart;
-                    inp.value = inp.value.toUpperCase();
-                    try { inp.setSelectionRange(pos, pos); } catch (e) {}
-                });
-            });
-        } catch (err) { /* safe */ }
-    }
-
-    /* ============================================================
-       COLLECT FIELD VALUES
-       ============================================================ */
-    function collectFieldValues(role) {
-        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
-            return f.enabled;
-        });
-        const values = {};
-        const errors = [];
-        const customFields = {};
-
-        fields.forEach(function(f) {
-            const el = document.getElementById(role + '_' + f.id);
-            if (!el) return;
-
-            let v = (el.value || '').trim();
-
-            if (f.type === 'image') {
-                if (!v && f.required) errors.push(f.label + ' is required');
-                if (v) customFields[f.id] = v;
-                return;
-            }
-
-            // Uppercase names
-            if (['firstName', 'middleName', 'lastName'].indexOf(f.id) !== -1) {
-                v = v.toUpperCase();
-            }
-
-            if (!v && f.required) errors.push(f.label + ' is required');
-
-            if (CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
-                values[f.id] = v;
-            } else {
-                customFields[f.id] = v;
-            }
-        });
-
-        // Hierarchy
-        const hier = (REG[role] && REG[role].hierarchy) || {};
-        const hierVals = {};
-        ['college', 'program', 'class', 'intake', 'studyMode'].forEach(function(k) {
-            if (!hier[k] || !hier[k].enabled) return;
-            const key = k === 'class' ? 'classId'
-                : k === 'intake' ? 'intakeId'
-                : k === 'program' ? 'programId'
-                : k === 'college' ? 'collegeId'
-                : 'studyMode';
-            let el;
-            if (k === 'studyMode') {
-                el = document.getElementById(role + '_studyModeSelect');
-            } else {
-                el = document.getElementById(role + '_' + k + 'Select');
-            }
-            hierVals[key] = el ? el.value : '';
-            if (hier[k].required && !hierVals[key]) {
-                errors.push(hier[k].label + ' is required');
-            }
-        });
-
-        return {
-            values: values,
-            customFields: Object.assign({}, customFields, hierVals),
-            errors: errors
-        };
-    }
-
-    /* ============================================================
-       FIND MISSING FIELDS (post-login gate)
-       Checks both top-level and customFields; also legacy locations
-       ============================================================ */
-    function findMissingFields(userData, role) {
-        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
-            return f.enabled && f.required;
-        });
-        const hier = (REG[role] && REG[role].hierarchy) || {};
-        const custom = userData.customFields || {};
-        const missing = [];
-
-        fields.forEach(function(f) {
-            if (['email', 'password', 'confirmPassword'].indexOf(f.id) !== -1) return;
-            if (f.type === 'email') return;
-
-            // Try custom first, then top-level, then legacy locations
-            let v = custom[f.id];
-
-            if (isBlank(v) && CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
-                v = userData[f.id];
-            }
-
-            // Legacy field-name compatibility (from the original index.html)
-            if (isBlank(v)) {
-                if (f.id === 'profilePic') v = userData.profileUrl || userData.profilePic;
-                else if (f.id === 'nrcFront') v = userData.nrcFront;
-                else if (f.id === 'nrcBack') v = userData.nrcBack;
-                else if (f.id === 'nrc') v = userData.nrcNumber || userData.nrc;
-                else if (f.id === 'certificateUrl') v = userData.certificateUrl;
-                else if (f.id === 'degreeUrl') v = userData.degreeUrl;
-            }
-
-            if (isBlank(v)) {
-                missing.push({ kind: 'field', field: f });
-            }
-        });
-
-        ['college', 'program', 'class', 'intake', 'studyMode'].forEach(function(k) {
-            if (!hier[k] || !hier[k].enabled || !hier[k].required) return;
-            const key = k === 'class' ? 'classId'
-                : k === 'intake' ? 'intakeId'
-                : k === 'program' ? 'programId'
-                : k === 'college' ? 'collegeId'
-                : 'studyMode';
-            if (!custom[key]) {
-                missing.push({ kind: 'hier', key: key, label: hier[k].label, hierKey: k });
-            }
-        });
-
-        return missing;
-    }
-
-    /* ============================================================
-       AUTO-CAPITALIZE NAME UPDATES (for existing users)
-       ============================================================ */
-    function capitalizeNameUpdates(userData) {
-        const updates = {};
-        ['firstName', 'lastName', 'middleName'].forEach(function(k) {
-            const v = userData[k];
-            if (typeof v === 'string' && v && v !== v.toUpperCase()) {
-                updates[k] = v.toUpperCase();
-            }
-        });
-        return updates;
     }
 
     /* ============================================================
        COMPLETE PROFILE OVERLAY
        ============================================================ */
     function openCompleteProfileOverlay(user, role, missing, userData) {
-        // Missing chips
         const chipsEl = document.getElementById('missingChipsContainer');
         chipsEl.innerHTML = missing.map(function(m) {
             const label = m.kind === 'field' ? m.field.label : m.label;
@@ -2177,88 +2323,30 @@
         missing.forEach(function(m) {
             if (m.kind === 'field') {
                 html += '<div class="complete-form-block">' +
-                        renderFieldHTML(m.field, role, prefill) +
+                            renderFieldHTML(m.field, prefill) +
                         '</div>';
             }
         });
 
-        // Render hierarchy if any missing
-        const hierMissing = missing.filter(function(m) { return m.kind === 'hier'; });
-        if (hierMissing.length > 0) {
-            const prefillHier = {
-                collegeId: custom.collegeId,
-                programId: custom.programId,
-                classId: custom.classId,
-                intakeId: custom.intakeId,
-                studyMode: custom.studyMode
-            };
-            html += '<div class="complete-form-block">' +
-                    renderHierarchySelects(role, prefillHier) +
-                    '</div>';
+        // Render the hierarchy block if any hierarchy item is missing
+        const needsHierarchy = missing.some(function(m) { return m.kind === 'hier'; });
+        if (needsHierarchy) {
+            const hierHtml = renderHierarchyBlock(role, {
+                collegeId: custom.collegeId || '',
+                programId: custom.programId || '',
+                classId:   custom.classId || '',
+                intakeId:  custom.intakeId || '',
+                studyMode: custom.studyMode || ''
+            });
+            if (hierHtml) {
+                html += '<div class="complete-form-block">' + hierHtml + '</div>';
+            }
         }
 
         container.innerHTML = html;
 
-        // Wire image uploads
-        container.querySelectorAll('.upload-box').forEach(function(box) {
-            box.addEventListener('click', async function() {
-                try {
-                    const url = await openCloudUpload({
-                        resourceType: 'image',
-                        clientAllowedFormats: ['jpg','jpeg','png','webp','gif']
-                    });
-                    const fieldId = box.dataset.fieldId;
-                    const roleAttr = box.dataset.role;
-                    const hidden = document.getElementById(roleAttr + '_' + fieldId);
-                    if (hidden) hidden.value = url;
-                    box.querySelectorAll('img').forEach(function(img) { img.remove(); });
-                    const img = document.createElement('img');
-                    img.src = url;
-                    box.appendChild(img);
-                    box.classList.add('has-image');
-                } catch (e) { console.warn(e); }
-            });
-        });
-
-        // Wire hierarchy selects
-        wireHierarchySelects(role);
-
-        // Restore pre-existing hierarchy values
-        setTimeout(function() {
-            const collegeSel = document.getElementById(role + '_collegeSelect');
-            if (collegeSel && custom.collegeId) {
-                collegeSel.value = custom.collegeId;
-                collegeSel.dispatchEvent(new Event('change'));
-                setTimeout(function() {
-                    const progSel = document.getElementById(role + '_programSelect');
-                    if (progSel && custom.programId) {
-                        progSel.value = custom.programId;
-                        progSel.dispatchEvent(new Event('change'));
-                        setTimeout(function() {
-                            const clSel = document.getElementById(role + '_classSelect');
-                            if (clSel && custom.classId) clSel.value = custom.classId;
-                        }, 120);
-                    }
-                    const intSel = document.getElementById(role + '_intakeSelect');
-                    if (intSel && custom.intakeId) intSel.value = custom.intakeId;
-                }, 120);
-            }
-            const smSel = document.getElementById(role + '_studyModeSelect');
-            if (smSel && custom.studyMode) smSel.value = custom.studyMode;
-        }, 60);
-
-        // Wire name capitalization in overlay
-        try {
-            ['firstName', 'middleName', 'lastName'].forEach(function(id) {
-                const inp = document.getElementById(role + '_' + id);
-                if (!inp) return;
-                inp.addEventListener('input', function() {
-                    const pos = inp.selectionStart;
-                    inp.value = inp.value.toUpperCase();
-                    try { inp.setSelectionRange(pos, pos); } catch (e) {}
-                });
-            });
-        } catch (e) { /* safe */ }
+        wireUploads(container);
+        wireNameCapitalization(container);
 
         document.getElementById('completeProfileError').innerText = '';
         document.getElementById('completeProfileOverlay').classList.add('open');
@@ -2305,7 +2393,6 @@
         authSegments.classList.remove('hidden-panel');
         setActiveSegment('signup');
         renderSignupForm('student');
-        wireNameCapitalization('student');
     }
 
     function showForgotPanel() {
@@ -2336,7 +2423,6 @@
         lecSignupPanel.classList.toggle('hidden-panel', which !== 'signup');
         if (which === 'signup') {
             renderSignupForm('lecturer');
-            wireNameCapitalization('lecturer');
         }
     }
 
@@ -2495,7 +2581,8 @@
         errEl.innerText = '';
         succEl.style.display = 'none';
 
-        const collected = collectFieldValues('student');
+        const container = document.getElementById('studentSignupFields');
+        const collected = collectFieldValues('student', container);
         if (collected.errors.length > 0) {
             errEl.innerText = collected.errors.join('\n');
             return;
@@ -2578,7 +2665,8 @@
         errEl.innerText = '';
         succEl.style.display = 'none';
 
-        const collected = collectFieldValues('lecturer');
+        const container = document.getElementById('lecturerSignupFields');
+        const collected = collectFieldValues('lecturer', container);
         if (collected.errors.length > 0) {
             errEl.innerText = collected.errors.join('\n');
             return;
@@ -2836,7 +2924,8 @@
         const role = PENDING_USER.role;
         const userData = PENDING_USER.userData;
 
-        const collected = collectFieldValues(role);
+        const container = document.getElementById('completeProfileFields');
+        const collected = collectFieldValues(role, container);
         if (collected.errors.length > 0) {
             errEl.innerText = collected.errors.join('\n');
             return;
@@ -2896,7 +2985,7 @@
 
     document.getElementById('completeProfileLogoutBtn').addEventListener('click', async function() {
         PENDING_USER = null;
-        try { await signOut(auth); } catch (e) {}
+        try { await signOut(auth); } catch (e) { /* ignore */ }
         document.getElementById('completeProfileOverlay').classList.remove('open');
         document.body.style.overflow = '';
         showLoginPanel();
@@ -2994,9 +3083,6 @@
         } catch (err) {
             console.error('[UTOM] Lecturer signup render failed:', err);
         }
-
-        try { wireNameCapitalization('student'); } catch (err) { /* safe */ }
-        try { wireNameCapitalization('lecturer'); } catch (err) { /* safe */ }
 
         console.log('✅ UTOM landing page ready — dynamic registration active');
     })();
