@@ -526,6 +526,7 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         <table class="dtable">
           <tr><td>Name</td><td id="setName">—</td></tr>
           <tr><td>Unique code</td><td id="setCode">—</td></tr>
+          <tr><td>College ID</td><td><code id="setCollegeId" style="font-size:11px;background:rgba(245,176,66,.15);padding:2px 8px;border-radius:20px">—</code></td></tr>
           <tr><td>City</td><td id="setCity">—</td></tr>
           <tr><td>Country</td><td id="setCountry">—</td></tr>
           <tr><td>Lecturer limit</td><td id="setLimit">—</td></tr>
@@ -614,7 +615,7 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword }
   from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { getDatabase, ref, set, get, update, remove, onValue, push, serverTimestamp, query, orderByChild, equalTo }
+import { getDatabase, ref, set, get, update, remove, onValue, push, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -624,7 +625,7 @@ const firebaseConfig = {
   projectId: "utom-c4003",
   storageBucket: "utom-c4003.firebasestorage.app",
   messagingSenderId: "878225874050",
-  appId: "1:878225874050:web:643626906bfe233eeae89b".replace('bfe', 'bfd')
+  appId: "1:878225874050:web:643626906bfd233eeae89b"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -639,10 +640,16 @@ let CURRENT_COLLEGE_ID = null;
 let CURRENT_COLLEGE = null;
 let CURRENT_COLLEGE_ADMIN = null; // entry from admins/{key}
 
-let allLecturers = {};            // {uid: lecturer}
-let myLecturers = [];             // filtered by collegeId
+let allLecturers = {};
+let myLecturers = [];
 let allStudents = {};
 let myStudents = [];
+
+/* Content stores (each kept in its own variable so we can
+   merge two assessment paths without losing either source). */
+let coursesStore = {};
+let assessmentsStoreA = {};   // 'assessments'
+let assessmentsStoreB = {};   // 'lecturerAssessments' (legacy)
 let allCourses = {};
 let allAssessments = {};
 let allVideos = {};
@@ -722,41 +729,60 @@ function sortByLastName(arr, getter){
 }
 
 /* ============================================================
+   COLLEGE-MEMBERSHIP HELPERS
+   ------------------------------------------------------------
+   Different flows store the college reference differently:
+     • management.html (this console)  →  lecturers/{uid}.collegeId
+     • index.html public signup        →  lecturers/{uid}.customFields.collegeId
+   We accept either location so nothing is silently dropped.
+   ============================================================ */
+function getLecturerCollegeId(l){
+  if(!l) return '';
+  if(l.collegeId) return String(l.collegeId).trim();
+  const cf = l.customFields || {};
+  if(cf.collegeId) return String(cf.collegeId).trim();
+  return '';
+}
+function lecturerBelongsToCollege(l, collegeId){
+  if(!collegeId) return false;
+  return getLecturerCollegeId(l) === String(collegeId).trim();
+}
+
+/* ============================================================
    AUTH GATE
 ============================================================ */
 onAuthStateChanged(auth, async (user) => {
   if(!user){
-    // Not signed in → bounce to index
     window.location.replace('index.html');
     return;
   }
-  CURRENT_ADMIN = { uid: user.uid, email: (user.email || '').toLowerCase() };
+  CURRENT_ADMIN = { uid: user.uid, email: (user.email || '').trim().toLowerCase() };
 
   try{
     await bootstrapAdmin();
   }catch(err){
-    console.error('Bootstrap error:', err);
+    console.error('[UTOM] Bootstrap error:', err);
     showGate('notadmin', 'Error loading your account. Please sign in again.');
   }
 });
 
 async function bootstrapAdmin(){
-  // 1. Look up college by matching admin email in colleges/*/admins/*
+  console.log('[UTOM] Looking up admin by email:', CURRENT_ADMIN.email);
+
   const collegesSnap = await get(ref(db, 'colleges'));
   const colleges = collegesSnap.val() || {};
 
   let foundCollegeId = null;
   let foundCollege = null;
-  let foundAdminKey = null;
   let foundAdmin = null;
 
   for(const [cid, c] of Object.entries(colleges)){
     const admins = c.admins || {};
-    for(const [akey, a] of Object.entries(admins)){
-      if((a.email || '').toLowerCase() === CURRENT_ADMIN.email){
+    for(const [, a] of Object.entries(admins)){
+      const adminEmail = (a.email || '').trim().toLowerCase();
+      if(adminEmail === CURRENT_ADMIN.email){
         foundCollegeId = cid;
         foundCollege = { id: cid, ...c };
-        foundAdminKey = akey;
         foundAdmin = a;
         break;
       }
@@ -765,7 +791,7 @@ async function bootstrapAdmin(){
   }
 
   if(!foundCollegeId){
-    // Not registered as a college admin
+    console.warn('[UTOM] No college found for this admin email.');
     showGate('notadmin', 'You are not registered as a college administrator. Contact UTOM Administration.');
     return;
   }
@@ -774,14 +800,14 @@ async function bootstrapAdmin(){
   CURRENT_COLLEGE = foundCollege;
   CURRENT_COLLEGE_ADMIN = foundAdmin;
 
-  // 2. Gate: banned?
+  console.log('[UTOM] Admin belongs to college:', CURRENT_COLLEGE_ID, foundCollege.name);
+
   if(foundCollege.banned){
     showGate('banned', foundCollege.banReason || 'Your college has been blocked from accessing the console.');
     populateBannedInfo(foundCollege);
     return;
   }
 
-  // 3. Gate: subscription active?
   const isPaid = foundCollege.paymentStatus === 'paid';
   const expired = foundCollege.accessExpiresAt && foundCollege.accessExpiresAt <= now();
   if(!isPaid || expired){
@@ -790,7 +816,6 @@ async function bootstrapAdmin(){
     return;
   }
 
-  // 4. All good — load dashboard
   showMainApp();
   attachRealtime();
 }
@@ -850,13 +875,11 @@ function showMainApp(){
   document.getElementById('gateNotAdmin').style.display = 'none';
   document.getElementById('mainApp').classList.add('show');
 
-  // Sidebar / header identity
   document.getElementById('sbCollegeName').textContent = CURRENT_COLLEGE.name || '';
   document.getElementById('sbCollegeCode').textContent = CURRENT_COLLEGE.uniqueCode || '';
   document.getElementById('collegeName').textContent = CURRENT_COLLEGE.name || '';
   document.getElementById('collegeCode').textContent = CURRENT_COLLEGE.uniqueCode || '';
 
-  // College avatar
   const av = document.getElementById('collegeAvatar');
   if(CURRENT_COLLEGE.logoUrl){
     av.innerHTML = `<img src="${esc(CURRENT_COLLEGE.logoUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent='${esc((CURRENT_COLLEGE.name||'C').charAt(0))}'">`;
@@ -864,27 +887,23 @@ function showMainApp(){
     av.textContent = (CURRENT_COLLEGE.name || 'C').charAt(0).toUpperCase();
   }
 
-  // Admin identity
   document.getElementById('adminName').textContent = CURRENT_COLLEGE_ADMIN.name || CURRENT_ADMIN.email;
   document.getElementById('setAdminName').textContent = CURRENT_COLLEGE_ADMIN.name || '—';
   document.getElementById('setAdminEmail').textContent = CURRENT_ADMIN.email;
   document.getElementById('setAdminPhone').textContent = CURRENT_COLLEGE_ADMIN.phone || '—';
 
-  // College settings
   document.getElementById('setName').textContent = CURRENT_COLLEGE.name || '—';
   document.getElementById('setCode').textContent = CURRENT_COLLEGE.uniqueCode || '—';
+  document.getElementById('setCollegeId').textContent = CURRENT_COLLEGE_ID || '—';
   document.getElementById('setCity').textContent = CURRENT_COLLEGE.city || '—';
   document.getElementById('setCountry').textContent = CURRENT_COLLEGE.country || '—';
   document.getElementById('setLimit').textContent = CURRENT_COLLEGE.lecturerLimit || 'Unlimited';
 
-  // Subscription summary
   renderSubscriptionCards();
 
-  // Lecturer limit display
   document.getElementById('limitTotal').textContent = CURRENT_COLLEGE.lecturerLimit || '∞';
   document.getElementById('limitUsed').textContent = '0';
 
-  // Update badge
   updateSubBadge();
 
   navigate('home');
@@ -920,7 +939,6 @@ function renderSubscriptionCards(){
   const isPaid = c.paymentStatus === 'paid';
   const expired = c.accessExpiresAt && c.accessExpiresAt <= now();
 
-  // Home card
   const homeStatus = document.getElementById('collegeSubStatus');
   const homeExp = document.getElementById('collegeSubExpiry');
   const homeLimit = document.getElementById('collegeLimit');
@@ -934,7 +952,6 @@ function renderSubscriptionCards(){
   homeExp.textContent = c.accessExpiresAt ? fmtDate(c.accessExpiresAt) : 'Lifetime';
   homeLimit.textContent = c.lecturerLimit || 'Unlimited';
 
-  // Subscription section
   const bigEl = document.getElementById('subStatusBig');
   const expEl = document.getElementById('subExpiryBig');
   if(isPaid && !expired){
@@ -959,6 +976,7 @@ function renderSubscriptionCards(){
    REALTIME DATA
 ============================================================ */
 function attachRealtime(){
+  // -------- College record (subscription / ban / admins) --------
   onValue(ref(db, 'colleges/' + CURRENT_COLLEGE_ID), snap => {
     if(!snap.exists()){
       showGate('notadmin', 'Your college record was removed.');
@@ -967,7 +985,19 @@ function attachRealtime(){
     const data = snap.val();
     CURRENT_COLLEGE = { id: CURRENT_COLLEGE_ID, ...data };
 
-    // Re-gate on live changes
+    // Re-sync the admin entry from the live admins object.
+    const admins = data.admins || {};
+    for(const [, a] of Object.entries(admins)){
+      const adminEmail = (a.email || '').trim().toLowerCase();
+      if(adminEmail === CURRENT_ADMIN.email){
+        CURRENT_COLLEGE_ADMIN = a;
+        document.getElementById('adminName').textContent = a.name || CURRENT_ADMIN.email;
+        document.getElementById('setAdminName').textContent = a.name || '—';
+        document.getElementById('setAdminPhone').textContent = a.phone || '—';
+        break;
+      }
+    }
+
     if(data.banned){
       showGate('banned', data.banReason || 'Your college has been blocked.');
       populateBannedInfo(CURRENT_COLLEGE);
@@ -991,11 +1021,15 @@ function attachRealtime(){
     document.getElementById('limitTotal').textContent = data.lecturerLimit || '∞';
   });
 
+  // -------- Lecturers (both direct collegeId and customFields.collegeId) --------
   onValue(ref(db, 'lecturers'), snap => {
     allLecturers = snap.val() || {};
     myLecturers = Object.entries(allLecturers)
-      .map(([uid,l]) => ({ uid, ...l }))
-      .filter(l => l.collegeId === CURRENT_COLLEGE_ID);
+      .map(([uid, l]) => ({ uid, ...l }))
+      .filter(l => lecturerBelongsToCollege(l, CURRENT_COLLEGE_ID));
+
+    console.log('[UTOM] Lecturers in college:', myLecturers.length, 'of', Object.keys(allLecturers).length);
+
     renderHomeStats();
     renderLecturersList();
     renderRecentLecturers();
@@ -1003,37 +1037,59 @@ function attachRealtime(){
     if(document.getElementById('lecturerDetailSection').classList.contains('active') && _currentLecturerId){
       renderLecturerDetail(_currentLecturerId);
     }
+    if(document.getElementById('contentSection').classList.contains('active')){
+      renderContentTab();
+    }
   });
 
+  // -------- Students --------
   onValue(ref(db, 'users'), snap => {
     allStudents = snap.val() || {};
     myStudents = Object.entries(allStudents)
-      .map(([uid,u]) => ({ uid, ...u }))
+      .map(([uid, u]) => ({ uid, ...u }))
       .filter(u => (u.customFields && u.customFields.collegeId === CURRENT_COLLEGE_ID));
     renderHomeStats();
     renderStudentsList();
   });
 
+  // -------- Courses --------
   onValue(ref(db, 'courses'), snap => {
-    allCourses = snap.val() || {};
+    coursesStore = snap.val() || {};
+    allCourses = coursesStore;
     renderHomeStats();
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
+  });
+
+  // -------- Assessments (two possible paths — merge both) --------
+  const refreshAssessments = () => {
+    allAssessments = { ...assessmentsStoreB, ...assessmentsStoreA };
+    renderHomeStats();
+    if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
+  };
+  onValue(ref(db, 'assessments'), snap => {
+    assessmentsStoreA = snap.val() || {};
+    refreshAssessments();
   });
   onValue(ref(db, 'lecturerAssessments'), snap => {
-    allAssessments = snap.val() || {};
-    renderHomeStats();
-    if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
+    assessmentsStoreB = snap.val() || {};
+    refreshAssessments();
   });
+
+  // -------- Videos --------
   onValue(ref(db, 'videos'), snap => {
     allVideos = snap.val() || {};
     renderHomeStats();
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
   });
+
+  // -------- Docs --------
   onValue(ref(db, 'docs'), snap => {
     allDocs = snap.val() || {};
     renderHomeStats();
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
   });
+
+  // -------- Pending content --------
   onValue(ref(db, 'pendingLecturerContent'), snap => {
     allPending = snap.val() || {};
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
@@ -1050,7 +1106,7 @@ function filterContentByMine(collection){
   const uids = myLecturerUids();
   return Object.entries(collection || {})
     .map(([id, item]) => ({ id, ...item }))
-    .filter(item => uids.has(item.lecturerId));
+    .filter(item => item && uids.has(item.lecturerId));
 }
 
 /* ============================================================
@@ -1214,11 +1270,13 @@ window.renderLecturerDetail = function(uid){
 
   const initials = (l.name||'?').charAt(0).toUpperCase();
 
-  // Content by this lecturer
   const courses = filterContentByMine(allCourses).filter(c => c.lecturerId === uid);
   const assessments = filterContentByMine(allAssessments).filter(a => a.lecturerId === uid);
   const videos = filterContentByMine(allVideos).filter(v => v.lecturerId === uid);
   const docs = filterContentByMine(allDocs).filter(d => d.lecturerId === uid);
+  const pending = Object.entries(allPending || {})
+    .map(([id, p]) => ({ id, ...p }))
+    .filter(p => p.lecturerId === uid && p.status === 'pending');
 
   box.innerHTML = `
     <div class="page-head">
@@ -1266,7 +1324,11 @@ window.renderLecturerDetail = function(uid){
     </div>
 
     <div class="card">
-      <div class="grid-title"><h3><i class="fas fa-folder-open" style="color:var(--gold)"></i> Content by this lecturer</h3></div>
+      <div class="grid-title">
+        <h3><i class="fas fa-folder-open" style="color:var(--gold)"></i> Content by this lecturer</h3>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:11px"
+          onclick="navigate('content')"><i class="fas fa-eye"></i> Open content tab</button>
+      </div>
       <div class="lc-stats">
         <div class="stat"><div class="n">${courses.length}</div><div class="l">Courses</div></div>
         <div class="stat"><div class="n">${assessments.length}</div><div class="l">Assessments</div></div>
@@ -1274,6 +1336,8 @@ window.renderLecturerDetail = function(uid){
       </div>
       <div class="lc-stats" style="margin-top:6px">
         <div class="stat"><div class="n">${docs.length}</div><div class="l">Documents</div></div>
+        <div class="stat"><div class="n">${pending.length}</div><div class="l">Pending</div></div>
+        <div class="stat"><div class="n">${courses.length + assessments.length + videos.length + docs.length}</div><div class="l">Total</div></div>
       </div>
     </div>
 
@@ -1307,14 +1371,12 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
     toast('Password must be at least 6 characters', 'error'); return;
   }
 
-  // Enforce lecturer limit
   const limit = parseInt(CURRENT_COLLEGE.lecturerLimit) || 0;
   if(limit > 0 && myLecturers.length >= limit){
     toast(`Lecturer limit reached (${limit}). Contact UTOM admin to increase it.`, 'error');
     return;
   }
 
-  // Check for duplicate email among all lecturers
   const dupes = Object.values(allLecturers).find(l => (l.email || '').toLowerCase() === email);
   if(dupes){
     toast('A lecturer with this email already exists', 'error'); return;
@@ -1326,8 +1388,6 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
 
   try{
-    // 1. Create the Firebase Auth user via a secondary app instance
-    //    so we don't lose the current admin session.
     let authUid = null;
     let authError = null;
     const secondaryName = 'lecturer-create-' + Date.now();
@@ -1357,13 +1417,12 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
       return;
     }
 
-    // 2. Save lecturer record in the database
     const uid = authUid;
     const payload = {
       name,
       email,
       phone,
-      password,                           // legacy — kept for compatibility
+      password,
       collegeId: CURRENT_COLLEGE_ID,
       collegeName: CURRENT_COLLEGE.name || '',
       status: 'approved',
@@ -1379,7 +1438,12 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
     await set(ref(db, 'lecturers/' + uid), payload);
 
     toast('Lecturer created successfully!', 'success');
-    try { push(ref(db, 'notifications'), { message: `👤 New lecturer ${name} created in ${CURRENT_COLLEGE.name}`, timestamp: serverTimestamp() }); } catch(_){}
+    try {
+      push(ref(db, 'notifications'), {
+        message: `👤 New lecturer ${name} created in ${CURRENT_COLLEGE.name}`,
+        timestamp: serverTimestamp()
+      });
+    } catch(_){}
 
     document.getElementById('fCreateLecturer').reset();
     navigate('lecturers');
@@ -1542,25 +1606,25 @@ function renderContentTab(){
   if(_contentTab === 'courses'){
     const arr = filterContentByMine(allCourses);
     box.innerHTML = arr.length === 0
-      ? `<div class="empty"><i class="fas fa-book"></i><h3>No courses yet</h3></div>`
+      ? `<div class="empty"><i class="fas fa-book"></i><h3>No courses yet</h3><p>Courses published by your lecturers will appear here.</p></div>`
       : arr.map(c => contentItemHTML('course', c, c.name || 'Untitled course', `Price: ${c.price>0?'ZMW '+c.price:'Free'}`)).join('');
   }
   else if(_contentTab === 'assessments'){
     const arr = filterContentByMine(allAssessments);
     box.innerHTML = arr.length === 0
-      ? `<div class="empty"><i class="fas fa-graduation-cap"></i><h3>No assessments yet</h3></div>`
+      ? `<div class="empty"><i class="fas fa-graduation-cap"></i><h3>No assessments yet</h3><p>Assessments published by your lecturers will appear here.</p></div>`
       : arr.map(a => contentItemHTML('assessment', a, a.name || 'Untitled assessment', `${a.type||'test'} · ${a.totalMarks||0} marks`)).join('');
   }
   else if(_contentTab === 'videos'){
     const arr = filterContentByMine(allVideos);
     box.innerHTML = arr.length === 0
-      ? `<div class="empty"><i class="fas fa-video"></i><h3>No videos yet</h3></div>`
+      ? `<div class="empty"><i class="fas fa-video"></i><h3>No videos yet</h3><p>Videos published by your lecturers will appear here.</p></div>`
       : arr.map(v => contentItemHTML('video', v, v.title || 'Untitled video', `Price: ${v.price>0?'ZMW '+v.price:'Free'}`)).join('');
   }
   else if(_contentTab === 'docs'){
     const arr = filterContentByMine(allDocs);
     box.innerHTML = arr.length === 0
-      ? `<div class="empty"><i class="fas fa-file-alt"></i><h3>No documents yet</h3></div>`
+      ? `<div class="empty"><i class="fas fa-file-alt"></i><h3>No documents yet</h3><p>Documents published by your lecturers will appear here.</p></div>`
       : arr.map(d => contentItemHTML('doc', d, d.title || 'Untitled document', `Price: ${d.price>0?'ZMW '+d.price:'Free'}`)).join('');
   }
   else if(_contentTab === 'pending'){
@@ -1568,7 +1632,7 @@ function renderContentTab(){
       .map(([id, p]) => ({ id, ...p }))
       .filter(p => myLecturerUids().has(p.lecturerId) && p.status === 'pending');
     box.innerHTML = arr.length === 0
-      ? `<div class="empty"><i class="fas fa-check-circle"></i><h3>Nothing pending</h3></div>`
+      ? `<div class="empty"><i class="fas fa-check-circle"></i><h3>Nothing pending</h3><p>All your lecturers' submissions have been reviewed.</p></div>`
       : arr.map(p => {
           const lect = myLecturers.find(l => l.uid === p.lecturerId);
           const title = p.data?.title || p.data?.name || 'Untitled';
