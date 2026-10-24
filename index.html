@@ -1729,6 +1729,59 @@
     }
 
     /* ============================================================
+       COLLEGE ADMIN DETECTION & AUTO-REPAIR
+       ------------------------------------------------------------
+       When an admin is created from the Lectures Admin console,
+       the record is stored under colleges/{collegeId}/admins/{key}
+       but a Firebase Auth account may not exist yet (older builds
+       did not create it). These helpers let the login screens:
+
+         1. Detect when the email belongs to a college admin.
+         2. If the Auth account is missing but the stored password
+            matches what the user typed, create the Firebase Auth
+            account on the fly, sign them in, and route them to
+            management.html.
+       ============================================================ */
+    async function findCollegeAdminByEmail(email) {
+        try {
+            const snap = await get(ref(database, 'colleges'));
+            const colleges = snap.val() || {};
+            const target = (email || '').toLowerCase();
+            for (const cid in colleges) {
+                const admins = colleges[cid].admins || {};
+                for (const akey in admins) {
+                    if ((admins[akey].email || '').toLowerCase() === target) {
+                        return { collegeId: cid, adminKey: akey, admin: admins[akey] };
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[UTOM] college-admin lookup failed:', e);
+        }
+        return null;
+    }
+
+    async function isCollegeAdminEmail(email) {
+        const rec = await findCollegeAdminByEmail(email);
+        return !!rec;
+    }
+
+    async function tryRepairCollegeAdmin(email, password) {
+        const rec = await findCollegeAdminByEmail(email);
+        if (!rec) return false;
+        const stored = rec.admin && rec.admin.password;
+        if (stored == null) return false;
+        if (String(stored) !== String(password)) return false;
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            return true;
+        } catch (e) {
+            console.warn('[UTOM] college-admin repair failed:', e);
+            return false;
+        }
+    }
+
+    /* ============================================================
        CLOUDINARY UPLOAD
        ============================================================ */
     function openCloudUpload(opts) {
@@ -2740,6 +2793,16 @@
 
     /* ============================================================
        STUDENT LOGIN + PROFILE COMPLETION GATE
+       ------------------------------------------------------------
+       Order of checks (after successful auth):
+         1. College admin?  → management.html
+         2. Platform admin? → admin.html
+         3. Otherwise       → users/{uid} → user.html
+
+       If the Auth account is missing (user-not-found) but the
+       email belongs to a college admin whose stored password
+       matches what was typed, we create the account on the fly
+       and redirect to management.html.
        ============================================================ */
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -2757,16 +2820,34 @@
         setButtonLoading(btn, true, orig);
 
         try {
-            const cred = await signInWithEmailAndPassword(auth, email, password);
+            let cred;
+            try {
+                cred = await signInWithEmailAndPassword(auth, email, password);
+            } catch (authErr) {
+                if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
+                    const repaired = await tryRepairCollegeAdmin(email, password);
+                    if (repaired) {
+                        window.location.href = 'management.html';
+                        return;
+                    }
+                }
+                throw authErr;
+            }
             const user = cred.user;
 
-            // Admin redirect
+            // ✅ College admin → management console
+            if (await isCollegeAdminEmail(email)) {
+                window.location.href = 'management.html';
+                return;
+            }
+
+            // Platform admin
             if (email.toLowerCase().startsWith('admin@')) {
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // Load user record
+            // Load student record
             const snap = await get(ref(database, 'users/' + user.uid));
             const userData = snap.val();
 
@@ -2823,6 +2904,16 @@
 
     /* ============================================================
        LECTURER LOGIN + PROFILE COMPLETION GATE
+       ------------------------------------------------------------
+       Same college-admin checks as the student portal so a
+       college admin can sign in from either portal and still
+       land on management.html.
+
+       SILENT MANAGEMENT REDIRECT:
+       Platform admins (email starts with admin@) are routed to
+       management.html without any visible message so the flow
+       stays seamless. Credentials are still verified by
+       Firebase Auth before the redirect happens.
        ============================================================ */
     document.getElementById('lecLoginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -2840,18 +2931,28 @@
         setButtonLoading(btn, true, orig);
 
         try {
-            const cred = await signInWithEmailAndPassword(auth, email, password);
+            let cred;
+            try {
+                cred = await signInWithEmailAndPassword(auth, email, password);
+            } catch (authErr) {
+                if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
+                    const repaired = await tryRepairCollegeAdmin(email, password);
+                    if (repaired) {
+                        window.location.href = 'management.html';
+                        return;
+                    }
+                }
+                throw authErr;
+            }
             const user = cred.user;
 
-            /* ---------- SILENT MANAGEMENT REDIRECT ----------
-             * Admin accounts that sign in through the Lecturer portal
-             * are routed to management.html. This is a different
-             * management console from the one used by the student
-             * portal's admin login. No visible message is shown so
-             * that the flow stays seamless and no error is displayed
-             * to the admin. Credentials are still verified by
-             * Firebase Auth before the redirect happens.
-             */
+            // ✅ College admin → management console
+            if (await isCollegeAdminEmail(email)) {
+                window.location.href = 'management.html';
+                return;
+            }
+
+            // Platform admin → management console (silent)
             if (email.toLowerCase().startsWith('admin@')) {
                 window.location.href = 'management.html';
                 return;
