@@ -1363,6 +1363,7 @@ label{font-size:11.5px;color:var(--text);font-weight:600;display:inline-flex;ali
           <div class="form-row"><input type="text" id="caName" placeholder="Assessment Name *" required></div>
           <div class="form-row"><label>Type:</label><select id="caType"><option value="test">Test</option><option value="quiz">Quiz</option><option value="exam">Exam</option><option value="assignment">Assignment</option></select></div>
           <div class="form-row" id="caDurationRow"><label>Duration:</label><input type="number" id="caDurationHours" placeholder="Hours" min="0" value="1" style="max-width:75px;"><span>h</span><input type="number" id="caDurationMinutes" placeholder="Minutes" min="0" max="59" value="30" style="max-width:75px;"><span>m</span><span id="caDurationDisplay" style="font-weight:700;color:var(--gold-dark);font-size:11px;margin-left:5px;">1h 30m</span></div>
+          <div class="form-row" id="caDeadlineRow" style="display:none;align-items:center;gap:6px;"><label>Deadline:</label><input type="datetime-local" id="caAssignmentDeadline" style="max-width:230px;"><span style="font-size:10.5px;color:#8b8fa3;">Assignments have a deadline (no time limit while working)</span></div>
         </div>
         <div class="form-card">
           <h4><i class="fas fa-users"></i> Registers</h4>
@@ -1373,7 +1374,7 @@ label{font-size:11.5px;color:var(--text);font-weight:600;display:inline-flex;ali
         </div>
         <div class="form-card">
           <h4><i class="fas fa-calendar"></i> Schedule</h4>
-          <div style="display:flex;gap:14px;margin-top:4px;flex-wrap:wrap;"><label><input type="radio" name="caSchedule" value="fixed" checked> Fixed Time</label><label><input type="radio" name="caSchedule" value="self"> Self-Paced</label></div>
+          <div id="caScheduleTypeRow" style="display:flex;gap:14px;margin-top:4px;flex-wrap:wrap;"><label><input type="radio" name="caSchedule" value="fixed" checked> Fixed Time</label><label><input type="radio" name="caSchedule" value="self"> Self-Paced</label></div>
           <div style="margin-top:9px;"><label><input type="checkbox" id="caPublishImmediately"> Publish immediately</label></div>
           <div id="caFixedSchedule" style="margin-top:7px;"><div class="form-row"><input type="datetime-local" id="caStartTime"><input type="datetime-local" id="caEndTime"></div></div>
           <div id="caSelfSchedule" style="display:none;margin-top:7px;"><div class="form-row"><input type="datetime-local" id="caAvailableFrom"><input type="datetime-local" id="caAvailableUntil"></div></div>
@@ -4094,11 +4095,12 @@ function renderAssessmentsList(){
   const buildCard = (ass) => {
     const registerNames = (ass.registerIds || []).map(id => allRegisters[id]?.name || 'N/A').join(', ');
     const statusClass = ass.status === 'published' ? 'published' : ass.status === 'draft' ? 'draft' : 'ended';
+    const durationLabel = ass.type === 'assignment' ? (ass.deadline ? 'Deadline' : 'Assignment') : (ass.duration || 'N/A');
     return `<div class="item-card">
       <div class="ic-header">
         <div style="flex:1;min-width:0;">
           <div class="ic-title">${esc(ass.name)}</div>
-          <div class="ic-meta">${ass.type} · ${ass.duration || 'N/A'} · ${ass.totalMarks || 0} marks</div>
+          <div class="ic-meta">${ass.type} · ${durationLabel} · ${ass.totalMarks || 0} marks</div>
           <div class="ic-meta">Registers: ${esc(registerNames) || 'N/A'}</div>
         </div>
         <span class="status-pill ${statusClass}">${(ass.status||'draft').toUpperCase()}</span>
@@ -4360,7 +4362,6 @@ function openDraftInCreateForm(draftId){
   _editingAssessmentId = null;
   _pendingDraftId = draftId;
   _draftBeingPublished = draft;
-  const sectionMap = { test: 'createTest', quiz: 'createQuiz', exam: 'createExam', assignment: 'createAssignment' };
   _caType = draft.type || 'test';
   showToast(`Loaded draft "${draft.name}" — add cover & details to publish.`, 'info');
   showSection('createAssessment', { type: draft.type || 'test' });
@@ -4404,10 +4405,11 @@ window.previewAssessment = function(assessmentId){
   const ass = _myAssessments.find(a => a.id === assessmentId);
   if(!ass) return;
   document.getElementById('pmTitle').innerHTML = `<i class="fas fa-eye"></i> ${esc(ass.name)}`;
+  const durLabel = ass.type === 'assignment' ? (ass.deadline ? 'Deadline: ' + fmtDate(ass.deadline) : 'No deadline') : (ass.duration || 'N/A');
   let html = `
     <div style="margin-bottom:10px;padding:9px 12px;background:rgba(245,176,66,0.08);border-radius:9px;border-left:3px solid var(--gold);">
       <div style="font-size:12px;font-weight:600;">${esc(ass.name)}</div>
-      <div style="font-size:10.5px;color:#8b8fa3;">Type: ${ass.type} · Duration: ${ass.duration || 'N/A'} · Marks: ${ass.totalMarks || 0}</div>
+      <div style="font-size:10.5px;color:#8b8fa3;">Type: ${ass.type} · ${durLabel} · Marks: ${ass.totalMarks || 0}</div>
     </div>`;
   if(ass.sections){
     ass.sections.forEach((sec, si) => {
@@ -4652,6 +4654,31 @@ window.cancelAssessmentCreate = function(){
   if(confirm('Discard this assessment?')){ showSection('testExams'); }
 };
 
+/* NEW: Toggle assignment-only fields (deadline instead of duration, no schedule radios) */
+function updateAssignmentFields() {
+  const typeEl = document.getElementById('caType');
+  const isAssignment = typeEl && typeEl.value === 'assignment';
+  const durationRow = document.getElementById('caDurationRow');
+  const deadlineRow = document.getElementById('caDeadlineRow');
+  const scheduleTypeRow = document.getElementById('caScheduleTypeRow');
+  const fixedSchedule = document.getElementById('caFixedSchedule');
+  const selfSchedule = document.getElementById('caSelfSchedule');
+
+  if (durationRow)  durationRow.style.display  = isAssignment ? 'none' : 'flex';
+  if (deadlineRow)  deadlineRow.style.display  = isAssignment ? 'flex' : 'none';
+  if (scheduleTypeRow) scheduleTypeRow.style.display = isAssignment ? 'none' : 'flex';
+  if (isAssignment) {
+    if (fixedSchedule) fixedSchedule.style.display = 'none';
+    if (selfSchedule)  selfSchedule.style.display  = 'none';
+  } else {
+    const checked = document.querySelector('input[name="caSchedule"]:checked');
+    const val = checked ? checked.value : 'fixed';
+    if (fixedSchedule) fixedSchedule.style.display = val === 'fixed' ? 'block' : 'none';
+    if (selfSchedule)  selfSchedule.style.display  = val === 'self'  ? 'block' : 'none';
+  }
+}
+window.updateAssignmentFields = updateAssignmentFields;
+
 function setupCreateAssessmentForm(){
   const type = _caType || 'test';
   document.getElementById('caType').value = type;
@@ -4671,6 +4698,9 @@ function setupCreateAssessmentForm(){
   document.getElementById('caDurationHours').value = 1;
   document.getElementById('caDurationMinutes').value = 30;
   document.getElementById('caDurationDisplay').textContent = '1h 30m';
+  const caDeadlineReset = document.getElementById('caAssignmentDeadline');
+  if (caDeadlineReset) caDeadlineReset.value = '';
+  if (typeof updateAssignmentFields === 'function') updateAssignmentFields();
   document.getElementById('caPassingScore').value = 50;
   document.getElementById('caInstructions').value = '';
   document.getElementById('caInstitutionName').value = 'UTOM';
@@ -4706,6 +4736,7 @@ function setupCreateAssessmentForm(){
   };
   document.getElementById('caDurationHours').oninput = updateDurationDisplay;
   document.getElementById('caDurationMinutes').oninput = updateDurationDisplay;
+  if (typeof updateAssignmentFields === 'function') updateAssignmentFields();
 
   document.getElementById('caInfoToggle').onclick = function(){
     this.classList.toggle('active');
@@ -4736,9 +4767,20 @@ function setupCreateAssessmentForm(){
         document.getElementById('caDurationHours').value = parts[0] || 0;
         document.getElementById('caDurationMinutes').value = parts[1] || 0;
       }
+      // Populate deadline for assignments
+      if (ass.type === 'assignment' && ass.deadline) {
+        const dl = document.getElementById('caAssignmentDeadline');
+        if (dl) {
+          const dt = new Date(ass.deadline);
+          const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+            .toISOString().slice(0, 16);
+          dl.value = local;
+        }
+      }
       _caRegSelected = new Set(ass.registerIds || []);
       updateCaRegisterDisplay();
       if(ass.sections) loadSectionsIntoForm({ sections: ass.sections });
+      if (typeof updateAssignmentFields === 'function') updateAssignmentFields();
     }
   }
 }
@@ -4851,6 +4893,12 @@ function buildOptionsFromData(q, type, sectionIdx, qCount){
 }
 
 function wireCaEvents(){
+  // Toggle duration vs deadline when type changes
+  const caTypeEl = document.getElementById('caType');
+  if (caTypeEl && !caTypeEl.dataset.assignmentWired) {
+    caTypeEl.dataset.assignmentWired = '1';
+    caTypeEl.addEventListener('change', updateAssignmentFields);
+  }
   document.getElementById('caCoverUploadBtn').onclick = ()=>{
     cloudinary.openUploadWidget({
       cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET,
@@ -4883,6 +4931,7 @@ function wireCaEvents(){
     const t = _caType.charAt(0).toUpperCase()+_caType.slice(1);
     document.getElementById('caStepTitle').textContent = `Create ${t} — Step 2: Details`;
     document.getElementById('caStepSub').textContent = 'Step 2: Details';
+    if (typeof updateAssignmentFields === 'function') updateAssignmentFields();
   };
   document.getElementById('caBackFromDetailsBtn').onclick = ()=>{
     document.getElementById('caDetailsStep').style.display = 'none';
@@ -4894,6 +4943,14 @@ function wireCaEvents(){
     const name = document.getElementById('caName').value.trim();
     if(!name){ showToast('Please enter a name.', 'error'); return; }
     if(_caRegSelected.size === 0){ showToast('Please select at least one register.', 'error'); return; }
+    // Validate deadline for assignments
+    const isAssignment = document.getElementById('caType').value === 'assignment';
+    if (isAssignment) {
+      const dlVal = document.getElementById('caAssignmentDeadline').value;
+      if (!dlVal) { showToast('Please set a deadline for the assignment.', 'error'); return; }
+      const dlTs = new Date(dlVal).getTime();
+      if (isNaN(dlTs) || dlTs <= Date.now()) { showToast('Deadline must be a future date/time.', 'error'); return; }
+    }
     document.getElementById('caDetailsStep').style.display = 'none';
     document.getElementById('caQuestionsStep').style.display = 'block';
     const t = _caType.charAt(0).toUpperCase()+_caType.slice(1);
@@ -5203,10 +5260,28 @@ function renumberQuestions(container){
 /* Collect data from form */
 function collectAssessmentData(){
   const type = document.getElementById('caType').value || _caType;
+  const isAssignment = type === 'assignment';
   const name = document.getElementById('caName').value.trim();
   const durationH = parseInt(document.getElementById('caDurationHours').value) || 0;
   const durationM = parseInt(document.getElementById('caDurationMinutes').value) || 0;
-  const duration = `${String(durationH).padStart(2,'0')}:${String(durationM).padStart(2,'0')}`;
+  const duration = isAssignment ? '' : `${String(durationH).padStart(2,'0')}:${String(durationM).padStart(2,'0')}`;
+
+  // Assignment deadline
+  let assignmentDeadline = null;
+  if (isAssignment) {
+    const dlVal = document.getElementById('caAssignmentDeadline').value;
+    if (!dlVal) {
+      showToast('Please set a deadline for the assignment.', 'error');
+      return null;
+    }
+    const dlTs = new Date(dlVal).getTime();
+    if (isNaN(dlTs) || dlTs <= Date.now()) {
+      showToast('Deadline must be a future date/time.', 'error');
+      return null;
+    }
+    assignmentDeadline = new Date(dlVal).toISOString();
+  }
+
   const registerIds = Array.from(_caRegSelected);
   const passingScore = parseInt(document.getElementById('caPassingScore').value) || 50;
   const instructions = document.getElementById('caInstructions').value.trim();
@@ -5217,13 +5292,18 @@ function collectAssessmentData(){
   if(!name || registerIds.length === 0) return null;
 
   const publishImmediately = document.getElementById('caPublishImmediately').checked;
-  const scheduleType = document.querySelector('input[name="caSchedule"]:checked')?.value || 'fixed';
+  const scheduleType = isAssignment ? 'deadline'
+                     : (document.querySelector('input[name="caSchedule"]:checked')?.value || 'fixed');
   let startTime = null, endTime = null, availableFrom = null, availableUntil = null;
-  if(publishImmediately){
+  if (isAssignment) {
+    // Deadline drives everything. Students can start immediately.
+    startTime = new Date().toISOString().slice(0,16);
+    endTime = assignmentDeadline;
+  } else if (publishImmediately) {
     startTime = new Date().toISOString().slice(0,16);
     const end = new Date(); end.setHours(end.getHours() + 2);
     endTime = end.toISOString().slice(0,16);
-  } else if(scheduleType === 'fixed'){
+  } else if (scheduleType === 'fixed') {
     startTime = document.getElementById('caStartTime').value;
     endTime = document.getElementById('caEndTime').value;
   } else {
@@ -5313,7 +5393,10 @@ function collectAssessmentData(){
   }
 
   return {
-    type, name, duration, registerIds, passingScore, instructions, institutionName, logoUrl, coverUrl,
+    type, name,
+    duration,                     // '' for assignments
+    deadline: assignmentDeadline, // ISO string or null
+    registerIds, passingScore, instructions, institutionName, logoUrl, coverUrl,
     publishImmediately, scheduleType, startTime, endTime, availableFrom, availableUntil,
     infoEnabled, infoFields, paid, price, gateway,
     sections, totalMarks,
@@ -5325,6 +5408,7 @@ function collectAssessmentData(){
 function collectQuestionsOnly(){
   const type = document.getElementById('caType').value || _caType;
   const name = document.getElementById('caName').value.trim() || `Untitled ${type}`;
+  const isAssignment = type === 'assignment';
   const sections = [];
   let totalMarks = 0;
   document.querySelectorAll('#caSectionsContainer > .question-builder').forEach(sec => {
@@ -5384,7 +5468,11 @@ function collectQuestionsOnly(){
     });
     if(questions.length > 0) sections.push({ name: secName, instructions: secInstructions, questions });
   });
-  return { type, name, sections, totalMarks };
+  return {
+    type, name, sections, totalMarks,
+    duration: isAssignment ? '' : undefined,
+    isAssignment
+  };
 }
 
 async function saveAsDraft(type){
@@ -5449,6 +5537,9 @@ function renderCoverPreviewPage(data){
   const type = data.type;
   const t = type.charAt(0).toUpperCase() + type.slice(1);
   const rules = (data.instructions || '').split('\n').filter(x => x.trim());
+  const durationHtml = data.type === 'assignment'
+    ? `<div><span style="font-weight:600;">Deadline:</span> ${data.deadline ? new Date(data.deadline).toLocaleString() : 'N/A'}</div>`
+    : `<div><span style="font-weight:600;">Duration:</span> ${esc(data.duration.replace(':', 'h ') + 'm')}</div>`;
   document.getElementById('coverPreviewContent').innerHTML = `
     <div class="cover-header">
       ${data.logoUrl ? `<img src="${esc(data.logoUrl)}" alt="Logo" style="max-width:120px;max-height:120px;object-fit:contain;background:#fff;border-radius:8px;padding:5px;margin-bottom:10px;">` : ''}
@@ -5459,7 +5550,7 @@ function renderCoverPreviewPage(data){
       <div class="assessment-type">${esc(t)}</div>
       <div class="assessment-name">${esc(data.name)}</div>
       <div class="details-grid">
-        <div><span style="font-weight:600;">Duration:</span> ${esc(data.duration.replace(':', 'h ') + 'm')}</div>
+        ${durationHtml}
         <div><span style="font-weight:600;">Total Marks:</span> ${data.totalMarks}</div>
         <div><span style="font-weight:600;">Passing:</span> ${data.passingScore}%</div>
         <div><span style="font-weight:600;">Registers:</span> ${data.registerIds.length}</div>
@@ -5469,10 +5560,13 @@ function renderCoverPreviewPage(data){
     </div>`;
 }
 function renderFullAssessmentPreview(data){
+  const durationLabel = data.type === 'assignment'
+    ? (data.deadline ? `Deadline: ${new Date(data.deadline).toLocaleString()}` : 'No deadline')
+    : (data.duration || '');
   let html = `
     <div style="padding:18px;">
       <h2 style="font-size:20px;font-weight:800;margin-bottom:3px;">${esc(data.name)}</h2>
-      <div style="font-size:11px;color:#8b8fa3;margin-bottom:10px;">${data.type.toUpperCase()} · ${data.duration} · ${data.totalMarks} marks</div>
+      <div style="font-size:11px;color:#8b8fa3;margin-bottom:10px;">${data.type.toUpperCase()} · ${durationLabel} · ${data.totalMarks} marks</div>
       ${data.instructions ? `<div style="font-size:11px;padding:9px;background:rgba(245,176,66,.1);border-radius:9px;margin-bottom:12px;border-left:3px solid #f5b042;">${esc(data.instructions)}</div>` : ''}
   `;
   data.sections.forEach((sec) => {
@@ -5526,6 +5620,9 @@ function renderOngoingList(){
     const ongoingResponses = Object.entries(allResponses || {}).map(([id,r])=>({id,...r})).filter(r => r.assessmentId === ass.id && (r.status === 'started' || r.status === 'ongoing'));
     const registerNames = (ass.registerIds || []).map(id => allRegisters[id]?.name || 'N/A').join(', ');
     const studentCount = ongoingResponses.length;
+    const durLabel = ass.type === 'assignment'
+      ? (ass.deadline ? 'Due ' + fmtDate(ass.deadline) : 'Assignment')
+      : (ass.duration || 'N/A');
     return `
       <div class="ongoing-card">
         <div class="ongoing-card-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;gap:9px;flex-wrap:wrap;">
@@ -5537,7 +5634,7 @@ function renderOngoingList(){
             </div>
             <div style="font-size:10.5px;color:#8b8fa3;margin-top:2px;"><i class="fas fa-address-book"></i> ${esc(registerNames || 'No registers')}</div>
           </div>
-          <div style="font-size:10.5px;color:#8b8fa3;">${ass.duration || 'N/A'} · ${ass.totalMarks || 0} marks</div>
+          <div style="font-size:10.5px;color:#8b8fa3;">${durLabel} · ${ass.totalMarks || 0} marks</div>
         </div>
         ${studentCount > 0 ? `
           <div style="padding:0 16px 12px;border-top:1px solid rgba(240,240,245,.6);padding-top:9px;">
@@ -5613,11 +5710,12 @@ function renderHistoryList(){
   const buildHistoryCard = (ass) => {
     const studentCount = Object.values(allResponses || {}).filter(r => r.assessmentId === ass.id && (r.status === 'ended' || r.status === 'completed')).length;
     const registerNames = (ass.registerIds || []).map(id => allRegisters[id]?.name || 'N/A').join(', ');
+    const durLabel = ass.type === 'assignment' ? (ass.deadline ? 'Due ' + fmtDate(ass.deadline) : 'Assignment') : (ass.duration || 'N/A');
     return `<div class="item-card" style="cursor:pointer;" onclick="openAssessmentHistory('${ass.id}')">
       <div class="ic-header">
         <div style="flex:1;min-width:0;">
           <div class="ic-title">${esc(ass.name)}</div>
-          <div class="ic-meta">${ass.type} · ${ass.duration} · ${ass.totalMarks || 0} marks</div>
+          <div class="ic-meta">${ass.type} · ${durLabel} · ${ass.totalMarks || 0} marks</div>
           <div class="ic-meta">Registers: ${esc(registerNames)}</div>
         </div>
         <span class="status-pill published">${studentCount} script${studentCount !== 1 ? 's' : ''}</span>
@@ -5660,13 +5758,15 @@ window.renderHistoryStudents = function(assId){
     .filter(r => r.assessmentId === assId && (r.status === 'ended' || r.status === 'completed'))
     .sort((a,b) => (b.score || 0) - (a.score || 0));
 
+  const durLabel = ass.type === 'assignment' ? (ass.deadline ? 'Due ' + fmtDate(ass.deadline) : 'Assignment') : (ass.duration || 'N/A');
+
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:12px;">
       <button class="btn-back" onclick="currentHistoryAssessmentId=null;renderHistoryList()"><i class="fas fa-arrow-left"></i> Back to Assessments</button>
       <button class="btn-primary" onclick="openBulkMarksModal('${assId}')" style="padding:7px 16px;font-size:11px;"><i class="fas fa-calculator"></i> Bulk Adjust Marks</button>
     </div>
     <h2 style="font-size:16px;font-weight:800;margin-bottom:3px;">${esc(ass.name)}</h2>
-    <div style="font-size:11px;color:#8b8fa3;margin-bottom:10px;">${ass.type} · ${ass.duration} · ${ass.totalMarks} marks · ${responses.length} scripts</div>
+    <div style="font-size:11px;color:#8b8fa3;margin-bottom:10px;">${ass.type} · ${durLabel} · ${ass.totalMarks} marks · ${responses.length} scripts</div>
     <div class="form-card" style="margin-top:9px;">
       <div class="form-row"><input type="text" id="histStudentSearch" placeholder="🔍 Search scripts by student name or email..."></div>
     </div>
@@ -5884,12 +5984,13 @@ function renderStudentScript(responseId, manualMark){
   const total = ass.totalMarks || 0;
   const percent = total > 0 ? Math.round((score / total) * 100) : 0;
   const passed = percent >= (ass.passingScore || 50);
+  const durLabel = ass.type === 'assignment' ? (ass.deadline ? 'Due ' + fmtDate(ass.deadline) : 'Assignment') : (ass.duration || '');
 
   let html = `
     <div class="script-booklet">
       <div style="background:#f5b042;padding:18px;border-radius:14px 14px 0 0;text-align:center;margin:-20px -20px 16px -20px;">
         <h1 style="font-size:21px;font-weight:900;color:#1a1d28;">${esc(ass.name)}</h1>
-        <p style="font-size:11px;color:#1a1d28;margin-top:3px;">${ass.type} · ${ass.duration}</p>
+        <p style="font-size:11px;color:#1a1d28;margin-top:3px;">${ass.type} · ${esc(durLabel)}</p>
         <div style="margin-top:7px;color:#1a1d28;font-size:12px;"><strong>Student:</strong> ${esc(name)} (${esc(email)})</div>
         <div style="margin-top:3px;color:#1a1d28;font-size:12px;">
           <strong>Score:</strong> ${score}/${total} (${percent}%)
@@ -7075,7 +7176,7 @@ window.renderProfileView = function(){
   `;
 };
 
-console.log('✅ Lecturer dashboard — full rewrite with drafts, folders, promotions, admin-style script marks, dropdown UI, 15% smaller scale.');
+console.log('✅ Lecturer dashboard — assignment deadline mode applied. Student ↔ Lecturer messaging already wired via studentLecturerMessages.');
 </script>
 </body>
 </html>
