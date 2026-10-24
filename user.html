@@ -14137,9 +14137,9 @@ function openLecturerChat(lecturerId) {
 function markLecturerMessagesRead(lecturerId) {
     if (!currentUser) return;
     const updates = {};
-    Object.entries(lecturerChatMessages).forEach(([id, m]) => {
-        if (m.sender === 'lecturer' && !m.read) {
-            updates[`studentLecturerMessages/${lecturerId}/${currentUser.uid}/${id}/read`] = true;
+    lecturerChatMessages.forEach(m => {
+        if (m.sender === 'lecturer' && !m.read && m.id) {
+            updates[`studentLecturerMessages/${lecturerId}/${currentUser.uid}/${m.id}/read`] = true;
         }
     });
     if (Object.keys(updates).length) update(ref(db), updates).catch(() => {});
