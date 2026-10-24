@@ -1,2533 +1,1302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UTOM | Secure Access</title>
-    <link rel="manifest" href="/utom/manifest.json">
-    <meta name="theme-color" content="#F5B042">
-    <link rel="apple-touch-icon" href="/utom/logo.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js",
-                "firebase/database": "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js"
-            }
-        }
-    </script>
-    <style>
-        /* ==========================================================
-           DESIGN TOKENS
-           ========================================================== */
-        :root {
-            --accent: #F5B042;
-            --accent-light: #FFC868;
-            --accent-dark: #E39B2B;
-            --accent-glow: rgba(245, 176, 66, 0.32);
-            --accent-soft: rgba(245, 176, 66, 0.10);
-            --accent-tint: rgba(245, 176, 66, 0.18);
-
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #aeaeb2;
-
-            --fill-gray: #f2f2f7;
-            --fill-gray-hover: #e9e9ef;
-
-            --radius-input: 14px;
-            --radius-btn: 14px;
-
-            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-            --panel-ease: cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            -webkit-text-size-adjust: 100%;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: var(--text-primary);
-            background: #ffffff;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        /* ==========================================================
-           SPLIT LANDING
-           ========================================================== */
-        .split-landing {
-            position: fixed;
-            inset: 0;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: filter 0.55s var(--panel-ease), transform 0.55s var(--panel-ease);
-            will-change: filter, transform;
-        }
-
-        body.panel-open .split-landing {
-            filter: blur(10px) brightness(0.92);
-            transform: scale(1.03);
-        }
-
-        .split-half {
-            position: relative;
-            flex: 1 1 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
-            transition: transform 0.55s var(--panel-ease);
-            will-change: transform;
-            touch-action: none;
-        }
-
-        .split-top {
-            background: #ffffff;
-            color: var(--text-primary);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .split-bottom {
-            background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
-            color: #1a1206;
-        }
-
-        .split-top.drag-active    { transform: translateY(var(--drag-y, 0)); }
-        .split-bottom.drag-active { transform: translateY(var(--drag-y, 0)); }
-
-        .half-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            text-align: center;
-            padding: 1rem;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .half-chevron {
-            font-size: 1.5rem;
-            opacity: 0.85;
-            animation: bobDown 1.9s var(--ease-smooth) infinite;
-        }
-
-        .split-bottom .half-chevron {
-            animation-name: bobUp;
-        }
-
-        @keyframes bobDown {
-            0%, 100% { transform: translateY(0); opacity: 0.5; }
-            50%      { transform: translateY(7px); opacity: 1; }
-        }
-
-        @keyframes bobUp {
-            0%, 100% { transform: translateY(0); opacity: 0.5; }
-            50%      { transform: translateY(-7px); opacity: 1; }
-        }
-
-        .half-icon {
-            font-size: 2.8rem;
-            line-height: 1;
-            margin: 6px 0 2px;
-        }
-
-        .split-top .half-icon { color: #3b82f6; }
-        .split-bottom .half-icon { color: #1a1206; }
-
-        .half-title {
-            font-size: 1.55rem;
-            font-weight: 800;
-            letter-spacing: -0.6px;
-            text-transform: uppercase;
-        }
-
-        .split-top .half-title { color: var(--text-primary); }
-        .split-bottom .half-title { color: #1a1206; }
-
-        .half-hint {
-            font-size: 0.82rem;
-            font-weight: 500;
-            letter-spacing: 0.2px;
-        }
-
-        .split-top .half-hint { color: var(--text-tertiary); }
-        .split-bottom .half-hint { color: rgba(26, 18, 6, 0.62); }
-
-        .center-logo {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 3;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 86px;
-            height: 86px;
-            border-radius: 50%;
-            background: #ffffff;
-            box-shadow:
-                0 10px 28px -8px rgba(0, 0, 0, 0.22),
-                0 0 0 5px rgba(255, 255, 255, 0.95),
-                0 0 0 7px rgba(245, 176, 66, 0.28);
-            animation: centerLogoIn 0.8s var(--spring) both;
-        }
-
-        @keyframes centerLogoIn {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
-            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        .center-logo img {
-            width: 62px;
-            height: 62px;
-            object-fit: contain;
-            display: block;
-            border-radius: 50%;
-        }
-
-        .center-logo .logo-fallback {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--accent-dark);
-            letter-spacing: -0.5px;
-        }
-
-        /* ==========================================================
-           SLIDE PANELS
-           ========================================================== */
-        .slide-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 100;
-            background: #ffffff;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            transition: transform 0.62s var(--panel-ease), opacity 0.4s var(--ease-out);
-            will-change: transform;
-            pointer-events: none;
-            visibility: hidden;
-            opacity: 0;
-            touch-action: auto;
-            user-select: text;
-            -webkit-user-select: text;
-        }
-
-        .slide-panel.active {
-            pointer-events: auto;
-            visibility: visible;
-            opacity: 1;
-        }
-
-        #studentPanel {
-            transform: translateY(-8%);
-            background: linear-gradient(180deg, #f8f9fb 0%, #ffffff 55%);
-        }
-        #studentPanel.active { transform: translateY(0); }
-
-        #lecturerPanel {
-            transform: translateY(8%);
-            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 55%);
-        }
-        #lecturerPanel.active { transform: translateY(0); }
-
-        /* ==========================================================
-           PANEL TOPBAR
-           ========================================================== */
-        .panel-topbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        #lecturerPanel .panel-topbar {
-            background: rgba(255, 250, 242, 0.85);
-        }
-
-        .back-btn {
-            background: var(--fill-gray);
-            border: none;
-            font-family: inherit;
-            font-size: 0.84rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            padding: 9px 15px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            cursor: pointer;
-            transition: background 0.25s var(--ease-smooth), transform 0.35s var(--spring);
-        }
-
-        .back-btn:hover { background: var(--fill-gray-hover); }
-        .back-btn:active { transform: scale(0.94); }
-
-        .back-btn i {
-            transition: transform 0.28s var(--spring);
-        }
-        .back-btn:hover i { transform: translateX(-2px); }
-
-        .panel-label {
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: var(--text-tertiary);
-        }
-
-        /* ==========================================================
-           PANEL LOGO
-           ========================================================== */
-        .panel-logo-strip {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 26px 16px 12px;
-            text-align: center;
-        }
-
-        .panel-logo-strip .panel-logo-img {
-            width: 132px;
-            height: 132px;
-            object-fit: contain;
-            display: block;
-            margin-bottom: 6px;
-            filter: drop-shadow(0 12px 26px rgba(245, 176, 66, 0.30));
-            animation: panelLogoIn 0.7s var(--spring) 0.08s both;
-        }
-
-        @keyframes panelLogoIn {
-            from { opacity: 0; transform: scale(0.55) translateY(-22px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .panel-logo-strip .logo-fallback {
-            font-size: 2.4rem;
-            font-weight: 800;
-            letter-spacing: -1.2px;
-            background: linear-gradient(135deg, #1d1d1f 30%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 6px;
-        }
-
-        .panel-brand-name {
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            color: var(--text-primary);
-        }
-
-        .panel-brand-sub {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-tertiary);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-top: 3px;
-        }
-
-        /* ==========================================================
-           PANEL INNER
-           ========================================================== */
-        .slide-panel-inner {
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 0 1.25rem 3rem;
-            min-height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .slide-panel.active .form-area { animation: formEnter 0.55s var(--ease-out) 0.15s both; }
-
-        @keyframes formEnter {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .slide-panel.active .segmented-control { animation: formEnter 0.55s var(--ease-out) 0.10s both; }
-
-        /* ==========================================================
-           SEGMENTED CONTROL
-           ========================================================== */
-        .segmented-control {
-            position: relative;
-            display: flex;
-            width: 100%;
-            background: var(--fill-gray);
-            border-radius: 12px;
-            padding: 3px;
-            margin-bottom: 1.6rem;
-            box-shadow:
-                inset 0 1px 2px rgba(0, 0, 0, 0.04),
-                0 4px 14px -8px rgba(0, 0, 0, 0.12);
-        }
-
-        .segmented-control::before {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: calc(50% - 3px);
-            height: calc(100% - 6px);
-            background: #ffffff;
-            border-radius: 9px;
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.10),
-                0 3px 8px rgba(0, 0, 0, 0.06);
-            transition: transform 0.5s var(--spring);
-            will-change: transform;
-        }
-
-        .segmented-control[data-active="signup"]::before {
-            transform: translateX(100%);
-        }
-
-        .segment {
-            position: relative;
-            z-index: 1;
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            border-radius: 9px;
-            font-family: inherit;
-            font-size: 0.86rem;
-            font-weight: 600;
-            letter-spacing: -0.1px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: color 0.3s var(--ease-smooth);
-        }
-
-        .segment.active { color: var(--text-primary); }
-        .segment:not(.active):hover { color: #4a4a50; }
-
-        /* ==========================================================
-           FORM AREA
-           ========================================================== */
-        .form-area { width: 100%; }
-
-        .form-panel { animation: panelIn 0.45s var(--ease-out); }
-        .hidden-panel { display: none; }
-
-        @keyframes panelIn {
-            from { opacity: 0; transform: translateY(9px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 1.3rem;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-title i { color: var(--accent); font-size: 1.35rem; }
-
-        .input-icon-group {
-            position: relative;
-            width: 100%;
-            margin-bottom: 0.85rem;
-        }
-
-        .input-icon-group > i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            font-size: 0.95rem;
-            pointer-events: none;
-            transition: color 0.3s var(--ease-smooth);
-            z-index: 1;
-        }
-
-        .pill-input {
-            width: 100%;
-            padding: 13px 16px 13px 42px;
-            font-family: inherit;
-            font-size: 0.94rem;
-            font-weight: 400;
-            border: 1.5px solid transparent;
-            border-radius: var(--radius-input);
-            background: var(--fill-gray);
-            outline: none;
-            color: var(--text-primary);
-            transition:
-                background 0.3s var(--ease-smooth),
-                border-color 0.3s var(--ease-smooth),
-                box-shadow 0.3s var(--ease-smooth);
-            user-select: text;
-            -webkit-user-select: text;
-        }
-
-        .pill-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
-        .pill-input:hover { background: var(--fill-gray-hover); }
-        .pill-input:focus {
-            background: #ffffff;
-            border-color: var(--accent);
-            box-shadow:
-                0 0 0 4px var(--accent-tint),
-                0 4px 14px -4px var(--accent-glow);
-        }
-
-        .input-icon-group:focus-within > i { color: var(--accent); }
-
-        #firstName, #lastName { text-transform: capitalize; }
-        #firstName::placeholder, #lastName::placeholder { text-transform: none; }
-
-        .field-hint {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.73rem;
-            font-weight: 500;
-            color: #a3741a;
-            background: var(--accent-soft);
-            border: 1px solid var(--accent-tint);
-            padding: 8px 12px;
-            border-radius: 11px;
-            margin: -0.2rem 0 0.95rem;
-            line-height: 1.35;
-        }
-
-        .field-hint i { color: var(--accent-dark); font-size: 0.75rem; flex-shrink: 0; }
-
-        .double-row {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .double-row .input-icon-group { flex: 1; min-width: 125px; }
-
-        /* Section label */
-        .section-label {
-            font-size: 0.74rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 0.9rem 0 0.5rem;
-        }
-
-        /* Upload grid */
-        .upload-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.7rem;
-            margin-bottom: 0.95rem;
-        }
-
-        .upload-box {
-            position: relative;
-            aspect-ratio: 1 / 1;
-            background: var(--fill-gray);
-            border: 2px dashed rgba(0, 0, 0, 0.12);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            cursor: pointer;
-            overflow: hidden;
-            transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth), transform 0.35s var(--spring);
-        }
-
-        .upload-box:hover { border-color: var(--accent); background: #fff; transform: translateY(-2px); }
-
-        .upload-box.has-image {
-            border-style: solid;
-            border-color: var(--accent);
-        }
-
-        .upload-box img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .upload-box .upload-label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .upload-box i.upload-icon {
-            font-size: 1.5rem;
-            color: var(--text-tertiary);
-        }
-
-        .upload-box.has-image .upload-label,
-        .upload-box.has-image i.upload-icon { display: none; }
-
-        .upload-box .upload-badge {
-            position: absolute;
-            bottom: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            font-size: 0.6rem;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: 30px;
-            letter-spacing: 0.3px;
-            pointer-events: none;
-            display: none;
-            z-index: 2;
-        }
-
-        .upload-box.has-image .upload-badge { display: inline-block; }
-
-        /* ==========================================================
-           BUTTONS
-           ========================================================== */
-        .btn {
-            font-family: inherit;
-            font-size: 0.94rem;
-            font-weight: 600;
-            letter-spacing: -0.1px;
-            border: none;
-            border-radius: var(--radius-btn);
-            padding: 13px 20px;
-            width: 100%;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
-            transition:
-                transform 0.35s var(--spring),
-                box-shadow 0.35s var(--ease-smooth),
-                background 0.3s var(--ease-smooth),
-                color 0.3s var(--ease-smooth),
-                opacity 0.3s var(--ease-smooth);
-        }
-
-        .btn-primary {
-            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
-            color: #1a1206;
-            box-shadow:
-                0 1px 1px rgba(255, 255, 255, 0.35) inset,
-                0 1px 2px rgba(0, 0, 0, 0.08),
-                0 8px 20px -6px var(--accent-glow);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow:
-                0 1px 1px rgba(255, 255, 255, 0.4) inset,
-                0 2px 4px rgba(0, 0, 0, 0.10),
-                0 16px 30px -8px var(--accent-glow);
-        }
-
-        .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
-
-        .btn-secondary {
-            background: #ffffff;
-            color: var(--text-primary);
-            box-shadow:
-                0 0 0 1px rgba(0, 0, 0, 0.07),
-                0 1px 2px rgba(0, 0, 0, 0.04),
-                0 6px 16px -6px rgba(0, 0, 0, 0.12);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            color: var(--accent-dark);
-        }
-
-        .btn-secondary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
-
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* ==========================================================
-           TEXT LINKS / TERMS
-           ========================================================== */
-        .text-link {
-            background: none;
-            border: none;
-            font-family: inherit;
-            color: var(--accent-dark);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.84rem;
-            padding: 8px 12px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: all 0.28s var(--ease-smooth);
-        }
-
-        .text-link i { font-size: 0.75rem; transition: transform 0.28s var(--spring); }
-        .text-link:hover { background: var(--accent-soft); }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.9rem;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .terms-check {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            margin: 0.9rem 0 1.3rem;
-            padding: 11px 14px;
-            background: var(--fill-gray);
-            border-radius: 14px;
-            flex-wrap: wrap;
-        }
-
-        .terms-check label {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            line-height: 1.4;
-            cursor: pointer;
-        }
-
-        .terms-check label strong { color: var(--text-primary); font-weight: 600; }
-
-        .terms-open-link {
-            background: none;
-            border: none;
-            color: var(--accent-dark);
-            font-weight: 700;
-            font-family: inherit;
-            font-size: 0.82rem;
-            cursor: pointer;
-            text-decoration: underline;
-            padding: 0;
-            margin-left: 2px;
-        }
-
-        .terms-open-link:hover { color: #b87418; }
-
-        .checkbox-custom {
-            width: 19px;
-            height: 19px;
-            accent-color: var(--accent);
-            cursor: pointer;
-            border-radius: 5px;
-            flex-shrink: 0;
-        }
-
-        /* ==========================================================
-           MESSAGES
-           ========================================================== */
-        .error-msg {
-            color: #ff3b30;
-            font-size: 0.76rem;
-            font-weight: 500;
-            margin: 0 0 0.75rem 4px;
-            min-height: 0;
-            line-height: 1.35;
-            animation: panelIn 0.3s var(--ease-out);
-            white-space: pre-wrap;
-        }
-
-        .error-msg:empty { display: none; }
-
-        .success-msg {
-            color: #1f8a3b;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: #e8f8ee;
-            border: 1px solid rgba(52, 199, 89, 0.25);
-            padding: 9px 14px;
-            border-radius: 12px;
-            display: inline-block;
-            margin-bottom: 0.9rem;
-            animation: panelIn 0.35s var(--ease-out);
-            line-height: 1.4;
-        }
-
-        /* ==========================================================
-           TERMS MODAL
-           ========================================================== */
-        .terms-modal-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 500;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            animation: fadeIn 0.25s var(--ease-out);
-        }
-
-        .terms-modal-overlay.open { display: flex; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .terms-modal {
-            background: #ffffff;
-            border-radius: 22px;
-            width: 100%;
-            max-width: 520px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-            animation: modalIn 0.35s var(--spring);
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.94) translateY(16px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .terms-modal-header {
-            padding: 20px 22px 16px;
-            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-
-        .terms-modal-header h2 {
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: -0.4px;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            line-height: 1.3;
-        }
-
-        .terms-modal-header h2 i {
-            color: var(--accent);
-            font-size: 1.1rem;
-        }
-
-        .terms-modal-close {
-            background: var(--fill-gray);
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            flex-shrink: 0;
-            transition: all 0.25s var(--ease-smooth);
-        }
-
-        .terms-modal-close:hover {
-            background: #ffe5e5;
-            color: #e63946;
-            transform: rotate(90deg);
-        }
-
-        .terms-modal-body {
-            padding: 20px 24px 24px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            font-size: 0.9rem;
-            line-height: 1.65;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .terms-modal-body ul,
-        .terms-modal-body ol {
-            padding-left: 1.4rem;
-            margin: 0.5rem 0;
-        }
-
-        .terms-modal-body li { margin-bottom: 0.35rem; }
-
-        .terms-modal-body h1, .terms-modal-body h2, .terms-modal-body h3, .terms-modal-body h4 {
-            margin: 1rem 0 0.5rem;
-            font-weight: 700;
-        }
-
-        .terms-modal-body p { margin-bottom: 0.85rem; }
-
-        .terms-modal-body:empty::after {
-            content: 'No terms and conditions have been published yet. You may still continue.';
-            color: var(--text-tertiary);
-            font-style: italic;
-        }
-
-        .terms-modal-footer {
-            padding: 14px 22px 18px;
-            background: #ffffff;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            flex-shrink: 0;
-        }
-
-        .terms-accept-btn {
-            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
-            color: #1a1206;
-            border: none;
-            font-family: inherit;
-            font-weight: 700;
-            font-size: 0.88rem;
-            padding: 11px 26px;
-            border-radius: 999px;
-            cursor: pointer;
-            box-shadow:
-                0 1px 1px rgba(255, 255, 255, 0.35) inset,
-                0 6px 16px -6px var(--accent-glow);
-            transition: transform 0.35s var(--spring), box-shadow 0.3s var(--ease-smooth);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .terms-accept-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -6px var(--accent-glow); }
-        .terms-accept-btn:active { transform: scale(0.96); }
-
-        .terms-decline-btn {
-            background: #ffffff;
-            color: var(--text-primary);
-            border: none;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.88rem;
-            padding: 11px 22px;
-            border-radius: 999px;
-            cursor: pointer;
-            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-            transition: all 0.25s var(--ease-smooth);
-        }
-
-        .terms-decline-btn:hover { background: #f5f5f7; }
-
-        /* ==========================================================
-           COMPLETE PROFILE OVERLAY (post-login for incomplete records)
-           ========================================================== */
-        .complete-profile-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 400;
-            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 60%);
-            display: none;
-            flex-direction: column;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 0 0 3rem;
-        }
-
-        .complete-profile-overlay.open { display: flex; }
-
-        .complete-profile-topbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: rgba(255, 250, 242, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .complete-profile-topbar .brand-mini {
-            font-size: 1.05rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .complete-profile-inner {
-            max-width: 560px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 24px 20px 40px;
-        }
-
-        .complete-profile-hero {
-            text-align: center;
-            margin-bottom: 22px;
-        }
-
-        .complete-profile-hero .hero-icon {
-            width: 78px;
-            height: 78px;
-            border-radius: 50%;
-            background: linear-gradient(180deg, var(--accent-light), var(--accent-dark));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 12px;
-            color: #ffffff;
-            font-size: 2rem;
-            box-shadow: 0 12px 28px -10px var(--accent-glow);
-        }
-
-        .complete-profile-hero h1 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.4px;
-            margin-bottom: 6px;
-        }
-
-        .complete-profile-hero p {
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            max-width: 380px;
-            margin: 0 auto;
-        }
-
-        .missing-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
-        .missing-chip {
-            background: #fff3cd;
-            color: #856404;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 30px;
-            border: 1px solid rgba(133, 100, 4, 0.15);
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .complete-form-block {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 18px 18px 8px;
-            margin-bottom: 14px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(0, 0, 0, 0.04);
-        }
-
-        .complete-form-block h3 {
-            font-size: 0.82rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .complete-form-block h3 i { color: var(--accent); }
-
-        /* ==========================================================
-           SPINNER
-           ========================================================== */
-        .fa-spinner { animation: spin 0.9s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ==========================================================
-           RESPONSIVE
-           ========================================================== */
-        @media (max-width: 560px) {
-            .form-title { font-size: 1.35rem; margin-bottom: 1.1rem; }
-            .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
-            .input-icon-group > i { left: 13px; font-size: 0.9rem; }
-            .btn { padding: 12px 16px; font-size: 0.9rem; }
-            .half-title { font-size: 1.3rem; }
-            .half-icon { font-size: 2.4rem; }
-            .center-logo { width: 76px; height: 76px; }
-            .center-logo img { width: 54px; height: 54px; }
-            .panel-logo-strip .panel-logo-img { width: 118px; height: 118px; }
-            .panel-logo-strip .logo-fallback { font-size: 2rem; }
-            .terms-modal { max-height: 90vh; }
-            .terms-modal-header { padding: 16px 18px 14px; }
-            .terms-modal-body { padding: 16px 20px 20px; font-size: 0.86rem; }
-            .terms-modal-footer { padding: 12px 18px 16px; }
-            .terms-accept-btn, .terms-decline-btn { padding: 10px 20px; font-size: 0.85rem; }
-        }
-
-        @media (max-width: 400px) {
-            .flex-between { flex-direction: column; align-items: stretch; }
-            .flex-between .text-link { justify-content: center; }
-            .double-row { flex-direction: column; gap: 0.8rem; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.001ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.001ms !important;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+<title>UTOM | Secure Access</title>
+<link rel="manifest" href="/utom/manifest.json">
+<meta name="theme-color" content="#F5B042">
+<link rel="apple-touch-icon" href="/utom/logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+<script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+<style>
+:root{
+  --accent:#F5B042;--accent-light:#FFC868;--accent-dark:#E39B2B;
+  --accent-glow:rgba(245,176,66,.32);--accent-soft:rgba(245,176,66,.10);--accent-tint:rgba(245,176,66,.18);
+  --text-primary:#1d1d1f;--text-secondary:#6e6e73;--text-tertiary:#aeaeb2;
+  --fill-gray:#f2f2f7;--fill-gray-hover:#e9e9ef;
+  --radius-input:14px;--radius-btn:14px;
+  --spring:cubic-bezier(0.34,1.56,0.64,1);
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+  --ease-smooth:cubic-bezier(0.4,0,0.2,1);
+  --panel-ease:cubic-bezier(0.32,0.72,0,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow:hidden;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;color:var(--text-primary);background:#fff;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+.split-landing{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;overflow:hidden;transition:filter .55s var(--panel-ease),transform .55s var(--panel-ease)}
+body.panel-open .split-landing{filter:blur(10px) brightness(.92);transform:scale(1.03)}
+.split-half{position:relative;flex:1 1 50%;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;touch-action:none}
+.split-top{background:#fff;color:var(--text-primary);border-bottom:1px solid rgba(0,0,0,.06)}
+.split-bottom{background:linear-gradient(180deg,var(--accent) 0%,var(--accent-dark) 100%);color:#1a1206}
+.half-content{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:1rem;pointer-events:none;z-index:2}
+.half-chevron{font-size:1.5rem;opacity:.85}
+.half-icon{font-size:2.8rem;line-height:1;margin:6px 0 2px}
+.split-top .half-icon{color:#3b82f6}
+.split-bottom .half-icon{color:#1a1206}
+.half-title{font-size:1.55rem;font-weight:800;letter-spacing:-.6px;text-transform:uppercase}
+.half-hint{font-size:.82rem;font-weight:500;letter-spacing:.2px}
+.split-top .half-hint{color:var(--text-tertiary)}
+.split-bottom .half-hint{color:rgba(26,18,6,.62)}
+.center-logo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;display:flex;align-items:center;justify-content:center;width:86px;height:86px;border-radius:50%;background:#fff;box-shadow:0 10px 28px -8px rgba(0,0,0,.22),0 0 0 5px rgba(255,255,255,.95),0 0 0 7px rgba(245,176,66,.28)}
+.center-logo .logo-fallback{font-size:1.15rem;font-weight:800;color:var(--accent-dark)}
+
+.slide-panel{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:transform .62s var(--panel-ease),opacity .4s var(--ease-out);pointer-events:none;visibility:hidden;opacity:0;touch-action:auto;user-select:text;-webkit-user-select:text}
+.slide-panel.active{pointer-events:auto;visibility:visible;opacity:1}
+#studentPanel{transform:translateY(-8%);background:linear-gradient(180deg,#f8f9fb 0%,#fff 55%)}
+#studentPanel.active{transform:translateY(0)}
+#lecturerPanel{transform:translateY(8%);background:linear-gradient(180deg,#fffaf2 0%,#fff 55%)}
+#lecturerPanel.active{transform:translateY(0)}
+
+.panel-topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05)}
+#lecturerPanel .panel-topbar{background:rgba(255,250,242,.85)}
+.back-btn{background:var(--fill-gray);border:none;font-family:inherit;font-size:.84rem;font-weight:600;color:var(--text-primary);padding:9px 15px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:background .25s var(--ease-smooth),transform .35s var(--spring)}
+.back-btn:hover{background:var(--fill-gray-hover)}
+.back-btn:active{transform:scale(.94)}
+.panel-label{font-size:.76rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-tertiary)}
+.slide-panel-inner{max-width:560px;margin:0 auto;padding:0 1.25rem 3rem;min-height:100%;display:flex;flex-direction:column}
+.panel-logo-strip{display:flex;flex-direction:column;align-items:center;padding:26px 16px 12px;text-align:center}
+.panel-brand-name{font-size:1.35rem;font-weight:800;letter-spacing:-.5px;color:var(--text-primary)}
+.panel-brand-sub{font-size:.72rem;font-weight:700;color:var(--text-tertiary);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+
+.segmented-control{position:relative;display:flex;width:100%;background:var(--fill-gray);border-radius:12px;padding:3px;margin-bottom:1.6rem;box-shadow:inset 0 1px 2px rgba(0,0,0,.04),0 4px 14px -8px rgba(0,0,0,.12)}
+.segmented-control::before{content:'';position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);background:#fff;border-radius:9px;box-shadow:0 1px 2px rgba(0,0,0,.10),0 3px 8px rgba(0,0,0,.06);transition:transform .5s var(--spring)}
+.segmented-control[data-active="signup"]::before{transform:translateX(100%)}
+.segment{position:relative;z-index:1;flex:1;padding:10px;border:none;background:transparent;border-radius:9px;font-family:inherit;font-size:.86rem;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:color .3s var(--ease-smooth)}
+.segment.active{color:var(--text-primary)}
+
+.form-area{width:100%}
+.form-panel{animation:panelIn .45s var(--ease-out)}
+.hidden-panel{display:none}
+@keyframes panelIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.form-title{font-size:1.5rem;font-weight:700;letter-spacing:-.5px;margin-bottom:1.3rem;color:var(--text-primary);display:flex;align-items:center;gap:10px}
+.form-title i{color:var(--accent);font-size:1.35rem}
+.input-icon-group{position:relative;width:100%;margin-bottom:.85rem}
+.input-icon-group>i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);font-size:.95rem;pointer-events:none;transition:color .3s var(--ease-smooth);z-index:1}
+.pill-input{width:100%;padding:13px 16px 13px 42px;font-family:inherit;font-size:.94rem;font-weight:400;border:1.5px solid transparent;border-radius:var(--radius-input);background:var(--fill-gray);outline:none;color:var(--text-primary);transition:background .3s,border-color .3s,box-shadow .3s;user-select:text;-webkit-user-select:text}
+.pill-input::placeholder{color:var(--text-tertiary);font-weight:400}
+.pill-input:hover{background:var(--fill-gray-hover)}
+.pill-input:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-tint),0 4px 14px -4px var(--accent-glow)}
+.input-icon-group:focus-within>i{color:var(--accent)}
+select.pill-input{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%23aeaeb2' d='M6 9L1 4h10z'/></svg>");background-repeat:no-repeat;background-position:right 16px center;padding-right:36px}
+
+.double-row{display:flex;gap:.75rem;flex-wrap:wrap}
+.double-row .input-icon-group{flex:1;min-width:125px}
+.section-label{font-size:.74rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin:.9rem 0 .5rem}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.95rem}
+.upload-box{position:relative;aspect-ratio:1/1;background:var(--fill-gray);border:2px dashed rgba(0,0,0,.12);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;overflow:hidden;transition:border-color .3s,background .3s,transform .35s var(--spring)}
+.upload-box:hover{border-color:var(--accent);background:#fff;transform:translateY(-2px)}
+.upload-box.has-image{border-style:solid;border-color:var(--accent)}
+.upload-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.upload-box .upload-label{font-size:.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.upload-box i.upload-icon{font-size:1.5rem;color:var(--text-tertiary)}
+.upload-box.has-image .upload-label,.upload-box.has-image i.upload-icon{display:none}
+.upload-box .upload-badge{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:.6rem;font-weight:600;padding:3px 10px;border-radius:30px;display:none;z-index:2}
+.upload-box.has-image .upload-badge{display:inline-block}
+
+.btn{font-family:inherit;font-size:.94rem;font-weight:600;letter-spacing:-.1px;border:none;border-radius:var(--radius-btn);padding:13px 20px;width:100%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:transform .35s var(--spring),box-shadow .35s var(--ease-smooth),background .3s,color .3s,opacity .3s}
+.btn-primary{background:linear-gradient(180deg,var(--accent-light) 0%,var(--accent) 55%,var(--accent-dark) 100%);color:#1a1206;box-shadow:0 1px 1px rgba(255,255,255,.35) inset,0 1px 2px rgba(0,0,0,.08),0 8px 20px -6px var(--accent-glow)}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 1px 1px rgba(255,255,255,.4) inset,0 2px 4px rgba(0,0,0,.10),0 16px 30px -8px var(--accent-glow)}
+.btn-primary:active:not(:disabled){transform:translateY(0) scale(.975)}
+.btn-secondary{background:#fff;color:var(--text-primary);box-shadow:0 0 0 1px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04),0 6px 16px -6px rgba(0,0,0,.12)}
+.btn-secondary:hover:not(:disabled){transform:translateY(-2px);color:var(--accent-dark)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.text-link{background:none;border:none;font-family:inherit;color:var(--accent-dark);font-weight:600;cursor:pointer;font-size:.84rem;padding:8px 12px;border-radius:10px;display:inline-flex;align-items:center;gap:7px;transition:all .28s var(--ease-smooth)}
+.text-link:hover{background:var(--accent-soft)}
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-top:.9rem;flex-wrap:wrap;gap:10px}
+.terms-check{display:flex;align-items:center;gap:11px;margin:.9rem 0 1.3rem;padding:11px 14px;background:var(--fill-gray);border-radius:14px;flex-wrap:wrap}
+.terms-check label{font-size:.82rem;color:var(--text-secondary);font-weight:400;line-height:1.4;cursor:pointer}
+.terms-check label strong{color:var(--text-primary);font-weight:600}
+.checkbox-custom{width:19px;height:19px;accent-color:var(--accent);cursor:pointer;border-radius:5px;flex-shrink:0}
+.error-msg{color:#ff3b30;font-size:.76rem;font-weight:500;margin:0 0 .75rem 4px;line-height:1.35;animation:panelIn .3s var(--ease-out);white-space:pre-wrap}
+.error-msg:empty{display:none}
+.success-msg{color:#1f8a3b;font-size:.8rem;font-weight:600;background:#e8f8ee;border:1px solid rgba(52,199,89,.25);padding:9px 14px;border-radius:12px;display:inline-block;margin-bottom:.9rem;animation:panelIn .35s var(--ease-out);line-height:1.4}
+
+/* Complete-profile overlay */
+.complete-profile-overlay{position:fixed;inset:0;z-index:400;background:linear-gradient(180deg,#fffaf2 0%,#fff 60%);display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 3rem}
+.complete-profile-overlay.open{display:flex}
+.complete-profile-topbar{position:sticky;top:0;z-index:10;background:rgba(255,250,242,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);padding:14px 18px;display:flex;align-items:center;gap:12px}
+.complete-profile-topbar .brand-mini{font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,var(--accent-dark),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.complete-profile-inner{max-width:560px;width:100%;margin:0 auto;padding:24px 20px 40px}
+.complete-profile-hero{text-align:center;margin-bottom:22px}
+.complete-profile-hero .hero-icon{width:78px;height:78px;border-radius:50%;background:linear-gradient(180deg,var(--accent-light),var(--accent-dark));display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff;font-size:2rem;box-shadow:0 12px 28px -10px var(--accent-glow)}
+.complete-profile-hero h1{font-size:1.4rem;font-weight:800;letter-spacing:-.4px;margin-bottom:6px}
+.complete-profile-hero p{font-size:.88rem;color:var(--text-secondary);line-height:1.5;max-width:380px;margin:0 auto}
+.missing-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.missing-chip{background:#fff3cd;color:#856404;font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:30px;border:1px solid rgba(133,100,4,.15);display:inline-flex;align-items:center;gap:5px}
+.complete-form-block{background:#fff;border-radius:18px;padding:18px 18px 8px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.04)}
+
+.fa-spinner{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:560px){
+  .form-title{font-size:1.35rem;margin-bottom:1.1rem}
+  .pill-input{padding:12px 14px 12px 39px;font-size:.9rem}
+  .input-icon-group>i{left:13px;font-size:.9rem}
+  .btn{padding:12px 16px;font-size:.9rem}
+  .half-title{font-size:1.3rem}
+  .half-icon{font-size:2.4rem}
+  .center-logo{width:76px;height:76px}
+  .double-row{flex-direction:column;gap:.8rem}
+}
+</style>
 </head>
 <body>
 
-<!-- ==========================================================
-     SPLIT LANDING
-     ========================================================== -->
+<!-- Split landing -->
 <div class="split-landing" id="splitLanding">
-    <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
-        <div class="half-content">
-            <div class="half-chevron"><i class="fas fa-chevron-down"></i></div>
-            <div class="half-icon"><i class="fas fa-user-graduate"></i></div>
-            <div class="half-title">Student</div>
-            <div class="half-hint">Swipe down to continue</div>
-        </div>
+  <div class="split-half split-top" id="splitTop" role="button">
+    <div class="half-content">
+      <div class="half-chevron"><i class="fas fa-chevron-down"></i></div>
+      <div class="half-icon"><i class="fas fa-user-graduate"></i></div>
+      <div class="half-title">Student</div>
+      <div class="half-hint">Swipe down or tap to continue</div>
     </div>
-
-    <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
-        <div class="half-content">
-            <div class="half-chevron"><i class="fas fa-chevron-up"></i></div>
-            <div class="half-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-            <div class="half-title">Lecturer</div>
-            <div class="half-hint">Swipe up to continue</div>
-        </div>
+  </div>
+  <div class="split-half split-bottom" id="splitBottom" role="button">
+    <div class="half-content">
+      <div class="half-chevron"><i class="fas fa-chevron-up"></i></div>
+      <div class="half-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+      <div class="half-title">Lecturer</div>
+      <div class="half-hint">Swipe up or tap to continue</div>
     </div>
-
-    <div class="center-logo" id="centerLogo">
-        <img src="logo.png" alt="UTOM logo"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-        <span class="logo-fallback" style="display:none;">UTOM</span>
-    </div>
+  </div>
+  <div class="center-logo">
+    <span class="logo-fallback">UTOM</span>
+  </div>
 </div>
 
-<!-- ==========================================================
-     STUDENT PANEL
-     ========================================================== -->
+<!-- STUDENT PANEL -->
 <div class="slide-panel" id="studentPanel">
-    <div class="panel-topbar">
-        <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
-        <span class="panel-label">Student Portal</span>
+  <div class="panel-topbar">
+    <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+    <span class="panel-label">Student Portal</span>
+  </div>
+  <div class="slide-panel-inner">
+    <div class="panel-logo-strip">
+      <div class="panel-brand-name">UTOM</div>
+      <div class="panel-brand-sub">Student Portal</div>
     </div>
-    <div class="slide-panel-inner">
-        <div class="panel-logo-strip">
-            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span class="logo-fallback" style="display:none;">UTOM</span>
-            <div class="panel-brand-name">UTOM</div>
-            <div class="panel-brand-sub">Student Portal</div>
-        </div>
-
-        <div class="segmented-control" id="authSegments" data-active="login">
-            <button type="button" class="segment active" id="segLogin">Sign in</button>
-            <button type="button" class="segment" id="segSignup">Create account</button>
-        </div>
-
-        <div class="form-area">
-            <!-- LOGIN -->
-            <div id="loginPanel" class="form-panel">
-                <div class="form-title">
-                    <i class="fas fa-arrow-right-to-bracket"></i>
-                    Welcome back
-                </div>
-                <form id="loginForm" novalidate>
-                    <div class="input-icon-group">
-                        <input type="email" id="loginEmail" class="pill-input"
-                               placeholder="Email address" autocomplete="email" required>
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="password" id="loginPassword" class="pill-input"
-                               placeholder="Password" autocomplete="current-password" required>
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <div id="loginError" class="error-msg"></div>
-                    <button type="submit" class="btn btn-primary" id="loginBtn">
-                        <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
-                    </button>
-                    <div class="flex-between">
-                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
-                            Forgot your password?
-                        </span>
-                        <button type="button" id="forgotPwdBtn" class="text-link">
-                            <i class="fas fa-key"></i> Reset it
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- SIGNUP -->
-            <div id="signupPanel" class="form-panel hidden-panel">
-                <div class="form-title">
-                    <i class="fas fa-user-plus"></i>
-                    Create your account
-                </div>
-                <form id="signupForm" novalidate>
-                    <div class="double-row">
-                        <div class="input-icon-group">
-                            <input type="text" id="firstName" class="pill-input"
-                                   placeholder="First name" autocomplete="given-name" required>
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="text" id="lastName" class="pill-input"
-                                   placeholder="Last name" autocomplete="family-name" required>
-                            <i class="fas fa-user-tag"></i>
-                        </div>
-                    </div>
-
-                    <div class="field-hint">
-                        <i class="fas fa-wand-magic-sparkles"></i>
-                        <span>Heads up — the first letter of each name is capitalized automatically.</span>
-                    </div>
-
-                    <div class="input-icon-group">
-                        <input type="tel" id="phoneNumber" class="pill-input"
-                               placeholder="Phone number" autocomplete="tel" required>
-                        <i class="fas fa-phone-alt"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="email" id="signupEmail" class="pill-input"
-                               placeholder="Email address" autocomplete="email" required>
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="password" id="signupPassword" class="pill-input"
-                               placeholder="Create password" autocomplete="new-password" required>
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="password" id="confirmPassword" class="pill-input"
-                               placeholder="Confirm password" autocomplete="new-password" required>
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div id="signupError" class="error-msg"></div>
-                    <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
-                    <div class="terms-check">
-                        <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
-                        <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="registerBtn">
-                        <i class="fas fa-user-check"></i> REGISTER
-                    </button>
-                </form>
-            </div>
-
-            <!-- FORGOT -->
-            <div id="forgotPanel" class="form-panel hidden-panel">
-                <div class="form-title">
-                    <i class="fas fa-paper-plane"></i>
-                    Reset password
-                </div>
-                <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
-                    Enter your email address and we'll send you a secure link to reset your password.
-                </p>
-                <div class="input-icon-group">
-                    <input type="email" id="resetEmailInput" class="pill-input"
-                           placeholder="Your email address" autocomplete="email">
-                    <i class="fas fa-envelope"></i>
-                </div>
-                <div id="resetError" class="error-msg"></div>
-                <div style="display:flex;gap:11px;margin-top:1.2rem;">
-                    <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
-                        <i class="fas fa-chevron-left"></i> Cancel
-                    </button>
-                    <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Send link
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="installBanner" class="install-banner" style="display:none;">
-            <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
-            <button id="bannerInstallBtn" type="button">Install</button>
-        </div>
+    <div class="segmented-control" id="authSegments" data-active="login">
+      <button type="button" class="segment active" id="segLogin">Sign in</button>
+      <button type="button" class="segment" id="segSignup">Create account</button>
     </div>
-</div>
-
-<!-- ==========================================================
-     LECTURER PANEL
-     ========================================================== -->
-<div class="slide-panel" id="lecturerPanel">
-    <div class="panel-topbar">
-        <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
-        <span class="panel-label">Lecturer Portal</span>
-    </div>
-    <div class="slide-panel-inner">
-
-        <div class="panel-logo-strip">
-            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <span class="logo-fallback" style="display:none;">UTOM</span>
-            <div class="panel-brand-name">UTOM</div>
-            <div class="panel-brand-sub">Lecturer Portal</div>
-        </div>
-
-        <div class="segmented-control" id="lecSegments" data-active="login">
-            <button type="button" class="segment active" id="lecSegLogin">Sign in</button>
-            <button type="button" class="segment" id="lecSegSignup">Apply</button>
-        </div>
-
-        <div class="form-area">
-            <!-- LECTURER LOGIN -->
-            <div id="lecLoginPanel" class="form-panel">
-                <div class="form-title">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    Lecturer sign in
-                </div>
-                <form id="lecLoginForm" novalidate>
-                    <div class="input-icon-group">
-                        <input type="email" id="lecLoginEmail" class="pill-input"
-                               placeholder="Email address" autocomplete="email" required>
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="password" id="lecLoginPassword" class="pill-input"
-                               placeholder="Password" autocomplete="current-password" required>
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <div id="lecLoginError" class="error-msg"></div>
-                    <button type="submit" class="btn btn-primary" id="lecLoginBtn">
-                        <i class="fas fa-arrow-right-to-bracket"></i> SIGN IN
-                    </button>
-                    <div class="flex-between">
-                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
-                            Not yet approved?
-                        </span>
-                        <button type="button" id="lecGoSignupBtn" class="text-link">
-                            <i class="fas fa-user-plus"></i> Apply now
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- LECTURER SIGNUP -->
-            <div id="lecSignupPanel" class="form-panel hidden-panel">
-                <div class="form-title">
-                    <i class="fas fa-user-plus"></i>
-                    Apply to teach
-                </div>
-                <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:1.1rem;line-height:1.5;">
-                    Submit your details and document images. An admin will review your application.
-                </p>
-                <form id="lecSignupForm" novalidate>
-                    <!-- Personal -->
-                    <div class="section-label">Personal details</div>
-
-                    <div class="input-icon-group">
-                        <input type="text" id="lecName" class="pill-input"
-                               placeholder="Full name" autocomplete="name" required>
-                        <i class="fas fa-user"></i>
-                    </div>
-
-                    <div class="double-row">
-                        <div class="input-icon-group">
-                            <input type="email" id="lecEmail" class="pill-input"
-                                   placeholder="Email address" autocomplete="email" required>
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="tel" id="lecPhone" class="pill-input"
-                                   placeholder="Phone number" autocomplete="tel" required>
-                            <i class="fas fa-phone-alt"></i>
-                        </div>
-                    </div>
-
-                    <div class="input-icon-group">
-                        <input type="text" id="lecNrc" class="pill-input"
-                               placeholder="NRC number (e.g. 123456/78/9)" required>
-                        <i class="fas fa-id-card"></i>
-                    </div>
-
-                    <!-- Location & Institution -->
-                    <div class="section-label">Location &amp; Institution</div>
-
-                    <div class="input-icon-group">
-                        <input type="text" id="lecCollege" class="pill-input"
-                               placeholder="College / University name" required>
-                        <i class="fas fa-university"></i>
-                    </div>
-
-                    <div class="double-row">
-                        <div class="input-icon-group">
-                            <input type="text" id="lecCity" class="pill-input"
-                                   placeholder="City" required>
-                            <i class="fas fa-city"></i>
-                        </div>
-                        <div class="input-icon-group">
-                            <input type="text" id="lecTown" class="pill-input"
-                                   placeholder="Town / Suburb">
-                            <i class="fas fa-map-pin"></i>
-                        </div>
-                    </div>
-
-                    <div class="input-icon-group">
-                        <input type="text" id="lecAddress" class="pill-input"
-                               placeholder="Physical address (street, plot)">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-
-                    <!-- Profile picture -->
-                    <div class="section-label">Profile picture</div>
-                    <div class="upload-grid" style="grid-template-columns:1fr;">
-                        <div class="upload-box" id="lecProfileUpload">
-                            <i class="fas fa-user-circle upload-icon"></i>
-                            <span class="upload-label">Tap to upload</span>
-                            <span class="upload-badge">Profile</span>
-                        </div>
-                    </div>
-                    <input type="hidden" id="lecProfileUrl">
-
-                    <!-- NRC images -->
-                    <div class="section-label">NRC images (front &amp; back)</div>
-                    <div class="upload-grid">
-                        <div class="upload-box" id="lecNrcFrontUpload">
-                            <i class="fas fa-id-card upload-icon"></i>
-                            <span class="upload-label">NRC Front</span>
-                            <span class="upload-badge">Front</span>
-                        </div>
-                        <div class="upload-box" id="lecNrcBackUpload">
-                            <i class="fas fa-id-card upload-icon"></i>
-                            <span class="upload-label">NRC Back</span>
-                            <span class="upload-badge">Back</span>
-                        </div>
-                    </div>
-                    <input type="hidden" id="lecNrcFrontUrl">
-                    <input type="hidden" id="lecNrcBackUrl">
-
-                    <!-- Credentials -->
-                    <div class="section-label">Teaching credentials</div>
-                    <div class="upload-grid">
-                        <div class="upload-box" id="lecCertUpload">
-                            <i class="fas fa-certificate upload-icon"></i>
-                            <span class="upload-label">Certificate</span>
-                            <span class="upload-badge">Teaching</span>
-                        </div>
-                        <div class="upload-box" id="lecDegreeUpload">
-                            <i class="fas fa-graduation-cap upload-icon"></i>
-                            <span class="upload-label">Degree / Diploma</span>
-                            <span class="upload-badge">Academic</span>
-                        </div>
-                    </div>
-                    <input type="hidden" id="lecCertUrl">
-                    <input type="hidden" id="lecDegreeUrl">
-
-                    <!-- Password -->
-                    <div class="section-label">Account security</div>
-                    <div class="input-icon-group">
-                        <input type="password" id="lecPassword" class="pill-input"
-                               placeholder="Create password" autocomplete="new-password" required>
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="password" id="lecConfirmPassword" class="pill-input"
-                               placeholder="Confirm password" autocomplete="new-password" required>
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-
-                    <div id="lecSignupError" class="error-msg"></div>
-                    <div id="lecSignupSuccess" class="success-msg" style="display: none;"></div>
-
-                    <div class="terms-check">
-                        <input type="checkbox" id="lecTermsCheckbox" class="checkbox-custom">
-                        <label for="lecTermsCheckbox">
-                            I confirm the documents are authentic and I agree to the
-                            <button type="button" class="terms-open-link" id="openLecTermsBtn">Lecturer Terms &amp; Conditions</button>.
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="lecRegisterBtn">
-                        <i class="fas fa-paper-plane"></i> SUBMIT APPLICATION
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ==========================================================
-     TERMS & CONDITIONS MODAL
-     ========================================================== -->
-<div class="terms-modal-overlay" id="termsModalOverlay">
-    <div class="terms-modal" role="dialog" aria-modal="true">
-        <div class="terms-modal-header">
-            <h2 id="termsModalTitle"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</h2>
-            <button class="terms-modal-close" id="termsModalCloseBtn" aria-label="Close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="terms-modal-body" id="termsModalBody"></div>
-        <div class="terms-modal-footer">
-            <button class="terms-decline-btn" id="termsDeclineBtn">Close</button>
-            <button class="terms-accept-btn" id="termsAcceptBtn">
-                <i class="fas fa-check"></i> I Agree
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ==========================================================
-     COMPLETE PROFILE OVERLAY (shown after login if record is incomplete)
-     ========================================================== -->
-<div class="complete-profile-overlay" id="completeProfileOverlay">
-    <div class="complete-profile-topbar">
-        <span class="brand-mini">UTOM · Complete Your Profile</span>
-    </div>
-    <div class="complete-profile-inner">
-        <div class="complete-profile-hero">
-            <div class="hero-icon"><i class="fas fa-user-shield"></i></div>
-            <h1>Almost there!</h1>
-            <p>Please complete the missing information below before we can grant you access to your dashboard.</p>
-            <div class="missing-chips" id="missingChipsContainer"></div>
-        </div>
-
-        <form id="completeProfileForm" novalidate>
-            <!-- Personal -->
-            <div class="complete-form-block">
-                <h3><i class="fas fa-user"></i> Personal details</h3>
-                <div class="input-icon-group">
-                    <input type="text" id="cpName" class="pill-input"
-                           placeholder="Full name" required>
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="input-icon-group">
-                    <input type="tel" id="cpPhone" class="pill-input"
-                           placeholder="Phone number" required>
-                    <i class="fas fa-phone-alt"></i>
-                </div>
-                <div class="input-icon-group">
-                    <input type="text" id="cpNrc" class="pill-input"
-                           placeholder="NRC number" required>
-                    <i class="fas fa-id-card"></i>
-                </div>
-            </div>
-
-            <!-- Location -->
-            <div class="complete-form-block">
-                <h3><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h3>
-                <div class="input-icon-group">
-                    <input type="text" id="cpCollege" class="pill-input"
-                           placeholder="College / University name" required>
-                    <i class="fas fa-university"></i>
-                </div>
-                <div class="double-row">
-                    <div class="input-icon-group">
-                        <input type="text" id="cpCity" class="pill-input"
-                               placeholder="City" required>
-                        <i class="fas fa-city"></i>
-                    </div>
-                    <div class="input-icon-group">
-                        <input type="text" id="cpTown" class="pill-input"
-                               placeholder="Town / Suburb">
-                        <i class="fas fa-map-pin"></i>
-                    </div>
-                </div>
-                <div class="input-icon-group">
-                    <input type="text" id="cpAddress" class="pill-input"
-                           placeholder="Physical address (street, plot)">
-                    <i class="fas fa-map-marker-alt"></i>
-                </div>
-            </div>
-
-            <!-- Documents -->
-            <div class="complete-form-block">
-                <h3><i class="fas fa-images"></i> Required documents</h3>
-
-                <div class="section-label" style="margin-top:0;">Profile picture</div>
-                <div class="upload-grid" style="grid-template-columns:1fr;">
-                    <div class="upload-box" id="cpProfileUpload">
-                        <i class="fas fa-user-circle upload-icon"></i>
-                        <span class="upload-label">Tap to upload</span>
-                        <span class="upload-badge">Profile</span>
-                    </div>
-                </div>
-                <input type="hidden" id="cpProfileUrl">
-
-                <div class="section-label">NRC images (front &amp; back)</div>
-                <div class="upload-grid">
-                    <div class="upload-box" id="cpNrcFrontUpload">
-                        <i class="fas fa-id-card upload-icon"></i>
-                        <span class="upload-label">NRC Front</span>
-                        <span class="upload-badge">Front</span>
-                    </div>
-                    <div class="upload-box" id="cpNrcBackUpload">
-                        <i class="fas fa-id-card upload-icon"></i>
-                        <span class="upload-label">NRC Back</span>
-                        <span class="upload-badge">Back</span>
-                    </div>
-                </div>
-                <input type="hidden" id="cpNrcFrontUrl">
-                <input type="hidden" id="cpNrcBackUrl">
-
-                <div class="section-label">Teaching credentials</div>
-                <div class="upload-grid">
-                    <div class="upload-box" id="cpCertUpload">
-                        <i class="fas fa-certificate upload-icon"></i>
-                        <span class="upload-label">Certificate</span>
-                        <span class="upload-badge">Teaching</span>
-                    </div>
-                    <div class="upload-box" id="cpDegreeUpload">
-                        <i class="fas fa-graduation-cap upload-icon"></i>
-                        <span class="upload-label">Degree / Diploma</span>
-                        <span class="upload-badge">Academic</span>
-                    </div>
-                </div>
-                <input type="hidden" id="cpCertUrl">
-                <input type="hidden" id="cpDegreeUrl">
-            </div>
-
-            <div id="completeProfileError" class="error-msg"></div>
-
-            <button type="submit" class="btn btn-primary" id="completeProfileBtn">
-                <i class="fas fa-check-circle"></i> SAVE &amp; CONTINUE
-            </button>
-
-            <button type="button" id="completeProfileLogoutBtn"
-                    style="background:none;border:none;color:var(--text-tertiary);font-family:inherit;font-size:0.82rem;width:100%;padding:14px 8px 0;cursor:pointer;text-decoration:underline;">
-                Sign out instead
-            </button>
+    <div class="form-area">
+      <!-- Login -->
+      <div id="loginPanel" class="form-panel">
+        <div class="form-title"><i class="fas fa-arrow-right-to-bracket"></i> Welcome back</div>
+        <form id="loginForm" novalidate>
+          <div class="input-icon-group">
+            <input type="email" id="loginEmail" class="pill-input" placeholder="Email address" autocomplete="email" required>
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="input-icon-group">
+            <input type="password" id="loginPassword" class="pill-input" placeholder="Password" autocomplete="current-password" required>
+            <i class="fas fa-lock"></i>
+          </div>
+          <div id="loginError" class="error-msg"></div>
+          <button type="submit" class="btn btn-primary" id="loginBtn">
+            <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
+          </button>
+          <div class="flex-between">
+            <span style="font-size:.8rem;color:var(--text-secondary)">Forgot your password?</span>
+            <button type="button" id="forgotPwdBtn" class="text-link"><i class="fas fa-key"></i> Reset it</button>
+          </div>
         </form>
+      </div>
+      <!-- Signup (dynamic) -->
+      <div id="signupPanel" class="form-panel hidden-panel">
+        <div class="form-title"><i class="fas fa-user-plus"></i> Create your account</div>
+        <form id="signupForm" novalidate>
+          <div id="studentSignupFields"></div>
+          <div id="signupError" class="error-msg"></div>
+          <div id="signupSuccessMsg" class="success-msg" style="display:none"></div>
+          <div class="terms-check">
+            <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+            <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="registerBtn">
+            <i class="fas fa-user-check"></i> REGISTER
+          </button>
+        </form>
+      </div>
+      <!-- Forgot -->
+      <div id="forgotPanel" class="form-panel hidden-panel">
+        <div class="form-title"><i class="fas fa-paper-plane"></i> Reset password</div>
+        <p style="font-size:.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5">Enter your email address and we'll send you a link to reset your password.</p>
+        <div class="input-icon-group">
+          <input type="email" id="resetEmailInput" class="pill-input" placeholder="Your email address">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div id="resetError" class="error-msg"></div>
+        <div style="display:flex;gap:11px;margin-top:1.2rem">
+          <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary"><i class="fas fa-chevron-left"></i> Cancel</button>
+          <button type="button" id="sendResetLinkBtn" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- LECTURER PANEL -->
+<div class="slide-panel" id="lecturerPanel">
+  <div class="panel-topbar">
+    <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+    <span class="panel-label">Lecturer Portal</span>
+  </div>
+  <div class="slide-panel-inner">
+    <div class="panel-logo-strip">
+      <div class="panel-brand-name">UTOM</div>
+      <div class="panel-brand-sub">Lecturer Portal</div>
+    </div>
+    <div class="segmented-control" id="lecSegments" data-active="login">
+      <button type="button" class="segment active" id="lecSegLogin">Sign in</button>
+      <button type="button" class="segment" id="lecSegSignup">Apply</button>
+    </div>
+    <div class="form-area">
+      <div id="lecLoginPanel" class="form-panel">
+        <div class="form-title"><i class="fas fa-chalkboard-teacher"></i> Lecturer sign in</div>
+        <form id="lecLoginForm" novalidate>
+          <div class="input-icon-group">
+            <input type="email" id="lecLoginEmail" class="pill-input" placeholder="Email address">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="input-icon-group">
+            <input type="password" id="lecLoginPassword" class="pill-input" placeholder="Password">
+            <i class="fas fa-lock"></i>
+          </div>
+          <div id="lecLoginError" class="error-msg"></div>
+          <button type="submit" class="btn btn-primary" id="lecLoginBtn"><i class="fas fa-arrow-right-to-bracket"></i> SIGN IN</button>
+          <div class="flex-between">
+            <span style="font-size:.8rem;color:var(--text-secondary)">Not yet approved?</span>
+            <button type="button" id="lecGoSignupBtn" class="text-link"><i class="fas fa-user-plus"></i> Apply now</button>
+          </div>
+        </form>
+      </div>
+      <div id="lecSignupPanel" class="form-panel hidden-panel">
+        <div class="form-title"><i class="fas fa-user-plus"></i> Apply to teach</div>
+        <form id="lecSignupForm" novalidate>
+          <div id="lecturerSignupFields"></div>
+          <div id="lecSignupError" class="error-msg"></div>
+          <div id="lecSignupSuccess" class="success-msg" style="display:none"></div>
+          <div class="terms-check">
+            <input type="checkbox" id="lecTermsCheckbox" class="checkbox-custom">
+            <label for="lecTermsCheckbox">I confirm the documents are authentic and I agree to the Terms.</label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="lecRegisterBtn"><i class="fas fa-paper-plane"></i> SUBMIT APPLICATION</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE PROFILE OVERLAY -->
+<div class="complete-profile-overlay" id="completeProfileOverlay">
+  <div class="complete-profile-topbar">
+    <span class="brand-mini">UTOM · Complete Your Profile</span>
+  </div>
+  <div class="complete-profile-inner">
+    <div class="complete-profile-hero">
+      <div class="hero-icon"><i class="fas fa-user-shield"></i></div>
+      <h1>Almost there!</h1>
+      <p>Please complete the missing information below to finish setting up your account.</p>
+      <div class="missing-chips" id="missingChipsContainer"></div>
+    </div>
+    <form id="completeProfileForm" novalidate>
+      <div id="completeProfileFields"></div>
+      <div id="completeProfileError" class="error-msg"></div>
+      <button type="submit" class="btn btn-primary" id="completeProfileBtn"><i class="fas fa-check-circle"></i> SAVE &amp; CONTINUE</button>
+      <button type="button" id="completeProfileLogoutBtn" style="background:none;border:none;color:var(--text-tertiary);font-family:inherit;font-size:.82rem;width:100%;padding:14px 8px 0;cursor:pointer;text-decoration:underline;">Sign out instead</button>
+    </form>
+  </div>
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
-        authDomain: "utom-c4003.firebaseapp.com",
-        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
-        projectId: "utom-c4003",
-        storageBucket: "utom-c4003.firebasestorage.app",
-        messagingSenderId: "878225874050",
-        appId: "1:878225874050:web:643626906bfd233eeae89b",
-        measurementId: "G-STHFWDKVZN"
+const firebaseConfig = {
+  apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+  authDomain: "utom-c4003.firebaseapp.com",
+  databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+  projectId: "utom-c4003",
+  storageBucket: "utom-c4003.firebasestorage.app",
+  messagingSenderId: "878225874050",
+  appId: "1:878225874050:web:643626906bfd233eeae89b"
+};
+const CLOUD_NAME = 'dd3lcymrk';
+const UPLOAD_PRESET = 'h3eyhc2o';
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
+const SETUP_REF = ref(database, 'system/registrationSetup');
+
+/* ---------- DEFAULT FALLBACKS ---------- */
+const SYSTEM_KEYS = ['email','password','confirmPassword'];
+
+const FALLBACK_STUDENT_FIELDS = {
+  firstName:{id:'firstName',label:'First Name',type:'text',required:true,enabled:true,order:1},
+  lastName:{id:'lastName',label:'Last Name',type:'text',required:true,enabled:true,order:2},
+  phone:{id:'phone',label:'Phone Number',type:'tel',required:true,enabled:true,order:3},
+  email:{id:'email',label:'Email Address',type:'email',required:true,enabled:true,order:4,system:true},
+  password:{id:'password',label:'Password',type:'password',required:true,enabled:true,order:5,system:true},
+  confirmPassword:{id:'confirmPassword',label:'Confirm Password',type:'password',required:true,enabled:true,order:6,system:true}
+};
+const FALLBACK_STUDENT_HIER = {};
+
+/* ---------- STATE ---------- */
+let REG = { student:{fields:{},hierarchy:{}}, lecturer:{fields:{},hierarchy:{}}, colleges:{} };
+let PENDING_USER = null;   // { user, role, missing, userData }
+
+/* ---------- UTILS ---------- */
+const toUpper = (s)=> (s==null?'':String(s).trim()).toUpperCase();
+const capAll  = (s)=> toUpper(s).replace(/\s+/g,' ');
+
+function capitalizeNameInDbIfNeeded(userData){
+  const updates = {};
+  ['firstName','lastName','middleName'].forEach(k=>{
+    const v = userData?.[k];
+    if(typeof v === 'string' && v && v !== v.toUpperCase()){
+      updates[k] = v.toUpperCase();
+    }
+  });
+  return updates;
+}
+
+async function loadRegistrationConfig(){
+  try{
+    const snap = await get(SETUP_REF);
+    const data = snap.val() || {};
+    const student = data.student || {};
+    const lecturer= data.lecturer|| {};
+    REG.student.fields   = student.fields   || FALLBACK_STUDENT_FIELDS;
+    REG.student.hierarchy= student.hierarchy|| FALLBACK_STUDENT_HIER;
+    REG.lecturer.fields  = lecturer.fields  || {};
+    REG.lecturer.hierarchy=lecturer.hierarchy||{};
+    REG.colleges = data.colleges || {};
+  }catch(err){
+    console.warn('Failed to load registration setup, using fallback:', err);
+    REG.student.fields = FALLBACK_STUDENT_FIELDS;
+  }
+}
+
+function sortFields(fields){
+  return Object.values(fields||{}).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+
+/* ---------- CLOUDINARY UPLOAD ---------- */
+function openCloudUpload(opts={}){
+  return new Promise((resolve,reject)=>{
+    const o = Object.assign({
+      cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET,
+      sources:['local','url'], maxFileSize:155000000, maxFiles:1,
+      resourceType:'image', clientAllowedFormats:['jpg','jpeg','png','webp','gif']
+    }, opts);
+    cloudinary.openUploadWidget(o,(err,res)=>{
+      if(err) return reject(err);
+      if(res.event==='success') resolve(res.info.secure_url);
+    });
+  });
+}
+
+/* ---------- DYNAMIC FIELD RENDERING ---------- */
+function renderFieldHTML(field, role, values={}){
+  const fid = `${role}_${field.id}`;
+  const req = field.required ? 'required' : '';
+  const reqMark = field.required ? ' *' : '';
+  const val = values[field.id] || '';
+
+  if(field.type === 'image'){
+    const hasImg = !!val;
+    return `
+      <div class="section-label">${field.label}${reqMark}</div>
+      <div class="upload-grid" style="grid-template-columns:1fr">
+        <div class="upload-box ${hasImg?'has-image':''}" id="${fid}_box" data-field-id="${field.id}" data-role="${role}">
+          ${hasImg ? `<img src="${val}" alt=""/>` : `<i class="fas fa-cloud-upload-alt upload-icon"></i><span class="upload-label">Tap to upload</span>`}
+          <span class="upload-badge">${field.label}</span>
+        </div>
+      </div>
+      <input type="hidden" id="${fid}" data-field="${field.id}" ${req} value="${val}"/>
+    `;
+  }
+
+  if(field.type === 'dropdown'){
+    const opts = (field.options||[]).map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('');
+    return `
+      <div class="input-icon-group">
+        <select id="${fid}" class="pill-input" data-field="${field.id}" ${req}>
+          <option value="">-- ${field.label}${reqMark} --</option>
+          ${opts}
+        </select>
+        <i class="fas fa-list"></i>
+      </div>
+    `;
+  }
+
+  let inputType = 'text';
+  if(field.type === 'email') inputType = 'email';
+  else if(field.type === 'tel') inputType = 'tel';
+  else if(field.type === 'password') inputType = 'password';
+  else if(field.type === 'number') inputType = 'number';
+  else if(field.type === 'date') inputType = 'date';
+
+  const icon = inputType==='email'?'fa-envelope':inputType==='password'?'fa-lock':inputType==='tel'?'fa-phone-alt':field.type==='nrc'?'fa-id-card':'fa-user';
+  const autoComplete = field.id==='email'?'email':field.id==='password'?'new-password':'off';
+  return `
+    <div class="input-icon-group">
+      <input type="${inputType}" id="${fid}" class="pill-input" data-field="${field.id}"
+             placeholder="${field.label}${reqMark}" autocomplete="${autoComplete}" ${req} value="${val}"/>
+      <i class="fas ${icon}"></i>
+    </div>
+  `;
+}
+
+function renderHierarchySelects(role, values={}){
+  const hier = REG[role]?.hierarchy || {};
+  const colleges = Object.values(REG.colleges||{});
+  if(!hier.college?.enabled && !hier.program?.enabled && !hier.class?.enabled && !hier.intake?.enabled && !hier.studyMode?.enabled) return '';
+
+  let html = `<div class="section-label">Enrollment Details</div>`;
+
+  if(hier.college?.enabled){
+    const opts = colleges.map(c=>`<option value="${c.id}" ${values.collegeId===c.id?'selected':''}>${c.name} (${c.centerCode||''})</option>`).join('');
+    html += `
+      <div class="input-icon-group">
+        <select id="${role}_collegeSelect" class="pill-input" data-hier="college" ${hier.college.required?'required':''}>
+          <option value="">-- ${hier.college.label}${hier.college.required?' *':''} --</option>
+          ${opts}
+        </select>
+        <i class="fas fa-university"></i>
+      </div>
+    `;
+  }
+
+  if(hier.program?.enabled){
+    html += `
+      <div class="input-icon-group">
+        <select id="${role}_programSelect" class="pill-input" data-hier="program" ${hier.program.required?'required':''}>
+          <option value="">-- Select college first --</option>
+        </select>
+        <i class="fas fa-graduation-cap"></i>
+      </div>
+    `;
+  }
+
+  if(hier.class?.enabled){
+    html += `
+      <div class="input-icon-group">
+        <select id="${role}_classSelect" class="pill-input" data-hier="class" ${hier.class.required?'required':''}>
+          <option value="">-- Select program first --</option>
+        </select>
+        <i class="fas fa-layer-group"></i>
+      </div>
+    `;
+  }
+
+  if(hier.intake?.enabled){
+    html += `
+      <div class="input-icon-group">
+        <select id="${role}_intakeSelect" class="pill-input" data-hier="intake" ${hier.intake.required?'required':''}>
+          <option value="">-- Select college first --</option>
+        </select>
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+    `;
+  }
+
+  if(hier.studyMode?.enabled){
+    const modes = hier.studyMode.options || ['FULL TIME','ODFL'];
+    html += `
+      <div class="input-icon-group">
+        <select id="${role}_studyModeSelect" class="pill-input" data-hier="studyMode" ${hier.studyMode.required?'required':''}>
+          <option value="">-- ${hier.studyMode.label}${hier.studyMode.required?' *':''} --</option>
+          ${modes.map(m=>`<option value="${m}" ${values.studyMode===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+        <i class="fas fa-clock"></i>
+      </div>
+    `;
+  }
+  return html;
+}
+
+/* ---------- WIRE UP DYNAMIC SELECT CHANGES ---------- */
+function wireHierarchySelects(role){
+  const collegeSel = document.getElementById(`${role}_collegeSelect`);
+  const programSel = document.getElementById(`${role}_programSelect`);
+  const classSel   = document.getElementById(`${role}_classSelect`);
+  const intakeSel  = document.getElementById(`${role}_intakeSelect`);
+
+  if(collegeSel){
+    collegeSel.addEventListener('change', ()=>{
+      const cid = collegeSel.value;
+      const college = REG.colleges[cid];
+      // Populate programs
+      if(programSel){
+        if(!college){
+          programSel.innerHTML = '<option value="">-- Select college first --</option>';
+        } else {
+          const progs = Object.values(college.programs||{});
+          programSel.innerHTML = '<option value="">-- Select program --</option>' +
+            progs.map(p=>`<option value="${p.id}">${p.name}${p.code?' ('+p.code+')':''}</option>`).join('');
+        }
+      }
+      // Populate intakes
+      if(intakeSel){
+        if(!college){
+          intakeSel.innerHTML = '<option value="">-- Select college first --</option>';
+        } else {
+          const intakes = Object.values(college.intakes||{});
+          intakeSel.innerHTML = '<option value="">-- Select intake --</option>' +
+            intakes.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
+        }
+      }
+      // Reset dependent selects
+      if(classSel) classSel.innerHTML = '<option value="">-- Select program first --</option>';
+    });
+  }
+
+  if(programSel){
+    programSel.addEventListener('change', ()=>{
+      const cid = collegeSel?.value;
+      const pid = programSel.value;
+      if(!classSel) return;
+      if(!cid || !pid){
+        classSel.innerHTML = '<option value="">-- Select program first --</option>';
+        return;
+      }
+      const program = REG.colleges[cid]?.programs?.[pid];
+      const classes = Object.values(program?.classes||{});
+      if(classes.length === 0){
+        classSel.innerHTML = '<option value="">No classes available</option>';
+        return;
+      }
+      // Show SHORT CODE as option text (as requested)
+      classSel.innerHTML = '<option value="">-- Select class --</option>' +
+        classes.map(c=>`<option value="${c.id}" title="${c.level}">${c.code} — ${c.level}</option>`).join('');
+    });
+  }
+}
+
+/* ---------- RENDER SIGNUP FORMS ---------- */
+function renderSignupForm(role){
+  const fields = sortFields(REG[role]?.fields).filter(f=>f.enabled);
+  const container = document.getElementById(role==='student'?'studentSignupFields':'lecturerSignupFields');
+  if(!container) return;
+
+  let html = '';
+  // Pair short fields on the same row
+  const shortTypes = ['text','tel','email','nrc','number'];
+  let i = 0;
+  while(i < fields.length){
+    const f = fields[i];
+    const isShort = shortTypes.includes(f.type) && f.type !== 'password' && f.type !== 'email';
+    if(isShort && i+1 < fields.length && shortTypes.includes(fields[i+1].type) && fields[i+1].type !== 'password' && fields[i+1].type !== 'email'){
+      html += `<div class="double-row">
+        ${renderFieldHTML(f, role)}
+        ${renderFieldHTML(fields[i+1], role)}
+      </div>`;
+      i += 2;
+    } else {
+      html += renderFieldHTML(f, role);
+      i++;
+    }
+  }
+  html += renderHierarchySelects(role);
+  container.innerHTML = html;
+
+  // Wire image uploads
+  container.querySelectorAll('.upload-box').forEach(box=>{
+    box.addEventListener('click', async ()=>{
+      try{
+        const url = await openCloudUpload();
+        const hid = document.getElementById(`${box.dataset.role}_${box.dataset.fieldId}`);
+        if(hid) hid.value = url;
+        box.querySelectorAll('img').forEach(x=>x.remove());
+        const img = document.createElement('img');
+        img.src = url;
+        box.appendChild(img);
+        box.classList.add('has-image');
+      }catch(e){ console.warn('Upload failed', e); }
+    });
+  });
+
+  wireHierarchySelects(role);
+}
+
+/* ---------- CAPITALIZE NAME INPUT LIVE ---------- */
+function wireNameCapitalization(role){
+  const container = document.getElementById(role==='student'?'studentSignupFields':'lecturerSignupFields');
+  if(!container) return;
+  ['firstName','middleName','lastName'].forEach(id=>{
+    const inp = document.getElementById(`${role}_${id}`);
+    if(!inp) return;
+    inp.addEventListener('input', ()=>{
+      const pos = inp.selectionStart;
+      inp.value = inp.value.toUpperCase();
+      try { inp.setSelectionRange(pos, pos); } catch(_){}
+    });
+  });
+}
+
+/* ---------- COLLECT FORM DATA ---------- */
+function collectFieldValues(role){
+  const fields = sortFields(REG[role]?.fields).filter(f=>f.enabled);
+  const values = {};
+  const errors = [];
+  const customFields = {};
+
+  fields.forEach(f=>{
+    const el = document.getElementById(`${role}_${f.id}`);
+    if(!el) return;
+    let v = (el.value || '').trim();
+    if(f.type === 'image'){
+      if(!v && f.required) errors.push(`${f.label} is required`);
+      if(v) customFields[f.id] = v;
+      return;
+    }
+    if(['firstName','middleName','lastName'].includes(f.id)) v = v.toUpperCase();
+    if(!v && f.required) errors.push(`${f.label} is required`);
+
+    // Store core fields at top-level for compatibility, everything else in customFields
+    if(['firstName','lastName','phone','email'].includes(f.id)){
+      values[f.id] = v;
+    } else {
+      customFields[f.id] = v;
+    }
+  });
+
+  // Hierarchy
+  const hier = REG[role]?.hierarchy || {};
+  const hierVals = {};
+  ['college','program','class','intake','studyMode'].forEach(k=>{
+    if(!hier[k]?.enabled) return;
+    const key = k==='class'?'classId':k==='intake'?'intakeId':k==='program'?'programId':k==='college'?'collegeId':'studyMode';
+    let el;
+    if(k==='studyMode'){
+      el = document.getElementById(`${role}_studyModeSelect`);
+      hierVals[key] = el?.value || '';
+    } else {
+      el = document.getElementById(`${role}_${k}Select`);
+      hierVals[key] = el?.value || '';
+    }
+    if(hier[k].required && !hierVals[key]){
+      errors.push(`${hier[k].label} is required`);
+    }
+  });
+
+  return { values, customFields: {...customFields, ...hierVals}, errors };
+}
+
+/* ---------- SIGNUP SUBMIT (STUDENT) ---------- */
+document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('signupError');
+  const succEl = document.getElementById('signupSuccessMsg');
+  errEl.innerText = '';
+  succEl.style.display = 'none';
+
+  const { values, customFields, errors } = collectFieldValues('student');
+  if(errors.length){ errEl.innerText = errors.join('\n'); return; }
+
+  const email = values.email || customFields.email || '';
+  const password = customFields.password || '';
+  const confirmPassword = customFields.confirmPassword || '';
+
+  if(!email || !password){ errEl.innerText = 'Email and password are required.'; return; }
+  const emailRe = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+  if(!emailRe.test(email)){ errEl.innerText = 'Enter a valid email address.'; return; }
+  if(password.length < 6){ errEl.innerText = 'Password must be at least 6 characters.'; return; }
+  if(password !== confirmPassword){ errEl.innerText = 'Passwords do not match.'; return; }
+  if(!document.getElementById('termsCheckbox').checked){
+    errEl.innerText = 'You must agree to the Terms & Conditions.';
+    return;
+  }
+
+  const btn = document.getElementById('registerBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+
+    // Build the stored user object
+    const payload = {
+      firstName: values.firstName || '',
+      lastName:  values.lastName  || '',
+      phone:     values.phone     || '',
+      email:     email,
+      customFields,
+      createdAt: serverTimestamp(),
+      role: 'student'
     };
-    const CLOUD_NAME = 'dd3lcymrk';
-    const UPLOAD_PRESET = 'h3eyhc2o';
+    // Remove password/confirmPassword from customFields (never store plaintext password)
+    delete payload.customFields.password;
+    delete payload.customFields.confirmPassword;
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
+    await set(ref(database, `users/${uid}`), payload);
 
-    /* ============================================================
-       GLOBAL TERMS STATE (loaded from Firebase on boot)
-       ============================================================ */
-    let adminTerms = { enabled: true, requireAccept: true, title: 'Terms and Conditions', content: '' };
+    succEl.style.display = 'block';
+    succEl.innerText = 'Registration successful! Please login with your credentials.';
 
-    async function loadAdminTerms() {
-        try {
-            const snap = await get(ref(database, 'system/lecturerTerms'));
-            if (snap.exists()) {
-                adminTerms = Object.assign(adminTerms, snap.val());
-            }
-        } catch (err) {
-            console.warn('Failed to load admin terms:', err);
-        }
-        // Update the terms link text to match admin's title
-        const titleText = (adminTerms.title || 'Terms and Conditions').trim();
-        const linkBtn = document.getElementById('openLecTermsBtn');
-        if (linkBtn) linkBtn.textContent = titleText;
-        const modalTitle = document.getElementById('termsModalTitle');
-        if (modalTitle) modalTitle.innerHTML = `<i class="fas fa-file-contract"></i> ${escapeHtmlClient(titleText)}`;
-    }
-
-    function escapeHtmlClient(str) {
-        if (str == null) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    function openTermsModal() {
-        const overlay = document.getElementById('termsModalOverlay');
-        const body = document.getElementById('termsModalBody');
-        const raw = adminTerms.content || '';
-        // Content may contain simple HTML — allow safe subset, otherwise escape
-        const hasMarkup = /<\/?(p|br|ul|ol|li|h1|h2|h3|h4|h5|h6|strong|em|b|i|u|a|div|span)\b/i.test(raw);
-        body.innerHTML = raw
-            ? (hasMarkup ? raw : escapeHtmlClient(raw).replace(/\n/g, '<br>'))
-            : '';
-        overlay.classList.add('open');
-    }
-
-    function closeTermsModal() {
-        document.getElementById('termsModalOverlay').classList.remove('open');
-    }
-
-    document.getElementById('termsModalCloseBtn').addEventListener('click', closeTermsModal);
-    document.getElementById('termsDeclineBtn').addEventListener('click', closeTermsModal);
-    document.getElementById('termsAcceptBtn').addEventListener('click', () => {
-        // Auto-check the lecturer terms checkbox when user accepts inside the modal
-        const cb = document.getElementById('lecTermsCheckbox');
-        if (cb) cb.checked = true;
-        closeTermsModal();
-    });
-    document.getElementById('termsModalOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'termsModalOverlay') closeTermsModal();
-    });
-    document.getElementById('openLecTermsBtn').addEventListener('click', openTermsModal);
-
-    // Kick off load (non-blocking)
-    loadAdminTerms();
-
-    /* ============================================================
-       SPLIT LANDING — gesture handling
-       ============================================================ */
-    const splitTop      = document.getElementById('splitTop');
-    const splitBottom   = document.getElementById('splitBottom');
-    const studentPanel  = document.getElementById('studentPanel');
-    const lecturerPanel = document.getElementById('lecturerPanel');
-
-    function openStudentPanel() {
-        studentPanel.classList.add('active');
-        lecturerPanel.classList.remove('active');
-        document.body.classList.add('panel-open');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function openLecturerPanel() {
-        lecturerPanel.classList.add('active');
-        studentPanel.classList.remove('active');
-        document.body.classList.add('panel-open');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closePanels() {
-        studentPanel.classList.remove('active');
-        lecturerPanel.classList.remove('active');
-        document.body.classList.remove('panel-open');
-        document.body.style.overflow = '';
-    }
-
-    document.getElementById('backFromStudent').addEventListener('click', closePanels);
-    document.getElementById('backFromLecturer').addEventListener('click', closePanels);
-
-    let activeGesture = null;
-    const SWIPE_THRESHOLD = 45;
-    const DRAG_FEEDBACK = 28;
-
-    function beginGesture(el, dir, clientY) {
-        activeGesture = { el, dir, startY: clientY, lastY: clientY };
-        el.classList.add('drag-active');
-        el.style.transition = 'none';
-    }
-
-    function updateGesture(clientY) {
-        if (!activeGesture) return;
-        const delta = clientY - activeGesture.startY;
-        let feedback = 0;
-        if (activeGesture.dir === 'down' && delta > 0) {
-            feedback = Math.min(DRAG_FEEDBACK, delta * 0.35);
-        } else if (activeGesture.dir === 'up' && delta < 0) {
-            feedback = Math.max(-DRAG_FEEDBACK, delta * 0.35);
-        }
-        activeGesture.el.style.setProperty('--drag-y', feedback + 'px');
-        activeGesture.lastY = clientY;
-    }
-
-    function endGesture() {
-        if (!activeGesture) return;
-        const { el, dir, startY, lastY } = activeGesture;
-        const delta = lastY - startY;
-
-        el.style.transition = '';
-        el.style.removeProperty('--drag-y');
-        el.classList.remove('drag-active');
-
-        if (dir === 'down' && delta > SWIPE_THRESHOLD) {
-            openStudentPanel();
-        } else if (dir === 'up' && delta < -SWIPE_THRESHOLD) {
-            openLecturerPanel();
-        }
-        activeGesture = null;
-    }
-
-    splitTop.addEventListener('touchstart', (e) => {
-        beginGesture(splitTop, 'down', e.touches[0].clientY);
-    }, { passive: true });
-    splitBottom.addEventListener('touchstart', (e) => {
-        beginGesture(splitBottom, 'up', e.touches[0].clientY);
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!activeGesture) return;
-        updateGesture(e.touches[0].clientY);
-    }, { passive: true });
-
-    document.addEventListener('touchend', () => {
-        if (activeGesture) endGesture();
-    }, { passive: true });
-
-    let mouseDown = false;
-    splitTop.addEventListener('mousedown', () => {
-        mouseDown = true;
-        beginGesture(splitTop, 'down', event.clientY);
-    });
-    splitBottom.addEventListener('mousedown', () => {
-        mouseDown = true;
-        beginGesture(splitBottom, 'up', event.clientY);
-    });
-    document.addEventListener('mousemove', (e) => {
-        if (!mouseDown || !activeGesture) return;
-        updateGesture(e.clientY);
-    });
-    document.addEventListener('mouseup', () => {
-        if (mouseDown && activeGesture) endGesture();
-        mouseDown = false;
+    document.getElementById('signupForm').reset();
+    document.getElementById('termsCheckbox').checked = false;
+    // Clear uploaded image previews
+    document.querySelectorAll('#studentSignupFields .upload-box').forEach(b=>{
+      b.classList.remove('has-image');
+      b.querySelectorAll('img').forEach(i=>i.remove());
+      if(!b.querySelector('.upload-icon')){
+        const ico = document.createElement('i');
+        ico.className = 'fas fa-cloud-upload-alt upload-icon';
+        b.prepend(ico);
+        const lbl = document.createElement('span');
+        lbl.className = 'upload-label';
+        lbl.textContent = 'Tap to upload';
+        b.appendChild(lbl);
+      }
     });
 
-    splitTop.addEventListener('click', () => {
-        if (!activeGesture) openStudentPanel();
+    setTimeout(()=>{
+      showLoginPanel();
+      document.getElementById('loginEmail').value = email;
+      succEl.style.display = 'none';
+    }, 1500);
+  }catch(err){
+    let msg = err.message;
+    if(err.code === 'auth/email-already-in-use') msg = 'Email already registered.';
+    else if(err.code === 'auth/weak-password') msg = 'Password too weak.';
+    errEl.innerText = msg;
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
+
+/* ---------- LECTURER SIGNUP SUBMIT ---------- */
+document.getElementById('lecSignupForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('lecSignupError');
+  const succEl = document.getElementById('lecSignupSuccess');
+  errEl.innerText = '';
+  succEl.style.display = 'none';
+
+  const { values, customFields, errors } = collectFieldValues('lecturer');
+  if(errors.length){ errEl.innerText = errors.join('\n'); return; }
+
+  const email = values.email || customFields.email || '';
+  const password = customFields.password || '';
+  const confirmPassword = customFields.confirmPassword || '';
+
+  if(!email || !password){ errEl.innerText = 'Email and password are required.'; return; }
+  const emailRe = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+  if(!emailRe.test(email)){ errEl.innerText = 'Enter a valid email address.'; return; }
+  if(password.length < 6){ errEl.innerText = 'Password must be at least 6 characters.'; return; }
+  if(password !== confirmPassword){ errEl.innerText = 'Passwords do not match.'; return; }
+  if(!document.getElementById('lecTermsCheckbox').checked){
+    errEl.innerText = 'You must agree to the Terms.';
+    return;
+  }
+
+  const btn = document.getElementById('lecRegisterBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+
+    const payload = {
+      firstName: values.firstName || '',
+      lastName:  values.lastName  || '',
+      phone:     values.phone     || '',
+      email:     email,
+      customFields,
+      createdAt: serverTimestamp(),
+      role: 'lecturer',
+      status: 'pending'
+    };
+    delete payload.customFields.password;
+    delete payload.customFields.confirmPassword;
+
+    await set(ref(database, `lecturers/${uid}`), payload);
+
+    succEl.style.display = 'block';
+    succEl.innerText = '✅ Application submitted! Wait for admin approval.';
+    document.getElementById('lecSignupForm').reset();
+    document.getElementById('lecTermsCheckbox').checked = false;
+
+    setTimeout(()=>{
+      showLecLoginPanel();
+      document.getElementById('lecLoginEmail').value = email;
+      succEl.style.display = 'none';
+    }, 1800);
+  }catch(err){
+    let msg = err.message;
+    if(err.code === 'auth/email-already-in-use') msg = 'Email already registered.';
+    else if(err.code === 'auth/weak-password') msg = 'Password too weak.';
+    errEl.innerText = msg;
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
+
+/* ---------- STUDENT LOGIN + PROFILE COMPLETION GATE ---------- */
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('loginError');
+  errEl.innerText = '';
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if(!email || !password){ errEl.innerText = 'Both email and password are required.'; return; }
+
+  const btn = document.getElementById('loginBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+  try{
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const user = cred.user;
+
+    if(email.toLowerCase().startsWith('admin@')){
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    // Load user record
+    const snap = await get(ref(database, `users/${user.uid}`));
+    const userData = snap.val() || {};
+
+    // ---- Auto-capitalize existing names ----
+    const updates = capitalizeNameInDbIfNeeded(userData);
+    if(Object.keys(updates).length > 0){
+      await update(ref(database, `users/${user.uid}`), updates);
+      Object.assign(userData, updates);
+    }
+
+    // ---- Check missing required fields ----
+    const missing = findMissingFields(userData, 'student');
+
+    if(missing.length > 0){
+      PENDING_USER = { user, role: 'student', missing, userData };
+      openCompleteProfileOverlay(user, 'student', missing, userData);
+      return;
+    }
+
+    // All good — redirect
+    window.location.href = 'user.html';
+  }catch(err){
+    let msg = 'Invalid email or password.';
+    if(err.code === 'auth/user-not-found') msg = 'No account found with this email.';
+    else if(err.code === 'auth/wrong-password') msg = 'Incorrect password.';
+    errEl.innerText = msg;
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
+
+/* ---------- LECTURER LOGIN + PROFILE COMPLETION GATE ---------- */
+document.getElementById('lecLoginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('lecLoginError');
+  errEl.innerText = '';
+  const email = document.getElementById('lecLoginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('lecLoginPassword').value;
+  if(!email || !password){ errEl.innerText = 'Both email and password are required.'; return; }
+
+  const btn = document.getElementById('lecLoginBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+  try{
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const user = cred.user;
+
+    const snap = await get(ref(database, `lecturers/${user.uid}`));
+    const data = snap.val();
+    if(!data){
+      errEl.innerText = 'No lecturer record found for this account.';
+      return;
+    }
+    if(data.banned){
+      errEl.innerText = 'Your account has been banned.';
+      return;
+    }
+    if(data.status === 'pending'){
+      errEl.innerText = '⏳ Your application is still under review.';
+      return;
+    }
+    if(data.status === 'rejected'){
+      errEl.innerText = '❌ Your application was rejected.';
+      return;
+    }
+
+    // Capitalize existing names
+    const updates = capitalizeNameInDbIfNeeded(data);
+    if(Object.keys(updates).length > 0){
+      await update(ref(database, `lecturers/${user.uid}`), updates);
+      Object.assign(data, updates);
+    }
+
+    // Check missing required fields
+    const missing = findMissingFields(data, 'lecturer');
+    if(missing.length > 0){
+      PENDING_USER = { user, role: 'lecturer', missing, userData: data };
+      openCompleteProfileOverlay(user, 'lecturer', missing, data);
+      return;
+    }
+
+    // Good to go
+    localStorage.setItem('lecturerUid', user.uid);
+    localStorage.setItem('lecturerEmail', data.email || email);
+    window.location.href = 'dashboard.html';
+  }catch(err){
+    let msg = 'Invalid email or password.';
+    if(err.code === 'auth/user-not-found') msg = 'No account with this email.';
+    else if(err.code === 'auth/wrong-password') msg = 'Incorrect password.';
+    errEl.innerText = msg;
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
+
+/* ---------- FIND MISSING REQUIRED FIELDS ---------- */
+function findMissingFields(userData, role){
+  const fields = sortFields(REG[role]?.fields).filter(f=>f.enabled && f.required);
+  const hier = REG[role]?.hierarchy || {};
+  const custom = userData.customFields || {};
+  const missing = [];
+
+  fields.forEach(f=>{
+    // Skip auth-only fields
+    if(['email','password','confirmPassword'].includes(f.id)) return;
+    // Skip if it's an email field (auth handles it)
+    if(f.type === 'email') return;
+
+    let v;
+    if(['firstName','lastName','phone','email'].includes(f.id)){
+      v = userData[f.id];
+    } else {
+      v = custom[f.id];
+    }
+    if(v === undefined || v === null || String(v).trim() === ''){
+      missing.push({ kind:'field', field:f });
+    }
+  });
+
+  // Hierarchy required
+  ['college','program','class','intake','studyMode'].forEach(k=>{
+    if(!hier[k]?.enabled || !hier[k].required) return;
+    const key = k==='class'?'classId':k==='intake'?'intakeId':k==='program'?'programId':k==='college'?'collegeId':'studyMode';
+    if(!custom[key]){
+      missing.push({ kind:'hier', key, label: hier[k].label, hierKey: k });
+    }
+  });
+
+  return missing;
+}
+
+/* ---------- OPEN COMPLETE-PROFILE OVERLAY ---------- */
+function openCompleteProfileOverlay(user, role, missing, userData){
+  const chipsEl = document.getElementById('missingChipsContainer');
+  chipsEl.innerHTML = missing.map(m=>
+    `<span class="missing-chip"><i class="fas fa-exclamation-circle"></i> ${m.kind==='field'?m.field.label:m.label}</span>`
+  ).join('');
+
+  // Build fields dynamically
+  const custom = userData.customFields || {};
+  const container = document.getElementById('completeProfileFields');
+  let html = '';
+
+  // Pre-fill values where possible
+  const prefill = {};
+  missing.forEach(m=>{
+    if(m.kind === 'field'){
+      const f = m.field;
+      if(['firstName','lastName','phone'].includes(f.id)) prefill[f.id] = userData[f.id] || '';
+      else prefill[f.id] = custom[f.id] || '';
+    }
+  });
+
+  // Render missing custom fields
+  missing.forEach(m=>{
+    if(m.kind === 'field'){
+      html += `<div class="complete-form-block">${renderFieldHTML(m.field, role, prefill)}</div>`;
+    }
+  });
+
+  // Render hierarchy selects if any hier fields missing
+  const hierMissing = missing.filter(m=>m.kind === 'hier');
+  if(hierMissing.length > 0){
+    const prefillHier = {
+      collegeId: custom.collegeId,
+      programId: custom.programId,
+      classId: custom.classId,
+      intakeId: custom.intakeId,
+      studyMode: custom.studyMode
+    };
+    html += `<div class="complete-form-block">${renderHierarchySelects(role, prefillHier)}</div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Wire uploads
+  container.querySelectorAll('.upload-box').forEach(box=>{
+    box.addEventListener('click', async ()=>{
+      try{
+        const url = await openCloudUpload();
+        const hid = document.getElementById(`${box.dataset.role}_${box.dataset.fieldId}`);
+        if(hid) hid.value = url;
+        box.querySelectorAll('img').forEach(x=>x.remove());
+        const img = document.createElement('img');
+        img.src = url;
+        box.appendChild(img);
+        box.classList.add('has-image');
+      }catch(e){ console.warn(e); }
     });
-    splitBottom.addEventListener('click', () => {
-        if (!activeGesture) openLecturerPanel();
-    });
+  });
 
-    /* ============================================================
-       HELPERS
-       ============================================================ */
-    function setButtonLoading(button, isLoading, originalHtml) {
-        if (isLoading) {
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        } else {
-            button.disabled = false;
-            button.innerHTML = originalHtml;
+  // Wire hierarchy
+  wireHierarchySelects(role);
+
+  // Set pre-existing hierarchy values
+  setTimeout(()=>{
+    const collegeSel = document.getElementById(`${role}_collegeSelect`);
+    if(collegeSel && custom.collegeId){
+      collegeSel.value = custom.collegeId;
+      collegeSel.dispatchEvent(new Event('change'));
+      setTimeout(()=>{
+        const progSel = document.getElementById(`${role}_programSelect`);
+        if(progSel && custom.programId){
+          progSel.value = custom.programId;
+          progSel.dispatchEvent(new Event('change'));
+          setTimeout(()=>{
+            const clSel = document.getElementById(`${role}_classSelect`);
+            if(clSel && custom.classId) clSel.value = custom.classId;
+          }, 100);
         }
+        const intSel = document.getElementById(`${role}_intakeSelect`);
+        if(intSel && custom.intakeId) intSel.value = custom.intakeId;
+      }, 100);
     }
+    const smSel = document.getElementById(`${role}_studyModeSelect`);
+    if(smSel && custom.studyMode) smSel.value = custom.studyMode;
+  }, 50);
 
-    function openCloudUpload(opts) {
-        return new Promise((resolve, reject) => {
-            const o = Object.assign({
-                cloudName: CLOUD_NAME,
-                uploadPreset: UPLOAD_PRESET,
-                sources: ['local', 'url'],
-                maxFileSize: 155000000,
-                maxFiles: 1
-            }, opts || {});
-            cloudinary.openUploadWidget(o, (err, res) => {
-                if (err) return reject(err);
-                if (res.event === 'success') resolve(res.info.secure_url);
-            });
-        });
-    }
+  document.getElementById('completeProfileError').innerText = '';
+  document.getElementById('completeProfileOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-    function wireUploadBox(boxId, hiddenId, errEl) {
-        const box = document.getElementById(boxId);
-        const hid = document.getElementById(hiddenId);
-        if (!box || !hid) return;
-        box.addEventListener('click', async () => {
-            try {
-                const url = await openCloudUpload({
-                    resourceType: 'image',
-                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp']
-                });
-                hid.value = url;
-                box.querySelectorAll('img').forEach(i => i.remove());
-                const img = document.createElement('img');
-                img.src = url;
-                box.appendChild(img);
-                box.classList.add('has-image');
-            } catch (e) {
-                if (errEl) errEl.innerText = 'Upload failed: ' + (e.message || e);
-            }
-        });
-    }
+/* ---------- SUBMIT COMPLETE PROFILE ---------- */
+document.getElementById('completeProfileForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!PENDING_USER){ return; }
+  const errEl = document.getElementById('completeProfileError');
+  errEl.innerText = '';
 
-    /* ============================================================
-       STUDENT PANEL
-       ============================================================ */
-    const loginPanel  = document.getElementById('loginPanel');
-    const signupPanel = document.getElementById('signupPanel');
-    const forgotPanel = document.getElementById('forgotPanel');
+  const { user, role, userData } = PENDING_USER;
+  const { values, customFields, errors } = collectFieldValues(role);
+  if(errors.length){ errEl.innerText = errors.join('\n'); return; }
 
-    const segmentsBar = document.getElementById('authSegments');
-    const segLogin    = document.getElementById('segLogin');
-    const segSignup   = document.getElementById('segSignup');
+  const btn = document.getElementById('completeProfileBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-    const loginForm      = document.getElementById('loginForm');
-    const loginEmail     = document.getElementById('loginEmail');
-    const loginPassword  = document.getElementById('loginPassword');
-    const loginErrorSpan = document.getElementById('loginError');
-    const loginBtn       = document.getElementById('loginBtn');
+  try{
+    // Build merged customFields (preserve existing, overwrite new)
+    const existingCustom = userData.customFields || {};
+    const mergedCustom = { ...existingCustom };
+    Object.entries(customFields).forEach(([k,v])=>{ if(v !== '' && v !== undefined) mergedCustom[k] = v; });
 
-    const signupForm        = document.getElementById('signupForm');
-    const firstName         = document.getElementById('firstName');
-    const lastName          = document.getElementById('lastName');
-    const phoneNumber       = document.getElementById('phoneNumber');
-    const signupEmail       = document.getElementById('signupEmail');
-    const signupPassword    = document.getElementById('signupPassword');
-    const confirmPassword   = document.getElementById('confirmPassword');
-    const termsCheckbox     = document.getElementById('termsCheckbox');
-    const signupErrorSpan   = document.getElementById('signupError');
-    const signupSuccessSpan = document.getElementById('signupSuccessMsg');
-    const registerBtn       = document.getElementById('registerBtn');
+    const updatePath = role === 'student' ? `users/${user.uid}` : `lecturers/${user.uid}`;
+    const updates = { customFields: mergedCustom };
 
-    const forgotPwdBtn             = document.getElementById('forgotPwdBtn');
-    const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
-    const sendResetLinkBtn         = document.getElementById('sendResetLinkBtn');
-    const resetEmailInput          = document.getElementById('resetEmailInput');
-    const resetErrorSpan           = document.getElementById('resetError');
-
-    function hideAllPanels() {
-        loginPanel.classList.add('hidden-panel');
-        signupPanel.classList.add('hidden-panel');
-        forgotPanel.classList.add('hidden-panel');
-    }
-
-    function setActiveSegment(which) {
-        if (!segmentsBar) return;
-        segmentsBar.setAttribute('data-active', which);
-        if (which === 'login') {
-            segLogin.classList.add('active');
-            segSignup.classList.remove('active');
-        } else {
-            segSignup.classList.add('active');
-            segLogin.classList.remove('active');
-        }
-    }
-
-    function showLoginPanel() {
-        hideAllPanels();
-        loginPanel.classList.remove('hidden-panel');
-        segmentsBar.classList.remove('hidden-panel');
-        setActiveSegment('login');
-        signupSuccessSpan.style.display = 'none';
-        signupErrorSpan.innerText = '';
-        loginErrorSpan.innerText = '';
-        resetErrorSpan.innerText = '';
-    }
-
-    function showSignupPanel() {
-        hideAllPanels();
-        signupPanel.classList.remove('hidden-panel');
-        segmentsBar.classList.remove('hidden-panel');
-        setActiveSegment('signup');
-        loginErrorSpan.innerText = '';
-        signupErrorSpan.innerText = '';
-        signupSuccessSpan.style.display = 'none';
-    }
-
-    function showForgotPanel() {
-        hideAllPanels();
-        forgotPanel.classList.remove('hidden-panel');
-        segmentsBar.classList.add('hidden-panel');
-        resetEmailInput.value = '';
-        resetErrorSpan.innerText = '';
-        resetErrorSpan.style.color = '#ff3b30';
-    }
-
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        signupErrorSpan.innerText = '';
-        signupSuccessSpan.style.display = 'none';
-
-        const fName      = firstName.value.trim();
-        const lName      = lastName.value.trim();
-        const phone      = phoneNumber.value.trim();
-        const email      = signupEmail.value.trim();
-        const pwd        = signupPassword.value;
-        const confirmPwd = confirmPassword.value;
-        const termsOk    = termsCheckbox.checked;
-
-        if (!fName || !lName || !phone || !email || !pwd || !confirmPwd) {
-            signupErrorSpan.innerText = 'All fields are required.';
-            return;
-        }
-        const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s\-']+$/;
-        if (!nameRegex.test(fName)) { signupErrorSpan.innerText = 'First name must contain only letters.'; return; }
-        if (!nameRegex.test(lName)) { signupErrorSpan.innerText = 'Last name must contain only letters.'; return; }
-        const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
-        if (!phoneRegex.test(phone)) { signupErrorSpan.innerText = 'Enter a valid phone number (8-20 digits).'; return; }
-        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if (!emailRegex.test(email)) { signupErrorSpan.innerText = 'Enter a valid email address.'; return; }
-        if (pwd.length < 6) { signupErrorSpan.innerText = 'Password must be at least 6 characters.'; return; }
-        if (pwd !== confirmPwd) { signupErrorSpan.innerText = 'Passwords do not match.'; return; }
-        if (!termsOk) { signupErrorSpan.innerText = 'You must agree to the Terms & Conditions.'; return; }
-
-        const originalText = registerBtn.innerHTML;
-        setButtonLoading(registerBtn, true, originalText);
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
-            const user = userCredential.user;
-
-            await set(ref(database, `users/${user.uid}`), {
-                firstName: fName,
-                lastName: lName,
-                phone: phone,
-                email: email,
-                createdAt: serverTimestamp()
-            });
-
-            signupSuccessSpan.style.display = 'block';
-            signupSuccessSpan.innerText = 'Registration successful! Please login with your credentials.';
-            signupForm.reset();
-            termsCheckbox.checked = false;
-
-            setTimeout(() => {
-                showLoginPanel();
-                loginEmail.value = email;
-                loginPassword.value = '';
-                signupSuccessSpan.style.display = 'none';
-            }, 1500);
-        } catch (error) {
-            let errorMsg = error.message;
-            if (error.code === 'auth/email-already-in-use') errorMsg = 'Email already registered.';
-            else if (error.code === 'auth/weak-password') errorMsg = 'Password too weak.';
-            else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
-            signupErrorSpan.innerText = errorMsg;
-        } finally {
-            setButtonLoading(registerBtn, false, originalText);
-        }
-    });
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        loginErrorSpan.innerText = '';
-        const email = loginEmail.value.trim();
-        const password = loginPassword.value;
-        if (!email || !password) {
-            loginErrorSpan.innerText = 'Both email and password are required.';
-            return;
-        }
-        const originalLoginHtml = loginBtn.innerHTML;
-        setButtonLoading(loginBtn, true, originalLoginHtml);
-
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            if (email.toLowerCase().startsWith('admin@')) {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'user.html';
-            }
-        } catch (error) {
-            let errorMsg = 'Invalid email or password.';
-            if (error.code === 'auth/user-not-found') errorMsg = 'No account found.';
-            if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password.';
-            loginErrorSpan.innerText = errorMsg;
-        } finally {
-            setButtonLoading(loginBtn, false, originalLoginHtml);
-        }
-    });
-
-    forgotPwdBtn.addEventListener('click', showForgotPanel);
-    backToLoginFromForgotBtn.addEventListener('click', showLoginPanel);
-
-    sendResetLinkBtn.addEventListener('click', async () => {
-        const email = resetEmailInput.value.trim();
-        resetErrorSpan.innerText = '';
-        if (!email) { resetErrorSpan.innerText = 'Please enter your email address.'; return; }
-        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if (!emailRegex.test(email)) { resetErrorSpan.innerText = 'Enter a valid email address.'; return; }
-
-        const originalBtnText = sendResetLinkBtn.innerHTML;
-        setButtonLoading(sendResetLinkBtn, true, originalBtnText);
-
-        try {
-            await sendPasswordResetEmail(auth, email);
-            resetErrorSpan.style.color = '#1f8a3b';
-            resetErrorSpan.innerText = '✅ Password reset email sent!';
-            setTimeout(() => {
-                showLoginPanel();
-                resetErrorSpan.style.color = '#ff3b30';
-                resetErrorSpan.innerText = '';
-            }, 2500);
-        } catch (error) {
-            let errorMsg = 'Failed to send reset email.';
-            if (error.code === 'auth/user-not-found') errorMsg = 'No account found.';
-            resetErrorSpan.style.color = '#ff3b30';
-            resetErrorSpan.innerText = errorMsg;
-        } finally {
-            setButtonLoading(sendResetLinkBtn, false, originalBtnText);
-        }
-    });
-
-    segLogin.addEventListener('click', showLoginPanel);
-    segSignup.addEventListener('click', showSignupPanel);
-
-    /* ============================================================
-       LECTURER PANEL
-       ============================================================ */
-    const lecSegmentsBar = document.getElementById('lecSegments');
-    const lecSegLogin    = document.getElementById('lecSegLogin');
-    const lecSegSignup   = document.getElementById('lecSegSignup');
-    const lecLoginPanel  = document.getElementById('lecLoginPanel');
-    const lecSignupPanel = document.getElementById('lecSignupPanel');
-
-    function setLecSegment(which) {
-        lecSegmentsBar.setAttribute('data-active', which);
-        if (which === 'login') {
-            lecSegLogin.classList.add('active');
-            lecSegSignup.classList.remove('active');
-            lecLoginPanel.classList.remove('hidden-panel');
-            lecSignupPanel.classList.add('hidden-panel');
-        } else {
-            lecSegSignup.classList.add('active');
-            lecSegLogin.classList.remove('active');
-            lecSignupPanel.classList.remove('hidden-panel');
-            lecLoginPanel.classList.add('hidden-panel');
-        }
-    }
-
-    lecSegLogin.addEventListener('click', () => setLecSegment('login'));
-    lecSegSignup.addEventListener('click', () => setLecSegment('signup'));
-    document.getElementById('lecGoSignupBtn').addEventListener('click', () => setLecSegment('signup'));
-
-    const lecName           = document.getElementById('lecName');
-    const lecEmail          = document.getElementById('lecEmail');
-    const lecPhone          = document.getElementById('lecPhone');
-    const lecNrc            = document.getElementById('lecNrc');
-    const lecCollege        = document.getElementById('lecCollege');
-    const lecCity           = document.getElementById('lecCity');
-    const lecTown           = document.getElementById('lecTown');
-    const lecAddress        = document.getElementById('lecAddress');
-    const lecPassword       = document.getElementById('lecPassword');
-    const lecConfirmPassword= document.getElementById('lecConfirmPassword');
-    const lecTermsCheckbox  = document.getElementById('lecTermsCheckbox');
-    const lecProfileUrl     = document.getElementById('lecProfileUrl');
-    const lecNrcFrontUrl    = document.getElementById('lecNrcFrontUrl');
-    const lecNrcBackUrl     = document.getElementById('lecNrcBackUrl');
-    const lecCertUrl        = document.getElementById('lecCertUrl');
-    const lecDegreeUrl      = document.getElementById('lecDegreeUrl');
-    const lecSignupError    = document.getElementById('lecSignupError');
-    const lecSignupSuccess  = document.getElementById('lecSignupSuccess');
-    const lecRegisterBtn    = document.getElementById('lecRegisterBtn');
-
-    // Wire all upload boxes in lecturer signup
-    wireUploadBox('lecProfileUpload', 'lecProfileUrl', lecSignupError);
-    wireUploadBox('lecNrcFrontUpload', 'lecNrcFrontUrl', lecSignupError);
-    wireUploadBox('lecNrcBackUpload', 'lecNrcBackUrl', lecSignupError);
-    wireUploadBox('lecCertUpload', 'lecCertUrl', lecSignupError);
-    wireUploadBox('lecDegreeUpload', 'lecDegreeUrl', lecSignupError);
-
-    document.getElementById('lecSignupForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        lecSignupError.innerText = '';
-        lecSignupSuccess.style.display = 'none';
-
-        const name = lecName.value.trim();
-        const email = lecEmail.value.trim().toLowerCase();
-        const phone = lecPhone.value.trim();
-        const nrc = lecNrc.value.trim();
-        const collegeName = lecCollege.value.trim();
-        const city = lecCity.value.trim();
-        const town = lecTown.value.trim();
-        const address = lecAddress.value.trim();
-        const pwd = lecPassword.value;
-        const confirmPwd = lecConfirmPassword.value;
-        const profileUrl = lecProfileUrl.value;
-        const nrcFront = lecNrcFrontUrl.value;
-        const nrcBack = lecNrcBackUrl.value;
-        const certificateUrl = lecCertUrl.value;
-        const degreeUrl = lecDegreeUrl.value;
-        const termsOk = lecTermsCheckbox.checked;
-
-        if (!name || !email || !phone || !nrc || !collegeName || !city || !pwd || !confirmPwd) {
-            lecSignupError.innerText = 'Please fill in all required fields.';
-            return;
-        }
-        const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
-        if (!emailRegex.test(email)) { lecSignupError.innerText = 'Enter a valid email address.'; return; }
-        const phoneRegex = /^[\+\d\s\-\(\)]{8,20}$/;
-        if (!phoneRegex.test(phone)) { lecSignupError.innerText = 'Enter a valid phone number.'; return; }
-        if (pwd.length < 6) { lecSignupError.innerText = 'Password must be at least 6 characters.'; return; }
-        if (pwd !== confirmPwd) { lecSignupError.innerText = 'Passwords do not match.'; return; }
-        if (!profileUrl) { lecSignupError.innerText = 'Please upload your profile picture.'; return; }
-        if (!nrcFront || !nrcBack) { lecSignupError.innerText = 'Please upload both NRC images.'; return; }
-        if (!certificateUrl || !degreeUrl) { lecSignupError.innerText = 'Please upload both your Teaching Certificate and Degree/Diploma.'; return; }
-        if (!termsOk) { lecSignupError.innerText = 'You must agree to the Lecturer Terms & Conditions.'; return; }
-
-        const originalText = lecRegisterBtn.innerHTML;
-        setButtonLoading(lecRegisterBtn, true, originalText);
-
-        try {
-            const snap = await get(ref(database, 'lecturers'));
-            const data = snap.val() || {};
-            const duplicate = Object.values(data).find(l => (l.email || '').toLowerCase() === email);
-            if (duplicate) {
-                lecSignupError.innerText = 'This email is already registered as a lecturer.';
-                setButtonLoading(lecRegisterBtn, false, originalText);
-                return;
-            }
-
-            const uid = 'lec_' + email.replace(/[^a-z0-9]/g, '_');
-            await set(ref(database, `lecturers/${uid}`), {
-                name, email, phone,
-                nrcNumber: nrc,
-                collegeName, city, town, address,
-                password: pwd,
-                profileUrl,
-                nrcFront,
-                nrcBack,
-                certificateUrl,
-                degreeUrl,
-                status: 'pending',
-                paymentStatus: 'unpaid',
-                banned: false,
-                appliedAt: Date.now()
-            });
-
-            lecSignupSuccess.style.display = 'block';
-            lecSignupSuccess.innerText = '✅ Application submitted! Wait for admin approval before signing in.';
-            document.getElementById('lecSignupForm').reset();
-            lecTermsCheckbox.checked = false;
-            lecProfileUrl.value = '';
-            lecNrcFrontUrl.value = '';
-            lecNrcBackUrl.value = '';
-            lecCertUrl.value = '';
-            lecDegreeUrl.value = '';
-            ['lecProfileUpload', 'lecNrcFrontUpload', 'lecNrcBackUpload', 'lecCertUpload', 'lecDegreeUpload'].forEach(id => {
-                const box = document.getElementById(id);
-                box.querySelectorAll('img').forEach(i => i.remove());
-                box.classList.remove('has-image');
-            });
-
-            setTimeout(() => {
-                setLecSegment('login');
-                lecSignupSuccess.style.display = 'none';
-                document.getElementById('lecLoginEmail').value = email;
-            }, 1800);
-
-        } catch (err) {
-            lecSignupError.innerText = 'Error: ' + (err.message || err);
-        } finally {
-            setButtonLoading(lecRegisterBtn, false, originalText);
-        }
+    // Also mirror core name/phone fields to top-level (uppercase)
+    ['firstName','lastName','phone'].forEach(k=>{
+      if(values[k]){
+        updates[k] = k === 'phone' ? values[k] : values[k].toUpperCase();
+      }
     });
 
-    /* ============================================================
-       LECTURER LOGIN + PROFILE COMPLETION GATE
-       ============================================================ */
-    const lecLoginForm     = document.getElementById('lecLoginForm');
-    const lecLoginEmail    = document.getElementById('lecLoginEmail');
-    const lecLoginPassword = document.getElementById('lecLoginPassword');
-    const lecLoginError    = document.getElementById('lecLoginError');
-    const lecLoginBtn      = document.getElementById('lecLoginBtn');
+    await update(ref(database, updatePath), updates);
 
-    // Fields required for full access on dashboard.html
-    const REQUIRED_PROFILE_FIELDS = [
-        { key: 'profileUrl',      label: 'Profile picture' },
-        { key: 'nrcFront',        label: 'NRC Front' },
-        { key: 'nrcBack',         label: 'NRC Back' },
-        { key: 'certificateUrl',  label: 'Teaching Certificate' },
-        { key: 'degreeUrl',       label: 'Degree / Diploma' },
-        { key: 'collegeName',     label: 'College / University' },
-        { key: 'city',            label: 'City' }
-    ];
-
-    function getMissingProfileFields(lecturer) {
-        if (!lecturer) return [];
-        const missing = [];
-        REQUIRED_PROFILE_FIELDS.forEach(f => {
-            const v = lecturer[f.key];
-            if (v === undefined || v === null || String(v).trim() === '') {
-                missing.push({ key: f.key, label: f.label });
-            }
-        });
-        return missing;
+    // Verify nothing is still missing
+    const merged = { ...userData, ...updates };
+    const stillMissing = findMissingFields(merged, role);
+    if(stillMissing.length > 0){
+      errEl.innerText = 'Still missing: ' + stillMissing.map(m=>m.kind==='field'?m.field.label:m.label).join(', ');
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      return;
     }
 
-    let pendingLecturerUid = null;
+    document.getElementById('completeProfileOverlay').classList.remove('open');
+    document.body.style.overflow = '';
 
-    function openCompleteProfileOverlay(lecturer, missing) {
-        pendingLecturerUid = lecturer.uid;
-
-        // Render missing chips
-        const chips = document.getElementById('missingChipsContainer');
-        chips.innerHTML = missing.map(m =>
-            `<span class="missing-chip"><i class="fas fa-exclamation-circle"></i> ${escapeHtmlClient(m.label)}</span>`
-        ).join('');
-
-        // Prefill personal fields
-        document.getElementById('cpName').value = lecturer.name || '';
-        document.getElementById('cpPhone').value = lecturer.phone || '';
-        document.getElementById('cpNrc').value = lecturer.nrcNumber || '';
-        document.getElementById('cpCollege').value = lecturer.collegeName || '';
-        document.getElementById('cpCity').value = lecturer.city || '';
-        document.getElementById('cpTown').value = lecturer.town || '';
-        document.getElementById('cpAddress').value = lecturer.address || '';
-
-        // Reset uploads
-        document.getElementById('cpProfileUrl').value = '';
-        document.getElementById('cpNrcFrontUrl').value = '';
-        document.getElementById('cpNrcBackUrl').value = '';
-        document.getElementById('cpCertUrl').value = '';
-        document.getElementById('cpDegreeUrl').value = '';
-        ['cpProfileUpload','cpNrcFrontUpload','cpNrcBackUpload','cpCertUpload','cpDegreeUpload'].forEach(id => {
-            const box = document.getElementById(id);
-            if (!box) return;
-            box.querySelectorAll('img').forEach(i => i.remove());
-            box.classList.remove('has-image');
-        });
-
-        document.getElementById('completeProfileError').innerText = '';
-        document.getElementById('completeProfileOverlay').classList.add('open');
-        document.body.style.overflow = 'hidden';
+    if(role === 'lecturer'){
+      localStorage.setItem('lecturerUid', user.uid);
+      localStorage.setItem('lecturerEmail', merged.email || '');
+      window.location.href = 'dashboard.html';
+    } else {
+      window.location.href = 'user.html';
     }
+  }catch(err){
+    errEl.innerText = 'Save failed: ' + err.message;
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
 
-    function closeCompleteProfileOverlay() {
-        document.getElementById('completeProfileOverlay').classList.remove('open');
-    }
+document.getElementById('completeProfileLogoutBtn').addEventListener('click', async ()=>{
+  PENDING_USER = null;
+  await signOut(auth);
+  document.getElementById('completeProfileOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  showLoginPanel();
+});
 
-    // Wire upload boxes in complete-profile overlay
-    wireUploadBox('cpProfileUpload', 'cpProfileUrl', document.getElementById('completeProfileError'));
-    wireUploadBox('cpNrcFrontUpload', 'cpNrcFrontUrl', document.getElementById('completeProfileError'));
-    wireUploadBox('cpNrcBackUpload', 'cpNrcBackUrl', document.getElementById('completeProfileError'));
-    wireUploadBox('cpCertUpload', 'cpCertUrl', document.getElementById('completeProfileError'));
-    wireUploadBox('cpDegreeUpload', 'cpDegreeUrl', document.getElementById('completeProfileError'));
+/* ---------- SEGMENTED PANEL LOGIC ---------- */
+const loginPanel   = document.getElementById('loginPanel');
+const signupPanel  = document.getElementById('signupPanel');
+const forgotPanel  = document.getElementById('forgotPanel');
+const authSegments = document.getElementById('authSegments');
+const segLogin     = document.getElementById('segLogin');
+const segSignup    = document.getElementById('segSignup');
 
-    document.getElementById('completeProfileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errEl = document.getElementById('completeProfileError');
-        errEl.innerText = '';
+function hideAllPanels(){
+  loginPanel.classList.add('hidden-panel');
+  signupPanel.classList.add('hidden-panel');
+  forgotPanel.classList.add('hidden-panel');
+}
+function setActiveSegment(which){
+  authSegments.setAttribute('data-active', which);
+  if(which==='login'){ segLogin.classList.add('active'); segSignup.classList.remove('active'); }
+  else{ segSignup.classList.add('active'); segLogin.classList.remove('active'); }
+}
+function showLoginPanel(){
+  hideAllPanels();
+  loginPanel.classList.remove('hidden-panel');
+  authSegments.classList.remove('hidden-panel');
+  setActiveSegment('login');
+}
+function showSignupPanel(){
+  hideAllPanels();
+  signupPanel.classList.remove('hidden-panel');
+  authSegments.classList.remove('hidden-panel');
+  setActiveSegment('signup');
+  renderSignupForm('student');
+  wireNameCapitalization('student');
+}
+function showForgotPanel(){
+  hideAllPanels();
+  forgotPanel.classList.remove('hidden-panel');
+  authSegments.classList.add('hidden-panel');
+}
+segLogin.addEventListener('click', showLoginPanel);
+segSignup.addEventListener('click', showSignupPanel);
+document.getElementById('forgotPwdBtn').addEventListener('click', showForgotPanel);
+document.getElementById('backToLoginFromForgotBtn').addEventListener('click', showLoginPanel);
 
-        if (!pendingLecturerUid) {
-            errEl.innerText = 'Session expired. Please sign in again.';
-            return;
-        }
+document.getElementById('sendResetLinkBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('resetEmailInput').value.trim();
+  const errEl = document.getElementById('resetError');
+  errEl.innerText = '';
+  if(!email){ errEl.innerText = 'Enter your email address.'; return; }
+  const btn = document.getElementById('sendResetLinkBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  try{
+    await sendPasswordResetEmail(auth, email);
+    errEl.style.color = '#1f8a3b';
+    errEl.innerText = '✅ Reset email sent!';
+    setTimeout(showLoginPanel, 2200);
+  }catch(err){
+    errEl.style.color = '#ff3b30';
+    errEl.innerText = 'Failed to send reset email.';
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+});
 
-        const name = document.getElementById('cpName').value.trim();
-        const phone = document.getElementById('cpPhone').value.trim();
-        const nrc = document.getElementById('cpNrc').value.trim();
-        const collegeName = document.getElementById('cpCollege').value.trim();
-        const city = document.getElementById('cpCity').value.trim();
-        const town = document.getElementById('cpTown').value.trim();
-        const address = document.getElementById('cpAddress').value.trim();
-        const profileUrl = document.getElementById('cpProfileUrl').value;
-        const nrcFront = document.getElementById('cpNrcFrontUrl').value;
-        const nrcBack = document.getElementById('cpNrcBackUrl').value;
-        const certUrl = document.getElementById('cpCertUrl').value;
-        const degreeUrl = document.getElementById('cpDegreeUrl').value;
+/* ---------- LECTURER SEGMENTS ---------- */
+const lecSegments = document.getElementById('lecSegments');
+const lecLoginPanel = document.getElementById('lecLoginPanel');
+const lecSignupPanel= document.getElementById('lecSignupPanel');
+function setLecSegment(which){
+  lecSegments.setAttribute('data-active', which);
+  document.getElementById('lecSegLogin').classList.toggle('active', which==='login');
+  document.getElementById('lecSegSignup').classList.toggle('active', which==='signup');
+  lecLoginPanel.classList.toggle('hidden-panel', which!=='login');
+  lecSignupPanel.classList.toggle('hidden-panel', which!=='signup');
+  if(which==='signup'){
+    renderSignupForm('lecturer');
+    wireNameCapitalization('lecturer');
+  }
+}
+document.getElementById('lecSegLogin').addEventListener('click', ()=>setLecSegment('login'));
+document.getElementById('lecSegSignup').addEventListener('click', ()=>setLecSegment('signup'));
+document.getElementById('lecGoSignupBtn').addEventListener('click', ()=>setLecSegment('signup'));
+function showLecLoginPanel(){ setLecSegment('login'); }
 
-        if (!name || !phone || !nrc || !collegeName || !city) {
-            errEl.innerText = 'Please fill in all required fields.';
-            return;
-        }
+/* ---------- SPLIT PANEL ---------- */
+const studentPanel  = document.getElementById('studentPanel');
+const lecturerPanel = document.getElementById('lecturerPanel');
 
-        const btn = document.getElementById('completeProfileBtn');
-        const originalText = btn.innerHTML;
-        setButtonLoading(btn, true, originalText);
+function openStudentPanel(){
+  studentPanel.classList.add('active');
+  lecturerPanel.classList.remove('active');
+  document.body.classList.add('panel-open');
+  document.body.style.overflow = 'hidden';
+}
+function openLecturerPanel(){
+  lecturerPanel.classList.add('active');
+  studentPanel.classList.remove('active');
+  document.body.classList.add('panel-open');
+  document.body.style.overflow = 'hidden';
+}
+function closePanels(){
+  studentPanel.classList.remove('active');
+  lecturerPanel.classList.remove('active');
+  document.body.classList.remove('panel-open');
+  document.body.style.overflow = '';
+}
+document.getElementById('backFromStudent').addEventListener('click', closePanels);
+document.getElementById('backFromLecturer').addEventListener('click', closePanels);
 
-        try {
-            const updatePayload = {
-                name, phone, nrcNumber: nrc,
-                collegeName, city, town, address,
-                profileCompletedAt: Date.now()
-            };
-            if (profileUrl)  updatePayload.profileUrl = profileUrl;
-            if (nrcFront)    updatePayload.nrcFront = nrcFront;
-            if (nrcBack)     updatePayload.nrcBack = nrcBack;
-            if (certUrl)     updatePayload.certificateUrl = certUrl;
-            if (degreeUrl)   updatePayload.degreeUrl = degreeUrl;
+const splitTop = document.getElementById('splitTop');
+const splitBottom = document.getElementById('splitBottom');
+splitTop.addEventListener('click', openStudentPanel);
+splitBottom.addEventListener('click', openLecturerPanel);
 
-            await update(ref(database, `lecturers/${pendingLecturerUid}`), updatePayload);
+/* ---------- BOOT ---------- */
+(async ()=>{
+  await loadRegistrationConfig();
+  renderSignupForm('student');
+  renderSignupForm('lecturer');
+  wireNameCapitalization('student');
+  wireNameCapitalization('lecturer');
+})();
 
-            // Verify nothing is missing now
-            const verifySnap = await get(ref(database, `lecturers/${pendingLecturerUid}`));
-            const lecturer = { uid: pendingLecturerUid, ...(verifySnap.val() || {}) };
-            const stillMissing = getMissingProfileFields(lecturer);
-
-            if (stillMissing.length > 0) {
-                errEl.innerText = 'Still missing: ' + stillMissing.map(m => m.label).join(', ');
-                setButtonLoading(btn, false, originalText);
-                return;
-            }
-
-            closeCompleteProfileOverlay();
-            localStorage.setItem('lecturerUid', pendingLecturerUid);
-            localStorage.setItem('lecturerEmail', lecturer.email || '');
-            window.location.href = 'dashboard.html';
-
-        } catch (err) {
-            errEl.innerText = 'Error saving profile: ' + (err.message || err);
-            setButtonLoading(btn, false, originalText);
-        }
-    });
-
-    document.getElementById('completeProfileLogoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('lecturerUid');
-        localStorage.removeItem('lecturerEmail');
-        pendingLecturerUid = null;
-        closeCompleteProfileOverlay();
-        document.body.style.overflow = '';
-        lecLoginForm.reset();
-    });
-
-    lecLoginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        lecLoginError.innerText = '';
-        const email = lecLoginEmail.value.trim().toLowerCase();
-        const pwd = lecLoginPassword.value;
-
-        if (!email || !pwd) {
-            lecLoginError.innerText = 'Both email and password are required.';
-            return;
-        }
-
-        const originalHtml = lecLoginBtn.innerHTML;
-        setButtonLoading(lecLoginBtn, true, originalHtml);
-
-        try {
-            const snap = await get(ref(database, 'lecturers'));
-            const data = snap.val() || {};
-            let match = null;
-            Object.entries(data).forEach(([uid, l]) => {
-                if ((l.email || '').toLowerCase() === email) match = { uid, ...l };
-            });
-
-            if (!match) {
-                lecLoginError.innerText = 'No lecturer account found with this email.';
-                return;
-            }
-            if (match.password !== pwd) {
-                lecLoginError.innerText = 'Incorrect password.';
-                return;
-            }
-            if (match.banned) {
-                lecLoginError.innerText = 'Your account has been banned. Reason: ' + (match.banReason || 'Contact admin.');
-                return;
-            }
-            if (match.status === 'pending') {
-                lecLoginError.innerText = '⏳ Your application is still under review. Please wait for admin approval.';
-                return;
-            }
-            if (match.status === 'rejected') {
-                lecLoginError.innerText = '❌ Your application was rejected. Reason: ' + (match.rejectionReason || 'Contact admin for details.');
-                return;
-            }
-            if (match.status !== 'approved') {
-                lecLoginError.innerText = 'Account is not active. Contact admin.';
-                return;
-            }
-
-            // === PROFILE COMPLETION GATE ===
-            const missing = getMissingProfileFields(match);
-            if (missing.length > 0) {
-                // Show overlay so they can fill in what's missing before we let them in
-                openCompleteProfileOverlay(match, missing);
-                return;
-            }
-
-            // All good — proceed to dashboard
-            localStorage.setItem('lecturerUid', match.uid);
-            localStorage.setItem('lecturerEmail', email);
-            window.location.href = 'dashboard.html';
-
-        } catch (err) {
-            lecLoginError.innerText = 'Login error: ' + (err.message || err);
-        } finally {
-            setButtonLoading(lecLoginBtn, false, originalHtml);
-        }
-    });
-
-    /* ============================================================
-       PWA INSTALL
-       ============================================================ */
-    let deferredPrompt = null;
-    const installBanner = document.getElementById('installBanner');
-    const bannerInstallBtn = document.getElementById('bannerInstallBtn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBanner.style.display = 'flex';
-    });
-
-    bannerInstallBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        installBanner.style.display = 'none';
-    });
-
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        installBanner.style.display = 'none';
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/utom/sw.js')
-            .then(() => console.log('SW registered'))
-            .catch(err => console.error('SW failed', err));
-    }
+/* Ensure logged-out state doesn't redirect */
+onAuthStateChanged(auth, (user)=>{
+  if(!user){
+    // User signed out — show split landing by default
+    closePanels();
+    document.getElementById('completeProfileOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
 </script>
 </body>
 </html>
