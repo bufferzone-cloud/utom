@@ -428,6 +428,14 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
 
       <form id="fCreateLecturer">
         <div class="form-card">
+          <h4><i class="fas fa-university"></i> College (locked)</h4>
+          <div class="row one">
+            <input type="text" id="cCollegeName" readonly style="background:#f0f0f5;color:var(--muted)">
+          </div>
+          <p class="hint">This lecturer will be linked to <strong id="cCollegeLabel">your college</strong>. To add a lecturer elsewhere, ask that college's admin.</p>
+        </div>
+
+        <div class="form-card">
           <h4><i class="fas fa-user"></i> Personal details</h4>
           <div class="row one"><input type="text" id="cName" placeholder="Full name *" required></div>
           <div class="row one"><input type="email" id="cEmail" placeholder="Email address *" required></div>
@@ -500,6 +508,9 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           <tr><td>Lifetime paid</td><td id="subPaidAmount">—</td></tr>
           <tr><td>Last payment</td><td id="subLastPaid">—</td></tr>
           <tr><td>Lecturer slots</td><td id="subLimit">—</td></tr>
+          <tr><td>Programs</td><td id="subPrograms">—</td></tr>
+          <tr><td>Classes</td><td id="subClasses">—</td></tr>
+          <tr><td>Intakes</td><td id="subIntakes">—</td></tr>
         </table>
       </div>
       <div class="form-card" style="background:rgba(255,243,205,.55);border:1px solid rgba(243,156,18,.3)">
@@ -522,7 +533,7 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         </div>
       </div>
       <div class="card">
-        <div class="grid-title"><h3><i class="fas fa-building" style="color:var(--gold)"></i> College profile (admin-managed)</h3></div>
+        <div class="grid-title"><h3><i class="fas fa-building" style="color:var(--gold)"></i> College profile (from Registration Setup)</h3></div>
         <table class="dtable">
           <tr><td>Name</td><td id="setName">—</td></tr>
           <tr><td>Unique code</td><td id="setCode">—</td></tr>
@@ -530,6 +541,9 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           <tr><td>City</td><td id="setCity">—</td></tr>
           <tr><td>Country</td><td id="setCountry">—</td></tr>
           <tr><td>Lecturer limit</td><td id="setLimit">—</td></tr>
+          <tr><td>Programs</td><td id="setPrograms">—</td></tr>
+          <tr><td>Classes</td><td id="setClasses">—</td></tr>
+          <tr><td>Intakes</td><td id="setIntakes">—</td></tr>
         </table>
       </div>
       <div class="card">
@@ -634,10 +648,17 @@ const db = getDatabase(app);
 
 /* ============================================================
    STATE
-============================================================ */
+   ------------------------------------------------------------
+   Two sources of truth are merged into CURRENT_COLLEGE:
+     • system/registrationSetup/colleges/{id}  → identity
+       (name, centerCode, programs, classes, intakes)
+     • colleges/{id}                           → admin metadata
+       (admins, subscription, lecturerLimit, bans)
+   ============================================================ */
 let CURRENT_ADMIN = null;         // { uid, email }
 let CURRENT_COLLEGE_ID = null;
-let CURRENT_COLLEGE = null;
+let CURRENT_COLLEGE = null;       // merged view
+let CURRENT_COLLEGE_REG = null;   // raw from registration setup
 let CURRENT_COLLEGE_ADMIN = null; // entry from admins/{key}
 
 let allLecturers = {};
@@ -645,11 +666,9 @@ let myLecturers = [];
 let allStudents = {};
 let myStudents = [];
 
-/* Content stores (each kept in its own variable so we can
-   merge two assessment paths without losing either source). */
 let coursesStore = {};
-let assessmentsStoreA = {};   // 'assessments'
-let assessmentsStoreB = {};   // 'lecturerAssessments' (legacy)
+let assessmentsStoreA = {};
+let assessmentsStoreB = {};
 let allCourses = {};
 let allAssessments = {};
 let allVideos = {};
@@ -696,15 +715,6 @@ function confirmBox(icon, title, html){
   });
 }
 
-function getStudentFullName(uid){
-  const u = allStudents[uid];
-  if(!u) return 'Unknown';
-  const c = u.customFields || {};
-  const first = u.firstName || c.firstName || '';
-  const last = u.lastName || c.lastName || '';
-  const full = `${first} ${last}`.trim();
-  return full || u.email || uid;
-}
 function getStudentLastName(uid){
   const u = allStudents[uid];
   if(!u) return '~';
@@ -729,12 +739,11 @@ function sortByLastName(arr, getter){
 }
 
 /* ============================================================
-   COLLEGE-MEMBERSHIP HELPERS
+   COLLEGE MERGE HELPERS
    ------------------------------------------------------------
-   Different flows store the college reference differently:
-     • management.html (this console)  →  lecturers/{uid}.collegeId
-     • index.html public signup        →  lecturers/{uid}.customFields.collegeId
-   We accept either location so nothing is silently dropped.
+   Some callers may store `collegeId` on the lecturer top-level,
+   and public signup stores it inside `customFields.collegeId`.
+   Accept either.
    ============================================================ */
 function getLecturerCollegeId(l){
   if(!l) return '';
@@ -748,9 +757,44 @@ function lecturerBelongsToCollege(l, collegeId){
   return getLecturerCollegeId(l) === String(collegeId).trim();
 }
 
+function buildMergedCollege(reg, admin){
+  reg = reg || {};
+  admin = admin || {};
+  const programs = reg.programs || {};
+  const intakes = reg.intakes || {};
+  let classesCount = 0;
+  for(const pid in programs){
+    classesCount += Object.keys((programs[pid] && programs[pid].classes) || {}).length;
+  }
+  return {
+    // Identity — always prefer registration setup
+    name: reg.name || admin.name || '',
+    uniqueCode: reg.centerCode || admin.uniqueCode || '',
+    city: reg.city || admin.city || '',
+    country: reg.country || admin.country || '',
+    logoUrl: reg.logoUrl || admin.logoUrl || '',
+
+    // Structure counts
+    programsCount: Object.keys(programs).length,
+    classesCount: classesCount,
+    intakesCount: Object.keys(intakes).length,
+
+    // Raw branches (handy for later)
+    programs: programs,
+    intakes: intakes,
+
+    // Admin metadata — spread last so `admins`, `paymentStatus`, etc. win
+    ...admin,
+    // But keep our normalised identity fields on top
+    name: reg.name || admin.name || '',
+    uniqueCode: reg.centerCode || admin.uniqueCode || '',
+    id: admin.id || reg.id
+  };
+}
+
 /* ============================================================
    AUTH GATE
-============================================================ */
+   ============================================================ */
 onAuthStateChanged(auth, async (user) => {
   if(!user){
     window.location.replace('index.html');
@@ -773,7 +817,6 @@ async function bootstrapAdmin(){
   const colleges = collegesSnap.val() || {};
 
   let foundCollegeId = null;
-  let foundCollege = null;
   let foundAdmin = null;
 
   for(const [cid, c] of Object.entries(colleges)){
@@ -782,7 +825,6 @@ async function bootstrapAdmin(){
       const adminEmail = (a.email || '').trim().toLowerCase();
       if(adminEmail === CURRENT_ADMIN.email){
         foundCollegeId = cid;
-        foundCollege = { id: cid, ...c };
         foundAdmin = a;
         break;
       }
@@ -797,22 +839,34 @@ async function bootstrapAdmin(){
   }
 
   CURRENT_COLLEGE_ID = foundCollegeId;
-  CURRENT_COLLEGE = foundCollege;
   CURRENT_COLLEGE_ADMIN = foundAdmin;
 
-  console.log('[UTOM] Admin belongs to college:', CURRENT_COLLEGE_ID, foundCollege.name);
+  // Load registration setup branch
+  try {
+    const regSnap = await get(ref(db, 'system/registrationSetup/colleges/' + CURRENT_COLLEGE_ID));
+    CURRENT_COLLEGE_REG = regSnap.val() || null;
+  } catch(e){
+    console.warn('[UTOM] Registration setup branch load failed:', e);
+    CURRENT_COLLEGE_REG = null;
+  }
 
-  if(foundCollege.banned){
-    showGate('banned', foundCollege.banReason || 'Your college has been blocked from accessing the console.');
-    populateBannedInfo(foundCollege);
+  CURRENT_COLLEGE = buildMergedCollege(CURRENT_COLLEGE_REG, colleges[foundCollegeId]);
+
+  console.log('[UTOM] Admin belongs to college:', CURRENT_COLLEGE_ID,
+              '·', CURRENT_COLLEGE.name || '(no name)',
+              '·', CURRENT_COLLEGE.uniqueCode || '(no code)');
+
+  if(CURRENT_COLLEGE.banned){
+    showGate('banned', CURRENT_COLLEGE.banReason || 'Your college has been blocked from accessing the console.');
+    populateBannedInfo(CURRENT_COLLEGE);
     return;
   }
 
-  const isPaid = foundCollege.paymentStatus === 'paid';
-  const expired = foundCollege.accessExpiresAt && foundCollege.accessExpiresAt <= now();
+  const isPaid = CURRENT_COLLEGE.paymentStatus === 'paid';
+  const expired = CURRENT_COLLEGE.accessExpiresAt && CURRENT_COLLEGE.accessExpiresAt <= now();
   if(!isPaid || expired){
     showGate('unpaid');
-    populateUnpaidInfo(foundCollege, isPaid, expired);
+    populateUnpaidInfo(CURRENT_COLLEGE, isPaid, expired);
     return;
   }
 
@@ -822,7 +876,7 @@ async function bootstrapAdmin(){
 
 /* ============================================================
    GATE SCREENS
-============================================================ */
+   ============================================================ */
 function showGate(which, msg){
   document.getElementById('bootLoader').style.display = 'none';
   document.getElementById('mainApp').classList.remove('show');
@@ -867,7 +921,7 @@ function populateUnpaidInfo(c, isPaid, expired){
 
 /* ============================================================
    MAIN APP
-============================================================ */
+   ============================================================ */
 function showMainApp(){
   document.getElementById('bootLoader').style.display = 'none';
   document.getElementById('gateBanned').style.display = 'none';
@@ -875,38 +929,57 @@ function showMainApp(){
   document.getElementById('gateNotAdmin').style.display = 'none';
   document.getElementById('mainApp').classList.add('show');
 
-  document.getElementById('sbCollegeName').textContent = CURRENT_COLLEGE.name || '';
-  document.getElementById('sbCollegeCode').textContent = CURRENT_COLLEGE.uniqueCode || '';
-  document.getElementById('collegeName').textContent = CURRENT_COLLEGE.name || '';
-  document.getElementById('collegeCode').textContent = CURRENT_COLLEGE.uniqueCode || '';
-
-  const av = document.getElementById('collegeAvatar');
-  if(CURRENT_COLLEGE.logoUrl){
-    av.innerHTML = `<img src="${esc(CURRENT_COLLEGE.logoUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent='${esc((CURRENT_COLLEGE.name||'C').charAt(0))}'">`;
-  } else {
-    av.textContent = (CURRENT_COLLEGE.name || 'C').charAt(0).toUpperCase();
-  }
-
-  document.getElementById('adminName').textContent = CURRENT_COLLEGE_ADMIN.name || CURRENT_ADMIN.email;
-  document.getElementById('setAdminName').textContent = CURRENT_COLLEGE_ADMIN.name || '—';
-  document.getElementById('setAdminEmail').textContent = CURRENT_ADMIN.email;
-  document.getElementById('setAdminPhone').textContent = CURRENT_COLLEGE_ADMIN.phone || '—';
-
-  document.getElementById('setName').textContent = CURRENT_COLLEGE.name || '—';
-  document.getElementById('setCode').textContent = CURRENT_COLLEGE.uniqueCode || '—';
-  document.getElementById('setCollegeId').textContent = CURRENT_COLLEGE_ID || '—';
-  document.getElementById('setCity').textContent = CURRENT_COLLEGE.city || '—';
-  document.getElementById('setCountry').textContent = CURRENT_COLLEGE.country || '—';
-  document.getElementById('setLimit').textContent = CURRENT_COLLEGE.lecturerLimit || 'Unlimited';
-
+  applyCollegeIdentityToUI();
   renderSubscriptionCards();
+  updateSubBadge();
 
   document.getElementById('limitTotal').textContent = CURRENT_COLLEGE.lecturerLimit || '∞';
   document.getElementById('limitUsed').textContent = '0';
 
-  updateSubBadge();
+  // Locked college input in create-lecturer form
+  const lock = document.getElementById('cCollegeName');
+  if(lock) lock.value = (CURRENT_COLLEGE.name || '—') + (CURRENT_COLLEGE.uniqueCode ? ` (${CURRENT_COLLEGE.uniqueCode})` : '');
+  const cLabel = document.getElementById('cCollegeLabel');
+  if(cLabel) cLabel.textContent = CURRENT_COLLEGE.name || 'your college';
 
   navigate('home');
+}
+
+function applyCollegeIdentityToUI(){
+  const c = CURRENT_COLLEGE || {};
+
+  // Sidebar
+  document.getElementById('sbCollegeName').textContent = c.name || '—';
+  document.getElementById('sbCollegeCode').textContent = c.uniqueCode || '—';
+
+  // Home overview
+  document.getElementById('collegeName').textContent = c.name || '—';
+  document.getElementById('collegeCode').textContent = c.uniqueCode || '—';
+
+  // Avatar
+  const av = document.getElementById('collegeAvatar');
+  if(c.logoUrl){
+    av.innerHTML = `<img src="${esc(c.logoUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent='${esc((c.name||'C').charAt(0))}'">`;
+  } else {
+    av.textContent = (c.name || 'C').charAt(0).toUpperCase();
+  }
+
+  // Admin identity
+  document.getElementById('adminName').textContent = (CURRENT_COLLEGE_ADMIN && CURRENT_COLLEGE_ADMIN.name) || CURRENT_ADMIN.email;
+  document.getElementById('setAdminName').textContent = (CURRENT_COLLEGE_ADMIN && CURRENT_COLLEGE_ADMIN.name) || '—';
+  document.getElementById('setAdminEmail').textContent = CURRENT_ADMIN.email;
+  document.getElementById('setAdminPhone').textContent = (CURRENT_COLLEGE_ADMIN && CURRENT_COLLEGE_ADMIN.phone) || '—';
+
+  // Settings — college profile
+  document.getElementById('setName').textContent = c.name || '—';
+  document.getElementById('setCode').textContent = c.uniqueCode || '—';
+  document.getElementById('setCollegeId').textContent = CURRENT_COLLEGE_ID || '—';
+  document.getElementById('setCity').textContent = c.city || '—';
+  document.getElementById('setCountry').textContent = c.country || '—';
+  document.getElementById('setLimit').textContent = c.lecturerLimit || 'Unlimited';
+  document.getElementById('setPrograms').textContent = c.programsCount != null ? c.programsCount : '—';
+  document.getElementById('setClasses').textContent = c.classesCount != null ? c.classesCount : '—';
+  document.getElementById('setIntakes').textContent = c.intakesCount != null ? c.intakesCount : '—';
 }
 
 function updateSubBadge(){
@@ -970,41 +1043,41 @@ function renderSubscriptionCards(){
   document.getElementById('subPaidAmount').textContent = 'ZMW ' + (c.paidAmount || 0);
   document.getElementById('subLastPaid').textContent = c.paidAt ? fmtDate(c.paidAt) : 'Never';
   document.getElementById('subLimit').textContent = c.lecturerLimit || 'Unlimited';
+  document.getElementById('subPrograms').textContent = c.programsCount != null ? c.programsCount : '—';
+  document.getElementById('subClasses').textContent = c.classesCount != null ? c.classesCount : '—';
+  document.getElementById('subIntakes').textContent = c.intakesCount != null ? c.intakesCount : '—';
 }
 
 /* ============================================================
-   REALTIME DATA
+   REALTIME
 ============================================================ */
 function attachRealtime(){
-  // -------- College record (subscription / ban / admins) --------
+  // -------- Admin metadata (subscription, admins, bans) --------
   onValue(ref(db, 'colleges/' + CURRENT_COLLEGE_ID), snap => {
     if(!snap.exists()){
       showGate('notadmin', 'Your college record was removed.');
       return;
     }
-    const data = snap.val();
-    CURRENT_COLLEGE = { id: CURRENT_COLLEGE_ID, ...data };
+    const admin = snap.val() || {};
+    CURRENT_COLLEGE = buildMergedCollege(CURRENT_COLLEGE_REG, { ...admin, id: CURRENT_COLLEGE_ID });
 
     // Re-sync the admin entry from the live admins object.
-    const admins = data.admins || {};
+    const admins = admin.admins || {};
     for(const [, a] of Object.entries(admins)){
       const adminEmail = (a.email || '').trim().toLowerCase();
       if(adminEmail === CURRENT_ADMIN.email){
         CURRENT_COLLEGE_ADMIN = a;
-        document.getElementById('adminName').textContent = a.name || CURRENT_ADMIN.email;
-        document.getElementById('setAdminName').textContent = a.name || '—';
-        document.getElementById('setAdminPhone').textContent = a.phone || '—';
         break;
       }
     }
 
-    if(data.banned){
-      showGate('banned', data.banReason || 'Your college has been blocked.');
+    if(admin.banned){
+      showGate('banned', admin.banReason || 'Your college has been blocked.');
       populateBannedInfo(CURRENT_COLLEGE);
       return;
     }
-    const isPaid = data.paymentStatus === 'paid';
-    const expired = data.accessExpiresAt && data.accessExpiresAt <= now();
+    const isPaid = admin.paymentStatus === 'paid';
+    const expired = admin.accessExpiresAt && admin.accessExpiresAt <= now();
     if(!isPaid || expired){
       showGate('unpaid');
       populateUnpaidInfo(CURRENT_COLLEGE, isPaid, expired);
@@ -1013,12 +1086,16 @@ function attachRealtime(){
 
     updateSubBadge();
     renderSubscriptionCards();
-    document.getElementById('setName').textContent = data.name || '—';
-    document.getElementById('setCode').textContent = data.uniqueCode || '—';
-    document.getElementById('setCity').textContent = data.city || '—';
-    document.getElementById('setCountry').textContent = data.country || '—';
-    document.getElementById('setLimit').textContent = data.lecturerLimit || 'Unlimited';
-    document.getElementById('limitTotal').textContent = data.lecturerLimit || '∞';
+    applyCollegeIdentityToUI();
+    document.getElementById('limitTotal').textContent = admin.lecturerLimit || '∞';
+  });
+
+  // -------- Identity (name, code, programs, classes, intakes) --------
+  onValue(ref(db, 'system/registrationSetup/colleges/' + CURRENT_COLLEGE_ID), snap => {
+    CURRENT_COLLEGE_REG = snap.val() || null;
+    CURRENT_COLLEGE = buildMergedCollege(CURRENT_COLLEGE_REG, CURRENT_COLLEGE || {});
+    renderSubscriptionCards();
+    applyCollegeIdentityToUI();
   });
 
   // -------- Lecturers (both direct collegeId and customFields.collegeId) --------
@@ -1060,7 +1137,7 @@ function attachRealtime(){
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
   });
 
-  // -------- Assessments (two possible paths — merge both) --------
+  // -------- Assessments (two possible paths — merge) --------
   const refreshAssessments = () => {
     allAssessments = { ...assessmentsStoreB, ...assessmentsStoreA };
     renderHomeStats();
@@ -1089,7 +1166,7 @@ function attachRealtime(){
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
   });
 
-  // -------- Pending content --------
+  // -------- Pending --------
   onValue(ref(db, 'pendingLecturerContent'), snap => {
     allPending = snap.val() || {};
     if(document.getElementById('contentSection').classList.contains('active')) renderContentTab();
@@ -1097,8 +1174,8 @@ function attachRealtime(){
 }
 
 /* ============================================================
-   HELPERS: FILTERED COLLECTIONS
-============================================================ */
+   FILTERED COLLECTIONS
+   ============================================================ */
 function myLecturerUids(){
   return new Set(myLecturers.map(l => l.uid));
 }
@@ -1111,7 +1188,7 @@ function filterContentByMine(collection){
 
 /* ============================================================
    HOME STATS
-============================================================ */
+   ============================================================ */
 function renderHomeStats(){
   document.getElementById('kLecturers').textContent = myLecturers.length;
   const active = myLecturers.filter(l => {
@@ -1157,8 +1234,8 @@ function renderRecentLecturers(){
 }
 
 /* ============================================================
-   LECTURER CARDS
-============================================================ */
+   LECTURER CARD
+   ============================================================ */
 function lecturerCardHTML(l, opt = {}){
   const isBanned = !!l.banned;
   const isExpired = l.accessExpiresAt && l.accessExpiresAt <= now();
@@ -1244,7 +1321,7 @@ document.getElementById('lectFilter')?.addEventListener('change', () => renderLe
 
 /* ============================================================
    LECTURER DETAIL
-============================================================ */
+   ============================================================ */
 window.openLecturerDetail = function(uid){
   _currentLecturerId = uid;
   navigate('lecturerDetail');
@@ -1316,6 +1393,7 @@ window.renderLecturerDetail = function(uid){
       <table class="dtable">
         <tr><td>Email</td><td>${esc(l.email||'—')}</td></tr>
         <tr><td>Phone</td><td>${esc(l.phone||'—')}</td></tr>
+        <tr><td>College</td><td>${esc(CURRENT_COLLEGE.name || '—')}</td></tr>
         <tr><td>Status</td><td>${esc(l.status || 'approved')}</td></tr>
         <tr><td>Payment status</td><td>${esc(l.paymentStatus || 'unpaid')}</td></tr>
         <tr><td>Expires</td><td>${l.accessExpiresAt ? fmtDate(l.accessExpiresAt) : 'Never'}</td></tr>
@@ -1353,7 +1431,7 @@ window.renderLecturerDetail = function(uid){
 
 /* ============================================================
    CREATE LECTURER
-============================================================ */
+   ============================================================ */
 document.getElementById('fCreateLecturer').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cName').value.trim();
@@ -1423,8 +1501,13 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
       email,
       phone,
       password,
+      // Both fields set so the lecturer is detected by BOTH
+      // registration-setup-aware and legacy readers.
       collegeId: CURRENT_COLLEGE_ID,
       collegeName: CURRENT_COLLEGE.name || '',
+      customFields: {
+        collegeId: CURRENT_COLLEGE_ID
+      },
       status: 'approved',
       paymentStatus: 'unpaid',
       banned: false,
@@ -1446,6 +1529,9 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
     } catch(_){}
 
     document.getElementById('fCreateLecturer').reset();
+    // Restore locked college label after reset
+    document.getElementById('cCollegeName').value =
+      (CURRENT_COLLEGE.name || '—') + (CURRENT_COLLEGE.uniqueCode ? ` (${CURRENT_COLLEGE.uniqueCode})` : '');
     navigate('lecturers');
     setTimeout(() => openLecturerDetail(uid), 250);
   }catch(err){
@@ -1459,7 +1545,7 @@ document.getElementById('fCreateLecturer').addEventListener('submit', async (e) 
 
 /* ============================================================
    BAN / UNBAN / DELETE / RESET PASSWORD
-============================================================ */
+   ============================================================ */
 window.openBanModal = function(uid){
   const l = myLecturers.find(x => x.uid === uid);
   if(!l) return;
@@ -1529,7 +1615,7 @@ document.getElementById('fBan').addEventListener('submit', async (e) => {
 
 /* ============================================================
    STUDENTS
-============================================================ */
+   ============================================================ */
 function renderStudentsList(){
   const box = document.getElementById('stuList');
   if(!box) return;
@@ -1589,7 +1675,7 @@ window.showStudentDetail = function(uid){
 
 /* ============================================================
    CONTENT
-============================================================ */
+   ============================================================ */
 document.querySelectorAll('#contentTabs .tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('#contentTabs .tab').forEach(t => t.classList.remove('active'));
@@ -1664,7 +1750,7 @@ function contentItemHTML(type, item, title, subtitle){
 
 /* ============================================================
    NAVIGATION
-============================================================ */
+   ============================================================ */
 const PAGES = ['home','lecturers','lecturerCreate','lecturerDetail','students','content','subscription','settings'];
 const TITLES = {
   home: 'Dashboard', lecturers: 'Lecturers', lecturerCreate: 'Add Lecturer',
@@ -1716,7 +1802,7 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
 
 /* ============================================================
    DROPDOWN HANDLING
-============================================================ */
+   ============================================================ */
 document.addEventListener('click', (e) => {
   const toggle = e.target.closest('.dd-toggle');
   const item = e.target.closest('.dd-item');
@@ -1737,7 +1823,7 @@ document.addEventListener('click', (e) => {
 
 /* ============================================================
    MODAL CLOSE
-============================================================ */
+   ============================================================ */
 document.querySelectorAll('[data-close]').forEach(btn => {
   btn.addEventListener('click', () => closeModal(btn.dataset.close));
 });
@@ -1747,7 +1833,7 @@ document.querySelectorAll('.modal').forEach(m => {
 
 /* ============================================================
    LOGOUT
-============================================================ */
+   ============================================================ */
 window.doLogout = async function(){
   try{ await signOut(auth); }catch(e){}
   window.location.href = 'index.html';
