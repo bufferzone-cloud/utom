@@ -1,979 +1,3091 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>UTOM · Registration Setup</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-:root{
-  --gold:#F5B042;--gold-dark:#c47f1a;--gold-light:#fff8ed;
-  --bg:#f2f4f8;--text:#1a1d28;--text-2:#5f6377;--text-3:#8b8fa3;
-  --green:#2ecc71;--red:#e63946;--yellow:#f39c12;--blue:#3b82f6;--purple:#8e44ad;
-  --shadow-sm:0 2px 12px rgba(0,0,0,.04);--shadow-md:0 8px 30px rgba(0,0,0,.06);
-  --shadow-lg:0 16px 48px rgba(0,0,0,.10);--shadow-xl:0 24px 64px rgba(0,0,0,.14);
-  --r-sm:12px;--r-md:18px;--r-lg:24px;--tx:.25s cubic-bezier(.25,.46,.45,.94);
-}
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;overflow:hidden}
-#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .6s}
-#loader.hidden{opacity:0;pointer-events:none}
-.spinner{width:48px;height:48px;border:5px solid #e5e7eb;border-top:5px solid var(--gold);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loader p{margin-top:18px;font-weight:700;color:var(--text-2);letter-spacing:.5px}
-.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:#fff;border-bottom:1px solid rgba(0,0,0,.05);flex-shrink:0;box-shadow:var(--shadow-sm);z-index:10}
-.header h1{font-size:18px;font-weight:800;background:linear-gradient(135deg,#d4952a,#f5b042,#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
-.back-btn,.save-btn{border:none;padding:9px 16px;border-radius:40px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:var(--tx)}
-.back-btn{background:var(--bg);color:var(--text)}
-.back-btn:hover{background:#e5e8ed;transform:translateY(-1px)}
-.save-btn{background:linear-gradient(135deg,#f5b042,#ff6b00);color:#fff;box-shadow:0 4px 20px rgba(245,176,66,.3)}
-.save-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(245,176,66,.35)}
-.save-btn.saved{background:linear-gradient(135deg,#2ecc71,#27ae60)}
-.tabs{display:flex;gap:0;background:#fff;border-bottom:1px solid rgba(0,0,0,.05);padding:0 12px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{border:none;background:transparent;padding:14px 20px;font-weight:700;font-size:13px;color:var(--text-3);cursor:pointer;border-bottom:3px solid transparent;transition:var(--tx);white-space:nowrap}
-.tab:hover{color:var(--text-2)}
-.tab.active{color:var(--gold-dark);border-bottom-color:var(--gold)}
-.content{flex:1;overflow-y:auto;padding:16px;padding-bottom:100px;-webkit-overflow-scrolling:touch}
-.tab-panel{display:none;animation:fadeIn .25s}
-.tab-panel.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.info-banner{background:rgba(245,176,66,.08);border:1px solid rgba(245,176,66,.2);border-radius:var(--r-sm);padding:12px 16px;font-size:12px;color:var(--gold-dark);margin-bottom:16px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
-.info-banner i{font-size:16px;flex-shrink:0;margin-top:2px}
-.field-row{display:flex;align-items:center;gap:12px;background:#fff;border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow-sm);border:1px solid rgba(0,0,0,.03);transition:var(--tx)}
-.field-row:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.field-row.disabled{opacity:.55;background:#f7f8fa}
-.field-order{width:28px;height:28px;border-radius:50%;background:rgba(245,176,66,.15);color:var(--gold-dark);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.field-info{flex:1;min-width:0}
-.field-label{font-weight:700;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.field-label .badge{background:rgba(0,0,0,.06);color:var(--text-2);font-size:9px;font-weight:700;padding:2px 8px;border-radius:30px;text-transform:uppercase;letter-spacing:.3px}
-.field-label .badge.required{background:rgba(230,57,70,.12);color:var(--red)}
-.field-label .badge.system{background:rgba(59,130,246,.12);color:var(--blue)}
-.field-meta{font-size:10px;color:var(--text-3);margin-top:2px}
-.field-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
-.toggle{width:42px;height:24px;background:#d5d8e0;border-radius:30px;position:relative;cursor:pointer;transition:var(--tx);flex-shrink:0}
-.toggle.active{background:linear-gradient(135deg,#f5b042,#ff6b00)}
-.toggle:after{content:"";width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:var(--tx);box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.toggle.active:after{left:20px}
-.icon-btn{width:32px;height:32px;border:none;border-radius:50%;background:rgba(0,0,0,.04);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:var(--tx)}
-.icon-btn:hover{background:rgba(0,0,0,.08);transform:scale(1.08)}
-.icon-btn.danger:hover{background:rgba(230,57,70,.12);color:var(--red)}
-.icon-btn.disabled{opacity:.3;pointer-events:none}
-.add-btn{width:100%;padding:14px;border:2px dashed rgba(245,176,66,.4);background:rgba(245,176,66,.06);color:var(--gold-dark);border-radius:var(--r-sm);font-weight:700;font-size:13px;cursor:pointer;transition:var(--tx);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px}
-.add-btn:hover{background:rgba(245,176,66,.12);border-color:var(--gold);transform:translateY(-2px)}
-.college-card{background:#fff;border-radius:var(--r-md);box-shadow:var(--shadow-sm);margin-bottom:14px;overflow:hidden;border:1px solid rgba(0,0,0,.03)}
-.college-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;transition:var(--tx);flex-wrap:wrap;gap:8px}
-.college-header:hover{background:rgba(245,176,66,.04)}
-.college-title{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.college-title h3{font-size:15px;font-weight:800;color:var(--text);word-break:break-word}
-.college-title .center-code{background:rgba(245,176,66,.15);color:var(--gold-dark);font-size:10px;font-weight:800;padding:2px 10px;border-radius:30px;font-family:monospace}
-.college-body{display:none;padding:0 18px 18px;border-top:1px solid rgba(0,0,0,.04)}
-.college-body.open{display:block;animation:fadeIn .25s}
-.sub-section{margin-top:16px}
-.sub-section h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.mini-btn{border:none;background:rgba(245,176,66,.12);color:var(--gold-dark);padding:5px 12px;border-radius:30px;font-size:10px;font-weight:700;cursor:pointer;transition:var(--tx);display:inline-flex;align-items:center;gap:4px}
-.mini-btn:hover{background:rgba(245,176,66,.22);transform:translateY(-1px)}
-.mini-btn.danger{background:rgba(230,57,70,.1);color:var(--red)}
-.mini-btn.danger:hover{background:rgba(230,57,70,.2)}
-.item-list{display:flex;flex-direction:column;gap:6px}
-.item-row{display:flex;justify-content:space-between;align-items:center;background:#f8f9fc;border-radius:10px;padding:10px 14px;gap:8px;flex-wrap:wrap;transition:var(--tx)}
-.item-row:hover{background:#f0f2f7}
-.item-row .item-main{flex:1;min-width:0}
-.item-row .item-title{font-weight:700;font-size:13px;color:var(--text);word-break:break-word}
-.item-row .item-sub{font-size:11px;color:var(--text-3);margin-top:2px;word-break:break-word}
-.item-row .item-actions{display:flex;gap:4px;flex-shrink:0}
-.program-card{background:#fafbfc;border:1px solid rgba(0,0,0,.05);border-radius:10px;margin-bottom:8px;overflow:hidden}
-.program-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;gap:8px;flex-wrap:wrap}
-.program-header:hover{background:rgba(245,176,66,.03)}
-.program-title{font-weight:700;font-size:13px;flex:1;min-width:0;word-break:break-word}
-.program-title .code-pill{background:rgba(142,68,173,.12);color:var(--purple);font-size:10px;font-weight:800;padding:2px 8px;border-radius:30px;margin-left:6px;font-family:monospace}
-.program-body{display:none;padding:0 14px 14px;border-top:1px solid rgba(0,0,0,.03)}
-.program-body.open{display:block}
-.class-row{background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-left:3px solid var(--gold)}
-.class-row .class-code{font-family:monospace;font-weight:900;font-size:13px;color:var(--gold-dark);background:rgba(245,176,66,.1);padding:2px 10px;border-radius:6px}
-.class-row .class-info{flex:1;min-width:0}
-.class-row .class-level{font-size:12px;font-weight:600;color:var(--text)}
-.class-row .class-terms{font-size:10px;color:var(--text-3);margin-top:2px}
-.class-row .class-max{font-size:10px;font-weight:700;color:var(--blue);background:rgba(59,130,246,.1);padding:2px 8px;border-radius:20px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex;animation:fadeIn .2s}
-.modal-box{background:#fff;border-radius:var(--r-lg);max-width:460px;width:100%;max-height:88vh;overflow-y:auto;padding:24px 22px;box-shadow:var(--shadow-xl);animation:modalIn .3s cubic-bezier(.25,.46,.45,.94);position:relative}
-@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.close-modal{position:absolute;top:12px;right:14px;border:none;background:none;font-size:22px;color:var(--text-3);cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:var(--tx)}
-.close-modal:hover{background:rgba(230,57,70,.08);color:var(--red);transform:rotate(90deg)}
-.modal-box h3{font-size:16px;font-weight:800;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px}
-.form-row{margin-bottom:12px}
-.form-row label{display:block;font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
-.form-row input[type=text],.form-row input[type=number],.form-row input[type=email],.form-row select,.form-row textarea{width:100%;padding:10px 14px;border-radius:30px;border:1.5px solid rgba(0,0,0,.08);background:#f8f9fc;font-size:13px;font-family:inherit;transition:var(--tx)}
-.form-row textarea{border-radius:var(--r-sm);min-height:70px;resize:vertical}
-.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 4px rgba(245,176,66,.1)}
-.form-row small{display:block;font-size:10px;color:var(--text-3);margin-top:3px}
-.form-row label.checkbox-label{display:flex;align-items:center;gap:8px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;font-weight:600}
-.form-row input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
-.form-row-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.term-input-group{background:rgba(245,176,66,.06);border-radius:var(--r-sm);padding:12px;margin-bottom:10px}
-.term-input-group h5{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);margin-bottom:8px}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
-.btn-cancel{border:2px solid rgba(0,0,0,.08);background:transparent;padding:9px 22px;border-radius:40px;font-weight:600;font-size:12px;cursor:pointer;color:var(--text-2);transition:var(--tx)}
-.btn-cancel:hover{border-color:var(--text-3);background:#f5f6f8}
-.btn-primary{background:linear-gradient(135deg,#f5b042,#ff6b00);border:none;padding:10px 24px;border-radius:40px;font-weight:700;font-size:12px;color:#fff;cursor:pointer;box-shadow:0 3px 16px rgba(245,176,66,.25);transition:var(--tx);display:inline-flex;align-items:center;gap:6px}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,176,66,.35)}
-.toast-container{position:fixed;top:76px;right:16px;z-index:4000;display:flex;flex-direction:column;gap:10px;max-width:380px}
-.toast{background:rgba(26,29,40,.95);color:#fff;padding:12px 22px;border-radius:30px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:slideInToast .35s;font-weight:500;font-size:12px;border-left:3px solid var(--gold)}
-@keyframes slideInToast{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
-.empty-state{text-align:center;padding:30px 16px;color:var(--text-3);font-size:12px}
-.empty-state i{font-size:32px;opacity:.3;display:block;margin-bottom:10px}
-@media(max-width:520px){
-  .header{padding:10px 12px}
-  .header h1{font-size:15px}
-  .tab{padding:12px 14px;font-size:12px}
-  .content{padding:12px;padding-bottom:80px}
-  .form-row-grid{grid-template-columns:1fr}
-  .modal-box{padding:20px 16px}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>UTOM | Secure Access</title>
+    <link rel="manifest" href="/utom/manifest.json">
+    <meta name="theme-color" content="#F5B042">
+    <link rel="apple-touch-icon" href="/utom/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <style>
+        /* ==========================================================
+           DESIGN TOKENS
+           ========================================================== */
+        :root {
+            --accent: #F5B042;
+            --accent-light: #FFC868;
+            --accent-dark: #E39B2B;
+            --accent-glow: rgba(245, 176, 66, 0.32);
+            --accent-soft: rgba(245, 176, 66, 0.10);
+            --accent-tint: rgba(245, 176, 66, 0.18);
+
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #aeaeb2;
+
+            --fill-gray: #f2f2f7;
+            --fill-gray-hover: #e9e9ef;
+
+            --radius-input: 14px;
+            --radius-btn: 14px;
+
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --panel-ease: cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+            background: #ffffff;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ==========================================================
+           SPLIT LANDING
+           ========================================================== */
+        .split-landing {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: filter 0.55s var(--panel-ease), transform 0.55s var(--panel-ease);
+            will-change: filter, transform;
+        }
+
+        body.panel-open .split-landing {
+            filter: blur(10px) brightness(0.92);
+            transform: scale(1.03);
+        }
+
+        .split-half {
+            position: relative;
+            flex: 1 1 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.55s var(--panel-ease);
+            will-change: transform;
+            touch-action: none;
+        }
+
+        .split-top {
+            background: #ffffff;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .split-bottom {
+            background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: #1a1206;
+        }
+
+        .split-top.drag-active    { transform: translateY(var(--drag-y, 0)); }
+        .split-bottom.drag-active { transform: translateY(var(--drag-y, 0)); }
+
+        .half-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+            padding: 1rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .half-chevron {
+            font-size: 1.5rem;
+            opacity: 0.85;
+            animation: bobDown 1.9s var(--ease-smooth) infinite;
+        }
+
+        .split-bottom .half-chevron {
+            animation-name: bobUp;
+        }
+
+        @keyframes bobDown {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50%      { transform: translateY(7px); opacity: 1; }
+        }
+
+        @keyframes bobUp {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50%      { transform: translateY(-7px); opacity: 1; }
+        }
+
+        .half-icon {
+            font-size: 2.8rem;
+            line-height: 1;
+            margin: 6px 0 2px;
+        }
+
+        .split-top .half-icon { color: #3b82f6; }
+        .split-bottom .half-icon { color: #1a1206; }
+
+        .half-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: -0.6px;
+            text-transform: uppercase;
+        }
+
+        .split-top .half-title { color: var(--text-primary); }
+        .split-bottom .half-title { color: #1a1206; }
+
+        .half-hint {
+            font-size: 0.82rem;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+
+        .split-top .half-hint { color: var(--text-tertiary); }
+        .split-bottom .half-hint { color: rgba(26, 18, 6, 0.62); }
+
+        .center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 86px;
+            height: 86px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow:
+                0 10px 28px -8px rgba(0, 0, 0, 0.22),
+                0 0 0 5px rgba(255, 255, 255, 0.95),
+                0 0 0 7px rgba(245, 176, 66, 0.28);
+            animation: centerLogoIn 0.8s var(--spring) both;
+        }
+
+        @keyframes centerLogoIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .center-logo img {
+            width: 62px;
+            height: 62px;
+            object-fit: contain;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .center-logo .logo-fallback {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+            letter-spacing: -0.5px;
+        }
+
+        /* ==========================================================
+           SLIDE PANELS
+           ========================================================== */
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            background: #ffffff;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transition: transform 0.62s var(--panel-ease), opacity 0.4s var(--ease-out);
+            will-change: transform;
+            pointer-events: none;
+            visibility: hidden;
+            opacity: 0;
+            touch-action: auto;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .slide-panel.active {
+            pointer-events: auto;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #studentPanel {
+            transform: translateY(-8%);
+            background: linear-gradient(180deg, #f8f9fb 0%, #ffffff 55%);
+        }
+        #studentPanel.active { transform: translateY(0); }
+
+        #lecturerPanel {
+            transform: translateY(8%);
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 55%);
+        }
+        #lecturerPanel.active { transform: translateY(0); }
+
+        .panel-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        #lecturerPanel .panel-topbar {
+            background: rgba(255, 250, 242, 0.85);
+        }
+
+        .back-btn {
+            background: var(--fill-gray);
+            border: none;
+            font-family: inherit;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            padding: 9px 15px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: background 0.25s var(--ease-smooth), transform 0.35s var(--spring);
+        }
+
+        .back-btn:hover { background: var(--fill-gray-hover); }
+        .back-btn:active { transform: scale(0.94); }
+
+        .back-btn i {
+            transition: transform 0.28s var(--spring);
+        }
+        .back-btn:hover i { transform: translateX(-2px); }
+
+        .panel-label {
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        .panel-logo-strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 26px 16px 12px;
+            text-align: center;
+        }
+
+        .panel-logo-strip .panel-logo-img {
+            width: 132px;
+            height: 132px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 12px 26px rgba(245, 176, 66, 0.30));
+            animation: panelLogoIn 0.7s var(--spring) 0.08s both;
+        }
+
+        @keyframes panelLogoIn {
+            from { opacity: 0; transform: scale(0.55) translateY(-22px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .panel-logo-strip .logo-fallback {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: -1.2px;
+            background: linear-gradient(135deg, #1d1d1f 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .panel-brand-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .panel-brand-sub {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .slide-panel-inner {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 0 1.25rem 3rem;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-panel.active .form-area { animation: formEnter 0.55s var(--ease-out) 0.15s both; }
+
+        @keyframes formEnter {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-panel.active .segmented-control { animation: formEnter 0.55s var(--ease-out) 0.10s both; }
+
+        /* ==========================================================
+           SEGMENTED CONTROL
+           ========================================================== */
+        .segmented-control {
+            position: relative;
+            display: flex;
+            width: 100%;
+            background: var(--fill-gray);
+            border-radius: 12px;
+            padding: 3px;
+            margin-bottom: 1.6rem;
+            box-shadow:
+                inset 0 1px 2px rgba(0, 0, 0, 0.04),
+                0 4px 14px -8px rgba(0, 0, 0, 0.12);
+        }
+
+        .segmented-control::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: calc(50% - 3px);
+            height: calc(100% - 6px);
+            background: #ffffff;
+            border-radius: 9px;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.10),
+                0 3px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.5s var(--spring);
+            will-change: transform;
+        }
+
+        .segmented-control[data-active="signup"]::before {
+            transform: translateX(100%);
+        }
+
+        .segment {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 0.86rem;
+            font-weight: 600;
+            letter-spacing: -0.1px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.3s var(--ease-smooth);
+        }
+
+        .segment.active { color: var(--text-primary); }
+        .segment:not(.active):hover { color: #4a4a50; }
+
+        /* ==========================================================
+           FORM AREA
+           ========================================================== */
+        .form-area { width: 100%; }
+
+        .form-panel { animation: panelIn 0.45s var(--ease-out); }
+        .hidden-panel { display: none; }
+
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(9px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 1.3rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-title i { color: var(--accent); font-size: 1.35rem; }
+
+        .input-icon-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 0.85rem;
+        }
+
+        .input-icon-group > i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 0.95rem;
+            pointer-events: none;
+            transition: color 0.3s var(--ease-smooth);
+            z-index: 1;
+        }
+
+        .pill-input {
+            width: 100%;
+            padding: 13px 16px 13px 42px;
+            font-family: inherit;
+            font-size: 0.94rem;
+            font-weight: 400;
+            border: 1.5px solid transparent;
+            border-radius: var(--radius-input);
+            background: var(--fill-gray);
+            outline: none;
+            color: var(--text-primary);
+            transition:
+                background 0.3s var(--ease-smooth),
+                border-color 0.3s var(--ease-smooth),
+                box-shadow 0.3s var(--ease-smooth);
+            user-select: text;
+            -webkit-user-select: text;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select.pill-input {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%23aeaeb2' d='M6 9L1 4h10z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 38px;
+            cursor: pointer;
+        }
+
+        .pill-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+        .pill-input:hover { background: var(--fill-gray-hover); }
+        .pill-input:focus {
+            background: #ffffff;
+            border-color: var(--accent);
+            box-shadow:
+                0 0 0 4px var(--accent-tint),
+                0 4px 14px -4px var(--accent-glow);
+        }
+
+        .input-icon-group:focus-within > i { color: var(--accent); }
+
+        .field-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.73rem;
+            font-weight: 500;
+            color: #a3741a;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-tint);
+            padding: 8px 12px;
+            border-radius: 11px;
+            margin: -0.2rem 0 0.95rem;
+            line-height: 1.35;
+        }
+
+        .field-hint i { color: var(--accent-dark); font-size: 0.75rem; flex-shrink: 0; }
+
+        .double-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .double-row .input-icon-group { flex: 1; min-width: 125px; }
+
+        .section-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0.9rem 0 0.5rem;
+        }
+
+        /* Upload grid */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+            margin-bottom: 0.95rem;
+        }
+
+        .upload-box {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: var(--fill-gray);
+            border: 2px dashed rgba(0, 0, 0, 0.12);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: border-color 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth), transform 0.35s var(--spring);
+        }
+
+        .upload-box:hover { border-color: var(--accent); background: #fff; transform: translateY(-2px); }
+
+        .upload-box.has-image {
+            border-style: solid;
+            border-color: var(--accent);
+        }
+
+        .upload-box img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-box .upload-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-box i.upload-icon {
+            font-size: 1.5rem;
+            color: var(--text-tertiary);
+        }
+
+        .upload-box.has-image .upload-label,
+        .upload-box.has-image i.upload-icon { display: none; }
+
+        .upload-box .upload-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+            pointer-events: none;
+            display: none;
+            z-index: 2;
+        }
+
+        .upload-box.has-image .upload-badge { display: inline-block; }
+
+        /* ==========================================================
+           BUTTONS
+           ========================================================== */
+        .btn {
+            font-family: inherit;
+            font-size: 0.94rem;
+            font-weight: 600;
+            letter-spacing: -0.1px;
+            border: none;
+            border-radius: var(--radius-btn);
+            padding: 13px 20px;
+            width: 100%;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            transition:
+                transform 0.35s var(--spring),
+                box-shadow 0.35s var(--ease-smooth),
+                background 0.3s var(--ease-smooth),
+                color 0.3s var(--ease-smooth),
+                opacity 0.3s var(--ease-smooth);
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
+            color: #1a1206;
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.35) inset,
+                0 1px 2px rgba(0, 0, 0, 0.08),
+                0 8px 20px -6px var(--accent-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.4) inset,
+                0 2px 4px rgba(0, 0, 0, 0.10),
+                0 16px 30px -8px var(--accent-glow);
+        }
+
+        .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: var(--text-primary);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.07),
+                0 1px 2px rgba(0, 0, 0, 0.04),
+                0 6px 16px -6px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            color: var(--accent-dark);
+        }
+
+        .btn-secondary:active:not(:disabled) { transform: translateY(0) scale(0.975); }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ==========================================================
+           TEXT LINKS / TERMS
+           ========================================================== */
+        .text-link {
+            background: none;
+            border: none;
+            font-family: inherit;
+            color: var(--accent-dark);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.84rem;
+            padding: 8px 12px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.28s var(--ease-smooth);
+        }
+
+        .text-link i { font-size: 0.75rem; transition: transform 0.28s var(--spring); }
+        .text-link:hover { background: var(--accent-soft); }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.9rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .terms-check {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin: 0.9rem 0 1.3rem;
+            padding: 11px 14px;
+            background: var(--fill-gray);
+            border-radius: 14px;
+            flex-wrap: wrap;
+        }
+
+        .terms-check label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .terms-check label strong { color: var(--text-primary); font-weight: 600; }
+
+        .terms-open-link {
+            background: none;
+            border: none;
+            color: var(--accent-dark);
+            font-weight: 700;
+            font-family: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            margin-left: 2px;
+        }
+
+        .terms-open-link:hover { color: #b87418; }
+
+        .checkbox-custom {
+            width: 19px;
+            height: 19px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================
+           MESSAGES
+           ========================================================== */
+        .error-msg {
+            color: #ff3b30;
+            font-size: 0.76rem;
+            font-weight: 500;
+            margin: 0 0 0.75rem 4px;
+            min-height: 0;
+            line-height: 1.35;
+            animation: panelIn 0.3s var(--ease-out);
+            white-space: pre-wrap;
+        }
+
+        .error-msg:empty { display: none; }
+
+        .success-msg {
+            color: #1f8a3b;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #e8f8ee;
+            border: 1px solid rgba(52, 199, 89, 0.25);
+            padding: 9px 14px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 0.9rem;
+            animation: panelIn 0.35s var(--ease-out);
+            line-height: 1.4;
+        }
+
+        /* ==========================================================
+           TERMS MODAL
+           ========================================================== */
+        .terms-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s var(--ease-out);
+        }
+
+        .terms-modal-overlay.open { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .terms-modal {
+            background: #ffffff;
+            border-radius: 22px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.35s var(--spring);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.94) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .terms-modal-header {
+            padding: 20px 22px 16px;
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .terms-modal-header h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.3;
+        }
+
+        .terms-modal-header h2 i {
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .terms-modal-close {
+            background: var(--fill-gray);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            transition: all 0.25s var(--ease-smooth);
+        }
+
+        .terms-modal-close:hover {
+            background: #ffe5e5;
+            color: #e63946;
+            transform: rotate(90deg);
+        }
+
+        .terms-modal-body {
+            padding: 20px 24px 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .terms-modal-body ul,
+        .terms-modal-body ol {
+            padding-left: 1.4rem;
+            margin: 0.5rem 0;
+        }
+
+        .terms-modal-body li { margin-bottom: 0.35rem; }
+
+        .terms-modal-body h1, .terms-modal-body h2, .terms-modal-body h3, .terms-modal-body h4 {
+            margin: 1rem 0 0.5rem;
+            font-weight: 700;
+        }
+
+        .terms-modal-body p { margin-bottom: 0.85rem; }
+
+        .terms-modal-body:empty::after {
+            content: 'No terms and conditions have been published yet. You may still continue.';
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        .terms-modal-footer {
+            padding: 14px 22px 18px;
+            background: #ffffff;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .terms-accept-btn {
+            background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 55%, var(--accent-dark) 100%);
+            color: #1a1206;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 11px 26px;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow:
+                0 1px 1px rgba(255, 255, 255, 0.35) inset,
+                0 6px 16px -6px var(--accent-glow);
+            transition: transform 0.35s var(--spring), box-shadow 0.3s var(--ease-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terms-accept-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -6px var(--accent-glow); }
+        .terms-accept-btn:active { transform: scale(0.96); }
+
+        .terms-decline-btn {
+            background: #ffffff;
+            color: var(--text-primary);
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 11px 22px;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s var(--ease-smooth);
+        }
+
+        .terms-decline-btn:hover { background: #f5f5f7; }
+
+        /* ==========================================================
+           COMPLETE PROFILE OVERLAY
+           ========================================================== */
+        .complete-profile-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: linear-gradient(180deg, #fffaf2 0%, #ffffff 60%);
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 0 3rem;
+        }
+
+        .complete-profile-overlay.open { display: flex; }
+
+        .complete-profile-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(255, 250, 242, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .complete-profile-topbar .brand-mini {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .complete-profile-inner {
+            max-width: 560px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
+        }
+
+        .complete-profile-hero {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .complete-profile-hero .hero-icon {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, var(--accent-light), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: #ffffff;
+            font-size: 2rem;
+            box-shadow: 0 12px 28px -10px var(--accent-glow);
+        }
+
+        .complete-profile-hero h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            margin-bottom: 6px;
+        }
+
+        .complete-profile-hero p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .missing-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .missing-chip {
+            background: #fff3cd;
+            color: #856404;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(133, 100, 4, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .complete-form-block {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 18px 18px 8px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .complete-form-block h3 {
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .complete-form-block h3 i { color: var(--accent); }
+
+        /* ==========================================================
+           INSTALL BANNER
+           ========================================================== */
+        .install-banner {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1d1d1f;
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 14px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+            z-index: 500;
+            max-width: calc(100vw - 32px);
+            font-size: 0.82rem;
+            font-weight: 500;
+            animation: panelIn 0.4s var(--ease-out);
+        }
+
+        .install-banner span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .install-banner button {
+            background: var(--accent);
+            color: #1a1206;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================
+           SPINNER
+           ========================================================== */
+        .fa-spinner { animation: spin 0.9s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ==========================================================
+           RESPONSIVE
+           ========================================================== */
+        @media (max-width: 560px) {
+            .form-title { font-size: 1.35rem; margin-bottom: 1.1rem; }
+            .pill-input { padding: 12px 14px 12px 39px; font-size: 0.9rem; }
+            .input-icon-group > i { left: 13px; font-size: 0.9rem; }
+            .btn { padding: 12px 16px; font-size: 0.9rem; }
+            .half-title { font-size: 1.3rem; }
+            .half-icon { font-size: 2.4rem; }
+            .center-logo { width: 76px; height: 76px; }
+            .center-logo img { width: 54px; height: 54px; }
+            .panel-logo-strip .panel-logo-img { width: 118px; height: 118px; }
+            .panel-logo-strip .logo-fallback { font-size: 2rem; }
+            .terms-modal { max-height: 90vh; }
+            .terms-modal-header { padding: 16px 18px 14px; }
+            .terms-modal-body { padding: 16px 20px 20px; font-size: 0.86rem; }
+            .terms-modal-footer { padding: 12px 18px 16px; }
+            .terms-accept-btn, .terms-decline-btn { padding: 10px 20px; font-size: 0.85rem; }
+        }
+
+        @media (max-width: 400px) {
+            .flex-between { flex-direction: column; align-items: stretch; }
+            .flex-between .text-link { justify-content: center; }
+            .double-row { flex-direction: column; gap: 0.8rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div id="loader">
-  <div class="spinner"></div>
-  <p>Loading Registration Setup…</p>
-</div>
-
-<div class="app">
-  <div class="header">
-    <button class="back-btn" onclick="window.location.href='admin.html'">
-      <i class="fas fa-arrow-left"></i> Back
-    </button>
-    <h1>Registration Setup</h1>
-    <button class="save-btn" id="globalSaveBtn" onclick="saveAllToFirebase()">
-      <i class="fas fa-save"></i> Save
-    </button>
-  </div>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="student">👤 Student Fields</button>
-    <button class="tab" data-tab="lecturer">🎓 Lecturer Fields</button>
-    <button class="tab" data-tab="structure">🏛️ Colleges & Structure</button>
-  </nav>
-
-  <main class="content">
-    <section id="tab-student" class="tab-panel active">
-      <div class="info-banner">
-        <i class="fas fa-info-circle"></i>
-        <div>These are the fields that will appear on the <b>student registration</b> form. Fields marked <b>system</b> (email / password) cannot be deleted — but you can disable any other field or reorder them.</div>
-      </div>
-      <div id="studentFieldsList"></div>
-      <button class="add-btn" onclick="openFieldModal('student')"><i class="fas fa-plus"></i> Add Student Field</button>
-    </section>
-
-    <section id="tab-lecturer" class="tab-panel">
-      <div class="info-banner">
-        <i class="fas fa-info-circle"></i>
-        <div>These are the fields shown on the <b>lecturer application</b> form. Adjust freely — students and lecturers can have different field sets.</div>
-      </div>
-      <div id="lecturerFieldsList"></div>
-      <button class="add-btn" onclick="openFieldModal('lecturer')"><i class="fas fa-plus"></i> Add Lecturer Field</button>
-    </section>
-
-    <section id="tab-structure" class="tab-panel">
-      <div class="info-banner">
-        <i class="fas fa-info-circle"></i>
-        <div>Set up <b>Colleges → Programs → Classes</b> and <b>Intakes</b>. Students will pick from these lists during registration. The class <b>short code</b> (e.g. <code>D6</code>) is what students see — not the long name.</div>
-      </div>
-      <div id="collegesList"></div>
-      <button class="add-btn" onclick="openCollegeModal()"><i class="fas fa-plus"></i> Add College</button>
-    </section>
-  </main>
-</div>
-
-<!-- FIELD MODAL -->
-<div id="fieldModal" class="modal-overlay">
-  <div class="modal-box">
-    <button class="close-modal" onclick="closeModal('fieldModal')">&times;</button>
-    <h3 id="fieldModalTitle">Add Field</h3>
-    <form id="fieldForm">
-      <input type="hidden" id="fieldRole">
-      <input type="hidden" id="fieldEditId">
-      <div class="form-row">
-        <label>Label (what users see)</label>
-        <input type="text" id="fieldLabel" required placeholder="e.g. Student ID No.">
-      </div>
-      <div class="form-row">
-        <label>Storage Key</label>
-        <input type="text" id="fieldKey" placeholder="e.g. studentId" pattern="[a-zA-Z][a-zA-Z0-9_]*">
-        <small>Auto-generated from label if left blank. Cannot change for existing fields.</small>
-      </div>
-      <div class="form-row">
-        <label>Type</label>
-        <select id="fieldType" onchange="updateFieldOptionsVisibility()">
-          <option value="text">Text</option>
-          <option value="email">Email</option>
-          <option value="tel">Phone</option>
-          <option value="password">Password</option>
-          <option value="dropdown">Dropdown</option>
-          <option value="image">Image Upload</option>
-          <option value="nrc">NRC</option>
-          <option value="date">Date</option>
-          <option value="number">Number</option>
-        </select>
-      </div>
-      <div class="form-row" id="fieldOptionsRow" style="display:none">
-        <label>Dropdown Options (one per line)</label>
-        <textarea id="fieldOptions" rows="4" placeholder="MALE&#10;FEMALE"></textarea>
-      </div>
-      <div class="form-row">
-        <label class="checkbox-label"><input type="checkbox" id="fieldRequired"> Required field</label>
-      </div>
-      <div class="form-row">
-        <label class="checkbox-label"><input type="checkbox" id="fieldEnabled" checked> Enabled</label>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeModal('fieldModal')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save Field</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- COLLEGE MODAL -->
-<div id="collegeModal" class="modal-overlay">
-  <div class="modal-box">
-    <button class="close-modal" onclick="closeModal('collegeModal')">&times;</button>
-    <h3 id="collegeModalTitle">Add College</h3>
-    <form id="collegeForm">
-      <input type="hidden" id="collegeEditId">
-      <div class="form-row">
-        <label>College Name</label>
-        <input type="text" id="collegeName" required placeholder="e.g. Northern Technical College">
-      </div>
-      <div class="form-row">
-        <label>Center Code</label>
-        <input type="text" id="collegeCenterCode" required placeholder="e.g. NORTEC">
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeModal('collegeModal')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save College</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- PROGRAM MODAL -->
-<div id="programModal" class="modal-overlay">
-  <div class="modal-box">
-    <button class="close-modal" onclick="closeModal('programModal')">&times;</button>
-    <h3 id="programModalTitle">Add Program</h3>
-    <form id="programForm">
-      <input type="hidden" id="programCollegeId">
-      <input type="hidden" id="programEditId">
-      <div class="form-row">
-        <label>Program Name</label>
-        <input type="text" id="programName" required placeholder="e.g. Mechanical Engineering">
-      </div>
-      <div class="form-row">
-        <label>Program Code (optional)</label>
-        <input type="text" id="programCode" placeholder="e.g. MECH">
-        <small>The code prefix used to build class codes.</small>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeModal('programModal')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save Program</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- CLASS MODAL -->
-<div id="classModal" class="modal-overlay">
-  <div class="modal-box">
-    <button class="close-modal" onclick="closeModal('classModal')">&times;</button>
-    <h3 id="classModalTitle">Add Class</h3>
-    <form id="classForm">
-      <input type="hidden" id="classCollegeId">
-      <input type="hidden" id="classProgramId">
-      <input type="hidden" id="classEditId">
-      <div class="form-row">
-        <label>Level</label>
-        <input type="text" id="classLevel" required placeholder="e.g. Diploma / Advanced Certificate / Craft Certificate">
-      </div>
-      <div class="form-row">
-        <label>Short Code (shown to students)</label>
-        <input type="text" id="classCode" required placeholder="e.g. D6" style="font-family:monospace;font-weight:800;text-transform:uppercase">
-        <small>This is what students see instead of the long name.</small>
-      </div>
-      <div class="form-row">
-        <label>Maximum Students</label>
-        <input type="number" id="classMax" min="0" value="40">
-      </div>
-      <div class="term-input-group">
-        <h5>📘 Full-Time — Terms per Year</h5>
-        <div class="form-row-grid">
-          <div class="form-row" style="margin-bottom:0"><label>Year 1</label><input type="number" id="ftY1" min="0" value="3"></div>
-          <div class="form-row" style="margin-bottom:0"><label>Year 2</label><input type="number" id="ftY2" min="0" value="3"></div>
-          <div class="form-row" style="margin-bottom:0"><label>Year 3</label><input type="number" id="ftY3" min="0" value="3"></div>
+<!-- ==========================================================
+     SPLIT LANDING
+     ========================================================== -->
+<div class="split-landing" id="splitLanding">
+    <div class="split-half split-top" id="splitTop" role="button" aria-label="Student portal — swipe down">
+        <div class="half-content">
+            <div class="half-chevron"><i class="fas fa-chevron-down"></i></div>
+            <div class="half-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="half-title">Student</div>
+            <div class="half-hint">Swipe down to continue</div>
         </div>
-      </div>
-      <div class="term-input-group">
-        <h5>📗 ODFL — Terms per Year</h5>
-        <div class="form-row-grid">
-          <div class="form-row" style="margin-bottom:0"><label>Year 1</label><input type="number" id="odflY1" min="0" value="4"></div>
-          <div class="form-row" style="margin-bottom:0"><label>Year 2</label><input type="number" id="odflY2" min="0" value="4"></div>
-          <div class="form-row" style="margin-bottom:0"><label>Year 3</label><input type="number" id="odflY3" min="0" value="3"></div>
+    </div>
+
+    <div class="split-half split-bottom" id="splitBottom" role="button" aria-label="Lecturer portal — swipe up">
+        <div class="half-content">
+            <div class="half-chevron"><i class="fas fa-chevron-up"></i></div>
+            <div class="half-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="half-title">Lecturer</div>
+            <div class="half-hint">Swipe up to continue</div>
         </div>
-        <small style="font-size:10px;color:var(--text-3);margin-top:6px;display:block">Example: ODFL Year 1 = 4 terms (1–4), Year 2 = 4 terms (5–8), Year 3 = 3 terms (9–11)</small>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeModal('classModal')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save Class</button>
-      </div>
-    </form>
-  </div>
+    </div>
+
+    <div class="center-logo" id="centerLogo">
+        <img src="logo.png" alt="UTOM logo"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <span class="logo-fallback" style="display:none;">UTOM</span>
+    </div>
 </div>
 
-<!-- INTAKE MODAL -->
-<div id="intakeModal" class="modal-overlay">
-  <div class="modal-box">
-    <button class="close-modal" onclick="closeModal('intakeModal')">&times;</button>
-    <h3 id="intakeModalTitle">Add Intake</h3>
-    <form id="intakeForm">
-      <input type="hidden" id="intakeCollegeId">
-      <input type="hidden" id="intakeEditId">
-      <div class="form-row">
-        <label>Intake Name</label>
-        <input type="text" id="intakeName" required placeholder="e.g. JAN 2026">
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeModal('intakeModal')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save Intake</button>
-      </div>
-    </form>
-  </div>
+<!-- ==========================================================
+     STUDENT PANEL
+     ========================================================== -->
+<div class="slide-panel" id="studentPanel">
+    <div class="panel-topbar">
+        <button id="backFromStudent" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+        <span class="panel-label">Student Portal</span>
+    </div>
+    <div class="slide-panel-inner">
+        <div class="panel-logo-strip">
+            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="logo-fallback" style="display:none;">UTOM</span>
+            <div class="panel-brand-name">UTOM</div>
+            <div class="panel-brand-sub">Student Portal</div>
+        </div>
+
+        <div class="segmented-control" id="authSegments" data-active="login">
+            <button type="button" class="segment active" id="segLogin">Sign in</button>
+            <button type="button" class="segment" id="segSignup">Create account</button>
+        </div>
+
+        <div class="form-area">
+            <!-- LOGIN -->
+            <div id="loginPanel" class="form-panel">
+                <div class="form-title">
+                    <i class="fas fa-arrow-right-to-bracket"></i>
+                    Welcome back
+                </div>
+                <form id="loginForm" novalidate>
+                    <div class="input-icon-group">
+                        <input type="email" id="loginEmail" class="pill-input"
+                               placeholder="Email address" autocomplete="email" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="loginPassword" class="pill-input"
+                               placeholder="Password" autocomplete="current-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div id="loginError" class="error-msg"></div>
+                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <i class="fas fa-arrow-right-to-bracket"></i> LOGIN
+                    </button>
+                    <div class="flex-between">
+                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                            Forgot your password?
+                        </span>
+                        <button type="button" id="forgotPwdBtn" class="text-link">
+                            <i class="fas fa-key"></i> Reset it
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SIGNUP (dynamic) -->
+            <div id="signupPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-user-plus"></i>
+                    Create your account
+                </div>
+                <form id="signupForm" novalidate>
+                    <div id="studentSignupFields">
+                        <!-- Filled dynamically from admin Registration Setup -->
+                    </div>
+                    <div id="signupError" class="error-msg"></div>
+                    <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
+                    <div class="terms-check">
+                        <input type="checkbox" id="termsCheckbox" class="checkbox-custom">
+                        <label for="termsCheckbox">I agree to the <strong>Terms &amp; Conditions</strong> and Privacy Policy.</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="registerBtn">
+                        <i class="fas fa-user-check"></i> REGISTER
+                    </button>
+                </form>
+            </div>
+
+            <!-- FORGOT -->
+            <div id="forgotPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-paper-plane"></i>
+                    Reset password
+                </div>
+                <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1.3rem;line-height:1.5;">
+                    Enter your email address and we'll send you a secure link to reset your password.
+                </p>
+                <div class="input-icon-group">
+                    <input type="email" id="resetEmailInput" class="pill-input"
+                           placeholder="Your email address" autocomplete="email">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div id="resetError" class="error-msg"></div>
+                <div style="display:flex;gap:11px;margin-top:1.2rem;">
+                    <button type="button" id="backToLoginFromForgotBtn" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> Cancel
+                    </button>
+                    <button type="button" id="sendResetLinkBtn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send link
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="installBanner" class="install-banner" style="display:none;">
+            <span><i class="fas fa-mobile-alt"></i> Install UTOM for offline access</span>
+            <button id="bannerInstallBtn" type="button">Install</button>
+        </div>
+    </div>
 </div>
 
-<div class="toast-container" id="toastContainer"></div>
+<!-- ==========================================================
+     LECTURER PANEL
+     ========================================================== -->
+<div class="slide-panel" id="lecturerPanel">
+    <div class="panel-topbar">
+        <button id="backFromLecturer" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+        <span class="panel-label">Lecturer Portal</span>
+    </div>
+    <div class="slide-panel-inner">
+        <div class="panel-logo-strip">
+            <img src="logo.png" alt="UTOM logo" class="panel-logo-img"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="logo-fallback" style="display:none;">UTOM</span>
+            <div class="panel-brand-name">UTOM</div>
+            <div class="panel-brand-sub">Lecturer Portal</div>
+        </div>
+
+        <div class="segmented-control" id="lecSegments" data-active="login">
+            <button type="button" class="segment active" id="lecSegLogin">Sign in</button>
+            <button type="button" class="segment" id="lecSegSignup">Apply</button>
+        </div>
+
+        <div class="form-area">
+            <!-- LECTURER LOGIN -->
+            <div id="lecLoginPanel" class="form-panel">
+                <div class="form-title">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    Lecturer sign in
+                </div>
+                <form id="lecLoginForm" novalidate>
+                    <div class="input-icon-group">
+                        <input type="email" id="lecLoginEmail" class="pill-input"
+                               placeholder="Email address" autocomplete="email" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-icon-group">
+                        <input type="password" id="lecLoginPassword" class="pill-input"
+                               placeholder="Password" autocomplete="current-password" required>
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div id="lecLoginError" class="error-msg"></div>
+                    <button type="submit" class="btn btn-primary" id="lecLoginBtn">
+                        <i class="fas fa-arrow-right-to-bracket"></i> SIGN IN
+                    </button>
+                    <div class="flex-between">
+                        <span style="font-size:0.8rem;color:var(--text-secondary);font-weight:400;">
+                            Not yet approved?
+                        </span>
+                        <button type="button" id="lecGoSignupBtn" class="text-link">
+                            <i class="fas fa-user-plus"></i> Apply now
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- LECTURER SIGNUP (dynamic) -->
+            <div id="lecSignupPanel" class="form-panel hidden-panel">
+                <div class="form-title">
+                    <i class="fas fa-user-plus"></i>
+                    Apply to teach
+                </div>
+                <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:1.1rem;line-height:1.5;">
+                    Submit your details. An admin will review your application.
+                </p>
+                <form id="lecSignupForm" novalidate>
+                    <div id="lecturerSignupFields">
+                        <!-- Filled dynamically from admin Registration Setup -->
+                    </div>
+                    <div id="lecSignupError" class="error-msg"></div>
+                    <div id="lecSignupSuccess" class="success-msg" style="display: none;"></div>
+
+                    <div class="terms-check">
+                        <input type="checkbox" id="lecTermsCheckbox" class="checkbox-custom">
+                        <label for="lecTermsCheckbox">
+                            I confirm the documents are authentic and I agree to the
+                            <button type="button" class="terms-open-link" id="openLecTermsBtn">Lecturer Terms &amp; Conditions</button>.
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="lecRegisterBtn">
+                        <i class="fas fa-paper-plane"></i> SUBMIT APPLICATION
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================
+     TERMS & CONDITIONS MODAL
+     ========================================================== -->
+<div class="terms-modal-overlay" id="termsModalOverlay">
+    <div class="terms-modal" role="dialog" aria-modal="true">
+        <div class="terms-modal-header">
+            <h2 id="termsModalTitle"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</h2>
+            <button class="terms-modal-close" id="termsModalCloseBtn" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="terms-modal-body" id="termsModalBody"></div>
+        <div class="terms-modal-footer">
+            <button class="terms-decline-btn" id="termsDeclineBtn">Close</button>
+            <button class="terms-accept-btn" id="termsAcceptBtn">
+                <i class="fas fa-check"></i> I Agree
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================
+     COMPLETE PROFILE OVERLAY
+     ========================================================== -->
+<div class="complete-profile-overlay" id="completeProfileOverlay">
+    <div class="complete-profile-topbar">
+        <span class="brand-mini">UTOM · Complete Your Profile</span>
+    </div>
+    <div class="complete-profile-inner">
+        <div class="complete-profile-hero">
+            <div class="hero-icon"><i class="fas fa-user-shield"></i></div>
+            <h1>Almost there!</h1>
+            <p>Please complete the missing information below before we can grant you access to your dashboard.</p>
+            <div class="missing-chips" id="missingChipsContainer"></div>
+        </div>
+
+        <form id="completeProfileForm" novalidate>
+            <div id="completeProfileFields"></div>
+            <div id="completeProfileError" class="error-msg"></div>
+            <button type="submit" class="btn btn-primary" id="completeProfileBtn">
+                <i class="fas fa-check-circle"></i> SAVE &amp; CONTINUE
+            </button>
+            <button type="button" id="completeProfileLogoutBtn"
+                    style="background:none;border:none;color:var(--text-tertiary);font-family:inherit;font-size:0.82rem;width:100%;padding:14px 8px 0;cursor:pointer;text-decoration:underline;">
+                Sign out instead
+            </button>
+        </form>
+    </div>
+</div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { getDatabase, ref, get, set, update, remove, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        sendPasswordResetEmail,
+        signOut
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import {
+        getDatabase,
+        ref,
+        set,
+        get,
+        update,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
-  authDomain: "utom-c4003.firebaseapp.com",
-  databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
-  projectId: "utom-c4003",
-  storageBucket: "utom-c4003.firebasestorage.app",
-  messagingSenderId: "878225874050",
-  appId: "1:878225874050:web:643626906bfd233eeae89b"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const SETUP_REF = ref(db, 'system/registrationSetup');
+    /* ============================================================
+       FIREBASE INITIALIZATION
+       ============================================================ */
+    const firebaseConfig = {
+        apiKey: "AIzaSyDHiQHbATgnQIIB9X-gOM5XdmRbOsUJoBQ",
+        authDomain: "utom-c4003.firebaseapp.com",
+        databaseURL: "https://utom-c4003-default-rtdb.firebaseio.com",
+        projectId: "utom-c4003",
+        storageBucket: "utom-c4003.firebasestorage.app",
+        messagingSenderId: "878225874050",
+        appId: "1:878225874050:web:643626906bfd233eeae89b",
+        measurementId: "G-STHFWDKVZN"
+    };
+    const CLOUD_NAME = 'dd3lcymrk';
+    const UPLOAD_PRESET = 'h3eyhc2o';
 
-/* ---------- DEFAULT SCHEMA ---------- */
-const SYSTEM_KEYS = ['email', 'password', 'confirmPassword'];
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
-const DEFAULT_STUDENT_FIELDS = {
-  firstName:   { id:'firstName',   label:'First Name',     type:'text',     required:true,  enabled:true, order:1 },
-  middleName:  { id:'middleName',  label:'Middle Name',    type:'text',     required:false, enabled:false,order:2 },
-  lastName:    { id:'lastName',    label:'Last Name',      type:'text',     required:true,  enabled:true, order:3 },
-  gender:      { id:'gender',      label:'Gender',         type:'dropdown', options:['MALE','FEMALE'], required:true, enabled:true, order:4 },
-  nrc:         { id:'nrc',         label:'NRC Number',     type:'nrc',      required:true,  enabled:true, order:5 },
-  studentId:   { id:'studentId',   label:'Student ID No.', type:'text',     required:true,  enabled:true, order:6 },
-  phone:       { id:'phone',       label:'Phone Number',   type:'tel',      required:true,  enabled:true, order:7 },
-  email:       { id:'email',       label:'Email Address',  type:'email',    required:true,  enabled:true, order:8, system:true },
-  password:    { id:'password',    label:'Password',       type:'password', required:true,  enabled:true, order:9, system:true },
-  confirmPassword:{ id:'confirmPassword',label:'Confirm Password',type:'password',required:true,enabled:true,order:10,system:true },
-  profilePic:  { id:'profilePic',  label:'Profile Picture',type:'image',    required:true,  enabled:true, order:20 },
-  nrcFront:    { id:'nrcFront',    label:'NRC Front',      type:'image',    required:true,  enabled:true, order:21 },
-  nrcBack:     { id:'nrcBack',     label:'NRC Back',       type:'image',    required:true,  enabled:true, order:22 }
-};
-const DEFAULT_STUDENT_HIERARCHY = {
-  college:   { id:'college',   label:'College',    enabled:true, required:true, order:30 },
-  program:   { id:'program',   label:'Program',    enabled:true, required:true, order:31 },
-  class:     { id:'class',     label:'Class',      enabled:true, required:true, order:32 },
-  intake:    { id:'intake',    label:'Intake',     enabled:true, required:true, order:33 },
-  studyMode: { id:'studyMode', label:'Study Mode', enabled:true, required:true, order:34, options:['FULL TIME','ODFL'] }
-};
+    const SETUP_REF = ref(database, 'system/registrationSetup');
+    const TERMS_REF = ref(database, 'system/lecturerTerms');
 
-const DEFAULT_LECTURER_FIELDS = {
-  firstName:  { id:'firstName', label:'First Name', type:'text',   required:true,  enabled:true, order:1 },
-  lastName:   { id:'lastName',  label:'Last Name',  type:'text',   required:true,  enabled:true, order:2 },
-  email:      { id:'email',     label:'Email Address', type:'email', required:true, enabled:true, order:3, system:true },
-  password:   { id:'password',  label:'Password', type:'password', required:true, enabled:true, order:4, system:true },
-  confirmPassword:{ id:'confirmPassword',label:'Confirm Password',type:'password',required:true,enabled:true,order:5,system:true },
-  phone:      { id:'phone',     label:'Phone Number', type:'tel', required:true, enabled:true, order:6 }
-};
-const DEFAULT_LECTURER_HIERARCHY = {
-  college: { id:'college', label:'College', enabled:false, required:false, order:30 }
-};
+    /* ============================================================
+       FALLBACK DEFAULTS (if Registration Setup has not been saved)
+       ============================================================ */
+    const SYSTEM_KEYS = ['email', 'password', 'confirmPassword'];
+    const CORE_TOP_LEVEL_FIELDS = ['firstName', 'lastName', 'phone', 'email'];
+    const HIER_KEYS = ['college', 'program', 'class', 'intake', 'studyMode'];
+    const HIER_VALUE_KEY = {
+        college: 'collegeId',
+        program: 'programId',
+        class: 'classId',
+        intake: 'intakeId',
+        studyMode: 'studyMode'
+    };
 
-/* ---------- STATE ---------- */
-let STATE = {
-  student: { fields:{}, hierarchy:{} },
-  lecturer:{ fields:{}, hierarchy:{} },
-  colleges:{}
-};
+    const FALLBACK_STUDENT_FIELDS = {
+        firstName:  { id:'firstName',  label:'First Name',     type:'text',     required:true,  enabled:true, order:1 },
+        middleName: { id:'middleName', label:'Middle Name',    type:'text',     required:false, enabled:false,order:2 },
+        lastName:   { id:'lastName',   label:'Last Name',      type:'text',     required:true,  enabled:true, order:3 },
+        gender:     { id:'gender',     label:'Gender',         type:'dropdown', options:['MALE','FEMALE'], required:true, enabled:true, order:4 },
+        nrc:        { id:'nrc',        label:'NRC Number',     type:'nrc',      required:true,  enabled:true, order:5 },
+        studentId:  { id:'studentId',  label:'Student ID No.', type:'text',     required:true,  enabled:true, order:6 },
+        phone:      { id:'phone',      label:'Phone Number',   type:'tel',      required:true,  enabled:true, order:7 },
+        email:      { id:'email',      label:'Email Address',  type:'email',    required:true,  enabled:true, order:8, system:true },
+        password:   { id:'password',   label:'Password',       type:'password', required:true,  enabled:true, order:9, system:true },
+        confirmPassword:{ id:'confirmPassword', label:'Confirm Password', type:'password', required:true, enabled:true, order:10, system:true },
+        profilePic: { id:'profilePic', label:'Profile Picture', type:'image',   required:true,  enabled:true, order:20 },
+        nrcFront:   { id:'nrcFront',   label:'NRC Front',      type:'image',    required:true,  enabled:true, order:21 },
+        nrcBack:    { id:'nrcBack',    label:'NRC Back',       type:'image',    required:true,  enabled:true, order:22 }
+    };
+    const FALLBACK_STUDENT_HIER = {
+        college:   { id:'college',   label:'College',    enabled:true, required:true, order:30 },
+        program:   { id:'program',   label:'Program',    enabled:true, required:true, order:31 },
+        class:     { id:'class',     label:'Class',      enabled:true, required:true, order:32 },
+        intake:    { id:'intake',    label:'Intake',     enabled:true, required:true, order:33 },
+        studyMode: { id:'studyMode', label:'Study Mode', enabled:true, required:true, order:34, options:['FULL TIME','ODFL'] }
+    };
+    const FALLBACK_LECTURER_FIELDS = {
+        firstName: { id:'firstName', label:'First Name', type:'text',   required:true, enabled:true, order:1 },
+        lastName:  { id:'lastName',  label:'Last Name',  type:'text',   required:true, enabled:true, order:2 },
+        email:     { id:'email',     label:'Email Address', type:'email', required:true, enabled:true, order:3, system:true },
+        password:  { id:'password',  label:'Password', type:'password', required:true, enabled:true, order:4, system:true },
+        confirmPassword:{ id:'confirmPassword', label:'Confirm Password', type:'password', required:true, enabled:true, order:5, system:true },
+        phone:     { id:'phone',     label:'Phone Number', type:'tel', required:true, enabled:true, order:6 }
+    };
+    const FALLBACK_LECTURER_HIER = {
+        college: { id:'college', label:'College', enabled:false, required:false, order:30 }
+    };
 
-/* ---------- HELPERS ---------- */
-function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function uid(){return 'x'+Math.random().toString(36).slice(2,10)}
-function slugKey(label){return label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || ('field_'+uid())}
-function showToast(msg,type='info'){
-  const t=document.createElement('div');
-  t.className='toast';
-  t.innerHTML=`<i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-bell'}"></i> ${msg}`;
-  document.getElementById('toastContainer').appendChild(t);
-  setTimeout(()=>t.remove(),3000);
-}
-function openModal(id){document.getElementById(id).classList.add('open')}
-function closeModal(id){document.getElementById(id).classList.remove('open')}
-window.closeModal = closeModal;
+    /* ============================================================
+       STATE
+       ============================================================ */
+    let REG = {
+        student:  { fields: FALLBACK_STUDENT_FIELDS,  hierarchy: FALLBACK_STUDENT_HIER },
+        lecturer: { fields: FALLBACK_LECTURER_FIELDS, hierarchy: FALLBACK_LECTURER_HIER },
+        colleges: {}
+    };
+    let PENDING_USER = null;
+    let adminTerms = { enabled: true, requireAccept: true, title: 'Lecturer Terms and Conditions', content: '' };
 
-/* ---------- LOAD ---------- */
-async function loadSetup(){
-  const snap = await get(SETUP_REF);
-  let data = snap.val() || {};
+    /* ============================================================
+       UTILITIES
+       ============================================================ */
+    function escapeHtml(s) {
+        if (s == null || s === '') return '';
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+        });
+    }
 
-  // Merge defaults for any missing bucket
-  if(!data.student) data.student = {};
-  if(!data.lecturer) data.lecturer = {};
-  if(!data.colleges) data.colleges = {};
+    function sortFields(fields) {
+        return Object.values(fields || {}).sort(function(a, b) {
+            return (a.order || 0) - (b.order || 0);
+        });
+    }
 
-  data.student.fields   = data.student.fields   || {};
-  data.student.hierarchy= data.student.hierarchy|| {};
-  data.lecturer.fields  = data.lecturer.fields  || {};
-  data.lecturer.hierarchy=data.lecturer.hierarchy||{};
+    function isBlank(v) {
+        return v === undefined || v === null || String(v).trim() === '';
+    }
 
-  // Fill defaults only for brand-new installs
-  if(Object.keys(data.student.fields).length === 0){
-    data.student.fields   = { ...DEFAULT_STUDENT_FIELDS };
-    data.student.hierarchy= { ...DEFAULT_STUDENT_HIERARCHY };
-  }
-  if(Object.keys(data.lecturer.fields).length === 0){
-    data.lecturer.fields   = { ...DEFAULT_LECTURER_FIELDS };
-    data.lecturer.hierarchy= { ...DEFAULT_LECTURER_HIERARCHY };
-  }
-  // Ensure hierarchy defaults exist
-  for(const k of Object.keys(DEFAULT_STUDENT_HIERARCHY)){
-    if(!data.student.hierarchy[k]) data.student.hierarchy[k] = { ...DEFAULT_STUDENT_HIERARCHY[k] };
-  }
-  for(const k of Object.keys(DEFAULT_LECTURER_HIERARCHY)){
-    if(!data.lecturer.hierarchy[k]) data.lecturer.hierarchy[k] = { ...DEFAULT_LECTURER_HIERARCHY[k] };
-  }
+    function setButtonLoading(button, isLoading, originalHtml) {
+        if (!button) return;
+        if (isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        }
+    }
 
-  STATE.student  = data.student;
-  STATE.lecturer = data.lecturer;
-  STATE.colleges = data.colleges || {};
+    /**
+     * Normalise anything Firebase may return into [key, value] pairs.
+     * Handles objects, arrays and sparse/legacy data.
+     */
+    function toEntryList(obj) {
+        if (!obj) return [];
+        if (Array.isArray(obj)) {
+            return obj
+                .map(function(v, i) { return [String(i), v]; })
+                .filter(function(e) { return e[1] !== null && e[1] !== undefined && e[1] !== ''; });
+        }
+        if (typeof obj !== 'object') return [];
+        return Object.entries(obj).filter(function(e) {
+            return e[1] !== null && e[1] !== undefined && e[1] !== '';
+        });
+    }
 
-  renderStudentFields();
-  renderLecturerFields();
-  renderStructure();
-}
+    /* ---------- NORMALISED COLLEGE / PROGRAM / CLASS / INTAKE ---------- */
 
-async function saveAllToFirebase(){
-  const btn = document.getElementById('globalSaveBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
-  try {
-    await set(SETUP_REF, {
-      student:  STATE.student,
-      lecturer: STATE.lecturer,
-      colleges: STATE.colleges
+    function getColleges() {
+        return toEntryList(REG.colleges).map(function(entry) {
+            const id = entry[0];
+            const c = entry[1];
+            if (typeof c === 'string') {
+                return { id: id, name: c, centerCode: '', raw: { name: c } };
+            }
+            return {
+                id: id,
+                name: c.name || c.collegeName || c.title || '',
+                centerCode: c.centerCode || c.code || c.center || '',
+                raw: c
+            };
+        });
+    }
+
+    function getCollegeById(id) {
+        if (!id) return null;
+        const colleges = getColleges();
+        for (let i = 0; i < colleges.length; i++) {
+            if (colleges[i].id === id) return colleges[i];
+        }
+        return null;
+    }
+
+    function getProgramsOf(college) {
+        if (!college) return [];
+        return toEntryList(college.raw && college.raw.programs).map(function(entry) {
+            const id = entry[0];
+            const p = entry[1];
+            if (typeof p === 'string') {
+                return { id: id, name: p, code: '', raw: { name: p } };
+            }
+            return {
+                id: id,
+                name: p.name || p.title || p.programName || p.program || '',
+                code: p.code || p.programCode || '',
+                raw: p
+            };
+        });
+    }
+
+    function getProgramById(college, programId) {
+        if (!college || !programId) return null;
+        const programs = getProgramsOf(college);
+        for (let i = 0; i < programs.length; i++) {
+            if (programs[i].id === programId) return programs[i];
+        }
+        return null;
+    }
+
+    function getClassesOf(program) {
+        if (!program) return [];
+        return toEntryList(program.raw && program.raw.classes).map(function(entry) {
+            const id = entry[0];
+            const c = entry[1];
+            if (typeof c === 'string') {
+                return { id: id, code: c, level: '' };
+            }
+            return {
+                id: id,
+                code: c.code || c.shortCode || c.classCode || '',
+                level: c.level || c.name || c.className || ''
+            };
+        });
+    }
+
+    function getIntakesOf(college) {
+        if (!college) return [];
+        return toEntryList(college.raw && college.raw.intakes).map(function(entry) {
+            const id = entry[0];
+            const it = entry[1];
+            if (typeof it === 'string') {
+                return { id: id, name: it };
+            }
+            return {
+                id: id,
+                name: it.name || it.title || it.intake || it.label || ''
+            };
+        });
+    }
+
+    /* ============================================================
+       LOAD REGISTRATION CONFIG
+       ============================================================ */
+    async function loadRegistrationConfig() {
+        try {
+            const snap = await get(SETUP_REF);
+            const data = snap.val() || {};
+            const student = data.student || {};
+            const lecturer = data.lecturer || {};
+
+            REG.student.fields = (student.fields && Object.keys(student.fields).length > 0)
+                ? student.fields
+                : FALLBACK_STUDENT_FIELDS;
+            REG.student.hierarchy = (student.hierarchy && Object.keys(student.hierarchy).length > 0)
+                ? student.hierarchy
+                : FALLBACK_STUDENT_HIER;
+            REG.lecturer.fields = (lecturer.fields && Object.keys(lecturer.fields).length > 0)
+                ? lecturer.fields
+                : FALLBACK_LECTURER_FIELDS;
+            REG.lecturer.hierarchy = (lecturer.hierarchy && Object.keys(lecturer.hierarchy).length > 0)
+                ? lecturer.hierarchy
+                : FALLBACK_LECTURER_HIER;
+            REG.colleges = data.colleges || {};
+
+            console.log('[UTOM] Colleges loaded:', getColleges().map(function(c) { return c.name; }));
+        } catch (err) {
+            console.warn('[UTOM] Could not load Registration Setup, using fallback defaults.', err);
+        }
+    }
+
+    async function loadAdminTerms() {
+        try {
+            const snap = await get(TERMS_REF);
+            if (snap.exists()) {
+                adminTerms = Object.assign(adminTerms, snap.val());
+            }
+        } catch (err) {
+            console.warn('[UTOM] Failed to load admin terms:', err);
+        }
+        const titleText = (adminTerms.title || 'Terms and Conditions').trim();
+        const linkBtn = document.getElementById('openLecTermsBtn');
+        if (linkBtn) linkBtn.textContent = titleText;
+        const modalTitle = document.getElementById('termsModalTitle');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-file-contract"></i> ' + escapeHtml(titleText);
+        }
+    }
+
+    /* ============================================================
+       CLOUDINARY UPLOAD
+       ============================================================ */
+    function openCloudUpload(opts) {
+        return new Promise(function(resolve, reject) {
+            if (typeof cloudinary === 'undefined') {
+                reject(new Error('Cloudinary widget not loaded'));
+                return;
+            }
+            const o = Object.assign({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['local', 'url'],
+                maxFileSize: 155000000,
+                maxFiles: 1,
+                resourceType: 'image',
+                clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp', 'gif']
+            }, opts || {});
+
+            cloudinary.openUploadWidget(o, function(err, res) {
+                if (err) return reject(err);
+                if (res.event === 'success') resolve(res.info.secure_url);
+            });
+        });
+    }
+
+    /* ============================================================
+       FIELD RENDERING
+       All elements use data-field / data-upload attributes so the
+       same field can safely be rendered in more than one place
+       (signup form + complete-profile overlay) without ID clashes.
+       ============================================================ */
+    function renderFieldHTML(field, values) {
+        values = values || {};
+        const fid = field.id;
+        const reqMark = field.required ? ' *' : '';
+        const val = values[fid] || '';
+
+        // ---- IMAGE UPLOAD ----
+        if (field.type === 'image') {
+            const hasImg = !!val;
+            return (
+                '<div class="image-field">' +
+                    '<div class="section-label">' + escapeHtml(field.label) + reqMark + '</div>' +
+                    '<div class="upload-grid" style="grid-template-columns:1fr">' +
+                        '<div class="upload-box ' + (hasImg ? 'has-image' : '') + '" data-upload="' + escapeHtml(fid) + '">' +
+                            (hasImg
+                                ? '<img src="' + escapeHtml(val) + '" alt="" />'
+                                : '<i class="fas fa-cloud-upload-alt upload-icon"></i><span class="upload-label">Tap to upload</span>') +
+                            '<span class="upload-badge">' + escapeHtml(field.label) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<input type="hidden" data-field="' + escapeHtml(fid) + '" value="' + escapeHtml(val) + '" />' +
+                '</div>'
+            );
+        }
+
+        // ---- DROPDOWN ----
+        if (field.type === 'dropdown') {
+            const opts = (field.options || []).map(function(o) {
+                return '<option value="' + escapeHtml(o) + '"' +
+                       (val === o ? ' selected' : '') + '>' + escapeHtml(o) + '</option>';
+            }).join('');
+            return (
+                '<div class="input-icon-group">' +
+                    '<select class="pill-input" data-field="' + escapeHtml(fid) + '"' +
+                            (field.required ? ' required' : '') + '>' +
+                        '<option value="">-- ' + escapeHtml(field.label) + reqMark + ' --</option>' +
+                        opts +
+                    '</select>' +
+                    '<i class="fas fa-list"></i>' +
+                '</div>'
+            );
+        }
+
+        // ---- TEXT-LIKE INPUTS ----
+        let inputType = 'text';
+        if (field.type === 'email') inputType = 'email';
+        else if (field.type === 'tel') inputType = 'tel';
+        else if (field.type === 'password') inputType = 'password';
+        else if (field.type === 'number') inputType = 'number';
+        else if (field.type === 'date') inputType = 'date';
+
+        let icon = 'fa-user';
+        if (inputType === 'email') icon = 'fa-envelope';
+        else if (inputType === 'password') icon = 'fa-lock';
+        else if (inputType === 'tel') icon = 'fa-phone-alt';
+        else if (field.type === 'nrc') icon = 'fa-id-card';
+        else if (field.type === 'date') icon = 'fa-calendar';
+
+        const autoComplete = field.id === 'email' ? 'email'
+            : field.id === 'password' ? 'new-password'
+            : 'off';
+
+        return (
+            '<div class="input-icon-group">' +
+                '<input type="' + inputType + '" class="pill-input" data-field="' + escapeHtml(fid) + '" ' +
+                       'placeholder="' + escapeHtml(field.label) + reqMark + '" ' +
+                       'autocomplete="' + autoComplete + '" ' + (field.required ? 'required ' : '') +
+                       'value="' + escapeHtml(val) + '" />' +
+                '<i class="fas ' + icon + '"></i>' +
+            '</div>'
+        );
+    }
+
+    /* ============================================================
+       HIERARCHY BLOCK
+       ============================================================ */
+    function collegeOptionsHTML(colleges, selectedId) {
+        let html = '<option value="">-- Select college --</option>';
+        colleges.forEach(function(c) {
+            html += '<option value="' + escapeHtml(c.id) + '"' +
+                    (selectedId === c.id ? ' selected' : '') + '>' +
+                    escapeHtml(c.name) +
+                    (c.centerCode ? ' (' + escapeHtml(c.centerCode) + ')' : '') +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function programOptionsHTML(college, selectedId) {
+        if (!college) return '<option value="">-- Select college first --</option>';
+        const programs = getProgramsOf(college);
+        if (programs.length === 0) return '<option value="">-- No programs available --</option>';
+        let html = '<option value="">-- Select program --</option>';
+        programs.forEach(function(p) {
+            html += '<option value="' + escapeHtml(p.id) + '"' +
+                    (selectedId === p.id ? ' selected' : '') + '>' +
+                    escapeHtml(p.name) +
+                    (p.code ? ' (' + escapeHtml(p.code) + ')' : '') +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function classOptionsHTML(college, programId, selectedId) {
+        const program = getProgramById(college, programId);
+        if (!program) return '<option value="">-- Select program first --</option>';
+        const classes = getClassesOf(program);
+        if (classes.length === 0) return '<option value="">-- No classes available --</option>';
+        let html = '<option value="">-- Select class --</option>';
+        classes.forEach(function(c) {
+            const label = (c.code || '') + (c.level ? ' — ' + c.level : '');
+            html += '<option value="' + escapeHtml(c.id) + '"' +
+                    (selectedId === c.id ? ' selected' : '') + '>' +
+                    escapeHtml(label) +
+                    '</option>';
+        });
+        return html;
+    }
+
+    function intakeOptionsHTML(college, selectedId) {
+        if (!college) return '<option value="">-- Select college first --</option>';
+        const intakes = getIntakesOf(college);
+        if (intakes.length === 0) return '<option value="">-- No intakes available --</option>';
+        let html = '<option value="">-- Select intake --</option>';
+        intakes.forEach(function(it) {
+            html += '<option value="' + escapeHtml(it.id) + '"' +
+                    (selectedId === it.id ? ' selected' : '') + '>' +
+                    escapeHtml(it.name) + '</option>';
+        });
+        return html;
+    }
+
+    function selectWrap(hierKey, required, optionsHtml, icon) {
+        return (
+            '<div class="input-icon-group">' +
+                '<select class="pill-input" data-hier="' + hierKey + '"' +
+                        (required ? ' required' : '') + '>' +
+                    optionsHtml +
+                '</select>' +
+                '<i class="fas ' + icon + '"></i>' +
+            '</div>'
+        );
+    }
+
+    function renderHierarchyBlock(role, values) {
+        values = values || {};
+        const hier = (REG[role] && REG[role].hierarchy) || {};
+        const colleges = getColleges();
+
+        const labelOf = function(k, fallback) {
+            return (hier[k] && hier[k].label) ? hier[k].label : fallback;
+        };
+        const isOn = function(k) { return !!(hier[k] && hier[k].enabled); };
+        const isReq = function(k) { return !!(hier[k] && hier[k].required); };
+
+        let html = '';
+
+        // College / Program / Class / Intake only make sense when at
+        // least one college exists in the system.
+        if (colleges.length > 0) {
+            if (isOn('college')) {
+                html += selectWrap(
+                    'college',
+                    isReq('college'),
+                    collegeOptionsHTML(colleges, values.collegeId || ''),
+                    'fa-university'
+                );
+            }
+
+            if (isOn('program')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'program',
+                    isReq('program'),
+                    programOptionsHTML(college, values.programId || ''),
+                    'fa-graduation-cap'
+                );
+            }
+
+            if (isOn('class')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'class',
+                    isReq('class'),
+                    classOptionsHTML(college, values.programId || '', values.classId || ''),
+                    'fa-layer-group'
+                );
+            }
+
+            if (isOn('intake')) {
+                const college = getCollegeById(values.collegeId);
+                html += selectWrap(
+                    'intake',
+                    isReq('intake'),
+                    intakeOptionsHTML(college, values.intakeId || ''),
+                    'fa-calendar-alt'
+                );
+            }
+        }
+
+        if (isOn('studyMode')) {
+            const modes = (hier.studyMode && hier.studyMode.options && hier.studyMode.options.length)
+                ? hier.studyMode.options
+                : ['FULL TIME', 'ODFL'];
+            let opts = '<option value="">-- ' + escapeHtml(labelOf('studyMode', 'Study Mode')) +
+                       (isReq('studyMode') ? ' *' : '') + ' --</option>';
+            modes.forEach(function(m) {
+                opts += '<option value="' + escapeHtml(m) + '"' +
+                        (values.studyMode === m ? ' selected' : '') + '>' +
+                        escapeHtml(m) + '</option>';
+            });
+            html += (
+                '<div class="input-icon-group">' +
+                    '<select class="pill-input" data-hier="studyMode"' +
+                            (isReq('studyMode') ? ' required' : '') + '>' +
+                        opts +
+                    '</select>' +
+                    '<i class="fas fa-clock"></i>' +
+                '</div>'
+            );
+        }
+
+        if (!html) return '';
+
+        return (
+            '<div class="hier-block" data-role="' + escapeHtml(role) + '">' +
+                '<div class="section-label">Enrollment Details</div>' +
+                html +
+            '</div>'
+        );
+    }
+
+    /* ============================================================
+       HIERARCHY CHANGE HANDLING (delegated — survives re-renders)
+       ============================================================ */
+    document.addEventListener('change', function(e) {
+        const sel = e.target;
+        if (!sel || !sel.dataset || !sel.dataset.hier) return;
+
+        const block = sel.closest('.hier-block');
+        if (!block) return;
+
+        const collegeSel = block.querySelector('[data-hier="college"]');
+        const programSel = block.querySelector('[data-hier="program"]');
+        const classSel   = block.querySelector('[data-hier="class"]');
+        const intakeSel  = block.querySelector('[data-hier="intake"]');
+
+        const college = collegeSel ? getCollegeById(collegeSel.value) : null;
+        const which = sel.dataset.hier;
+
+        if (which === 'college') {
+            if (programSel) programSel.innerHTML = programOptionsHTML(college, '');
+            if (intakeSel)  intakeSel.innerHTML  = intakeOptionsHTML(college, '');
+            if (classSel)   classSel.innerHTML   = '<option value="">-- Select program first --</option>';
+        } else if (which === 'program') {
+            if (classSel) classSel.innerHTML = classOptionsHTML(college, sel.value, '');
+        }
+    }, true);
+
+    /* ============================================================
+       UPLOAD + NAME CAPITALISATION WIRING (container scoped)
+       ============================================================ */
+    function wireUploads(container) {
+        if (!container) return;
+        container.querySelectorAll('[data-upload]').forEach(function(box) {
+            if (box.dataset.wired === '1') return;
+            box.dataset.wired = '1';
+
+            box.addEventListener('click', async function() {
+                try {
+                    const url = await openCloudUpload({
+                        resourceType: 'image',
+                        clientAllowedFormats: ['jpg','jpeg','png','webp','gif']
+                    });
+                    const fieldId = box.dataset.upload;
+                    const wrap = box.closest('.image-field');
+                    const input = wrap ? wrap.querySelector('input[data-field="' + fieldId + '"]') : null;
+                    if (input) input.value = url;
+
+                    box.querySelectorAll('img').forEach(function(img) { img.remove(); });
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = '';
+                    box.appendChild(img);
+                    box.classList.add('has-image');
+                } catch (err) {
+                    console.warn('[UTOM] Upload failed:', err);
+                }
+            });
+        });
+    }
+
+    function wireNameCapitalization(container) {
+        if (!container) return;
+        ['firstName', 'middleName', 'lastName'].forEach(function(id) {
+            const inp = container.querySelector('input[data-field="' + id + '"]');
+            if (!inp || inp.dataset.wired === '1') return;
+            inp.dataset.wired = '1';
+            inp.addEventListener('input', function() {
+                const pos = inp.selectionStart;
+                inp.value = inp.value.toUpperCase();
+                try { inp.setSelectionRange(pos, pos); } catch (err) { /* ignore */ }
+            });
+        });
+    }
+
+    /* ============================================================
+       COLLECT VALUES (container scoped — works for signup + overlay)
+       ============================================================ */
+    function collectHierarchy(container, role) {
+        const out = {};
+        const errors = [];
+        const hier = (REG[role] && REG[role].hierarchy) || {};
+        const block = container ? container.querySelector('.hier-block') : null;
+        if (!block) return { values: out, errors: errors };
+
+        HIER_KEYS.forEach(function(k) {
+            if (!hier[k] || !hier[k].enabled) return;
+            const sel = block.querySelector('[data-hier="' + k + '"]');
+            if (!sel) return;
+
+            const v = (sel.value || '').trim();
+            out[HIER_VALUE_KEY[k]] = v;
+
+            if (hier[k].required && !v) {
+                const hasOptions = Array.prototype.some.call(sel.options, function(o) {
+                    return o.value !== '';
+                });
+                // Only complain when there is actually something to pick,
+                // so an unconfigured system never blocks registration.
+                if (hasOptions) {
+                    errors.push((hier[k].label || k) + ' is required');
+                }
+            }
+        });
+
+        return { values: out, errors: errors };
+    }
+
+    function collectFieldValues(role, container) {
+        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
+            return f.enabled;
+        });
+        const values = {};
+        const customFields = {};
+        const errors = [];
+
+        if (container) {
+            fields.forEach(function(f) {
+                const el = container.querySelector('[data-field="' + f.id + '"]');
+                if (!el) return;
+
+                let v = (el.value || '').trim();
+
+                if (f.type === 'image') {
+                    if (!v && f.required) errors.push(f.label + ' is required');
+                    if (v) customFields[f.id] = v;
+                    return;
+                }
+
+                if (['firstName', 'middleName', 'lastName'].indexOf(f.id) !== -1) {
+                    v = v.toUpperCase();
+                }
+
+                if (!v && f.required) errors.push(f.label + ' is required');
+
+                if (CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
+                    values[f.id] = v;
+                } else {
+                    customFields[f.id] = v;
+                }
+            });
+        }
+
+        const hier = collectHierarchy(container, role);
+        hier.errors.forEach(function(m) { errors.push(m); });
+        Object.keys(hier.values).forEach(function(k) {
+            customFields[k] = hier.values[k];
+        });
+
+        return { values: values, customFields: customFields, errors: errors };
+    }
+
+    /* ============================================================
+       FIND MISSING FIELDS (post-login gate)
+       ============================================================ */
+    function findMissingFields(userData, role) {
+        const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
+            return f.enabled && f.required;
+        });
+        const hier = (REG[role] && REG[role].hierarchy) || {};
+        const custom = userData.customFields || {};
+        const missing = [];
+
+        fields.forEach(function(f) {
+            if (SYSTEM_KEYS.indexOf(f.id) !== -1) return;
+            if (f.type === 'email') return;
+
+            let v = custom[f.id];
+
+            if (isBlank(v) && CORE_TOP_LEVEL_FIELDS.indexOf(f.id) !== -1) {
+                v = userData[f.id];
+            }
+
+            // Legacy field-name compatibility
+            if (isBlank(v)) {
+                if (f.id === 'profilePic') v = userData.profileUrl || userData.profilePic;
+                else if (f.id === 'nrcFront') v = userData.nrcFront;
+                else if (f.id === 'nrcBack') v = userData.nrcBack;
+                else if (f.id === 'nrc') v = userData.nrcNumber || userData.nrc;
+                else if (f.id === 'certificateUrl') v = userData.certificateUrl;
+                else if (f.id === 'degreeUrl') v = userData.degreeUrl;
+            }
+
+            if (isBlank(v)) {
+                missing.push({ kind: 'field', field: f });
+            }
+        });
+
+        /* ---- hierarchy ---- */
+        const colleges = getColleges();
+
+        if (hier.college && hier.college.enabled && hier.college.required &&
+            colleges.length > 0 && isBlank(custom.collegeId)) {
+            missing.push({
+                kind: 'hier', key: 'collegeId', hierKey: 'college',
+                label: hier.college.label || 'College'
+            });
+        }
+
+        const college = getCollegeById(custom.collegeId);
+
+        if (college) {
+            if (hier.program && hier.program.enabled && hier.program.required &&
+                isBlank(custom.programId) && getProgramsOf(college).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'programId', hierKey: 'program',
+                    label: hier.program.label || 'Program'
+                });
+            }
+
+            if (hier.intake && hier.intake.enabled && hier.intake.required &&
+                isBlank(custom.intakeId) && getIntakesOf(college).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'intakeId', hierKey: 'intake',
+                    label: hier.intake.label || 'Intake'
+                });
+            }
+
+            const program = getProgramById(college, custom.programId);
+            if (program && hier.class && hier.class.enabled && hier.class.required &&
+                isBlank(custom.classId) && getClassesOf(program).length > 0) {
+                missing.push({
+                    kind: 'hier', key: 'classId', hierKey: 'class',
+                    label: hier.class.label || 'Class'
+                });
+            }
+        }
+
+        if (hier.studyMode && hier.studyMode.enabled && hier.studyMode.required &&
+            isBlank(custom.studyMode)) {
+            missing.push({
+                kind: 'hier', key: 'studyMode', hierKey: 'studyMode',
+                label: hier.studyMode.label || 'Study Mode'
+            });
+        }
+
+        return missing;
+    }
+
+    /* ============================================================
+       AUTO-CAPITALISE NAME UPDATES (for existing users)
+       ============================================================ */
+    function capitalizeNameUpdates(userData) {
+        const updates = {};
+        ['firstName', 'lastName', 'middleName'].forEach(function(k) {
+            const v = userData[k];
+            if (typeof v === 'string' && v && v !== v.toUpperCase()) {
+                updates[k] = v.toUpperCase();
+            }
+        });
+        return updates;
+    }
+
+    /* ============================================================
+       RENDER SIGNUP FORM
+       ============================================================ */
+    function renderSignupForm(role) {
+        try {
+            const container = document.getElementById(
+                role === 'student' ? 'studentSignupFields' : 'lecturerSignupFields'
+            );
+            if (!container) return;
+
+            const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) {
+                return f.enabled;
+            });
+
+            let html = '';
+
+            // Pair short fields into double rows for a compact look
+            const shortTypes = ['text', 'tel', 'nrc', 'number'];
+            let i = 0;
+            while (i < fields.length) {
+                const f = fields[i];
+                const nextF = fields[i + 1];
+                const isShort = shortTypes.indexOf(f.type) !== -1;
+                const nextIsShort = nextF && shortTypes.indexOf(nextF.type) !== -1;
+
+                if (isShort && nextIsShort) {
+                    html += '<div class="double-row">' +
+                                renderFieldHTML(f) +
+                                renderFieldHTML(nextF) +
+                            '</div>';
+                    i += 2;
+                } else {
+                    html += renderFieldHTML(f);
+                    i++;
+                }
+            }
+
+            html += renderHierarchyBlock(role, {});
+            container.innerHTML = html;
+
+            wireUploads(container);
+            wireNameCapitalization(container);
+        } catch (err) {
+            console.error('[UTOM] renderSignupForm error for', role, err);
+        }
+    }
+
+    /* ============================================================
+       COMPLETE PROFILE OVERLAY
+       ============================================================ */
+    function openCompleteProfileOverlay(user, role, missing, userData) {
+        const chipsEl = document.getElementById('missingChipsContainer');
+        chipsEl.innerHTML = missing.map(function(m) {
+            const label = m.kind === 'field' ? m.field.label : m.label;
+            return '<span class="missing-chip"><i class="fas fa-exclamation-circle"></i> ' +
+                   escapeHtml(label) + '</span>';
+        }).join('');
+
+        const custom = userData.customFields || {};
+        const container = document.getElementById('completeProfileFields');
+        let html = '';
+
+        // Pre-fill values from existing data
+        const prefill = {};
+        missing.forEach(function(m) {
+            if (m.kind === 'field') {
+                const f = m.field;
+                if (['firstName', 'lastName', 'phone'].indexOf(f.id) !== -1) {
+                    prefill[f.id] = userData[f.id] || '';
+                } else {
+                    prefill[f.id] = custom[f.id] || userData[f.id] || '';
+                }
+            }
+        });
+
+        // Render missing fields
+        missing.forEach(function(m) {
+            if (m.kind === 'field') {
+                html += '<div class="complete-form-block">' +
+                            renderFieldHTML(m.field, prefill) +
+                        '</div>';
+            }
+        });
+
+        // Render the hierarchy block if any hierarchy item is missing
+        const needsHierarchy = missing.some(function(m) { return m.kind === 'hier'; });
+        if (needsHierarchy) {
+            const hierHtml = renderHierarchyBlock(role, {
+                collegeId: custom.collegeId || '',
+                programId: custom.programId || '',
+                classId:   custom.classId || '',
+                intakeId:  custom.intakeId || '',
+                studyMode: custom.studyMode || ''
+            });
+            if (hierHtml) {
+                html += '<div class="complete-form-block">' + hierHtml + '</div>';
+            }
+        }
+
+        container.innerHTML = html;
+
+        wireUploads(container);
+        wireNameCapitalization(container);
+
+        document.getElementById('completeProfileError').innerText = '';
+        document.getElementById('completeProfileOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /* ============================================================
+       SEGMENTED CONTROL — STUDENT
+       ============================================================ */
+    const loginPanel   = document.getElementById('loginPanel');
+    const signupPanel  = document.getElementById('signupPanel');
+    const forgotPanel  = document.getElementById('forgotPanel');
+    const authSegments = document.getElementById('authSegments');
+    const segLogin     = document.getElementById('segLogin');
+    const segSignup    = document.getElementById('segSignup');
+
+    function hideAllPanels() {
+        loginPanel.classList.add('hidden-panel');
+        signupPanel.classList.add('hidden-panel');
+        forgotPanel.classList.add('hidden-panel');
+    }
+
+    function setActiveSegment(which) {
+        authSegments.setAttribute('data-active', which);
+        if (which === 'login') {
+            segLogin.classList.add('active');
+            segSignup.classList.remove('active');
+        } else {
+            segSignup.classList.add('active');
+            segLogin.classList.remove('active');
+        }
+    }
+
+    function showLoginPanel() {
+        hideAllPanels();
+        loginPanel.classList.remove('hidden-panel');
+        authSegments.classList.remove('hidden-panel');
+        setActiveSegment('login');
+    }
+
+    function showSignupPanel() {
+        hideAllPanels();
+        signupPanel.classList.remove('hidden-panel');
+        authSegments.classList.remove('hidden-panel');
+        setActiveSegment('signup');
+        renderSignupForm('student');
+    }
+
+    function showForgotPanel() {
+        hideAllPanels();
+        forgotPanel.classList.remove('hidden-panel');
+        authSegments.classList.add('hidden-panel');
+        document.getElementById('resetError').innerText = '';
+        document.getElementById('resetEmailInput').value = '';
+    }
+
+    segLogin.addEventListener('click', showLoginPanel);
+    segSignup.addEventListener('click', showSignupPanel);
+    document.getElementById('forgotPwdBtn').addEventListener('click', showForgotPanel);
+    document.getElementById('backToLoginFromForgotBtn').addEventListener('click', showLoginPanel);
+
+    /* ============================================================
+       SEGMENTED CONTROL — LECTURER
+       ============================================================ */
+    const lecSegments = document.getElementById('lecSegments');
+    const lecLoginPanel = document.getElementById('lecLoginPanel');
+    const lecSignupPanel = document.getElementById('lecSignupPanel');
+
+    function setLecSegment(which) {
+        lecSegments.setAttribute('data-active', which);
+        document.getElementById('lecSegLogin').classList.toggle('active', which === 'login');
+        document.getElementById('lecSegSignup').classList.toggle('active', which === 'signup');
+        lecLoginPanel.classList.toggle('hidden-panel', which !== 'login');
+        lecSignupPanel.classList.toggle('hidden-panel', which !== 'signup');
+        if (which === 'signup') {
+            renderSignupForm('lecturer');
+        }
+    }
+
+    document.getElementById('lecSegLogin').addEventListener('click', function() { setLecSegment('login'); });
+    document.getElementById('lecSegSignup').addEventListener('click', function() { setLecSegment('signup'); });
+    document.getElementById('lecGoSignupBtn').addEventListener('click', function() { setLecSegment('signup'); });
+
+    /* ============================================================
+       SPLIT LANDING — GESTURE + CLICK
+       ============================================================ */
+    const splitTop = document.getElementById('splitTop');
+    const splitBottom = document.getElementById('splitBottom');
+    const studentPanel = document.getElementById('studentPanel');
+    const lecturerPanel = document.getElementById('lecturerPanel');
+
+    function openStudentPanel() {
+        studentPanel.classList.add('active');
+        lecturerPanel.classList.remove('active');
+        document.body.classList.add('panel-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openLecturerPanel() {
+        lecturerPanel.classList.add('active');
+        studentPanel.classList.remove('active');
+        document.body.classList.add('panel-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePanels() {
+        studentPanel.classList.remove('active');
+        lecturerPanel.classList.remove('active');
+        document.body.classList.remove('panel-open');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('backFromStudent').addEventListener('click', closePanels);
+    document.getElementById('backFromLecturer').addEventListener('click', closePanels);
+
+    // ---- Touch gestures ----
+    let activeGesture = null;
+    const SWIPE_THRESHOLD = 45;
+    const DRAG_FEEDBACK = 28;
+
+    function beginGesture(el, dir, clientY) {
+        activeGesture = { el: el, dir: dir, startY: clientY, lastY: clientY };
+        el.classList.add('drag-active');
+        el.style.transition = 'none';
+    }
+
+    function updateGesture(clientY) {
+        if (!activeGesture) return;
+        const delta = clientY - activeGesture.startY;
+        let feedback = 0;
+        if (activeGesture.dir === 'down' && delta > 0) {
+            feedback = Math.min(DRAG_FEEDBACK, delta * 0.35);
+        } else if (activeGesture.dir === 'up' && delta < 0) {
+            feedback = Math.max(-DRAG_FEEDBACK, delta * 0.35);
+        }
+        activeGesture.el.style.setProperty('--drag-y', feedback + 'px');
+        activeGesture.lastY = clientY;
+    }
+
+    function endGesture() {
+        if (!activeGesture) return;
+        const g = activeGesture;
+        const delta = g.lastY - g.startY;
+        g.el.style.transition = '';
+        g.el.style.removeProperty('--drag-y');
+        g.el.classList.remove('drag-active');
+        if (g.dir === 'down' && delta > SWIPE_THRESHOLD) openStudentPanel();
+        else if (g.dir === 'up' && delta < -SWIPE_THRESHOLD) openLecturerPanel();
+        activeGesture = null;
+    }
+
+    splitTop.addEventListener('touchstart', function(e) {
+        beginGesture(splitTop, 'down', e.touches[0].clientY);
+    }, { passive: true });
+
+    splitBottom.addEventListener('touchstart', function(e) {
+        beginGesture(splitBottom, 'up', e.touches[0].clientY);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (activeGesture) updateGesture(e.touches[0].clientY);
+    }, { passive: true });
+
+    document.addEventListener('touchend', function() {
+        if (activeGesture) endGesture();
+    }, { passive: true });
+
+    // ---- Mouse drag ----
+    let mouseDown = false;
+    splitTop.addEventListener('mousedown', function(e) {
+        mouseDown = true;
+        beginGesture(splitTop, 'down', e.clientY);
     });
-    btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-    btn.classList.add('saved');
-    showToast('Registration setup saved.', 'success');
-    setTimeout(()=>{
-      btn.innerHTML = '<i class="fas fa-save"></i> Save';
-      btn.classList.remove('saved');
-      btn.disabled = false;
-    }, 1800);
-  } catch(err){
-    showToast('Save failed: '+err.message, 'error');
-    btn.innerHTML = '<i class="fas fa-save"></i> Save';
-    btn.disabled = false;
-  }
-}
-window.saveAllToFirebase = saveAllToFirebase;
+    splitBottom.addEventListener('mousedown', function(e) {
+        mouseDown = true;
+        beginGesture(splitBottom, 'up', e.clientY);
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!mouseDown || !activeGesture) return;
+        updateGesture(e.clientY);
+    });
+    document.addEventListener('mouseup', function() {
+        if (mouseDown && activeGesture) endGesture();
+        mouseDown = false;
+    });
 
-/* ---------- TABS ---------- */
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
-  });
-});
+    // ---- Click fallback ----
+    splitTop.addEventListener('click', function() {
+        if (!activeGesture) openStudentPanel();
+    });
+    splitBottom.addEventListener('click', function() {
+        if (!activeGesture) openLecturerPanel();
+    });
 
-/* ---------- RENDER FIELDS ---------- */
-function renderStudentFields(){ renderFieldList('student'); }
-function renderLecturerFields(){ renderFieldList('lecturer'); }
-
-function renderFieldList(role){
-  const container = document.getElementById(role+'FieldsList');
-  const fields = Object.values(STATE[role].fields || {}).sort((a,b)=>(a.order||0)-(b.order||0));
-  if(fields.length === 0){
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No fields configured yet.</div>';
-  } else {
-    container.innerHTML = fields.map(f=>{
-      const isSystem = f.system || SYSTEM_KEYS.includes(f.id);
-      const typeBadge = f.type==='dropdown' ? `DROPDOWN` : f.type.toUpperCase();
-      return `
-        <div class="field-row ${f.enabled?'':'disabled'}">
-          <div class="field-order">${f.order||0}</div>
-          <div class="field-info">
-            <div class="field-label">
-              ${escapeHtml(f.label)}
-              <span class="badge">${typeBadge}</span>
-              ${f.required?'<span class="badge required">REQUIRED</span>':''}
-              ${isSystem?'<span class="badge system">SYSTEM</span>':''}
-            </div>
-            <div class="field-meta">key: <code>${escapeHtml(f.id)}</code>${f.options?' · '+f.options.length+' option(s)':''}</div>
-          </div>
-          <div class="field-actions">
-            <div class="toggle ${f.enabled?'active':''}" onclick="toggleField('${role}','${f.id}')" title="Toggle visible"></div>
-            <button class="icon-btn" onclick="openFieldModal('${role}','${f.id}')" title="Edit"><i class="fas fa-pen"></i></button>
-            <button class="icon-btn danger ${isSystem?'disabled':''}" onclick="deleteField('${role}','${f.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Hierarchy toggle cards
-  const hier = Object.values(STATE[role].hierarchy || {}).sort((a,b)=>(a.order||0)-(b.order||0));
-  container.innerHTML += `
-    <div style="margin-top:24px;margin-bottom:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);">
-      <i class="fas fa-sitemap"></i> Hierarchy Selectors
-    </div>
-    <div id="${role}HierarchyList"></div>
-  `;
-  const hierContainer = document.getElementById(role+'HierarchyList');
-  hierContainer.innerHTML = hier.map(h=>`
-    <div class="field-row ${h.enabled?'':'disabled'}">
-      <div class="field-order"><i class="fas fa-sitemap" style="font-size:11px"></i></div>
-      <div class="field-info">
-        <div class="field-label">
-          ${escapeHtml(h.label)}
-          <span class="badge">SELECT</span>
-          ${h.required?'<span class="badge required">REQUIRED</span>':''}
-        </div>
-        <div class="field-meta">id: <code>${escapeHtml(h.id)}</code>${h.options?' · '+h.options.join(', '):''}</div>
-      </div>
-      <div class="field-actions">
-        <div class="toggle ${h.enabled?'active':''}" onclick="toggleHierarchy('${role}','${h.id}')" title="Toggle visible"></div>
-        <div class="toggle ${h.required?'active':''}" style="background:${h.required?'linear-gradient(135deg,#2ecc71,#27ae60)':'#d5d8e0'}" onclick="toggleHierarchyRequired('${role}','${h.id}')" title="Toggle required"></div>
-      </div>
-    </div>
-  `).join('');
-}
-
-window.toggleField = (role, id)=>{
-  STATE[role].fields[id].enabled = !STATE[role].fields[id].enabled;
-  renderFieldList(role);
-};
-window.toggleHierarchy = (role, id)=>{
-  STATE[role].hierarchy[id].enabled = !STATE[role].hierarchy[id].enabled;
-  renderFieldList(role);
-};
-window.toggleHierarchyRequired = (role, id)=>{
-  STATE[role].hierarchy[id].required = !STATE[role].hierarchy[id].required;
-  renderFieldList(role);
-};
-window.deleteField = async (role, id)=>{
-  const f = STATE[role].fields[id];
-  if(!f) return;
-  if(f.system || SYSTEM_KEYS.includes(id)){
-    showToast('System fields cannot be deleted.', 'error');
-    return;
-  }
-  if(!confirm(`Delete field "${f.label}"? Existing user data will not be affected.`)) return;
-  delete STATE[role].fields[id];
-  renderFieldList(role);
-  showToast('Field deleted (remember to Save)', 'info');
-};
-
-/* ---------- FIELD MODAL ---------- */
-window.openFieldModal = (role, id=null)=>{
-  document.getElementById('fieldRole').value = role;
-  document.getElementById('fieldEditId').value = id||'';
-  document.getElementById('fieldOptions').value = '';
-  document.getElementById('fieldOptionsRow').style.display = 'none';
-
-  if(id){
-    const f = STATE[role].fields[id];
-    document.getElementById('fieldModalTitle').textContent = 'Edit Field';
-    document.getElementById('fieldLabel').value = f.label;
-    document.getElementById('fieldKey').value = f.id;
-    document.getElementById('fieldKey').disabled = true;
-    document.getElementById('fieldType').value = f.type;
-    document.getElementById('fieldRequired').checked = !!f.required;
-    document.getElementById('fieldEnabled').checked = !!f.enabled;
-    if(f.type==='dropdown'){
-      document.getElementById('fieldOptionsRow').style.display='block';
-      document.getElementById('fieldOptions').value = (f.options||[]).join('\n');
+    /* ============================================================
+       TERMS MODAL
+       ============================================================ */
+    function openTermsModal() {
+        const overlay = document.getElementById('termsModalOverlay');
+        const body = document.getElementById('termsModalBody');
+        const raw = adminTerms.content || '';
+        const hasMarkup = /<\/?(p|br|ul|ol|li|h1|h2|h3|h4|h5|h6|strong|em|b|i|u|a|div|span)\b/i.test(raw);
+        body.innerHTML = raw
+            ? (hasMarkup ? raw : escapeHtml(raw).replace(/\n/g, '<br>'))
+            : '';
+        overlay.classList.add('open');
     }
-  } else {
-    document.getElementById('fieldModalTitle').textContent = 'Add Field';
-    document.getElementById('fieldLabel').value = '';
-    document.getElementById('fieldKey').value = '';
-    document.getElementById('fieldKey').disabled = false;
-    document.getElementById('fieldType').value = 'text';
-    document.getElementById('fieldRequired').checked = false;
-    document.getElementById('fieldEnabled').checked = true;
-  }
-  updateFieldOptionsVisibility();
-  openModal('fieldModal');
-};
 
-function updateFieldOptionsVisibility(){
-  const t = document.getElementById('fieldType').value;
-  document.getElementById('fieldOptionsRow').style.display = t==='dropdown' ? 'block' : 'none';
-}
-window.updateFieldOptionsVisibility = updateFieldOptionsVisibility;
-
-document.getElementById('fieldForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const role = document.getElementById('fieldRole').value;
-  const editId = document.getElementById('fieldEditId').value;
-  const label = document.getElementById('fieldLabel').value.trim();
-  let key = document.getElementById('fieldKey').value.trim();
-  if(!key) key = slugKey(label);
-  const type = document.getElementById('fieldType').value;
-  const required = document.getElementById('fieldRequired').checked;
-  const enabled  = document.getElementById('fieldEnabled').checked;
-
-  let options = null;
-  if(type==='dropdown'){
-    options = document.getElementById('fieldOptions').value.split('\n').map(o=>o.trim()).filter(Boolean);
-    if(options.length===0){showToast('Please add at least one option.','error');return}
-  }
-
-  if(editId){
-    const f = STATE[role].fields[editId];
-    f.label = label;
-    f.type = type;
-    f.required = required;
-    f.enabled = enabled;
-    f.options = options;
-  } else {
-    if(STATE[role].fields[key]){
-      showToast('A field with this key already exists.','error');
-      return;
+    function closeTermsModal() {
+        document.getElementById('termsModalOverlay').classList.remove('open');
     }
-    const maxOrder = Math.max(0,...Object.values(STATE[role].fields).map(f=>f.order||0));
-    STATE[role].fields[key] = { id:key, label, type, required, enabled, order:maxOrder+1, options };
-  }
-  closeModal('fieldModal');
-  renderFieldList(role);
-  showToast('Field saved. Remember to Save!', 'success');
-});
 
-/* ---------- STRUCTURE ---------- */
-function renderStructure(){
-  const container = document.getElementById('collegesList');
-  const colleges = Object.entries(STATE.colleges || {});
-  if(colleges.length === 0){
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-university"></i>No colleges yet. Add one to get started.</div>';
-    return;
-  }
-  container.innerHTML = colleges.map(([cid,c])=>renderCollege(cid,c)).join('');
-}
-window.renderStructure = renderStructure;
+    document.getElementById('termsModalCloseBtn').addEventListener('click', closeTermsModal);
+    document.getElementById('termsDeclineBtn').addEventListener('click', closeTermsModal);
+    document.getElementById('termsAcceptBtn').addEventListener('click', function() {
+        const cb = document.getElementById('lecTermsCheckbox');
+        if (cb) cb.checked = true;
+        closeTermsModal();
+    });
+    document.getElementById('termsModalOverlay').addEventListener('click', function(e) {
+        if (e.target.id === 'termsModalOverlay') closeTermsModal();
+    });
+    document.getElementById('openLecTermsBtn').addEventListener('click', openTermsModal);
 
-function renderCollege(cid,c){
-  const programs = Object.entries(c.programs||{});
-  const intakes   = Object.entries(c.intakes||{});
-  return `
-    <div class="college-card" data-college-id="${cid}">
-      <div class="college-header" onclick="toggleCollegeBody('${cid}')">
-        <div class="college-title">
-          <h3>${escapeHtml(c.name)}</h3>
-          <span class="center-code">${escapeHtml(c.centerCode||'')}</span>
-        </div>
-        <div style="display:flex;gap:4px;">
-          <button class="mini-btn" onclick="event.stopPropagation();openCollegeModal('${cid}')"><i class="fas fa-pen"></i></button>
-          <button class="mini-btn danger" onclick="event.stopPropagation();deleteCollege('${cid}')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>
-      <div class="college-body" id="collegeBody-${cid}">
-        <!-- INTAKES -->
-        <div class="sub-section">
-          <h4>Intakes (${intakes.length}) <button class="mini-btn" onclick="openIntakeModal('${cid}')"><i class="fas fa-plus"></i> Add Intake</button></h4>
-          <div class="item-list">
-            ${intakes.length===0 ? '<div style="font-size:11px;color:var(--text-3);padding:6px">No intakes yet</div>' : intakes.map(([iid,it])=>`
-              <div class="item-row">
-                <div class="item-main"><div class="item-title">${escapeHtml(it.name)}</div></div>
-                <div class="item-actions">
-                  <button class="mini-btn" onclick="openIntakeModal('${cid}','${iid}')"><i class="fas fa-pen"></i></button>
-                  <button class="mini-btn danger" onclick="deleteIntake('${cid}','${iid}')"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>
-        <!-- PROGRAMS -->
-        <div class="sub-section">
-          <h4>Programs (${programs.length}) <button class="mini-btn" onclick="openProgramModal('${cid}')"><i class="fas fa-plus"></i> Add Program</button></h4>
-          <div class="item-list">
-            ${programs.length===0 ? '<div style="font-size:11px;color:var(--text-3);padding:6px">No programs yet</div>' : programs.map(([pid,p])=>renderProgram(cid,pid,p)).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
+    /* ============================================================
+       STUDENT SIGNUP
+       ============================================================ */
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('signupError');
+        const succEl = document.getElementById('signupSuccessMsg');
+        errEl.innerText = '';
+        succEl.style.display = 'none';
 
-function renderProgram(cid,pid,p){
-  const classes = Object.entries(p.classes||{});
-  return `
-    <div class="program-card">
-      <div class="program-header" onclick="toggleProgramBody('${pid}')">
-        <div class="program-title">${escapeHtml(p.name)} ${p.code?`<span class="code-pill">${escapeHtml(p.code)}</span>`:''}</div>
-        <div style="display:flex;gap:4px;">
-          <button class="mini-btn" onclick="event.stopPropagation();openProgramModal('${cid}','${pid}')"><i class="fas fa-pen"></i></button>
-          <button class="mini-btn danger" onclick="event.stopPropagation();deleteProgram('${cid}','${pid}')"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>
-      <div class="program-body" id="programBody-${pid}">
-        <div class="sub-section" style="margin-top:8px">
-          <h4>Classes (${classes.length}) <button class="mini-btn" onclick="openClassModal('${cid}','${pid}')"><i class="fas fa-plus"></i> Add Class</button></h4>
-          <div class="item-list">
-            ${classes.length===0 ? '<div style="font-size:11px;color:var(--text-3);padding:6px">No classes yet</div>' : classes.map(([clid,cl])=>`
-              <div class="class-row">
-                <span class="class-code">${escapeHtml(cl.code)}</span>
-                <div class="class-info">
-                  <div class="class-level">${escapeHtml(cl.level)}</div>
-                  <div class="class-terms">
-                    FT: ${(cl.termsFulltime||[3,3,3]).join('/')} ·
-                    ODFL: ${(cl.termsOdfl||[4,4,3]).join('/')}
-                  </div>
-                </div>
-                <span class="class-max">max ${cl.maxStudents||0}</span>
-                <div class="item-actions">
-                  <button class="mini-btn" onclick="openClassModal('${cid}','${pid}','${clid}')"><i class="fas fa-pen"></i></button>
-                  <button class="mini-btn danger" onclick="deleteClass('${cid}','${pid}','${clid}')"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
+        const container = document.getElementById('studentSignupFields');
+        const collected = collectFieldValues('student', container);
+        if (collected.errors.length > 0) {
+            errEl.innerText = collected.errors.join('\n');
+            return;
+        }
 
-window.toggleCollegeBody = (cid)=>{
-  document.getElementById('collegeBody-'+cid).classList.toggle('open');
-};
-window.toggleProgramBody = (pid)=>{
-  document.getElementById('programBody-'+pid).classList.toggle('open');
-};
+        const values = collected.values;
+        const customFields = collected.customFields;
+        const email = values.email || customFields.email || '';
+        const password = customFields.password || '';
+        const confirmPassword = customFields.confirmPassword || '';
 
-/* ---------- COLLEGE CRUD ---------- */
-window.openCollegeModal = (id=null)=>{
-  document.getElementById('collegeEditId').value = id||'';
-  if(id){
-    const c = STATE.colleges[id];
-    document.getElementById('collegeModalTitle').textContent = 'Edit College';
-    document.getElementById('collegeName').value = c.name;
-    document.getElementById('collegeCenterCode').value = c.centerCode||'';
-  } else {
-    document.getElementById('collegeModalTitle').textContent = 'Add College';
-    document.getElementById('collegeName').value = '';
-    document.getElementById('collegeCenterCode').value = '';
-  }
-  openModal('collegeModal');
-};
-document.getElementById('collegeForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const id = document.getElementById('collegeEditId').value;
-  const name = document.getElementById('collegeName').value.trim();
-  const centerCode = document.getElementById('collegeCenterCode').value.trim();
-  if(!name||!centerCode){showToast('Name and center code required','error');return}
-  if(id){
-    STATE.colleges[id].name = name;
-    STATE.colleges[id].centerCode = centerCode;
-  } else {
-    const nid = uid();
-    STATE.colleges[nid] = { id:nid, name, centerCode, programs:{}, intakes:{} };
-  }
-  closeModal('collegeModal');
-  renderStructure();
-  showToast('College saved (remember to Save!)','success');
-});
-window.deleteCollege = (cid)=>{
-  if(!confirm('Delete this college and everything inside it?')) return;
-  delete STATE.colleges[cid];
-  renderStructure();
-};
+        if (!email || !password) { errEl.innerText = 'Email and password are required.'; return; }
+        const emailRe = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if (!emailRe.test(email)) { errEl.innerText = 'Enter a valid email address.'; return; }
+        if (password.length < 6) { errEl.innerText = 'Password must be at least 6 characters.'; return; }
+        if (password !== confirmPassword) { errEl.innerText = 'Passwords do not match.'; return; }
+        if (!document.getElementById('termsCheckbox').checked) {
+            errEl.innerText = 'You must agree to the Terms & Conditions.';
+            return;
+        }
 
-/* ---------- PROGRAM CRUD ---------- */
-window.openProgramModal = (cid,pid=null)=>{
-  document.getElementById('programCollegeId').value = cid;
-  document.getElementById('programEditId').value = pid||'';
-  if(pid){
-    const p = STATE.colleges[cid].programs[pid];
-    document.getElementById('programModalTitle').textContent = 'Edit Program';
-    document.getElementById('programName').value = p.name;
-    document.getElementById('programCode').value = p.code||'';
-  } else {
-    document.getElementById('programModalTitle').textContent = 'Add Program';
-    document.getElementById('programName').value = '';
-    document.getElementById('programCode').value = '';
-  }
-  openModal('programModal');
-};
-document.getElementById('programForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const cid = document.getElementById('programCollegeId').value;
-  const pid = document.getElementById('programEditId').value;
-  const name = document.getElementById('programName').value.trim();
-  const code = document.getElementById('programCode').value.trim();
-  if(!name){showToast('Name required','error');return}
-  if(!STATE.colleges[cid].programs) STATE.colleges[cid].programs = {};
-  if(pid){
-    STATE.colleges[cid].programs[pid].name = name;
-    STATE.colleges[cid].programs[pid].code = code;
-  } else {
-    const nid = uid();
-    STATE.colleges[cid].programs[nid] = { id:nid, name, code, classes:{} };
-  }
-  closeModal('programModal');
-  renderStructure();
-  showToast('Program saved (remember to Save!)','success');
-});
-window.deleteProgram = (cid,pid)=>{
-  if(!confirm('Delete this program and its classes?')) return;
-  delete STATE.colleges[cid].programs[pid];
-  renderStructure();
-};
+        const btn = document.getElementById('registerBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
 
-/* ---------- CLASS CRUD ---------- */
-window.openClassModal = (cid,pid,clid=null)=>{
-  document.getElementById('classCollegeId').value = cid;
-  document.getElementById('classProgramId').value = pid;
-  document.getElementById('classEditId').value = clid||'';
-  if(clid){
-    const cl = STATE.colleges[cid].programs[pid].classes[clid];
-    document.getElementById('classModalTitle').textContent = 'Edit Class';
-    document.getElementById('classLevel').value = cl.level;
-    document.getElementById('classCode').value = cl.code;
-    document.getElementById('classMax').value = cl.maxStudents||40;
-    const ft = cl.termsFulltime||[3,3,3];
-    const od = cl.termsOdfl   ||[4,4,3];
-    document.getElementById('ftY1').value = ft[0]??3;
-    document.getElementById('ftY2').value = ft[1]??3;
-    document.getElementById('ftY3').value = ft[2]??3;
-    document.getElementById('odflY1').value = od[0]??4;
-    document.getElementById('odflY2').value = od[1]??4;
-    document.getElementById('odflY3').value = od[2]??3;
-  } else {
-    document.getElementById('classModalTitle').textContent = 'Add Class';
-    document.getElementById('classLevel').value = '';
-    document.getElementById('classCode').value = '';
-    document.getElementById('classMax').value = 40;
-    document.getElementById('ftY1').value = 3;
-    document.getElementById('ftY2').value = 3;
-    document.getElementById('ftY3').value = 3;
-    document.getElementById('odflY1').value = 4;
-    document.getElementById('odflY2').value = 4;
-    document.getElementById('odflY3').value = 3;
-  }
-  openModal('classModal');
-};
-document.getElementById('classForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const cid = document.getElementById('classCollegeId').value;
-  const pid = document.getElementById('classProgramId').value;
-  const clid = document.getElementById('classEditId').value;
-  const level = document.getElementById('classLevel').value.trim();
-  const code  = document.getElementById('classCode').value.trim().toUpperCase();
-  const maxStudents = parseInt(document.getElementById('classMax').value)||0;
-  if(!level||!code){showToast('Level and code required','error');return}
-  const termsFulltime = [
-    parseInt(document.getElementById('ftY1').value)||0,
-    parseInt(document.getElementById('ftY2').value)||0,
-    parseInt(document.getElementById('ftY3').value)||0
-  ];
-  const termsOdfl = [
-    parseInt(document.getElementById('odflY1').value)||0,
-    parseInt(document.getElementById('odflY2').value)||0,
-    parseInt(document.getElementById('odflY3').value)||0
-  ];
-  if(!STATE.colleges[cid].programs[pid].classes) STATE.colleges[cid].programs[pid].classes = {};
-  if(clid){
-    Object.assign(STATE.colleges[cid].programs[pid].classes[clid], { level, code, maxStudents, termsFulltime, termsOdfl });
-  } else {
-    const nid = uid();
-    STATE.colleges[cid].programs[pid].classes[nid] = { id:nid, level, code, maxStudents, termsFulltime, termsOdfl };
-  }
-  closeModal('classModal');
-  renderStructure();
-  showToast('Class saved (remember to Save!)','success');
-});
-window.deleteClass = (cid,pid,clid)=>{
-  if(!confirm('Delete this class?')) return;
-  delete STATE.colleges[cid].programs[pid].classes[clid];
-  renderStructure();
-};
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = cred.user.uid;
 
-/* ---------- INTAKE CRUD ---------- */
-window.openIntakeModal = (cid,iid=null)=>{
-  document.getElementById('intakeCollegeId').value = cid;
-  document.getElementById('intakeEditId').value = iid||'';
-  if(iid){
-    const it = STATE.colleges[cid].intakes[iid];
-    document.getElementById('intakeModalTitle').textContent = 'Edit Intake';
-    document.getElementById('intakeName').value = it.name;
-  } else {
-    document.getElementById('intakeModalTitle').textContent = 'Add Intake';
-    document.getElementById('intakeName').value = '';
-  }
-  openModal('intakeModal');
-};
-document.getElementById('intakeForm').addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const cid = document.getElementById('intakeCollegeId').value;
-  const iid = document.getElementById('intakeEditId').value;
-  const name = document.getElementById('intakeName').value.trim();
-  if(!name){showToast('Name required','error');return}
-  if(!STATE.colleges[cid].intakes) STATE.colleges[cid].intakes = {};
-  if(iid){
-    STATE.colleges[cid].intakes[iid].name = name;
-  } else {
-    const nid = uid();
-    STATE.colleges[cid].intakes[nid] = { id:nid, name };
-  }
-  closeModal('intakeModal');
-  renderStructure();
-  showToast('Intake saved (remember to Save!)','success');
-});
-window.deleteIntake = (cid,iid)=>{
-  if(!confirm('Delete this intake?')) return;
-  delete STATE.colleges[cid].intakes[iid];
-  renderStructure();
-};
+            const payload = {
+                firstName: values.firstName || '',
+                lastName:  values.lastName  || '',
+                phone:     values.phone     || '',
+                email:     email,
+                customFields: customFields,
+                role: 'student',
+                createdAt: serverTimestamp()
+            };
+            delete payload.customFields.password;
+            delete payload.customFields.confirmPassword;
 
-/* ---------- BOOT ---------- */
-onAuthStateChanged(auth, async (user)=>{
-  if(!user){ window.location.href='index.html'; return; }
-  if(!user.email?.startsWith('admin@')){
-    alert('Admin access only.'); window.location.href='index.html'; return;
-  }
-  try {
-    await loadSetup();
-    document.getElementById('loader').classList.add('hidden');
-  } catch(err){
-    console.error(err);
-    showToast('Load error: '+err.message, 'error');
-    document.getElementById('loader').classList.add('hidden');
-  }
-});
+            await set(ref(database, 'users/' + uid), payload);
+
+            succEl.style.display = 'block';
+            succEl.innerText = 'Registration successful! Please login with your credentials.';
+
+            document.getElementById('signupForm').reset();
+            document.getElementById('termsCheckbox').checked = false;
+
+            document.querySelectorAll('#studentSignupFields .upload-box').forEach(function(b) {
+                b.classList.remove('has-image');
+                b.querySelectorAll('img').forEach(function(img) { img.remove(); });
+            });
+
+            await signOut(auth);
+
+            setTimeout(function() {
+                showLoginPanel();
+                document.getElementById('loginEmail').value = email;
+                succEl.style.display = 'none';
+            }, 1500);
+        } catch (err) {
+            let msg = err.message;
+            if (err.code === 'auth/email-already-in-use') msg = 'Email already registered.';
+            else if (err.code === 'auth/weak-password') msg = 'Password too weak.';
+            else if (err.code === 'auth/invalid-email') msg = 'Invalid email format.';
+            errEl.innerText = msg;
+        } finally {
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    /* ============================================================
+       LECTURER SIGNUP
+       ============================================================ */
+    document.getElementById('lecSignupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('lecSignupError');
+        const succEl = document.getElementById('lecSignupSuccess');
+        errEl.innerText = '';
+        succEl.style.display = 'none';
+
+        const container = document.getElementById('lecturerSignupFields');
+        const collected = collectFieldValues('lecturer', container);
+        if (collected.errors.length > 0) {
+            errEl.innerText = collected.errors.join('\n');
+            return;
+        }
+
+        const values = collected.values;
+        const customFields = collected.customFields;
+        const email = values.email || customFields.email || '';
+        const password = customFields.password || '';
+        const confirmPassword = customFields.confirmPassword || '';
+
+        if (!email || !password) { errEl.innerText = 'Email and password are required.'; return; }
+        const emailRe = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if (!emailRe.test(email)) { errEl.innerText = 'Enter a valid email address.'; return; }
+        if (password.length < 6) { errEl.innerText = 'Password must be at least 6 characters.'; return; }
+        if (password !== confirmPassword) { errEl.innerText = 'Passwords do not match.'; return; }
+        if (!document.getElementById('lecTermsCheckbox').checked) {
+            errEl.innerText = 'You must agree to the Lecturer Terms & Conditions.';
+            return;
+        }
+
+        const btn = document.getElementById('lecRegisterBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
+
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = cred.user.uid;
+
+            const payload = {
+                firstName: values.firstName || '',
+                lastName:  values.lastName  || '',
+                phone:     values.phone     || '',
+                email:     email,
+                customFields: customFields,
+                role: 'lecturer',
+                status: 'pending',
+                createdAt: serverTimestamp()
+            };
+            delete payload.customFields.password;
+            delete payload.customFields.confirmPassword;
+
+            await set(ref(database, 'lecturers/' + uid), payload);
+
+            succEl.style.display = 'block';
+            succEl.innerText = '✅ Application submitted! Wait for admin approval before signing in.';
+
+            document.getElementById('lecSignupForm').reset();
+            document.getElementById('lecTermsCheckbox').checked = false;
+            document.querySelectorAll('#lecturerSignupFields .upload-box').forEach(function(b) {
+                b.classList.remove('has-image');
+                b.querySelectorAll('img').forEach(function(img) { img.remove(); });
+            });
+
+            await signOut(auth);
+
+            setTimeout(function() {
+                setLecSegment('login');
+                document.getElementById('lecLoginEmail').value = email;
+                succEl.style.display = 'none';
+            }, 1800);
+        } catch (err) {
+            let msg = err.message;
+            if (err.code === 'auth/email-already-in-use') msg = 'Email already registered.';
+            else if (err.code === 'auth/weak-password') msg = 'Password too weak.';
+            errEl.innerText = msg;
+        } finally {
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    /* ============================================================
+       STUDENT LOGIN + PROFILE COMPLETION GATE
+       ============================================================ */
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('loginError');
+        errEl.innerText = '';
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        if (!email || !password) {
+            errEl.innerText = 'Both email and password are required.';
+            return;
+        }
+
+        const btn = document.getElementById('loginBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
+
+        try {
+            const cred = await signInWithEmailAndPassword(auth, email, password);
+            const user = cred.user;
+
+            // Admin redirect
+            if (email.toLowerCase().startsWith('admin@')) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            // Load user record
+            const snap = await get(ref(database, 'users/' + user.uid));
+            const userData = snap.val();
+
+            if (!userData) {
+                const lecSnap = await get(ref(database, 'lecturers/' + user.uid));
+                if (lecSnap.exists()) {
+                    errEl.innerText = 'This account is registered as a lecturer. Please use the Lecturer portal.';
+                    await signOut(auth);
+                    return;
+                }
+                errEl.innerText = 'No student account found with this email.';
+                await signOut(auth);
+                return;
+            }
+
+            // Check banned
+            const banSnap = await get(ref(database, 'bannedUsers/' + user.uid));
+            if (banSnap.exists()) {
+                const banInfo = banSnap.val();
+                const reason = (banInfo && banInfo.reason) ? banInfo.reason : 'Contact administrator.';
+                errEl.innerText = 'Your account has been suspended. Reason: ' + reason;
+                await signOut(auth);
+                return;
+            }
+
+            // Auto-capitalize existing names
+            const updates = capitalizeNameUpdates(userData);
+            if (Object.keys(updates).length > 0) {
+                try {
+                    await update(ref(database, 'users/' + user.uid), updates);
+                    Object.assign(userData, updates);
+                } catch (e) { console.warn('[UTOM] Could not capitalize names:', e); }
+            }
+
+            // Check for missing required fields
+            const missing = findMissingFields(userData, 'student');
+            if (missing.length > 0) {
+                PENDING_USER = { user: user, role: 'student', missing: missing, userData: userData };
+                openCompleteProfileOverlay(user, 'student', missing, userData);
+                return;
+            }
+
+            window.location.href = 'user.html';
+        } catch (err) {
+            let msg = 'Invalid email or password.';
+            if (err.code === 'auth/user-not-found') msg = 'No account found with this email.';
+            else if (err.code === 'auth/wrong-password') msg = 'Incorrect password.';
+            else if (err.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
+            errEl.innerText = msg;
+        } finally {
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    /* ============================================================
+       LECTURER LOGIN + PROFILE COMPLETION GATE
+       ============================================================ */
+    document.getElementById('lecLoginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('lecLoginError');
+        errEl.innerText = '';
+        const email = document.getElementById('lecLoginEmail').value.trim().toLowerCase();
+        const password = document.getElementById('lecLoginPassword').value;
+        if (!email || !password) {
+            errEl.innerText = 'Both email and password are required.';
+            return;
+        }
+
+        const btn = document.getElementById('lecLoginBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
+
+        try {
+            const cred = await signInWithEmailAndPassword(auth, email, password);
+            const user = cred.user;
+
+            const snap = await get(ref(database, 'lecturers/' + user.uid));
+            const data = snap.val();
+
+            if (!data) {
+                const studentSnap = await get(ref(database, 'users/' + user.uid));
+                if (studentSnap.exists()) {
+                    errEl.innerText = 'This account is registered as a student. Please use the Student portal.';
+                    await signOut(auth);
+                    return;
+                }
+                errEl.innerText = 'No lecturer account found with this email.';
+                await signOut(auth);
+                return;
+            }
+
+            if (data.banned) {
+                errEl.innerText = 'Your account has been banned. Reason: ' + (data.banReason || 'Contact admin.');
+                await signOut(auth);
+                return;
+            }
+            if (data.status === 'pending') {
+                errEl.innerText = '⏳ Your application is still under review. Please wait for admin approval.';
+                await signOut(auth);
+                return;
+            }
+            if (data.status === 'rejected') {
+                errEl.innerText = '❌ Your application was rejected. Reason: ' + (data.rejectionReason || 'Contact admin.');
+                await signOut(auth);
+                return;
+            }
+            if (data.status !== 'approved' && data.status !== 'active') {
+                errEl.innerText = 'Account is not active. Contact admin.';
+                await signOut(auth);
+                return;
+            }
+
+            // Auto-capitalize existing names
+            const updates = capitalizeNameUpdates(data);
+            if (Object.keys(updates).length > 0) {
+                try {
+                    await update(ref(database, 'lecturers/' + user.uid), updates);
+                    Object.assign(data, updates);
+                } catch (e) { console.warn('[UTOM] Could not capitalize names:', e); }
+            }
+
+            // Check for missing required fields
+            const missing = findMissingFields(data, 'lecturer');
+            if (missing.length > 0) {
+                PENDING_USER = { user: user, role: 'lecturer', missing: missing, userData: data };
+                openCompleteProfileOverlay(user, 'lecturer', missing, data);
+                return;
+            }
+
+            // All good — save session and redirect
+            localStorage.setItem('lecturerUid', user.uid);
+            localStorage.setItem('lecturerEmail', data.email || email);
+            window.location.href = 'dashboard.html';
+        } catch (err) {
+            let msg = 'Invalid email or password.';
+            if (err.code === 'auth/user-not-found') msg = 'No account with this email.';
+            else if (err.code === 'auth/wrong-password') msg = 'Incorrect password.';
+            else if (err.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
+            errEl.innerText = msg;
+        } finally {
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    /* ============================================================
+       COMPLETE PROFILE SUBMIT
+       ============================================================ */
+    document.getElementById('completeProfileForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!PENDING_USER) return;
+        const errEl = document.getElementById('completeProfileError');
+        errEl.innerText = '';
+
+        const user = PENDING_USER.user;
+        const role = PENDING_USER.role;
+        const userData = PENDING_USER.userData;
+
+        const container = document.getElementById('completeProfileFields');
+        const collected = collectFieldValues(role, container);
+        if (collected.errors.length > 0) {
+            errEl.innerText = collected.errors.join('\n');
+            return;
+        }
+
+        const btn = document.getElementById('completeProfileBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
+
+        try {
+            const existingCustom = userData.customFields || {};
+            const mergedCustom = Object.assign({}, existingCustom);
+            Object.keys(collected.customFields).forEach(function(k) {
+                const v = collected.customFields[k];
+                if (v !== '' && v !== undefined) mergedCustom[k] = v;
+            });
+
+            const updatePath = role === 'student' ? 'users/' + user.uid : 'lecturers/' + user.uid;
+            const updates = { customFields: mergedCustom };
+
+            ['firstName', 'lastName', 'phone'].forEach(function(k) {
+                if (collected.values[k]) {
+                    updates[k] = k === 'phone' ? collected.values[k] : collected.values[k].toUpperCase();
+                }
+            });
+
+            await update(ref(database, updatePath), updates);
+
+            // Verify nothing is still missing
+            const merged = Object.assign({}, userData, updates);
+            const stillMissing = findMissingFields(merged, role);
+
+            if (stillMissing.length > 0) {
+                errEl.innerText = 'Still missing: ' + stillMissing.map(function(m) {
+                    return m.kind === 'field' ? m.field.label : m.label;
+                }).join(', ');
+                setButtonLoading(btn, false, orig);
+                return;
+            }
+
+            document.getElementById('completeProfileOverlay').classList.remove('open');
+            document.body.style.overflow = '';
+            PENDING_USER = null;
+
+            if (role === 'lecturer') {
+                localStorage.setItem('lecturerUid', user.uid);
+                localStorage.setItem('lecturerEmail', merged.email || '');
+                window.location.href = 'dashboard.html';
+            } else {
+                window.location.href = 'user.html';
+            }
+        } catch (err) {
+            errEl.innerText = 'Save failed: ' + err.message;
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    document.getElementById('completeProfileLogoutBtn').addEventListener('click', async function() {
+        PENDING_USER = null;
+        try { await signOut(auth); } catch (e) { /* ignore */ }
+        document.getElementById('completeProfileOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+        showLoginPanel();
+    });
+
+    /* ============================================================
+       FORGOT PASSWORD
+       ============================================================ */
+    document.getElementById('sendResetLinkBtn').addEventListener('click', async function() {
+        const email = document.getElementById('resetEmailInput').value.trim();
+        const errEl = document.getElementById('resetError');
+        errEl.innerText = '';
+        errEl.style.color = '#ff3b30';
+        if (!email) { errEl.innerText = 'Please enter your email address.'; return; }
+
+        const btn = document.getElementById('sendResetLinkBtn');
+        const orig = btn.innerHTML;
+        setButtonLoading(btn, true, orig);
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            errEl.style.color = '#1f8a3b';
+            errEl.innerText = '✅ Password reset email sent!';
+            setTimeout(function() {
+                showLoginPanel();
+                errEl.style.color = '#ff3b30';
+                errEl.innerText = '';
+            }, 2500);
+        } catch (err) {
+            let msg = 'Failed to send reset email.';
+            if (err.code === 'auth/user-not-found') msg = 'No account found with this email.';
+            errEl.innerText = msg;
+        } finally {
+            setButtonLoading(btn, false, orig);
+        }
+    });
+
+    /* ============================================================
+       PWA INSTALL
+       ============================================================ */
+    let deferredPrompt = null;
+    const installBanner = document.getElementById('installBanner');
+    const bannerInstallBtn = document.getElementById('bannerInstallBtn');
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBanner) installBanner.style.display = 'flex';
+    });
+
+    if (bannerInstallBtn) {
+        bannerInstallBtn.addEventListener('click', async function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installBanner.style.display = 'none';
+        });
+    }
+
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        if (installBanner) installBanner.style.display = 'none';
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/utom/sw.js')
+            .then(function() { console.log('[UTOM] SW registered'); })
+            .catch(function(err) { console.error('[UTOM] SW failed', err); });
+    }
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+    (async function boot() {
+        try {
+            await loadRegistrationConfig();
+        } catch (err) {
+            console.warn('[UTOM] Registration config load failed:', err);
+        }
+
+        try {
+            await loadAdminTerms();
+        } catch (err) {
+            console.warn('[UTOM] Admin terms load failed:', err);
+        }
+
+        try {
+            renderSignupForm('student');
+        } catch (err) {
+            console.error('[UTOM] Student signup render failed:', err);
+        }
+
+        try {
+            renderSignupForm('lecturer');
+        } catch (err) {
+            console.error('[UTOM] Lecturer signup render failed:', err);
+        }
+
+        console.log('✅ UTOM landing page ready — dynamic registration active');
+    })();
 </script>
 </body>
 </html>
