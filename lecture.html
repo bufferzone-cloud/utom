@@ -576,6 +576,42 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
 .terms-editor:focus{outline:none;border-color:var(--gold);background:#fff;
   box-shadow:0 0 0 4px rgba(245,176,66,.10)}
 
+/* ---- COLLEGES ---- */
+.college-card{background:var(--card);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.6);
+  border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--sh-sm);margin-bottom:12px;transition:var(--t)}
+.college-card:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.college-card.banned{background:rgba(253,232,232,.55);border-left:4px solid var(--red)}
+.college-logo{width:56px;height:56px;flex:0 0 56px;border-radius:14px;object-fit:cover;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-weight:800;font-size:20px;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(59,130,246,.22)}
+.college-code{display:inline-block;background:rgba(59,130,246,.12);color:#1d4ed8;
+  padding:2px 10px;border-radius:30px;font-size:10px;font-weight:800;letter-spacing:.5px;
+  text-transform:uppercase;margin-top:3px}
+.admin-row{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;
+  background:rgba(248,249,252,.6);font-size:12px;flex-wrap:wrap}
+.admin-row .info{flex:1;min-width:0}
+.admin-row .nm{font-weight:700;font-size:13px}
+.admin-row .mt{font-size:11px;color:var(--muted);margin-top:1px;word-break:break-all}
+.admin-row .badge-sm{background:rgba(46,204,113,.15);color:#1e7d46;padding:2px 8px;
+  border-radius:30px;font-size:9px;font-weight:800;text-transform:uppercase}
+.capacity{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 14px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);
+  border-radius:10px;margin-bottom:10px;font-size:12px}
+.capacity strong{color:#1d4ed8}
+.progress-mini{height:6px;background:rgba(59,130,246,.15);border-radius:30px;overflow:hidden;
+  margin-top:6px;width:100%}
+.progress-mini .fill{height:100%;background:linear-gradient(90deg,#3b82f6,#1d4ed8);
+  border-radius:30px;transition:width .3s}
+
+.video-toggle-card{background:linear-gradient(135deg,#fff9ed,#fef5e6);border-radius:12px;
+  padding:14px 16px;border:1px solid rgba(245,176,66,.28);margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.video-toggle-card .vt-info{flex:1;min-width:0}
+.video-toggle-card .vt-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
+.video-toggle-card .vt-sub{font-size:11px;color:var(--sub);margin-top:2px}
+.video-toggle-card .vt-btn{flex:0 0 auto}
+
 @media (max-width:560px){
   .app-content{padding:12px 11px 90px}
   .header{height:58px;padding:0 12px}
@@ -631,6 +667,10 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           <div class="dash-number" id="kStuRev">ZMW 0</div><div class="dash-label">Student Sales</div></div>
         <div class="dash-card"><div class="dash-icon"><i class="fas fa-user-slash"></i></div>
           <div class="dash-number" id="kBanned">0</div><div class="dash-label">Banned</div></div>
+        <div class="dash-card"><div class="dash-icon"><i class="fas fa-university"></i></div>
+          <div class="dash-number" id="kColleges">0</div><div class="dash-label">Colleges</div></div>
+        <div class="dash-card"><div class="dash-icon"><i class="fas fa-building"></i></div>
+          <div class="dash-number" id="kCollegeRev">ZMW 0</div><div class="dash-label">College Revenue</div></div>
       </div>
 
       <div class="card">
@@ -638,6 +678,7 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         <div class="action-bar">
           <button class="btn btn-primary" onclick="navigate('applications')"><i class="fas fa-clipboard-list"></i> Applications</button>
           <button class="btn btn-outline" onclick="navigate('lecturerCreate')"><i class="fas fa-user-plus"></i> Add Lecturer</button>
+          <button class="btn btn-outline" onclick="navigate('collegeCreate')"><i class="fas fa-university"></i> Add College</button>
           <button class="btn btn-outline" onclick="navigate('pendingContent')"><i class="fas fa-inbox"></i> Pending Content</button>
           <button class="btn btn-outline" onclick="navigate('subPayments')"><i class="fas fa-key"></i> Sub Payments</button>
           <button class="btn btn-outline" onclick="navigate('popups')"><i class="fas fa-bell"></i> Send Popup</button>
@@ -696,6 +737,7 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
             <option value="expired">Expired</option>
             <option value="unpaid">Unpaid</option>
             <option value="banned">Banned</option>
+            <option value="noVideo">Video posting disabled</option>
           </select>
         </div>
       </div>
@@ -729,6 +771,11 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
 
         <div class="form-card">
           <h4><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h4>
+          <div class="row one">
+            <select id="cCollegeId">
+              <option value="">— Link to registered college (optional) —</option>
+            </select>
+          </div>
           <div class="row one"><input type="text" id="cCollege" placeholder="College / University Name *" required></div>
           <div class="row one"><input type="text" id="cCity" placeholder="City *" required></div>
           <div class="row one"><input type="text" id="cTown" placeholder="Town / Suburb"></div>
@@ -784,6 +831,20 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           </div>
         </div>
 
+        <div class="form-card">
+          <h4><i class="fas fa-video"></i> Permissions</h4>
+          <div class="setting-row">
+            <span>Allow video posting</span>
+            <label style="flex:0 0 auto;gap:8px">
+              <input type="checkbox" id="cVideoPosting" checked>
+              <span style="font-size:12px;color:var(--sub)">Enabled</span>
+            </label>
+          </div>
+          <p class="hint" style="margin-top:8px;margin-bottom:0">
+            When disabled, this lecturer cannot upload new videos. You can toggle this at any time from the lecturer's detail page.
+          </p>
+        </div>
+
         <div class="page-foot">
           <button type="button" class="btn btn-ghost" onclick="navigate('lecturers')">Cancel</button>
           <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Create Lecturer</button>
@@ -812,6 +873,11 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         </div>
         <div class="form-card">
           <h4><i class="fas fa-map-marker-alt"></i> Location &amp; Institution</h4>
+          <div class="row one">
+            <select id="eCollegeId">
+              <option value="">— Not linked to a registered college —</option>
+            </select>
+          </div>
           <div class="row one"><input type="text" id="eCollege" placeholder="College / University Name"></div>
           <div class="row one"><input type="text" id="eCity" placeholder="City"></div>
           <div class="row one"><input type="text" id="eTown" placeholder="Town / Suburb"></div>
@@ -962,6 +1028,206 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
         </div>
       </div>
       <div id="postedBody"></div>
+    </section>
+
+    <!-- ALL COLLEGES -->
+    <section id="collegesSection" class="section">
+      <div class="page-head">
+        <div style="flex:1;min-width:0">
+          <div class="page-title">All Colleges</div>
+          <div class="page-sub">Manage colleges, admins and lecturer limits</div>
+        </div>
+        <button class="icon-btn" onclick="navigate('collegeCreate')" title="Add college">
+          <i class="fas fa-plus"></i></button>
+      </div>
+      <div class="form-card">
+        <div class="row">
+          <input type="text" id="colSearch" placeholder="Search colleges, code, admins…">
+          <select id="colFilter">
+            <option value="all">All</option>
+            <option value="active">Active access</option>
+            <option value="expired">Expired</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="banned">Banned</option>
+          </select>
+        </div>
+      </div>
+      <div id="colList"></div>
+    </section>
+
+    <!-- CREATE COLLEGE -->
+    <section id="collegeCreateSection" class="section">
+      <div class="page-head">
+        <button class="icon-btn" onclick="navigate('colleges')"><i class="fas fa-arrow-left"></i></button>
+        <div style="flex:1;min-width:0">
+          <div class="page-title">Add College</div>
+          <div class="page-sub">Register a college, its unique ID and its first admin</div>
+        </div>
+      </div>
+
+      <form id="fCollegeCreate">
+        <div class="form-card">
+          <h4><i class="fas fa-university"></i> College details</h4>
+          <div class="row one"><input type="text" id="colName" placeholder="College / University Name *" required></div>
+          <div class="row one"><input type="text" id="colCode" placeholder="Unique College ID / Code (e.g. UNZA, CBU, MUL) *" required></div>
+          <div class="row one"><input type="text" id="colCountry" placeholder="Country (optional)"></div>
+          <div class="row one"><input type="text" id="colCity" placeholder="City / Town (optional)"></div>
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-image"></i> College logo</h4>
+          <div class="upload" id="upCollegeLogo">
+            <div class="ph"><i class="fas fa-image"></i><span>Tap to upload logo</span></div>
+          </div>
+          <input type="hidden" id="colLogo">
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-cog"></i> Access &amp; limits</h4>
+          <p class="hint">Colleges require an active subscription to manage their lecturers. You can grant access here or later from the college detail page.</p>
+          <div class="setting-row"><span>Access fee (ZMW)</span>
+            <input type="number" id="colAccessFee" min="0" step="0.01" value="150"></div>
+          <div class="setting-row"><span>Access duration</span>
+            <div style="display:flex;gap:6px;flex:0 0 200px">
+              <input type="number" id="colDurVal" min="1" value="1" style="flex:1;text-align:right">
+              <select id="colDurType" style="flex:1">
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months" selected>Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div></div>
+          <div class="setting-row"><span>Max lecturers this college can create</span>
+            <input type="number" id="colLecturerLimit" min="0" step="1" value="10"></div>
+          <div class="setting-row"><span>Grant access immediately</span>
+            <select id="colGrantNow">
+              <option value="yes">Yes — activate access</option>
+              <option value="no" selected>No — require payment</option>
+            </select></div>
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-user-shield"></i> First college admin</h4>
+          <p class="hint">Each college can have up to 3 admins. The first admin is created now and can login to manage the college.</p>
+          <div class="row one"><input type="text" id="colAdminName" placeholder="Admin full name *" required></div>
+          <div class="row one"><input type="tel" id="colAdminPhone" placeholder="Admin phone number *" required></div>
+          <div class="row one"><input type="email" id="colAdminEmail" placeholder="Admin email *" required></div>
+          <div class="row one"><input type="text" id="colAdminPass" placeholder="Admin password *" required></div>
+        </div>
+
+        <div class="page-foot">
+          <button type="button" class="btn btn-ghost" onclick="navigate('colleges')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Create College</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- COLLEGE DETAIL -->
+    <section id="collegeDetailSection" class="section">
+      <div id="cdBody"></div>
+    </section>
+
+    <!-- EDIT COLLEGE -->
+    <section id="collegeEditSection" class="section">
+      <div class="page-head">
+        <button class="icon-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+        <div style="flex:1;min-width:0">
+          <div class="page-title">Edit College</div>
+          <div class="page-sub" id="colEditSub">Update college information</div>
+        </div>
+      </div>
+
+      <form id="fCollegeEdit">
+        <input type="hidden" id="eColId">
+        <div class="form-card">
+          <h4><i class="fas fa-university"></i> College details</h4>
+          <div class="row one"><input type="text" id="eColName" placeholder="College name" required></div>
+          <div class="row one"><input type="text" id="eColCode" placeholder="Unique college code" required></div>
+          <div class="row one"><input type="text" id="eColCountry" placeholder="Country"></div>
+          <div class="row one"><input type="text" id="eColCity" placeholder="City / Town"></div>
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-image"></i> College logo</h4>
+          <div class="upload" id="upCollegeLogoEdit">
+            <div class="ph"><i class="fas fa-image"></i><span>Tap to upload new logo</span></div>
+          </div>
+          <input type="hidden" id="eColLogo">
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-sliders-h"></i> Limits</h4>
+          <div class="setting-row"><span>Max lecturers this college can create</span>
+            <input type="number" id="eColLecturerLimit" min="0" step="1"></div>
+        </div>
+
+        <div class="page-foot">
+          <button type="button" class="btn btn-ghost" onclick="history.back()">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save Changes</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- COLLEGE ACCESS -->
+    <section id="collegeAccessSection" class="section">
+      <div class="page-head">
+        <button class="icon-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+        <div style="flex:1;min-width:0">
+          <div class="page-title" id="caTitle">Manage College Access</div>
+          <div class="page-sub">Grant, extend or revoke college subscription</div>
+        </div>
+      </div>
+
+      <div id="caSummary" class="lect-mini"></div>
+
+      <form id="fCollegeAccess">
+        <input type="hidden" id="caUid">
+
+        <div class="form-card">
+          <h4><i class="fas fa-sliders-h"></i> Action</h4>
+          <div class="row one" style="margin-bottom:12px">
+            <select id="caAction">
+              <option value="grant">Grant / Extend (adds duration)</option>
+              <option value="set">Set exact expiry date</option>
+              <option value="revoke">Revoke access (lock college)</option>
+            </select>
+          </div>
+
+          <div id="caGrantBlock">
+            <div class="row one"><input type="number" id="caFee" placeholder="Access fee (ZMW)" min="0" step="0.01"></div>
+            <div class="row tight">
+              <input type="number" id="caDurVal" min="1" value="1" placeholder="Duration">
+              <select id="caDurType">
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months" selected>Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="caSetBlock" style="display:none">
+            <div class="row one"><input type="number" id="caSetFee" placeholder="Access fee (ZMW)" min="0" step="0.01"></div>
+            <div class="row one"><input type="datetime-local" id="caExpiry"></div>
+          </div>
+
+          <div id="caWarn" style="display:none;background:#fde8e8;color:#c62828;padding:10px 14px;
+            border-radius:10px;font-size:11px;margin-top:10px">
+            <i class="fas fa-exclamation-triangle"></i> Revoking access will prevent the college and its admins from managing lecturers until access is restored.
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h4><i class="fas fa-sticky-note"></i> Note (optional)</h4>
+          <div class="row one"><input type="text" id="caNote" placeholder="Internal note about this change"></div>
+        </div>
+
+        <div class="page-foot">
+          <button type="button" class="btn btn-ghost" onclick="history.back()">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i>
+            <span id="caSubmitLabel">Grant / Extend</span></button>
+        </div>
+      </form>
     </section>
 
     <!-- SUB PAYMENTS -->
@@ -1145,6 +1411,28 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
       </div>
 
       <div class="form-card">
+        <h4><i class="fas fa-university"></i> College Settings</h4>
+        <div class="setting-row"><span>Default College Access Fee (ZMW)</span>
+          <input type="number" id="setCollegeFee" min="0" step="0.01" value="150"></div>
+        <div class="setting-row"><span>Default College Access Duration</span>
+          <select id="setCollegeDurType">
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months">Months</option>
+            <option value="years">Years</option>
+          </select></div>
+        <div class="setting-row"><span>Default College Access Duration Value</span>
+          <input type="number" id="setCollegeDurValue" min="1" value="1"></div>
+        <div class="setting-row"><span>Default Max Lecturers Per College</span>
+          <input type="number" id="setCollegeLecturerLimit" min="0" value="10"></div>
+        <div class="setting-row"><span>Max Admins Per College</span>
+          <input type="number" id="setCollegeMaxAdmins" min="1" max="3" value="3"></div>
+        <div class="page-foot" style="justify-content:stretch;margin-bottom:0">
+          <button class="btn btn-primary full" id="saveCollegeSettings"><i class="fas fa-save"></i> Save College Settings</button>
+        </div>
+      </div>
+
+      <div class="form-card">
         <h4><i class="fas fa-money-bill-wave"></i> Admin Payment Numbers</h4>
         <p class="hint">
           These numbers are used to collect subscription payments from lecturers.
@@ -1218,6 +1506,16 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
           <span class="badge" id="navAppBadge"></span></button>
         <button class="nav" data-page="lecturers"><i class="fas fa-user-graduate"></i><span>All Lecturers</span></button>
         <button class="nav" data-page="lecturerCreate"><i class="fas fa-user-plus"></i><span>Add Lecturer</span></button>
+      </div>
+    </div>
+
+    <div class="nav-group" data-group="colleges">
+      <button class="nav group-head" type="button">
+        <i class="fas fa-university"></i><span>Colleges</span><i class="fas fa-chevron-down caret"></i>
+      </button>
+      <div class="subnav">
+        <button class="nav" data-page="colleges"><i class="fas fa-building"></i><span>All Colleges</span></button>
+        <button class="nav" data-page="collegeCreate"><i class="fas fa-plus"></i><span>Add College</span></button>
       </div>
     </div>
 
@@ -1307,6 +1605,45 @@ input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(-
   </div>
 </div>
 
+<!-- College ban modal -->
+<div class="modal" id="mCollegeBan">
+  <div class="modal-box">
+    <button class="modal-close" data-close="mCollegeBan">&times;</button>
+    <div class="brand">UTOM</div>
+    <h3><i class="fas fa-ban"></i> Confirm Ban</h3>
+    <p class="hint">Ban <strong id="cbName"></strong>? All college admins will be blocked immediately.</p>
+    <form id="fCollegeBan">
+      <input type="hidden" id="cbUid">
+      <textarea id="cbReason" rows="3" placeholder="Reason for ban…" required></textarea>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="mCollegeBan">Cancel</button>
+        <button type="submit" class="btn btn-danger"><i class="fas fa-ban"></i> Ban College</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add college admin modal -->
+<div class="modal" id="mAddColAdmin">
+  <div class="modal-box">
+    <button class="modal-close" data-close="mAddColAdmin">&times;</button>
+    <div class="brand">UTOM</div>
+    <h3><i class="fas fa-user-shield"></i> Add College Admin</h3>
+    <p class="hint" id="addAdminHint">Each college can have up to 3 admins.</p>
+    <form id="fAddColAdmin">
+      <input type="hidden" id="acaCollegeId">
+      <div class="row one"><input type="text" id="acaName" placeholder="Admin full name *" required></div>
+      <div class="row one"><input type="tel" id="acaPhone" placeholder="Phone number *" required></div>
+      <div class="row one"><input type="email" id="acaEmail" placeholder="Email *" required></div>
+      <div class="row one"><input type="text" id="acaPass" placeholder="Password *" required></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="mAddColAdmin">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Add Admin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Chat overlay -->
 <div class="chat-overlay" id="chatOverlay">
   <header class="chat-head">
@@ -1358,11 +1695,13 @@ const db   = getDatabase(app);
 const S = {
   lecturers:{}, settings:{}, pending:{}, courses:{}, assessments:{},
   videos:{}, docs:{}, subfolders:{}, registers:{}, approved:{},
-  payments:{}, users:{}, popups:{}, messages:{}, terms:{}
+  payments:{}, users:{}, popups:{}, messages:{}, terms:{},
+  colleges:{}
 };
 let currentAdmin = null;
 let currentPage  = { id:'home', params:{} };
 let detailTab    = 'profile';
+let collegeDetailTab = 'profile';
 let currentChatUid = null;
 let popupFilter  = 'all';
 let popupSearch  = '';
@@ -1383,13 +1722,16 @@ const REFS = {
   notif     : ref(db,'notifications'),
   popups    : ref(db,'lecturerPopups'),
   messages  : ref(db,'lecturerMessages'),
-  terms     : ref(db,'system/lecturerTerms')
+  terms     : ref(db,'system/lecturerTerms'),
+  colleges  : ref(db,'colleges')
 };
 
 const DEFAULT_SETTINGS = {
   accessMode:'paid', accessFee:150, accessDurationType:'months', accessDurationValue:1,
   requireContentApproval:'yes', autoApproveApps:'no', mtnNumber:'', airtelNumber:'',
-  routingBehavior:'admin'
+  routingBehavior:'admin',
+  collegeFee: 150, collegeDurType:'months', collegeDurValue: 1,
+  collegeLecturerLimit: 10, collegeMaxAdmins: 3
 };
 
 const DEFAULT_TERMS = {
@@ -1538,7 +1880,8 @@ const earningsOf = uid => earningsMap().get(uid) || { total:0, count:0, items:[]
 const SECTIONS = [
   'home','applications','lecturers','lecturerDetail','lecturerCreate','lecturerEdit',
   'lecturerAccess','lecturerPassword','pendingContent','contentPreview','postedContent',
-  'subPayments','popups','messages','settings'
+  'subPayments','popups','messages','settings',
+  'colleges','collegeCreate','collegeDetail','collegeEdit','collegeAccess'
 ];
 
 const TITLES = {
@@ -1547,13 +1890,17 @@ const TITLES = {
   lecturerAccess:'Manage Access', lecturerPassword:'Reset Password',
   pendingContent:'Pending Content', contentPreview:'Content Preview',
   postedContent:'Posted Content', subPayments:'Subscription Payments',
-  popups:'Popup Notifications', messages:'Support Messages', settings:'Settings & Terms'
+  popups:'Popup Notifications', messages:'Support Messages', settings:'Settings & Terms',
+  colleges:'All Colleges', collegeCreate:'Add College', collegeDetail:'College Details',
+  collegeEdit:'Edit College', collegeAccess:'College Access'
 };
 
 const NAV_MAP = {
   lecturerDetail:'lecturers', lecturerEdit:'lecturers', lecturerAccess:'lecturers',
   lecturerPassword:'lecturers', lecturerCreate:'lecturerCreate',
-  contentPreview:'pendingContent', postedContent:null
+  contentPreview:'pendingContent', postedContent:null,
+  collegeDetail:'colleges', collegeEdit:'colleges', collegeAccess:'colleges',
+  collegeCreate:'collegeCreate'
 };
 
 let _raf = null;
@@ -1614,6 +1961,11 @@ function paint(force){
     case 'lecturerEdit':    if(force) fillEditForm(params.uid); break;
     case 'lecturerAccess':  if(force) fillAccessForm(params.uid, params.mode); break;
     case 'lecturerPassword':if(force) fillPasswordForm(params.uid); break;
+    case 'colleges':        renderColleges(); break;
+    case 'collegeCreate':   if(force) resetCollegeCreateForm(); break;
+    case 'collegeDetail':   renderCollegeDetail(params.uid); break;
+    case 'collegeEdit':     if(force) fillCollegeEditForm(params.uid); break;
+    case 'collegeAccess':   if(force) fillCollegeAccessForm(params.uid, params.mode); break;
   }
   updateBadges();
   updateChrome();
@@ -1679,6 +2031,10 @@ function renderHome(){
   for(const map of Object.values(S.payments))
     for(const p of Object.values(map)) if(p.status === 'approved') subRev += Number(p.amount)||0;
 
+  const collegeList = Object.values(S.colleges);
+  let collegeRev = 0;
+  for(const c of collegeList) if(c.paymentStatus === 'paid') collegeRev += Number(c.paidAmount)||0;
+
   earningsMap();
 
   document.getElementById('kTotal').textContent   = list.length;
@@ -1687,6 +2043,8 @@ function renderHome(){
   document.getElementById('kBanned').textContent  = banned;
   document.getElementById('kSubRev').textContent  = 'ZMW ' + subRev;
   document.getElementById('kStuRev').textContent  = 'ZMW ' + _grandTotal;
+  document.getElementById('kColleges').textContent = collegeList.length;
+  document.getElementById('kCollegeRev').textContent = 'ZMW ' + collegeRev;
 
   const recent = list.filter(l => (l.status || 'pending') === 'pending')
                      .sort((a,b) => (b.appliedAt||0) - (a.appliedAt||0))
@@ -1712,6 +2070,7 @@ function lecturerCardHTML(l, opt = {}){
                    (!l.accessExpiresAt || l.accessExpiresAt > now);
   const isExpired = l.accessExpiresAt && l.accessExpiresAt <= now;
   const isPending = (l.status || 'pending') === 'pending';
+  const videoEnabled = l.videoPostingEnabled !== false;
 
   let pillCls = 'unpaid', pillTxt = 'Unpaid';
   if(l.banned){ pillCls='banned'; pillTxt='Banned'; }
@@ -1741,6 +2100,12 @@ function lecturerCardHTML(l, opt = {}){
       Access expired — student payments routed to admin numbers</div>`;
   }
 
+  let videoChip = '';
+  if(!videoEnabled){
+    videoChip = `<div class="chip bad" style="display:inline-flex;font-size:10px;margin-top:6px">
+      <i class="fas fa-video-slash"></i> Video posting disabled</div>`;
+  }
+
   const stats = opt.compact ? '' : `
     <div class="lc-stats">
       <div class="stat gold"><div class="n">ZMW ${e.total}</div><div class="l">Earnings</div></div>
@@ -1763,6 +2128,8 @@ function lecturerCardHTML(l, opt = {}){
           <i class="fas fa-user-pen"></i> Edit profile</button>
         <button class="dd-item" onclick="navigate('lecturerPassword',{uid:'${l.uid}'})">
           <i class="fas fa-lock"></i> Reset password</button>
+        <button class="dd-item" onclick="toggleVideoPosting('${l.uid}')">
+          <i class="fas fa-video"></i> ${videoEnabled ? 'Disable' : 'Enable'} video posting</button>
         <button class="dd-item" onclick="openChat('${l.uid}')">
           <i class="fas fa-comments"></i> Send message</button>
         <div class="dd-sep"></div>
@@ -1808,6 +2175,8 @@ function lecturerCardHTML(l, opt = {}){
 
   const collegeLine = l.collegeName ? `<div class="lc-meta">🏫 ${esc(l.collegeName)}</div>` : '';
   const locationLine = (l.city || l.town) ? `<div class="lc-meta">📍 ${esc([l.city, l.town].filter(Boolean).join(', '))}</div>` : '';
+  const linkedCollege = l.collegeId && S.colleges[l.collegeId]
+    ? `<div class="lc-meta">🏛️ <a href="#collegeDetail" onclick="navigate('collegeDetail',{uid:'${esc(l.collegeId)}'});return false;" style="color:#2979c1;text-decoration:none">${esc(S.colleges[l.collegeId].name)}</a></div>` : '';
 
   return `
     <article class="lc-card ${l.banned ? 'banned' : ''}">
@@ -1818,6 +2187,7 @@ function lecturerCardHTML(l, opt = {}){
           <div class="lc-email">${esc(l.email || '')}</div>
           <div class="lc-meta">📞 ${esc(l.phone || 'N/A')} · NRC: ${esc(l.nrcNumber || 'N/A')}</div>
           ${collegeLine}
+          ${linkedCollege}
           ${locationLine}
           <div class="lc-meta">${isPending
             ? 'Applied: ' + fmt(l.appliedAt)
@@ -1826,6 +2196,7 @@ function lecturerCardHTML(l, opt = {}){
         <span class="pill ${pillCls}">${pillTxt}</span>
       </div>
       ${expiredWarn}
+      ${videoChip}
       ${stats}
       ${actions}
     </article>`;
@@ -1874,6 +2245,7 @@ function renderLecturers(){
   else if(f === 'expired') arr = arr.filter(l => l.accessExpiresAt && l.accessExpiresAt <= now);
   else if(f === 'unpaid')  arr = arr.filter(l => l.paymentStatus !== 'paid');
   else if(f === 'banned')  arr = arr.filter(l => l.banned);
+  else if(f === 'noVideo') arr = arr.filter(l => l.videoPostingEnabled === false);
 
   if(q) arr = arr.filter(l =>
     (l.name||'').toLowerCase().includes(q) ||
@@ -1910,6 +2282,7 @@ function renderLecturerDetail(uid){
   const active = !l.banned && l.paymentStatus === 'paid' && (!l.accessExpiresAt || l.accessExpiresAt > now);
   const isExpired = l.accessExpiresAt && l.accessExpiresAt <= now;
   const isPending = (l.status || 'pending') === 'pending';
+  const videoEnabled = l.videoPostingEnabled !== false;
 
   const myCourses     = Object.entries(S.courses).filter(([,c]) => c.lecturerId === uid);
   const myAssessments = Object.entries(S.assessments).filter(([,a]) => a.lecturerId === uid);
@@ -1971,6 +2344,10 @@ function renderLecturerDetail(uid){
     ? `<tr><td>Town / Suburb</td><td>${esc(l.town)}</td></tr>` : '';
   const addressRow = l.address
     ? `<tr><td>Physical Address</td><td>${esc(l.address)}</td></tr>` : '';
+  const linkedCollegeRow = l.collegeId && S.colleges[l.collegeId]
+    ? `<tr><td>Linked College</td><td>
+        <a href="#collegeDetail" onclick="navigate('collegeDetail',{uid:'${esc(l.collegeId)}'});return false;" style="color:#2979c1">
+          ${esc(S.colleges[l.collegeId].name)}</a></td></tr>` : '';
 
   box.innerHTML = `
     <div class="page-head">
@@ -1988,6 +2365,8 @@ function renderLecturerDetail(uid){
             <i class="fas fa-lock"></i> Reset password</button>
           <button class="dd-item" onclick="navigate('postedContent',{uid:'${uid}'})">
             <i class="fas fa-folder-open"></i> Posted content</button>
+          <button class="dd-item" onclick="toggleVideoPosting('${uid}')">
+            <i class="fas fa-video"></i> ${videoEnabled ? 'Disable' : 'Enable'} video posting</button>
           <button class="dd-item" onclick="openChat('${uid}')">
             <i class="fas fa-comments"></i> Send message</button>
           <div class="dd-sep"></div>
@@ -2021,6 +2400,9 @@ function renderLecturerDetail(uid){
         <span class="pill ${active ? 'active' : 'expired'}">
           ${active ? 'Active' : (l.paymentStatus === 'paid' ? 'Expired' : 'Unpaid')}</span>
         ${l.banned ? '<span class="pill banned">Banned</span>' : ''}
+        <span class="chip ${videoEnabled ? 'ok' : 'bad'}" style="font-size:10px">
+          <i class="fas ${videoEnabled ? 'fa-video' : 'fa-video-slash'}"></i>
+          Video posting: ${videoEnabled ? 'On' : 'Off'}</span>
       </div>
       <div class="lc-stats">
         <div class="stat gold"><div class="n">ZMW ${e.total}</div><div class="l">Earnings</div></div>
@@ -2034,6 +2416,22 @@ function renderLecturerDetail(uid){
           <button class="btn btn-reject" onclick="openReject('${uid}')">
             <i class="fas fa-times"></i> Reject</button>
         </div>` : ''}
+    </div>
+
+    <div class="video-toggle-card">
+      <div class="vt-info">
+        <div class="vt-title"><i class="fas ${videoEnabled ? 'fa-video' : 'fa-video-slash'}"
+          style="color:${videoEnabled ? '#2ecc71' : '#e74c3c'}"></i>
+          Video Posting ${videoEnabled ? 'Enabled' : 'Disabled'}</div>
+        <div class="vt-sub">${videoEnabled
+          ? 'This lecturer can upload new videos.'
+          : 'This lecturer cannot upload new videos until re-enabled.'}</div>
+      </div>
+      <button class="btn ${videoEnabled ? 'btn-warn' : 'btn-approve'} vt-btn"
+        onclick="toggleVideoPosting('${uid}')">
+        <i class="fas ${videoEnabled ? 'fa-video-slash' : 'fa-video'}"></i>
+        ${videoEnabled ? 'Deactivate video posting' : 'Activate video posting'}
+      </button>
     </div>
 
     <div class="tabs">
@@ -2051,6 +2449,7 @@ function renderLecturerDetail(uid){
           <tr><td>Phone</td><td>${esc(l.phone || '')}</td></tr>
           <tr><td>NRC</td><td>${esc(l.nrcNumber || '')}</td></tr>
           ${collegeRow}
+          ${linkedCollegeRow}
           ${cityRow}
           ${townRow}
           ${addressRow}
@@ -2059,6 +2458,9 @@ function renderLecturerDetail(uid){
             <button class="btn btn-ghost" style="padding:3px 12px;font-size:10px;margin-left:6px"
               onclick="document.getElementById('pwdMask').textContent=${JSON.stringify(l.password || '(none)')}">Reveal</button>
           </td></tr>
+          <tr><td>Video posting</td><td>
+            <span style="color:${videoEnabled ? '#1e7d46' : '#c62828'};font-weight:700">
+              ${videoEnabled ? 'Enabled' : 'Disabled'}</span></td></tr>
           <tr><td>Applied</td><td>${fmt(l.appliedAt)}</td></tr>
           ${l.approvedAt ? `<tr><td>Approved</td><td>${fmt(l.approvedAt)}</td></tr>` : ''}
           ${l.banned && l.banReason ? `<tr><td style="color:#c62828">Ban reason</td>
@@ -2191,12 +2593,558 @@ function renderLecturerDetail(uid){
 }
 
 /* ============================================================
-   FORM FILLERS
+   VIDEO POSTING TOGGLE
 ============================================================ */
+async function toggleVideoPosting(uid){
+  const l = S.lecturers[uid];
+  if(!l) return;
+  const current = l.videoPostingEnabled !== false;
+  const ok = await confirmBox(
+    current ? '🔒' : '🔓',
+    current ? 'Disable video posting?' : 'Enable video posting?',
+    current
+      ? `This lecturer will <strong>not</strong> be able to upload new videos until you re-enable it. Existing videos remain visible.`
+      : `This lecturer will be able to upload new videos again.`
+  );
+  if(!ok) return;
+  try{
+    await update(ref(db, `lecturers/${uid}`), {
+      videoPostingEnabled: !current,
+      videoPostingUpdatedAt: Date.now(),
+      videoPostingUpdatedBy: currentAdmin?.email || 'admin'
+    });
+    toast(current ? 'Video posting disabled' : 'Video posting enabled', 'success');
+  }catch(e){ toast('Error: ' + e.message, 'error'); }
+}
+window.toggleVideoPosting = toggleVideoPosting;
+
+/* ============================================================
+   COLLEGE HELPERS
+============================================================ */
+function collegeLecturerCount(collegeId){
+  return Object.values(S.lecturers).filter(l => l.collegeId === collegeId).length;
+}
+function collegeAdminCount(c){
+  return Object.keys(c.admins || {}).length;
+}
+function maxCollegeAdmins(){
+  return Math.min(3, Math.max(1, parseInt(S.settings.collegeMaxAdmins) || 3));
+}
+function collegeCardHTML(c){
+  const e = { total:0, count:0 };
+  const now = Date.now();
+  const adminCount = collegeAdminCount(c);
+  const lecturerCount = collegeLecturerCount(c.id);
+  const limit = parseInt(c.lecturerLimit) || 0;
+  const active = !c.banned && c.paymentStatus === 'paid' &&
+                 (!c.accessExpiresAt || c.accessExpiresAt > now);
+
+  let pillCls = 'unpaid', pillTxt = 'Unpaid';
+  if(c.banned){ pillCls='banned'; pillTxt='Banned'; }
+  else if(c.status === 'pending'){ pillCls='pending'; pillTxt='Pending'; }
+  else if(active){ pillCls='active'; pillTxt='Active'; }
+  else if(c.accessExpiresAt && c.accessExpiresAt <= now){ pillCls='expired'; pillTxt='Expired'; }
+
+  const logo = c.logoUrl
+    ? `<img class="college-logo" src="${esc(c.logoUrl)}" alt="" loading="lazy">`
+    : `<div class="college-logo">${esc((c.name||'?').charAt(0).toUpperCase())}</div>`;
+
+  const capacityPct = limit > 0 ? Math.min(100, Math.round((lecturerCount / limit) * 100)) : 0;
+
+  return `
+    <article class="college-card ${c.banned ? 'banned' : ''}">
+      <div class="lc-head">
+        ${logo}
+        <div class="lc-info">
+          <div class="lc-name">${esc(c.name || 'Unnamed')}</div>
+          <div class="lc-email">${esc(c.country || '')}${c.city ? ' · ' + esc(c.city) : ''}</div>
+          <div class="college-code">${esc(c.uniqueCode || 'NO-CODE')}</div>
+          <div class="lc-meta" style="margin-top:6px">
+            👥 ${adminCount}/${maxCollegeAdmins()} admins · 🎓 ${lecturerCount}${limit ? '/' + limit : ''} lecturers
+          </div>
+          <div class="lc-meta">${c.accessExpiresAt ? 'Expires: ' + fmt(c.accessExpiresAt) : 'Lifetime'}</div>
+        </div>
+        <span class="pill ${pillCls}">${pillTxt}</span>
+      </div>
+      <div class="lc-stats">
+        <div class="stat gold"><div class="n">ZMW ${c.paidAmount || 0}</div><div class="l">Paid</div></div>
+        <div class="stat green"><div class="n">${lecturerCount}</div><div class="l">Lecturers</div></div>
+        <div class="stat blue"><div class="n">${adminCount}/${maxCollegeAdmins()}</div><div class="l">Admins</div></div>
+      </div>
+      ${limit > 0 ? `
+        <div class="progress-mini" style="margin-top:10px">
+          <div class="fill" style="width:${capacityPct}%;${capacityPct >= 100 ? 'background:linear-gradient(90deg,#e74c3c,#c0392b)' : ''}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;text-align:right">
+          ${lecturerCount} of ${limit} lecturer slots used
+        </div>` : ''}
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="navigate('collegeDetail',{uid:'${c.id}'})">
+          <i class="fas fa-eye"></i> Open</button>
+        ${c.banned
+          ? `<button class="btn btn-ghost" onclick="unbanCollege('${c.id}')">
+               <i class="fas fa-unlock"></i> Unban</button>`
+          : `<button class="btn btn-danger" onclick="openCollegeBan('${c.id}')">
+               <i class="fas fa-ban"></i> Ban</button>`}
+        <div class="dd">
+          <button class="btn btn-ghost dd-toggle" type="button" style="padding:9px 16px">
+            <i class="fas fa-ellipsis-vertical"></i></button>
+          <div class="dd-menu">
+            <button class="dd-item" onclick="navigate('collegeEdit',{uid:'${c.id}'})">
+              <i class="fas fa-pen"></i> Edit college</button>
+            <button class="dd-item" onclick="navigate('collegeAccess',{uid:'${c.id}'})">
+              <i class="fas fa-key"></i> Manage access</button>
+            <div class="dd-sep"></div>
+            <button class="dd-item danger" onclick="deleteCollege('${c.id}')">
+              <i class="fas fa-trash"></i> Delete college</button>
+          </div>
+        </div>
+      </div>
+    </article>`;
+}
+
+/* ============================================================
+   COLLEGES LIST
+============================================================ */
+function renderColleges(){
+  const q = (document.getElementById('colSearch')?.value || '').toLowerCase();
+  const f = document.getElementById('colFilter')?.value || 'all';
+  const now = Date.now();
+
+  let arr = Object.entries(S.colleges).map(([id,d]) => ({ id, ...d }));
+  if(f === 'active')       arr = arr.filter(c => !c.banned && c.paymentStatus === 'paid' && (!c.accessExpiresAt || c.accessExpiresAt > now));
+  else if(f === 'expired') arr = arr.filter(c => c.accessExpiresAt && c.accessExpiresAt <= now);
+  else if(f === 'unpaid')  arr = arr.filter(c => c.paymentStatus !== 'paid');
+  else if(f === 'banned')  arr = arr.filter(c => c.banned);
+
+  if(q) arr = arr.filter(c => {
+    const admins = Object.values(c.admins || {});
+    return (c.name||'').toLowerCase().includes(q) ||
+      (c.uniqueCode||'').toLowerCase().includes(q) ||
+      (c.city||'').toLowerCase().includes(q) ||
+      admins.some(a => (a.name||'').toLowerCase().includes(q) || (a.email||'').toLowerCase().includes(q));
+  });
+  arr.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  const box = document.getElementById('colList');
+  if(!arr.length){
+    box.innerHTML = `<div class="empty"><i class="fas fa-university"></i>
+      <h3>No colleges found</h3>
+      <p>${Object.keys(S.colleges).length ? 'Try a different filter.' : 'Create your first college to get started.'}</p></div>`;
+    return;
+  }
+  box.innerHTML = arr.map(c => collegeCardHTML(c)).join('');
+}
+
+/* ============================================================
+   COLLEGE CREATE / EDIT
+============================================================ */
+function resetCollegeCreateForm(){
+  ['colName','colCode','colCountry','colCity','colLogo',
+   'colAdminName','colAdminPhone','colAdminEmail','colAdminPass'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('colAccessFee').value = S.settings.collegeFee || 150;
+  document.getElementById('colDurVal').value = S.settings.collegeDurValue || 1;
+  document.getElementById('colDurType').value = S.settings.collegeDurType || 'months';
+  document.getElementById('colLecturerLimit').value = S.settings.collegeLecturerLimit || 10;
+  document.getElementById('colGrantNow').value = 'no';
+  const sq = document.getElementById('upCollegeLogo');
+  if(sq){
+    sq.querySelectorAll('img').forEach(i => i.remove());
+    const ph = sq.querySelector('.ph'); if(ph) ph.style.display = 'block';
+  }
+}
+
+function fillCollegeEditForm(id){
+  const c = S.colleges[id];
+  if(!c){ toast('College not found', 'error'); navigate('colleges', {}, false); return; }
+  document.getElementById('eColId').value = id;
+  document.getElementById('eColName').value = c.name || '';
+  document.getElementById('eColCode').value = c.uniqueCode || '';
+  document.getElementById('eColCountry').value = c.country || '';
+  document.getElementById('eColCity').value = c.city || '';
+  document.getElementById('eColLogo').value = c.logoUrl || '';
+  document.getElementById('eColLecturerLimit').value = c.lecturerLimit || 0;
+
+  const sq = document.getElementById('upCollegeLogoEdit');
+  if(sq){
+    sq.querySelectorAll('img').forEach(i => i.remove());
+    const ph = sq.querySelector('.ph');
+    if(c.logoUrl){
+      const img = document.createElement('img');
+      img.src = c.logoUrl; img.loading = 'lazy';
+      sq.appendChild(img);
+      if(ph) ph.style.display = 'none';
+    } else if(ph){ ph.style.display = 'block'; }
+  }
+  document.getElementById('colEditSub').textContent = c.uniqueCode || 'Update college information';
+}
+
+function fillCollegeAccessForm(id, mode){
+  const c = S.colleges[id];
+  if(!c){ toast('College not found', 'error'); navigate('colleges', {}, false); return; }
+  document.getElementById('caUid').value = id;
+  document.getElementById('caFee').value = S.settings.collegeFee || 150;
+  document.getElementById('caSetFee').value = S.settings.collegeFee || 150;
+  document.getElementById('caDurVal').value = S.settings.collegeDurValue || 1;
+  document.getElementById('caDurType').value = S.settings.collegeDurType || 'months';
+  document.getElementById('caNote').value = '';
+
+  document.getElementById('caSummary').innerHTML = `
+    ${c.logoUrl
+      ? `<img src="${esc(c.logoUrl)}" class="lc-avatar" style="object-fit:cover">`
+      : `<div class="lc-avatar">${esc((c.name||'?').charAt(0).toUpperCase())}</div>`}
+    <div style="flex:1;min-width:0">
+      <div class="nm">${esc(c.name || 'College')}</div>
+      <div class="mt">Code: ${esc(c.uniqueCode || '—')}</div>
+      <div class="mt">Current: ${c.accessExpiresAt ? 'expires ' + fmt(c.accessExpiresAt) : 'lifetime'}
+        · Paid ZMW ${c.paidAmount || 0}</div>
+    </div>`;
+
+  const base = (c.accessExpiresAt && c.accessExpiresAt > Date.now())
+    ? c.accessExpiresAt : Date.now() + 30*86400000;
+  const dt = new Date(base - new Date(base).getTimezoneOffset()*60000);
+  document.getElementById('caExpiry').value = dt.toISOString().slice(0,16);
+
+  document.getElementById('caAction').value = mode || 'grant';
+  applyCollegeAccessAction();
+
+  document.getElementById('caTitle').textContent =
+    mode === 'revoke' ? 'Revoke College Access' :
+    mode === 'set' ? 'Set College Expiry' :
+    (c.paymentStatus === 'paid' ? 'Extend College Access' : 'Grant College Access');
+}
+
+function applyCollegeAccessAction(){
+  const v = document.getElementById('caAction').value;
+  document.getElementById('caGrantBlock').style.display = v === 'grant' ? 'block' : 'none';
+  document.getElementById('caSetBlock').style.display   = v === 'set' ? 'block' : 'none';
+  document.getElementById('caWarn').style.display       = v === 'revoke' ? 'block' : 'none';
+  document.getElementById('caSubmitLabel').textContent  =
+    v === 'grant' ? 'Grant / Extend' : v === 'set' ? 'Set Expiry' : 'Revoke Access';
+}
+
+/* ============================================================
+   COLLEGE DETAIL
+============================================================ */
+function renderCollegeDetail(id){
+  const box = document.getElementById('cdBody');
+  const c = S.colleges[id];
+
+  if(!c){
+    box.innerHTML = `<div class="empty"><i class="fas fa-university"></i>
+      <h3>College not found</h3><p>This college may have been deleted.</p>
+      <div style="margin-top:14px"><button class="btn btn-primary"
+        onclick="navigate('colleges')">Back to colleges</button></div></div>`;
+    return;
+  }
+
+  const now = Date.now();
+  const active = !c.banned && c.paymentStatus === 'paid' &&
+                 (!c.accessExpiresAt || c.accessExpiresAt > now);
+  const isExpired = c.accessExpiresAt && c.accessExpiresAt <= now;
+  const admins = Object.entries(c.admins || {}).map(([aid, a]) => ({ id: aid, ...a }));
+  const myLecturers = Object.values(S.lecturers).filter(l => l.collegeId === id);
+  const limit = parseInt(c.lecturerLimit) || 0;
+  const adminSlots = maxCollegeAdmins();
+
+  const logo = c.logoUrl
+    ? `<img class="college-logo" style="width:64px;height:64px;flex:0 0 64px;font-size:22px"
+        src="${esc(c.logoUrl)}" alt="">`
+    : `<div class="college-logo" style="width:64px;height:64px;flex:0 0 64px;font-size:22px">
+        ${esc((c.name||'?').charAt(0).toUpperCase())}</div>`;
+
+  const adminsHtml = admins.length
+    ? admins.map(a => `
+      <div class="admin-row">
+        <div class="info">
+          <div class="nm">${esc(a.name || 'Unnamed')}</div>
+          <div class="mt">📞 ${esc(a.phone || '—')} · ✉️ ${esc(a.email || '—')}</div>
+          <div class="mt" style="color:var(--muted)">Added ${fmt(a.createdAt)}</div>
+        </div>
+        <span class="badge-sm">Admin</span>
+        <button class="mini-btn" title="Remove admin"
+          onclick="removeCollegeAdmin('${id}','${a.id}')">
+          <i class="fas fa-trash"></i></button>
+      </div>`).join('')
+    : `<div class="empty" style="padding:18px"><i class="fas fa-user-shield"></i>
+        <h3>No admins yet</h3><p>Add the first admin for this college.</p></div>`;
+
+  const lecturersHtml = myLecturers.length
+    ? myLecturers.map(l => `
+      <div class="admin-row">
+        <div class="info">
+          <div class="nm">${esc(l.name || l.email || l.uid)}</div>
+          <div class="mt">${esc(l.email || '')} · ${esc(l.phone || '')}</div>
+        </div>
+        <button class="mini-btn view" title="Open lecturer"
+          onclick="navigate('lecturerDetail',{uid:'${l.uid}'})">
+          <i class="fas fa-eye"></i></button>
+      </div>`).join('')
+    : `<div class="empty" style="padding:18px"><i class="fas fa-user-graduate"></i>
+        <h3>No lecturers assigned</h3>
+        <p>Lecturers linked to this college will appear here.</p></div>`;
+
+  const capacityHtml = limit > 0
+    ? `<div class="capacity">
+        <span><strong>${myLecturers.length}</strong> of <strong>${limit}</strong> lecturer slots used</span>
+        <span style="color:var(--muted);font-size:11px">${Math.max(0, limit - myLecturers.length)} remaining</span>
+      </div>
+      <div class="progress-mini">
+        <div class="fill" style="width:${Math.min(100, Math.round((myLecturers.length/limit)*100))}%;${myLecturers.length >= limit ? 'background:linear-gradient(90deg,#e74c3c,#c0392b)' : ''}"></div>
+      </div>`
+    : `<div class="capacity">
+        <span>Unlimited lecturer capacity</span>
+        <span style="color:var(--muted);font-size:11px">${myLecturers.length} currently</span>
+      </div>`;
+
+  box.innerHTML = `
+    <div class="page-head">
+      <button class="icon-btn" onclick="navigate('colleges')"><i class="fas fa-arrow-left"></i></button>
+      <div style="flex:1;min-width:0">
+        <div class="page-title">${esc(c.name || 'Unnamed College')}</div>
+        <div class="page-sub">Code: ${esc(c.uniqueCode || '—')}</div>
+      </div>
+      <div class="dd">
+        <button class="icon-btn dd-toggle" type="button"><i class="fas fa-ellipsis-vertical"></i></button>
+        <div class="dd-menu">
+          <button class="dd-item" onclick="navigate('collegeEdit',{uid:'${id}'})">
+            <i class="fas fa-pen"></i> Edit college</button>
+          <button class="dd-item" onclick="navigate('collegeAccess',{uid:'${id}'})">
+            <i class="fas fa-key"></i> Manage access</button>
+          <div class="dd-sep"></div>
+          ${c.banned
+            ? `<button class="dd-item" onclick="unbanCollege('${id}')">
+                 <i class="fas fa-unlock"></i> Unban college</button>`
+            : `<button class="dd-item danger" onclick="openCollegeBan('${id}')">
+                 <i class="fas fa-ban"></i> Ban college</button>`}
+          <button class="dd-item danger" onclick="deleteCollege('${id}')">
+            <i class="fas fa-trash"></i> Delete college</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="lc-head">
+        ${logo}
+        <div class="lc-info">
+          <div class="lc-name">${esc(c.name || 'Unnamed')}</div>
+          <div class="college-code">${esc(c.uniqueCode || 'NO-CODE')}</div>
+          ${c.country ? `<div class="lc-meta">🌍 ${esc(c.country)}</div>` : ''}
+          ${c.city ? `<div class="lc-meta">📍 ${esc(c.city)}</div>` : ''}
+          <div class="lc-meta">${c.accessExpiresAt ? 'Access expires: ' + fmt(c.accessExpiresAt) : 'Access: Lifetime'}</div>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="pill ${c.banned ? 'banned' : (active ? 'active' : (isExpired ? 'expired' : 'unpaid'))}">
+          ${c.banned ? 'Banned' : (active ? 'Active' : (isExpired ? 'Expired' : 'Unpaid'))}</span>
+        ${c.banned ? '<span class="pill banned">Banned</span>' : ''}
+      </div>
+      <div class="lc-stats">
+        <div class="stat gold"><div class="n">ZMW ${c.paidAmount || 0}</div><div class="l">Paid</div></div>
+        <div class="stat green"><div class="n">${myLecturers.length}</div><div class="l">Lecturers</div></div>
+        <div class="stat blue"><div class="n">${admins.length}/${adminSlots}</div><div class="l">Admins</div></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab ${collegeDetailTab==='profile'?'active':''}" data-tab="profile"><i class="fas fa-info-circle"></i> Profile</button>
+      <button class="tab ${collegeDetailTab==='admins'?'active':''}" data-tab="admins"><i class="fas fa-user-shield"></i> Admins</button>
+      <button class="tab ${collegeDetailTab==='lecturers'?'active':''}" data-tab="lecturers"><i class="fas fa-user-graduate"></i> Lecturers</button>
+      <button class="tab ${collegeDetailTab==='access'?'active':''}" data-tab="access"><i class="fas fa-key"></i> Access</button>
+    </div>
+
+    <div class="tab-panel ${collegeDetailTab==='profile'?'active':''}" data-panel="profile">
+      <div class="card">
+        <table class="dtable">
+          <tr><td>College name</td><td>${esc(c.name || '')}</td></tr>
+          <tr><td>Unique code</td><td><span class="college-code" style="margin-top:0">${esc(c.uniqueCode || '—')}</span></td></tr>
+          <tr><td>Country</td><td>${esc(c.country || '—')}</td></tr>
+          <tr><td>City / Town</td><td>${esc(c.city || '—')}</td></tr>
+          <tr><td>Lecturer limit</td><td>${limit > 0 ? limit + ' lecturers' : 'Unlimited'}</td></tr>
+          <tr><td>Created</td><td>${fmt(c.createdAt)}</td></tr>
+          <tr><td>Created by</td><td>${esc(c.createdBy || '—')}</td></tr>
+        </table>
+      </div>
+      <div class="page-foot">
+        <button class="btn btn-ghost" onclick="navigate('collegeEdit',{uid:'${id}'})">
+          <i class="fas fa-pen"></i> Edit College</button>
+      </div>
+    </div>
+
+    <div class="tab-panel ${collegeDetailTab==='admins'?'active':''}" data-panel="admins">
+      <div class="card">
+        <div class="grid-title">
+          <h3><i class="fas fa-user-shield" style="color:var(--gold)"></i>
+            College Admins <span style="font-weight:600;color:var(--muted);font-size:11px">(${admins.length}/${adminSlots})</span></h3>
+          ${admins.length < adminSlots
+            ? `<button class="btn btn-primary" style="padding:7px 14px;font-size:11px" onclick="openAddCollegeAdmin('${id}')">
+                <i class="fas fa-plus"></i> Add Admin</button>`
+            : `<span class="badge-count">Max admins reached</span>`}
+        </div>
+        ${adminsHtml}
+      </div>
+    </div>
+
+    <div class="tab-panel ${collegeDetailTab==='lecturers'?'active':''}" data-panel="lecturers">
+      <div class="card">
+        <div class="grid-title">
+          <h3><i class="fas fa-user-graduate" style="color:var(--gold)"></i>
+            Lecturers in this college</h3>
+          <button class="btn btn-ghost" style="padding:7px 14px;font-size:11px"
+            onclick="navigate('lecturerCreate')">
+            <i class="fas fa-user-plus"></i> Add Lecturer</button>
+        </div>
+        ${capacityHtml}
+        <div style="margin-top:12px">${lecturersHtml}</div>
+      </div>
+    </div>
+
+    <div class="tab-panel ${collegeDetailTab==='access'?'active':''}" data-panel="access">
+      <div class="card">
+        <div class="chips">
+          ${active ? '<span class="chip ok"><i class="fas fa-check"></i> Active</span>'
+                   : '<span class="chip bad"><i class="fas fa-times"></i> Inactive</span>'}
+          <span class="chip info"><i class="fas fa-money-bill"></i> Paid total: ZMW ${c.paidAmount || 0}</span>
+          ${c.accessExpiresAt
+            ? `<span class="chip ${c.accessExpiresAt > now ? 'ok' : 'bad'}">
+                <i class="fas fa-calendar"></i> Expires ${fmt(c.accessExpiresAt)}</span>`
+            : '<span class="chip warn"><i class="fas fa-infinity"></i> Lifetime</span>'}
+        </div>
+        <table class="dtable" style="margin-top:12px">
+          <tr><td>Payment status</td><td>${esc(c.paymentStatus || 'unpaid')}</td></tr>
+          <tr><td>Last paid</td><td>${c.paidAt ? fmt(c.paidAt) : 'Never'}</td></tr>
+          <tr><td>Note</td><td>${esc(c.accessNote || '—')}</td></tr>
+        </table>
+        <div class="action-bar">
+          <button class="btn btn-primary" onclick="navigate('collegeAccess',{uid:'${id}',mode:'grant'})">
+            <i class="fas fa-plus"></i> Extend</button>
+          <button class="btn btn-ghost" onclick="navigate('collegeAccess',{uid:'${id}',mode:'set'})">
+            <i class="fas fa-calendar-check"></i> Set Expiry</button>
+          <button class="btn btn-warn" onclick="navigate('collegeAccess',{uid:'${id}',mode:'revoke'})">
+            <i class="fas fa-lock"></i> Revoke</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  box.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      collegeDetailTab = t.dataset.tab;
+      box.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+      box.querySelectorAll('.tab-panel').forEach(p =>
+        p.classList.toggle('active', p.dataset.panel === collegeDetailTab));
+    };
+  });
+}
+
+/* ============================================================
+   COLLEGE ADMINS
+============================================================ */
+function openAddCollegeAdmin(collegeId){
+  const c = S.colleges[collegeId];
+  if(!c) return;
+  const admins = Object.keys(c.admins || {}).length;
+  if(admins >= maxCollegeAdmins()){
+    toast(`Maximum ${maxCollegeAdmins()} admins per college`, 'error');
+    return;
+  }
+  document.getElementById('acaCollegeId').value = collegeId;
+  document.getElementById('acaName').value = '';
+  document.getElementById('acaPhone').value = '';
+  document.getElementById('acaEmail').value = '';
+  document.getElementById('acaPass').value = '';
+  document.getElementById('addAdminHint').textContent =
+    `${admins} of ${maxCollegeAdmins()} admin slot(s) used. Add another admin for this college.`;
+  openModal('mAddColAdmin');
+}
+window.openAddCollegeAdmin = openAddCollegeAdmin;
+
+async function removeCollegeAdmin(collegeId, adminId){
+  const c = S.colleges[collegeId];
+  if(!c) return;
+  const a = (c.admins || {})[adminId];
+  if(!a) return;
+  const ok = await confirmBox('🗑️', 'Remove college admin?',
+    `Remove <strong>${esc(a.name || 'this admin')}</strong> from ${esc(c.name || 'this college')}? They will lose access to the college portal.`);
+  if(!ok) return;
+  try{
+    await remove(ref(db, `colleges/${collegeId}/admins/${adminId}`));
+    toast('Admin removed', 'info');
+  }catch(e){ toast('Error: ' + e.message, 'error'); }
+}
+window.removeCollegeAdmin = removeCollegeAdmin;
+
+/* ============================================================
+   COLLEGE APPROVE / BAN / DELETE
+============================================================ */
+async function unbanCollege(id){
+  const ok = await confirmBox('✅', 'Unban college?',
+    'The college and its admins will regain access immediately (subject to their subscription).');
+  if(!ok) return;
+  try{
+    await update(ref(db, `colleges/${id}`), {
+      banned: false,
+      banReason: '',
+      unbannedAt: Date.now(),
+      unbannedBy: currentAdmin?.email || 'admin'
+    });
+    toast('College unbanned', 'success');
+  }catch(e){ toast('Error: ' + e.message, 'error'); }
+}
+window.unbanCollege = unbanCollege;
+
+function openCollegeBan(id){
+  const c = S.colleges[id];
+  if(!c) return;
+  document.getElementById('cbUid').value = id;
+  document.getElementById('cbName').textContent = c.name || 'this college';
+  document.getElementById('cbReason').value = '';
+  openModal('mCollegeBan');
+}
+window.openCollegeBan = openCollegeBan;
+
+async function deleteCollege(id){
+  const c = S.colleges[id];
+  if(!c) return;
+  const lecturerCount = collegeLecturerCount(id);
+  const ok = await confirmBox('🗑️', 'Delete college?',
+    `Permanently delete <strong>${esc(c.name || 'this college')}</strong>?<br><br>
+     It has <strong>${lecturerCount}</strong> linked lecturer(s). Those lecturers will remain, but will no longer be linked to a college.`);
+  if(!ok) return;
+  try{
+    await remove(ref(db, `colleges/${id}`));
+    toast('College deleted', 'info');
+    if(currentPage.id === 'collegeDetail' || currentPage.id === 'collegeEdit' ||
+       currentPage.id === 'collegeAccess'){
+      navigate('colleges');
+    }
+  }catch(e){ toast('Error: ' + e.message, 'error'); }
+}
+window.deleteCollege = deleteCollege;
+
+/* ============================================================
+   FORM FILLERS (LECTURER)
+============================================================ */
+function populateCollegeDropdowns(){
+  const collegesArr = Object.entries(S.colleges).map(([id,c]) => ({ id, name: c.name || id }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+  const opts = ['<option value="">— Not linked —</option>'].concat(
+    collegesArr.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`)
+  ).join('');
+  const cSel = document.getElementById('cCollegeId');
+  if(cSel){ cSel.innerHTML = `<option value="">— Link to registered college (optional) —</option>` + opts.replace(/^<option value="">— Not linked —<\/option>/,''); }
+  const eSel = document.getElementById('eCollegeId');
+  if(eSel){ eSel.innerHTML = `<option value="">— Not linked to a registered college —</option>` + opts.replace(/^<option value="">— Not linked —<\/option>/,''); }
+}
+
 function resetCreateForm(){
   ['cName','cEmail','cPhone','cNrc','cPass','cProfile','cNrcF','cNrcB','cCert','cDegree',
-   'cCollege','cCity','cTown','cAddress']
+   'cCollege','cCity','cTown','cAddress','cCollegeId']
     .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  const vp = document.getElementById('cVideoPosting');
+  if(vp) vp.checked = true;
   ['upProfile','upNrcF','upNrcB','upCert','upDegree'].forEach(id => {
     const el = document.getElementById(id);
     if(!el) return;
@@ -2204,11 +3152,13 @@ function resetCreateForm(){
     const ph = el.querySelector('.ph');
     if(ph) ph.style.display = 'block';
   });
+  populateCollegeDropdowns();
 }
 
 function fillEditForm(uid){
   const l = S.lecturers[uid];
   if(!l){ toast('Lecturer not found','error'); navigate('lecturers',{},false); return; }
+  populateCollegeDropdowns();
   document.getElementById('eUid').value   = uid;
   document.getElementById('eName').value  = l.name || '';
   document.getElementById('eEmail').value = l.email || '';
@@ -2218,6 +3168,7 @@ function fillEditForm(uid){
   document.getElementById('eCity').value    = l.city || '';
   document.getElementById('eTown').value    = l.town || '';
   document.getElementById('eAddress').value = l.address || '';
+  document.getElementById('eCollegeId').value = l.collegeId || '';
   document.getElementById('editSub').textContent = l.email || 'Update account information';
 }
 
@@ -3139,6 +4090,11 @@ function fillSettings(){
   set('setMtn', s.mtnNumber || '');
   set('setAirtel', s.airtelNumber || '');
   set('setRoutingBehavior', s.routingBehavior || 'admin');
+  set('setCollegeFee', s.collegeFee ?? 150);
+  set('setCollegeDurType', s.collegeDurType || 'months');
+  set('setCollegeDurValue', s.collegeDurValue || 1);
+  set('setCollegeLecturerLimit', s.collegeLecturerLimit || 10);
+  set('setCollegeMaxAdmins', s.collegeMaxAdmins || 3);
 
   const t = S.terms || {};
   set('termsTitle', t.title || 'Terms and Conditions');
@@ -3391,15 +4347,17 @@ window.rejectSub = rejectSub;
    CSV
 ============================================================ */
 function exportLecturersCSV(){
-  const rows = [['Name','Email','Phone','NRC','College / University','City','Town','Address','Status','Payment','Expires','Banned','Earnings','Sales']];
+  const rows = [['Name','Email','Phone','NRC','College / University','Linked College','City','Town','Address','Status','Payment','Expires','Banned','Video Posting','Earnings','Sales']];
   for(const [uid, l] of Object.entries(S.lecturers)){
     const e = earningsOf(uid);
+    const linked = l.collegeId && S.colleges[l.collegeId] ? S.colleges[l.collegeId].name : '';
     rows.push([
       l.name||'', l.email||'', l.phone||'', l.nrcNumber||'',
-      l.collegeName||'', l.city||'', l.town||'', l.address||'',
+      l.collegeName||'', linked, l.city||'', l.town||'', l.address||'',
       l.status||'', l.paymentStatus||'',
       l.accessExpiresAt ? new Date(l.accessExpiresAt).toISOString() : 'Never',
       l.banned ? 'Yes' : 'No',
+      l.videoPostingEnabled === false ? 'Disabled' : 'Enabled',
       e.total, e.count
     ]);
   }
@@ -3488,6 +4446,23 @@ document.getElementById('spFilter').addEventListener('change', renderSubPayments
 document.getElementById('msgSearch').addEventListener('input', debounce(renderMessagesList));
 document.getElementById('aAction').addEventListener('change', applyAccessAction);
 
+/* College filters */
+document.getElementById('colSearch').addEventListener('input', debounce(renderColleges));
+document.getElementById('colFilter').addEventListener('change', renderColleges);
+document.getElementById('caAction').addEventListener('change', applyCollegeAccessAction);
+
+/* College dropdown → auto-fill name */
+document.getElementById('cCollegeId').addEventListener('change', function(){
+  if(this.value && S.colleges[this.value]){
+    document.getElementById('cCollege').value = S.colleges[this.value].name || '';
+  }
+});
+document.getElementById('eCollegeId').addEventListener('change', function(){
+  if(this.value && S.colleges[this.value]){
+    document.getElementById('eCollege').value = S.colleges[this.value].name || '';
+  }
+});
+
 /* Popups */
 document.getElementById('popTarget').addEventListener('change', function(){
   document.getElementById('popSpecificUid').style.display = this.value === 'specific' ? 'block' : 'none';
@@ -3566,6 +4541,18 @@ document.getElementById('saveSettings').onclick = async () => {
   catch(e){ toast('Error: ' + e.message, 'error'); }
 };
 
+document.getElementById('saveCollegeSettings').onclick = async () => {
+  const data = {
+    collegeFee: parseFloat(document.getElementById('setCollegeFee').value) || 0,
+    collegeDurType: document.getElementById('setCollegeDurType').value,
+    collegeDurValue: parseInt(document.getElementById('setCollegeDurValue').value) || 1,
+    collegeLecturerLimit: parseInt(document.getElementById('setCollegeLecturerLimit').value) || 10,
+    collegeMaxAdmins: Math.min(3, Math.max(1, parseInt(document.getElementById('setCollegeMaxAdmins').value) || 3))
+  };
+  try{ await update(REFS.settings, data); toast('College settings saved!', 'success'); }
+  catch(e){ toast('Error: ' + e.message, 'error'); }
+};
+
 document.getElementById('savePayInfo').onclick = async () => {
   try{
     await update(REFS.settings, {
@@ -3600,6 +4587,8 @@ wireUpload('upNrcB','cNrcB');
 wireUpload('upCert','cCert');
 wireUpload('upDegree','cDegree');
 wireUpload('popMediaUpload','popMediaUrl');
+wireUpload('upCollegeLogo','colLogo');
+wireUpload('upCollegeLogoEdit','eColLogo');
 
 /* ============================================================
    FORM SUBMISSIONS
@@ -3612,11 +4601,13 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
   const nrc = document.getElementById('cNrc').value.trim();
   const pass = document.getElementById('cPass').value;
   const collegeName = document.getElementById('cCollege').value.trim();
+  const collegeId = document.getElementById('cCollegeId').value;
   const city = document.getElementById('cCity').value.trim();
   const town = document.getElementById('cTown').value.trim();
   const address = document.getElementById('cAddress').value.trim();
   const certUrl = document.getElementById('cCert').value || '';
   const degreeUrl = document.getElementById('cDegree').value || '';
+  const videoPostingEnabled = document.getElementById('cVideoPosting').checked;
 
   if(!name || !email || !phone || !nrc || !pass){
     toast('Fill all required personal fields', 'error'); return;
@@ -3630,9 +4621,18 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
   if(Object.values(S.lecturers).some(l => (l.email||'').toLowerCase() === email)){
     toast('A lecturer with this email already exists', 'error'); return;
   }
+  if(collegeId && S.colleges[collegeId]){
+    const limit = parseInt(S.colleges[collegeId].lecturerLimit) || 0;
+    const count = collegeLecturerCount(collegeId);
+    if(limit > 0 && count >= limit){
+      toast(`College lecturer limit reached (${limit}). Increase the limit first.`, 'error');
+      return;
+    }
+  }
+
   try{
     const uid = 'lec_' + email.replace(/[^a-z0-9]/g,'_');
-    await set(ref(db, `lecturers/${uid}`), {
+    const data = {
       name, email, phone, nrcNumber: nrc, password: pass,
       collegeName, city, town, address,
       profileUrl: document.getElementById('cProfile').value || '',
@@ -3640,10 +4640,13 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
       nrcBack: document.getElementById('cNrcB').value || '',
       certificateUrl: certUrl,
       degreeUrl: degreeUrl,
+      videoPostingEnabled,
       status:'approved', paymentStatus:'unpaid', banned:false,
       appliedAt: Date.now(), approvedAt: Date.now(),
       createdBy: currentAdmin?.email || 'admin'
-    });
+    };
+    if(collegeId) data.collegeId = collegeId;
+    await set(ref(db, `lecturers/${uid}`), data);
     toast('Lecturer created!', 'success');
     push(REFS.notif, { message: `👤 Lecturer ${name} added by admin`, timestamp: serverTimestamp() });
     navigate('lecturerDetail', { uid });
@@ -3653,8 +4656,9 @@ document.getElementById('fCreate').addEventListener('submit', async e => {
 document.getElementById('fEdit').addEventListener('submit', async e => {
   e.preventDefault();
   const uid = document.getElementById('eUid').value;
+  const collegeId = document.getElementById('eCollegeId').value;
   try{
-    await update(ref(db, `lecturers/${uid}`), {
+    const data = {
       name: document.getElementById('eName').value.trim(),
       email: document.getElementById('eEmail').value.trim().toLowerCase(),
       phone: document.getElementById('ePhone').value.trim(),
@@ -3664,7 +4668,20 @@ document.getElementById('fEdit').addEventListener('submit', async e => {
       town: document.getElementById('eTown').value.trim(),
       address: document.getElementById('eAddress').value.trim(),
       updatedAt: Date.now()
-    });
+    };
+    if(collegeId){
+      data.collegeId = collegeId;
+      const limit = parseInt(S.colleges[collegeId]?.lecturerLimit) || 0;
+      const count = collegeLecturerCount(collegeId);
+      const currentCollegeId = S.lecturers[uid]?.collegeId;
+      if(limit > 0 && count >= limit && currentCollegeId !== collegeId){
+        toast(`College lecturer limit reached (${limit}). Increase the limit first.`, 'error');
+        return;
+      }
+    } else {
+      data.collegeId = null;
+    }
+    await update(ref(db, `lecturers/${uid}`), data);
     toast('Profile updated', 'success');
     navigate('lecturerDetail', { uid });
   }catch(err){ toast('Error: ' + err.message, 'error'); }
@@ -3784,6 +4801,204 @@ document.getElementById('fAccess').addEventListener('submit', async e => {
   }catch(err){ toast('Error: ' + err.message, 'error'); }
 });
 
+/* ----- College form submissions ----- */
+document.getElementById('fCollegeCreate').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('colName').value.trim();
+  const code = document.getElementById('colCode').value.trim().toUpperCase();
+  const country = document.getElementById('colCountry').value.trim();
+  const city = document.getElementById('colCity').value.trim();
+  const logoUrl = document.getElementById('colLogo').value || '';
+  const fee = parseFloat(document.getElementById('colAccessFee').value) || 0;
+  const durVal = parseInt(document.getElementById('colDurVal').value) || 1;
+  const durType = document.getElementById('colDurType').value;
+  const lecturerLimit = parseInt(document.getElementById('colLecturerLimit').value) || 0;
+  const grantNow = document.getElementById('colGrantNow').value === 'yes';
+  const adminName = document.getElementById('colAdminName').value.trim();
+  const adminPhone = document.getElementById('colAdminPhone').value.trim();
+  const adminEmail = document.getElementById('colAdminEmail').value.trim().toLowerCase();
+  const adminPass = document.getElementById('colAdminPass').value;
+
+  if(!name || !code){ toast('College name and unique code are required', 'error'); return; }
+  if(!adminName || !adminPhone || !adminEmail || !adminPass){
+    toast('First admin details are required', 'error'); return;
+  }
+  if(Object.values(S.colleges).some(c => (c.uniqueCode||'').toUpperCase() === code)){
+    toast('This college code is already in use', 'error'); return;
+  }
+
+  const now = Date.now();
+  const MS = { days:86400000, weeks:604800000, months:2592000000, years:31536000000 };
+  const expiry = grantNow ? now + durVal * (MS[durType] || MS.months) : null;
+
+  try{
+    const newRef = push(REFS.colleges);
+    const cid = newRef.key;
+    const admins = {};
+    const adminKey = 'admin_' + Date.now();
+    admins[adminKey] = {
+      name: adminName,
+      phone: adminPhone,
+      email: adminEmail,
+      password: adminPass,
+      createdAt: now,
+      createdBy: currentAdmin?.email || 'admin'
+    };
+    await set(newRef, {
+      name, uniqueCode: code,
+      country, city,
+      logoUrl,
+      lecturerLimit,
+      admins,
+      status: grantNow ? 'approved' : 'pending',
+      paymentStatus: grantNow ? 'paid' : 'unpaid',
+      accessExpiresAt: expiry,
+      paidAmount: grantNow ? fee : 0,
+      paidAt: grantNow ? now : null,
+      accessDurationType: durType,
+      accessDurationValue: durVal,
+      banned: false,
+      banReason: '',
+      createdAt: now,
+      createdBy: currentAdmin?.email || 'admin'
+    });
+    toast('College created!', 'success');
+    push(REFS.notif, { message: `🏛️ College ${name} created`, timestamp: serverTimestamp() });
+    navigate('collegeDetail', { uid: cid });
+  }catch(err){ toast('Error: ' + err.message, 'error'); }
+});
+
+document.getElementById('fCollegeEdit').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('eColId').value;
+  const code = document.getElementById('eColCode').value.trim().toUpperCase();
+  const name = document.getElementById('eColName').value.trim();
+  if(!name || !code){ toast('Name and code are required', 'error'); return; }
+  if(Object.entries(S.colleges).some(([cid,c]) => cid !== id && (c.uniqueCode||'').toUpperCase() === code)){
+    toast('This college code is already in use by another college', 'error'); return;
+  }
+  try{
+    await update(ref(db, `colleges/${id}`), {
+      name,
+      uniqueCode: code,
+      country: document.getElementById('eColCountry').value.trim(),
+      city: document.getElementById('eColCity').value.trim(),
+      logoUrl: document.getElementById('eColLogo').value || '',
+      lecturerLimit: parseInt(document.getElementById('eColLecturerLimit').value) || 0,
+      updatedAt: Date.now(),
+      updatedBy: currentAdmin?.email || 'admin'
+    });
+    toast('College updated', 'success');
+    navigate('collegeDetail', { uid: id });
+  }catch(err){ toast('Error: ' + err.message, 'error'); }
+});
+
+document.getElementById('fCollegeAccess').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('caUid').value;
+  const action = document.getElementById('caAction').value;
+  const note = document.getElementById('caNote').value.trim();
+  const c = S.colleges[id];
+  if(!c) return;
+
+  try{
+    if(action === 'revoke'){
+      const ok = await confirmBox('⚠️','Revoke college access?',
+        'The college and all its admins will be locked out of managing lecturers until access is restored.');
+      if(!ok) return;
+      await update(ref(db, `colleges/${id}`), {
+        paymentStatus:'unpaid',
+        accessExpiresAt: Date.now() - 1000,
+        accessNote: note || 'Revoked by admin',
+        revokedAt: Date.now(),
+        revokedBy: currentAdmin?.email || 'admin'
+      });
+      toast('College access revoked', 'info');
+    }
+    else if(action === 'set'){
+      const fee = parseFloat(document.getElementById('caSetFee').value) || 0;
+      const dtStr = document.getElementById('caExpiry').value;
+      if(!dtStr){ toast('Set an expiry date', 'error'); return; }
+      const expiry = new Date(dtStr).getTime();
+      await update(ref(db, `colleges/${id}`), {
+        paymentStatus:'paid',
+        paidAmount: (c.paidAmount || 0) + fee,
+        paidAt: Date.now(),
+        accessExpiresAt: expiry,
+        accessDurationType: 'custom',
+        accessDurationValue: 0,
+        accessNote: note
+      });
+      toast('College expiry updated', 'success');
+    }
+    else {
+      const fee = parseFloat(document.getElementById('caFee').value) || 0;
+      const durVal = parseInt(document.getElementById('caDurVal').value) || 1;
+      const durType = document.getElementById('caDurType').value;
+      const MS = { days:86400000, weeks:604800000, months:2592000000, years:31536000000 };
+      const now = Date.now();
+      const base = (c.accessExpiresAt && c.accessExpiresAt > now) ? c.accessExpiresAt : now;
+      const newExpiry = base + durVal * (MS[durType] || MS.months);
+      await update(ref(db, `colleges/${id}`), {
+        paymentStatus:'paid',
+        paidAmount: (c.paidAmount || 0) + fee,
+        paidAt: now,
+        accessExpiresAt: newExpiry,
+        accessDurationType: durType,
+        accessDurationValue: durVal,
+        accessNote: note
+      });
+      toast('College access granted / extended!', 'success');
+    }
+    navigate('collegeDetail', { uid: id });
+  }catch(err){ toast('Error: ' + err.message, 'error'); }
+});
+
+document.getElementById('fCollegeBan').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('cbUid').value;
+  const reason = document.getElementById('cbReason').value.trim();
+  if(!reason){ toast('Reason required', 'error'); return; }
+  try{
+    await update(ref(db, `colleges/${id}`), {
+      banned:true, banReason:reason, bannedAt: Date.now(),
+      bannedBy: currentAdmin?.email || 'admin'
+    });
+    toast('College banned', 'success');
+    closeModal('mCollegeBan');
+    push(REFS.notif, { message: `🚫 College banned: ${reason}`, timestamp: serverTimestamp() });
+  }catch(err){ toast('Error: ' + err.message, 'error'); }
+});
+
+document.getElementById('fAddColAdmin').addEventListener('submit', async e => {
+  e.preventDefault();
+  const collegeId = document.getElementById('acaCollegeId').value;
+  const c = S.colleges[collegeId];
+  if(!c) return;
+  const admins = Object.keys(c.admins || {}).length;
+  if(admins >= maxCollegeAdmins()){
+    toast(`Maximum ${maxCollegeAdmins()} admins per college`, 'error');
+    return;
+  }
+  const name = document.getElementById('acaName').value.trim();
+  const phone = document.getElementById('acaPhone').value.trim();
+  const email = document.getElementById('acaEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('acaPass').value;
+  if(!name || !phone || !email || !pass){ toast('All admin fields required', 'error'); return; }
+
+  try{
+    const adminKey = 'admin_' + Date.now();
+    await update(ref(db, `colleges/${collegeId}/admins/${adminKey}`), {
+      name, phone, email, password: pass,
+      createdAt: Date.now(),
+      createdBy: currentAdmin?.email || 'admin'
+    });
+    toast('College admin added', 'success');
+    closeModal('mAddColAdmin');
+    renderCollegeDetail(collegeId);
+  }catch(err){ toast('Error: ' + err.message, 'error'); }
+});
+
 /* ============================================================
    REALTIME
 ============================================================ */
@@ -3802,6 +5017,7 @@ function attachRealtime(){
   onValue(REFS.payments,  snap => { S.payments = snap.val() || {}; schedule(); });
   onValue(REFS.users,     snap => { S.users = snap.val() || {}; schedule(); });
   onValue(REFS.popups,    snap => { S.popups = snap.val() || {}; updateBadges(); schedule(); });
+  onValue(REFS.colleges,  snap => { S.colleges = snap.val() || {}; schedule(); });
   onValue(REFS.messages,  snap => {
     S.messages = snap.val() || {};
     updateBadges();
@@ -3828,11 +5044,13 @@ onAuthStateChanged(auth, user => {
   const startD = new Date(Date.now() + 60000);
   document.getElementById('popStartDate').value = toLocalInput(startD);
 
+  populateCollegeDropdowns();
+
   document.getElementById('appLoader').classList.add('hidden');
   navigate(start, {}, false);
 });
 
-console.log('✅ UTOM Lectures Admin — added city, town, address and college/university fields.');
+console.log('✅ UTOM Lectures Admin — colleges, college admins, lecturer video posting toggle included.');
 </script>
 </body>
 </html>
