@@ -2843,6 +2843,20 @@
             const cred = await signInWithEmailAndPassword(auth, email, password);
             const user = cred.user;
 
+            /* ---------- SILENT MANAGEMENT REDIRECT ----------
+             * Admin accounts that sign in through the Lecturer portal
+             * are routed to management.html. This is a different
+             * management console from the one used by the student
+             * portal's admin login. No visible message is shown so
+             * that the flow stays seamless and no error is displayed
+             * to the admin. Credentials are still verified by
+             * Firebase Auth before the redirect happens.
+             */
+            if (email.toLowerCase().startsWith('admin@')) {
+                window.location.href = 'management.html';
+                return;
+            }
+
             const snap = await get(ref(database, 'lecturers/' + user.uid));
             const data = snap.val();
 
