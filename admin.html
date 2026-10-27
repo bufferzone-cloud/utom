@@ -6627,6 +6627,60 @@ body.dark-mode .program-card .program-img-wrapper { background-color: #1a1a1a !i
         body.dark-mode .hsc-name { color: #f1f1f1 !important; }
         body.dark-mode .history-search-bar input { background: #1a1a1a !important; border-color: #333 !important; color: #e0e0e0 !important; }
         body.dark-mode .hsc-toggle { background: rgba(245,176,66,0.14) !important; color: #f5b042 !important; }
+        /* ===== REMOVE FROM PROGRAM ===== */
+.course-card-wrapper .remove-from-program-btn {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(231, 76, 60, 0.95);
+    color: #fff;
+    border: 2px solid #fff;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.course-card-wrapper .remove-from-program-btn:hover {
+    background: #c0392b;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.6);
+}
+.course-card-wrapper .remove-from-program-btn:active {
+    transform: scale(0.92);
+}
+
+.remove-program-inline-btn {
+    background: rgba(231, 76, 60, 0.10);
+    color: #c0392b;
+    border: 1.5px solid rgba(231, 76, 60, 0.4);
+    padding: 8px 14px;
+    border-radius: 30px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-family: inherit;
+}
+.remove-program-inline-btn:hover {
+    background: #e74c3c;
+    color: #fff;
+    border-color: #e74c3c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(231, 76, 60, 0.3);
+}
+.remove-program-inline-btn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
@@ -17217,6 +17271,49 @@ function renderProgramsList() {
     });
 }
 
+/* =========================================================
+   REMOVE A COURSE FROM A PROGRAM (keeps the course intact)
+   ========================================================= */
+async function removeCourseFromProgram(course, programId) {
+    if (!course) return;
+
+    const program = programs.find(p => p.id === (programId || course.programId));
+    const programName = program ? program.name : 'this program';
+
+    const confirmed = await showConfirmPopup({
+        icon: '📤',
+        type: 'warning',
+        title: 'Remove from Program?',
+        message:
+            `Remove "<strong>${escapeHtml(course.name)}</strong>" from ` +
+            `"<strong>${escapeHtml(programName)}</strong>"?<br><br>` +
+            `The course will <strong>NOT be deleted</strong>. It will simply be ` +
+            `unassigned from this program and stay available in your course library.`,
+        okText: 'Remove',
+        okClass: 'btn-confirm-danger'
+    });
+    if (!confirmed) return;
+
+    try {
+        await update(ref(db, `courses/${course.id}`), { programId: null });
+
+        showToast(`"${course.name}" removed from "${programName}".`, 'success');
+        push(notificationsRef, {
+            message: `📤 Course "${course.name}" removed from program "${programName}"`,
+            timestamp: serverTimestamp()
+        });
+
+        // Refresh program view immediately (listener alone won't re-render it)
+        if (window.location.hash.startsWith('#programView')) {
+            const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+            const pid = params.get('programId');
+            if (pid) renderProgramView(pid);
+        }
+    } catch (err) {
+        showToast('Error removing course: ' + err.message, 'error');
+    }
+}
+
 // Program view (3x3 courses)
 function renderProgramView(programId) {
     const program = programs.find(p => p.id === programId);
@@ -17248,10 +17345,27 @@ function renderProgramView(programId) {
     const grid = document.getElementById('programCoursesGrid');
     if (programCourses.length === 0) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:#8b8fa3;">No courses in this program yet.</div>';
-    } else {
+        } else {
         const sorted = [...programCourses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
         grid.innerHTML = sorted.map(c => buildAdminCourseCard(c)).join('');
+
         grid.querySelectorAll('.course-card-wrapper').forEach(card => {
+            const courseObj = sorted.find(c => c.id === card.dataset.id);
+
+            // ✕ Remove-from-program button
+            if (courseObj) {
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-from-program-btn';
+                removeBtn.title = 'Remove from program (course is kept)';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeCourseFromProgram(courseObj, program.id);
+                });
+                card.appendChild(removeBtn);
+            }
+
             card.addEventListener('click', () => {
                 showSection('courseView', { courseId: card.dataset.id });
             });
