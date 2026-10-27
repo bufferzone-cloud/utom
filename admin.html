@@ -6886,6 +6886,14 @@ body.dark-mode .program-card .program-img-wrapper { background-color: #1a1a1a !i
                             <input type="hidden" id="newCourseImageUrl" value="">
                         </div>
                     </div>
+                     <!-- ▼▼▼ NEW: bulk assign button ▼▼▼ -->
+        <div style="display:flex;justify-content:flex-end;margin:6px 0 10px 0;">
+            <button type="button" id="bulkAssignProgramBtn" class="btn-outline"
+                    style="padding:10px 20px;font-size:11px;">
+                <i class="fas fa-object-group"></i> Add Courses to Program
+            </button>
+        </div>
+        <!-- ▲▲▲ END ▼▲▲ -->
                     <div id="coursesAccordionContainer"></div>
                 </div>
             </div>
@@ -16435,6 +16443,139 @@ function renderPopupRegisterList(searchTerm = '') {
             }
         });
 
+        /* =================================================================
+   BULK ASSIGN — Add multiple courses to an existing program
+   ================================================================= */
+function openBulkAssignProgramModal() {
+    if (!programs || programs.length === 0) {
+        showToast('Create a program first.', 'error');
+        return;
+    }
+    if (!courses || courses.length === 0) {
+        showToast('No courses available.', 'error');
+        return;
+    }
+
+    document.getElementById('bulkAssignModal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'bulkAssignModal';
+    modal.className = 'modal-overlay open';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:520px;">
+            <button class="close-modal" type="button"
+                    onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="utom-brand">UTOM</div>
+            <h3><i class="fas fa-object-group"></i> Add Courses to a Program</h3>
+
+            <div class="form-row">
+                <label style="font-weight:600;font-size:11px;min-width:80px;">Program</label>
+                <select id="bulkAssignProgramSelect" style="flex:1;">
+                    <option value="">-- Select a program --</option>
+                    ${programs.map(p =>
+                        `<option value="${p.id}">${escapeHtml(p.name)}</option>`
+                    ).join('')}
+                </select>
+            </div>
+
+            <div style="margin:12px 0 6px 0;font-weight:600;font-size:12px;">
+                Courses (check to add):
+            </div>
+            <div id="bulkAssignCourseList"
+                 style="max-height:300px;overflow-y:auto;border:1px solid rgba(229,232,237,0.6);
+                        border-radius:var(--radius-sm);padding:6px;background:rgba(250,251,252,0.4);">
+                ${courses.map(c => {
+                    const currentProg = c.programId
+                        ? programs.find(p => p.id === c.programId)?.name
+                        : '';
+                    return `
+                        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+                                      border-radius:6px;cursor:pointer;font-size:12px;
+                                      border-bottom:1px solid rgba(240,240,245,0.5);">
+                            <input type="checkbox" class="bulk-assign-cb" value="${c.id}"
+                                   style="width:16px;height:16px;">
+                            <span style="flex:1;">${escapeHtml(c.name)}</span>
+                            ${currentProg
+                                ? `<span style="font-size:9px;color:#8b8fa3;">(${escapeHtml(currentProg)})</span>`
+                                : ''}
+                        </label>`;
+                }).join('')}
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        margin-top:12px;flex-wrap:wrap;gap:8px;">
+                <button type="button" id="bulkAssignSelectAll" class="btn-outline"
+                        style="padding:6px 14px;font-size:10px;">Select All</button>
+                <div style="display:flex;gap:10px;">
+                    <button type="button" class="btn-cancel"
+                            onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                    <button type="button" id="bulkAssignApplyBtn" class="btn-confirm">
+                        <i class="fas fa-check"></i> Assign
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Select All / Deselect All toggle
+    modal.querySelector('#bulkAssignSelectAll').addEventListener('click', function () {
+        const cbs = modal.querySelectorAll('.bulk-assign-cb');
+        const allChecked = Array.from(cbs).every(cb => cb.checked);
+        cbs.forEach(cb => cb.checked = !allChecked);
+        this.textContent = allChecked ? 'Select All' : 'Deselect All';
+    });
+
+    // Apply
+    modal.querySelector('#bulkAssignApplyBtn').addEventListener('click', async function () {
+        const programId = modal.querySelector('#bulkAssignProgramSelect').value;
+        if (!programId) { showToast('Please select a program.', 'error'); return; }
+
+        const selected = Array.from(
+            modal.querySelectorAll('.bulk-assign-cb:checked')
+        ).map(cb => cb.value);
+
+        if (selected.length === 0) {
+            showToast('Please select at least one course.', 'error');
+            return;
+        }
+
+        const programName = programs.find(p => p.id === programId)?.name || 'program';
+        const confirmed = await showConfirmPopup({
+            icon: '📚',
+            type: 'info',
+            title: 'Assign Courses?',
+            message: `Add <strong>${selected.length}</strong> course(s) to ` +
+                     `<strong>${escapeHtml(programName)}</strong>?`,
+            okText: 'Assign',
+            okClass: 'btn-confirm'
+        });
+        if (!confirmed) return;
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+
+        try {
+            const updates = {};
+            selected.forEach(cid => {
+                updates[`courses/${cid}/programId`] = programId;
+            });
+            await update(ref(db), updates);
+
+            showToast(`${selected.length} course(s) added to "${programName}"!`, 'success');
+            push(notificationsRef, {
+                message: `📚 ${selected.length} course(s) assigned to "${programName}"`,
+                timestamp: serverTimestamp()
+            });
+            modal.remove();
+        } catch (err) {
+            showToast('Error assigning: ' + err.message, 'error');
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check"></i> Assign';
+        }
+    });
+}
+
         async function updateBannedList() {
             const container = document.getElementById('bannedUsersList');
             const bannedUsers = users.filter(u => isUserBanned(u.uid));
@@ -17276,6 +17417,8 @@ function openProgramEditModal(programId) {
 function setupProgramCreationForm() {
     const form = document.getElementById('createProgramForm');
     if (!form) return;
+    if (form.dataset.wired === '1') return;   // ← ADD THIS GUARD
+    form.dataset.wired = '1';                  // ← ADD THIS GUARD
 
     const priceTypeSel = document.getElementById('newProgramPriceType');
     priceTypeSel.addEventListener('change', function() {
@@ -24349,6 +24492,7 @@ document.addEventListener('pointerdown', (e) => {
 });
 
 /* ---------- button wiring ---------- */
+document.getElementById('bulkAssignProgramBtn')?.addEventListener('click', openBulkAssignProgramModal);
 document.getElementById('arrangeVideosBtn')?.addEventListener('click', () => {
     toggleArrange('library');
 });
