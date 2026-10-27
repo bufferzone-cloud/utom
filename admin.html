@@ -10384,68 +10384,10 @@ function checkAndShowPendingPopup() {
             }
         }
 
-        // --- All Courses Name List ---
-        function renderAdminAllCoursesNames() {
-            const container = document.getElementById('adminAllCoursesNameContainer');
-            const filtered = [...courses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-            container.innerHTML = filtered.map(c => {
-                const subfolderCount = subfolders.filter(sf => sf.courseId === c.id).length;
-                const durationLabel = c.durationType && c.durationType !== 'lifetime' ?
-                    ` · ${c.durationValue} ${c.durationType}` : '';
-                return `<span class="course-name-item" data-id="${c.id}">${escapeHtml(c.name)} <span class="badge-count-sm">${subfolderCount}${durationLabel}</span></span>`;
-            }).join('') || '<span class="empty-state" style="padding:0.5rem;">No courses found</span>';
-
-            document.getElementById('adminTotalCourseCount').innerText = filtered.length;
-
-            container.querySelectorAll('.course-name-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const courseId = el.dataset.id;
-                    showSection('courses');
-                    setTimeout(() => {
-                        const header = document.querySelector(
-                            `.course-folder .course-header[data-course-id="${courseId}"]`);
-                        if (header) {
-                            header.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            header.click();
-                            header.style.background = 'rgba(245,176,66,0.15)';
-                            setTimeout(() => header.style.background = '', 1200);
-                        }
-                    }, 300);
-                });
-            });
-        }
+        
 
         // --- Course Grids ---
-        function renderAdminCourseGrids() {
-            const free = courses.filter(c => c.price === 0).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-            const paid = courses.filter(c => c.price > 0).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-
-            document.getElementById('adminFreeCoursesGrid').innerHTML = free.map(c => buildAdminCourseCard(c))
-                .join('') || '<div class="empty-state">No free courses</div>';
-            document.getElementById('adminPaidCoursesGrid').innerHTML = paid.map(c => buildAdminCourseCard(c))
-                .join('') || '<div class="empty-state">No paid courses</div>';
-
-            document.getElementById('adminFreeCourseCount').innerText = free.length;
-            document.getElementById('adminPaidCourseCount').innerText = paid.length;
-
-            document.querySelectorAll('#adminFreeCoursesGrid .course-card-wrapper, #adminPaidCoursesGrid .course-card-wrapper')
-                .forEach(card => {
-                    card.addEventListener('click', () => {
-                        const courseId = card.dataset.id;
-                        showSection('courses');
-                        setTimeout(() => {
-                            const header = document.querySelector(
-                                `.course-folder .course-header[data-course-id="${courseId}"]`);
-                            if (header) {
-                                header.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                header.click();
-                                header.style.background = 'rgba(245,176,66,0.15)';
-                                setTimeout(() => header.style.background = '', 1200);
-                            }
-                        }, 300);
-                    });
-                });
-        }
+       
 
         function buildAdminCourseCard(course) {
             const priceDisplay = course.price === 0 ? 'FREE' : `ZMW ${course.price}`;
