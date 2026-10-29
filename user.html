@@ -11321,6 +11321,7 @@ function rebuildApprovedFromBothSources() {
     renderMyLearn();
     renderOfflinePage();
     if (selectedCourse) renderCourseDetail(selectedCourse);
+    _refreshActiveProgramView();
     if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
         renderTransactionHistory();
     }
@@ -14219,6 +14220,7 @@ async function loadApprovedCourses(uid) {
             renderAllCourses();
             renderMyLearn();
             if (selectedCourse) renderCourseDetail(selectedCourse);
+             _refreshActiveProgramView();    
             if (document.getElementById('transactionHistoryPage').classList.contains('active-page')) {
                 renderTransactionHistory();
             }
@@ -15225,21 +15227,45 @@ function renderProgramViewPage(programId) {
     const sorted = [...programCourses].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
     grid.innerHTML = sorted.map(c => buildCourseCard(c, { fromProgram: program.id })).join('');
 
-    grid.querySelectorAll('.course-card-wrapper').forEach(card => {
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return;
-            const courseId = card.dataset.id;
-            const course = allCourses.find(c => c.id === courseId);
-            if (!course) return;
-            if (checkCourseAccess(course)) {
-                openCourseDetail(course);
-            } else if (pendingPurchases[courseId] !== undefined) {
+   grid.querySelectorAll('.course-card-wrapper').forEach(card => {
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+
+        const courseId = card.dataset.id;
+        const course = allCourses.find(c => c.id === courseId);
+        if (!course) return;
+
+        // Ignore the click when the inline onclick already handled it
+        if (card.dataset.handled === '1') { delete card.dataset.handled; return; }
+        card.dataset.handled = '1';
+        setTimeout(() => { delete card.dataset.handled; }, 400);
+
+        const programObj          = course.programId ? allPrograms.find(p => p.id === course.programId) : null;
+        const programIsPaid       = programObj && (programObj.price || 0) > 0;
+        const hasProgramAccess    = programObj ? checkProgramAccess(programObj) : false;
+        const isIndividuallyBought = approvedCourses.has(course.id);
+        const lockedByProgram     = programIsPaid && !hasProgramAccess && !isIndividuallyBought;
+
+        if (lockedByProgram) {
+            if (pendingPurchases[courseId] !== undefined) {
                 showPendingPaymentModal(course);
+            } else if (programObj && pendingPrograms[programObj.id] !== undefined) {
+                showProgramPendingMessage(programObj.id);
             } else {
-                openCourseViewModal(course);
+                showLockedProgramMessage(course.programId);
             }
-        });
+            return;
+        }
+
+        if (checkCourseAccess(course)) {
+            openCourseDetail(course);
+        } else if (pendingPurchases[courseId] !== undefined) {
+            showPendingPaymentModal(course);
+        } else {
+            openCourseViewModal(course);
+        }
     });
+});
 }
 
 window.openProgramPayment = function (programId) {
@@ -15254,7 +15280,46 @@ window.showPendingPaymentModalFromProgram = function (programId) {
     if (!program) return;
     showPendingPaymentModal(program);
 };
+let _lockedMsgOpen = false;
 
+window.showLockedProgramMessage = async function (programId) {
+    if (_lockedMsgOpen) return;
+    const program = allPrograms.find(p => p.id === programId);
+    if (!program || (program.price || 0) <= 0) {
+        addNotification('warning', '🔒 This course is locked. Purchase the program to unlock.');
+        return;
+    }
+    _lockedMsgOpen = true;
+    try {
+        const proceed = await showGeneralConfirm({
+            title: '🔒 Course Locked',
+            message: `This course is part of "${program.name}". Purchase the program for ZMW ${program.price} to unlock all its courses.`,
+            okText: 'Buy Program',
+            cancelText: 'Not now',
+            okClass: 'btn-confirm'
+        });
+        if (proceed) openProgramPayment(programId);
+    } finally {
+        _lockedMsgOpen = false;
+    }
+};
+
+window.showProgramPendingMessage = function (programId) {
+    const program = allPrograms.find(p => p.id === programId);
+    const label = program ? ` for "${program.name}"` : '';
+    addNotification('info', `⏳ Your payment${label} is pending approval. Courses unlock once the program is approved.`);
+};
+
+// Used to keep program view in sync when a program purchase is approved while user is on it
+function _refreshActiveProgramView() {
+    const pv = document.getElementById('programViewPage');
+    if (!pv || !pv.classList.contains('active-page')) return;
+    const hash = window.location.hash || '';
+    const m = hash.match(/[?&]programId=([^&]+)/);
+    if (m) {
+        try { renderProgramViewPage(decodeURIComponent(m[1])); } catch (_) { }
+    }
+}
 function renderCourseGrid(containerId, courses) {
     const container = document.getElementById(containerId);
     container.innerHTML = courses.map(c => buildCourseCard(c)).join('') ||
@@ -15285,10 +15350,16 @@ function buildCourseCard(course, opts = {}) {
     const isApproved = approvedCourses.has(course.id);
     const isPending  = pendingPurchases[course.id] !== undefined;
     const isFree     = (course.price || 0) === 0;
-    const hasProgramAccess = course.programId && checkProgramAccess(
-        allPrograms.find(p => p.id === course.programId)
-    );
-    const hasAccess  = isFree || isApproved || hasProgramAccess;
+
+    const programObj      = course.programId ? allPrograms.find(p => p.id === course.programId) : null;
+    const programIsPaid   = programObj && (programObj.price || 0) > 0;
+    const hasProgramAccess = programObj ? checkProgramAccess(programObj) : false;
+    const programPending   = programObj ? pendingPrograms[programObj.id] !== undefined : false;
+
+    // ⭐ lockedByProgram = paid program, not purchased, not individually approved
+    const lockedByProgram = programIsPaid && !hasProgramAccess && !isApproved;
+
+    const hasAccess = isFree || isApproved || hasProgramAccess;
 
     let statusHtml = '';
     let actionsHtml = '';
@@ -15296,7 +15367,7 @@ function buildCourseCard(course, opts = {}) {
     if (isApproved) {
         statusHtml = `<span class="course-status-badge enrolled">Enrolled</span>`;
         actionsHtml = '';
-    } else if (hasProgramAccess && !isFree) {
+    } else if (hasProgramAccess) {
         statusHtml = `<span class="course-status-badge enrolled">Via Program</span>`;
         actionsHtml = `
             <div class="course-status-badge-wrapper">
@@ -15305,6 +15376,27 @@ function buildCourseCard(course, opts = {}) {
                     Open Course
                 </span>
             </div>`;
+    } else if (lockedByProgram) {
+        // 🔒 Course in an unpaid, unapproved program
+        if (programPending) {
+            statusHtml = `<span class="course-status-badge pending">⏳ Pending</span>`;
+            actionsHtml = `
+                <div class="course-status-badge-wrapper">
+                    <span class="course-status-badge pending" style="cursor:pointer;"
+                          onclick="event.stopPropagation(); showProgramPendingMessage('${course.programId}')">
+                        ⏳ Awaiting Program Approval
+                    </span>
+                </div>`;
+        } else {
+            statusHtml = `<span class="course-status-badge" style="background:#f8d7da;color:#721c24;">🔒 Locked</span>`;
+            actionsHtml = `
+                <div class="course-status-badge-wrapper">
+                    <span class="course-status-badge" style="background:#f8d7da;color:#721c24;cursor:pointer;font-weight:800;"
+                          onclick="event.stopPropagation(); showLockedProgramMessage('${course.programId}')">
+                        🔒 Unlock via Program
+                    </span>
+                </div>`;
+        }
     } else if (isPending) {
         statusHtml = `<span class="course-status-badge pending">⏳ Pending</span>`;
         actionsHtml = `
@@ -15338,9 +15430,9 @@ function buildCourseCard(course, opts = {}) {
     }
 
     const priceDisplay = (course.price || 0) === 0 ? 'FREE' : `ZMW ${course.price}`;
-    const imgUrl = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
-    const bgColor = imgUrl ? 'transparent' : getRandomColor();
-    const initial = (course.name || 'C').charAt(0).toUpperCase();
+    const imgUrl   = course.imageUrl && course.imageUrl.trim() !== '' ? course.imageUrl : null;
+    const bgColor  = imgUrl ? 'transparent' : getRandomColor();
+    const initial  = (course.name || 'C').charAt(0).toUpperCase();
     const lecturer = allLecturers[course.lecturerId] || {};
     const lecturerPhoto = lecturer.profileUrl || '';
     const lecturerName  = lecturer.name || '';
@@ -15352,8 +15444,13 @@ function buildCourseCard(course, opts = {}) {
         durationDisplay = `${course.durationValue} ${lbl}${course.durationValue > 1 ? 's' : ''}`;
     }
 
+    // Card-wide click handler — locked courses never open the detail page
     let cardClickHandler = '';
-    if (hasAccess) {
+    if (lockedByProgram) {
+        cardClickHandler = programPending
+            ? `onclick="showProgramPendingMessage('${course.programId}')"`
+            : `onclick="showLockedProgramMessage('${course.programId}')"`;
+    } else if (hasAccess) {
         cardClickHandler = `onclick="openCourseDetailFromCard('${course.id}')"`;
     } else if (isPending) {
         cardClickHandler = `onclick="showPendingPaymentModalFromCard('${course.id}')"`;
@@ -15365,9 +15462,15 @@ function buildCourseCard(course, opts = {}) {
 
     return `
     <div class="course-card-wrapper ${enrolledClass}" data-id="${course.id}" data-price="${course.price}"
-         data-approved="${isApproved}" data-pending="${isPending}" ${cardClickHandler}>
+         data-approved="${isApproved}" data-pending="${isPending}" data-locked="${lockedByProgram}" ${cardClickHandler}>
         <div class="course-card-img-wrapper" style="background-color:${bgColor}; ${imgUrl ? `background-image:url('${imgUrl}');` : ''}">
             ${!imgUrl ? `<span style="font-size:1.15rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,0.2);">${initial}</span>` : ''}
+            ${lockedByProgram ? `
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                            pointer-events:none;z-index:1;background:rgba(0,0,0,0.15);border-radius:14px 14px 0 0;">
+                    <i class="fas fa-lock" style="font-size:1.4rem;color:rgba(255,255,255,0.9);
+                                                  text-shadow:0 2px 10px rgba(0,0,0,0.7);"></i>
+                </div>` : ''}
             ${lecturerPhoto ? `
                 <div class="lecturer-avatar-badge" title="${escapeHtml(lecturerName)}">
                     <img src="${lecturerPhoto}" alt="${escapeHtml(lecturerName)}" loading="lazy"
