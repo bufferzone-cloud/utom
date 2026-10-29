@@ -1966,6 +1966,118 @@
                 transition-duration: 0.001ms !important;
             }
         }
+        /* ==========================================================
+   NETWORK ACCESS BLOCK OVERLAY
+   ========================================================== */
+.network-block-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s var(--ease-out);
+}
+.network-block-overlay.open { display: flex; }
+
+.network-block-box {
+    background: #ffffff;
+    border-radius: 24px;
+    max-width: 440px;
+    width: 100%;
+    padding: 32px 26px 26px;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+    animation: modalIn 0.38s var(--spring);
+    position: relative;
+    overflow: hidden;
+}
+.network-block-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);
+}
+.network-block-icon {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    color: #dc2626;
+    font-size: 2.3rem;
+    box-shadow: 0 12px 28px -10px rgba(220, 38, 38, 0.35);
+    animation: pulseWarn 2s ease-in-out infinite;
+}
+@keyframes pulseWarn {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+}
+.network-block-box h2 {
+    font-size: 1.32rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #1d1d1f;
+    letter-spacing: -0.3px;
+}
+.network-block-box > p {
+    font-size: 0.88rem;
+    color: #6e6e73;
+    line-height: 1.55;
+    margin-bottom: 16px;
+}
+.network-block-allowed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+.network-block-allowed .net-chip {
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    color: #c2410c;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 30px;
+    border: 1px solid rgba(245, 176, 66, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.network-block-detected {
+    font-size: 0.8rem;
+    color: #6e6e73;
+    background: #f2f2f7;
+    padding: 11px 14px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.network-block-detected strong {
+    color: #1d1d1f;
+    font-weight: 700;
+    margin-left: 6px;
+}
+.network-block-detected strong.warning {
+    color: #dc2626;
+}
+#networkBlockRetryBtn {
+    width: 100%;
+    margin-top: 4px;
+}
     </style>
 </head>
 <body>
@@ -2353,6 +2465,29 @@
     </div>
 </div>
 
+<!-- ==========================================================
+     NETWORK ACCESS BLOCK OVERLAY
+     ========================================================== -->
+<div class="network-block-overlay" id="networkBlockOverlay">
+    <div class="network-block-box">
+        <div class="network-block-icon">
+            <i class="fas fa-wifi"></i>
+        </div>
+        <h2>Network Access Restricted</h2>
+        <p id="networkBlockMessage">
+            To proceed, please switch to one of the approved network providers below.
+        </p>
+        <div class="network-block-allowed" id="networkBlockAllowed"></div>
+        <div class="network-block-detected">
+            <span>Detected network:</span>
+            <strong id="networkBlockDetected">Detecting…</strong>
+        </div>
+        <button type="button" id="networkBlockRetryBtn" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Retry Detection
+        </button>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
     import {
@@ -2404,6 +2539,7 @@
     const SETUP_REF = ref(database, 'system/registrationSetup');
     const LECTURER_TERMS_REF = ref(database, 'system/lecturerTerms');
     const STUDENT_TERMS_REF = ref(database, 'system/studentTerms');
+        const NETWORK_ACCESS_REF = ref(database, 'system/networkAccess');
 
     /* ============================================================
        FALLBACK DEFAULTS
@@ -5119,12 +5255,201 @@
             .catch(function(err) { console.error('[UTOM] SW failed', err); });
     }
 
+        /* ============================================================
+       NETWORK ACCESS CONTROL
+       ============================================================ */
+    let networkCache = { result: null, timestamp: 0 };
+    const NETWORK_CACHE_MS = 5 * 60 * 1000;   // cache for 5 min
+    let networkRetryInterval = null;
+
+    function getConnType() {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        return conn ? conn.type : null;
+    }
+
+    async function detectUserNetwork(force = false) {
+        const now = Date.now();
+        if (!force && networkCache.result && (now - networkCache.timestamp) < NETWORK_CACHE_MS) {
+            return networkCache.result;
+        }
+
+        const connType = getConnType();
+
+        // Try IP lookup first to determine carrier
+        let ipCarrier = null;
+        let ispLabel = '';
+
+        try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            const res = await fetch('https://ipwhois.app/json/', {
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' }
+            });
+            clearTimeout(timer);
+            const data = await res.json();
+
+            const isp  = ((data && data.connection && data.connection.isp)  || '').toUpperCase();
+            const org  = ((data && data.connection && data.connection.org)  || '').toUpperCase();
+            const combined = isp + ' ' + org;
+            ispLabel = isp || org || '';
+
+            if (combined.includes('MTN')) ipCarrier = 'mtn';
+            else if (combined.includes('AIRTEL')) ipCarrier = 'airtel';
+            else if (combined.includes('ZAMTEL') || combined.includes('ZAMBIA TELECOMMUNICATIONS')) ipCarrier = 'zamtel';
+        } catch (e) {
+            console.warn('[UTOM] IP lookup failed:', e);
+        }
+
+        // Priority: detected Zambian carrier > WiFi > unknown
+        let result;
+        if (ipCarrier) {
+            result = { provider: ipCarrier, label: ipCarrier.toUpperCase(), detected: true };
+        } else if (connType === 'wifi' || connType === 'ethernet') {
+            result = { provider: 'wifi', label: 'WiFi', detected: true };
+        } else if (connType === 'cellular') {
+            result = { provider: 'unknown', label: ispLabel || 'Cellular (unknown carrier)', detected: false };
+        } else {
+            result = { provider: 'unknown', label: ispLabel || 'Unknown Network', detected: false };
+        }
+
+        networkCache = { result, timestamp: Date.now() };
+        return result;
+    }
+
+    async function checkNetworkAccess(force = false) {
+        try {
+            const snap = await get(NETWORK_ACCESS_REF);
+            const settings = snap.val();
+
+            // No config → allow
+            if (!settings) return { allowed: true };
+            // Admin enabled "Everything" → allow
+            if (settings.allowAll) return { allowed: true };
+
+            // Build list of allowed providers
+            const allowed = [];
+            if (settings.mtn)    allowed.push({ key: 'mtn',    label: 'MTN' });
+            if (settings.airtel) allowed.push({ key: 'airtel', label: 'Airtel' });
+            if (settings.zamtel) allowed.push({ key: 'zamtel', label: 'Zamtel' });
+            if (settings.wifi)   allowed.push({ key: 'wifi',   label: 'WiFi' });
+
+            // Nothing selected → allow (safety fallback)
+            if (allowed.length === 0) return { allowed: true };
+
+            const network = await detectUserNetwork(force);
+            const isAllowed = allowed.some(p => p.key === network.provider);
+
+            if (isAllowed) return { allowed: true, network };
+            return { allowed: false, network, allowed };
+        } catch (err) {
+            console.warn('[UTOM] Network check failed:', err);
+            // On error, don't block legit users — allow
+            return { allowed: true };
+        }
+    }
+
+    function showNetworkBlock(allowed, network) {
+        const overlay = document.getElementById('networkBlockOverlay');
+        if (!overlay) return;
+
+        document.getElementById('networkBlockAllowed').innerHTML = allowed.map(p =>
+            '<span class="net-chip"><i class="fas fa-check-circle"></i> ' + escapeHtml(p.label) + '</span>'
+        ).join('');
+
+        const detectedEl = document.getElementById('networkBlockDetected');
+        const label = network.label || 'Unknown';
+        detectedEl.textContent = label;
+        detectedEl.className = network.detected ? '' : 'warning';
+
+        const msgEl = document.getElementById('networkBlockMessage');
+        msgEl.innerHTML = 'To proceed, please switch to one of the approved network providers below.';
+
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideNetworkBlock() {
+        const overlay = document.getElementById('networkBlockOverlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    async function enforceNetworkAccess(force = false) {
+        const result = await checkNetworkAccess(force);
+        if (result.allowed) {
+            hideNetworkBlock();
+            if (networkRetryInterval) {
+                clearInterval(networkRetryInterval);
+                networkRetryInterval = null;
+            }
+            return true;
+        }
+
+        showNetworkBlock(result.allowed, result.network);
+
+        // Auto-retry every 20 seconds in case user switches network
+        if (!networkRetryInterval) {
+            networkRetryInterval = setInterval(async () => {
+                const retry = await checkNetworkAccess(true);
+                if (retry.allowed) {
+                    hideNetworkBlock();
+                    clearInterval(networkRetryInterval);
+                    networkRetryInterval = null;
+                    showSessionWelcome('Network verified — welcome!');
+                } else {
+                    // Update detected network label live
+                    const detectedEl = document.getElementById('networkBlockDetected');
+                    if (detectedEl && retry.network) {
+                        detectedEl.textContent = retry.network.label || 'Unknown';
+                        detectedEl.className = retry.network.detected ? '' : 'warning';
+                    }
+                }
+            }, 20000);
+        }
+        return false;
+    }
+
+    // Wire up retry button
+    document.getElementById('networkBlockRetryBtn').addEventListener('click', async function () {
+        const btn = this;
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking…';
+        const ok = await enforceNetworkAccess(true);
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        if (ok) showSessionWelcome('Network verified — welcome!');
+    });
+
+    // Re-check immediately when connection type changes
+    (function watchConnectionChange() {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && conn.addEventListener) {
+            conn.addEventListener('change', () => {
+                const overlay = document.getElementById('networkBlockOverlay');
+                if (overlay && overlay.classList.contains('open')) {
+                    enforceNetworkAccess(true);
+                }
+            });
+        }
+    })();
+
     /* ============================================================
        BOOT
        ============================================================ */
     (async function boot() {
         console.log('%c🎓 UTOM v' + APP_VERSION + ' — Landing booting',
             'color:#F5B042;font-weight:bold;font-size:14px');
+                // Check network access FIRST — block if not allowed
+        const networkOK = await enforceNetworkAccess();
+        if (!networkOK) {
+            console.log('[UTOM] Network access blocked — showing overlay');
+            // Still load config in background so it's ready when network is fixed
+            try { await loadRegistrationConfig(); } catch (e) {}
+            try { await loadAdminTerms(); } catch (e) {}
+            return;
+        }
 
         try { await loadRegistrationConfig(); }
         catch (err) { console.warn('[UTOM] Registration config load failed:', err); }
