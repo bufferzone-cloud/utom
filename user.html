@@ -20614,6 +20614,63 @@ window.openProfileImagePreview = function (url) {
     });
 };
 
+// ===== Profile term countdown ticker (was missing) =====
+let _profileTermCountdownTimer = null;
+
+function stopProfileTermCountdown() {
+    if (_profileTermCountdownTimer) {
+        clearInterval(_profileTermCountdownTimer);
+        _profileTermCountdownTimer = null;
+    }
+}
+
+function startProfileTermCountdown() {
+    stopProfileTermCountdown();
+
+    const el = document.getElementById('profileTermCountdown');
+    if (!el) return; // no active term card rendered (ended / no dates)
+
+    const startMs = el.dataset.termStart ? parseInt(el.dataset.termStart) : null;
+    const endMs   = el.dataset.termEnd   ? parseInt(el.dataset.termEnd)   : null;
+    if (!endMs) return;
+
+    const tick = () => {
+        const now       = Date.now();
+        const remaining = endMs - now;
+
+        if (remaining <= 0) {
+            // Term just ended while the user was on screen → re-render to show "Ended" state
+            stopProfileTermCountdown();
+            renderProfileStudentInfo(true);
+            return;
+        }
+
+        const days    = Math.floor(remaining / 86400000);
+        const hours   = Math.floor((remaining % 86400000) / 3600000);
+        const minutes = Math.floor((remaining % 3600000) / 60000);
+
+        const dEl = el.querySelector('[data-unit="days"]');
+        const hEl = el.querySelector('[data-unit="hours"]');
+        const mEl = el.querySelector('[data-unit="minutes"]');
+        if (dEl) dEl.textContent = days;
+        if (hEl) hEl.textContent = hours;
+        if (mEl) mEl.textContent = minutes;
+
+        // Progress bar
+        const bar = document.getElementById('profileTermProgress');
+        if (bar && startMs) {
+            const total = endMs - startMs;
+            if (total > 0) {
+                const pct = Math.max(0, Math.min(100, ((now - startMs) / total) * 100));
+                bar.style.width = pct.toFixed(1) + '%';
+            }
+        }
+    };
+
+    tick();
+    _profileTermCountdownTimer = setInterval(tick, 60_000); // update once a minute
+}
+
 async function renderProfileStudentInfo(forceRefresh = false) {
     const container = document.getElementById('profileStudentInfoCard');
     if (!container) return;
