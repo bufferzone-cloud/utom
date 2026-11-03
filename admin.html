@@ -12117,7 +12117,13 @@ function loadCommentsForVideo(videoId, onChange) {
         }
 
         function navigateToSection(sectionId, params) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    // ✅ Reset scroll BEFORE any section is shown or any early-return fires
+    const appContent = document.querySelector('.app-content');
+    if (appContent) appContent.scrollTop = 0;
+    window.scrollTo(0, 0);
+    document.body.style.overflow = '';   // clears leftover "hidden" from sidebar
+
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
 
             if (sectionId === 'programView') {
     const programId = params.programId;
