@@ -19195,18 +19195,23 @@ function buildQuestionBlock(q, idx, qKey, savedAnswer = null, savedScratch = nul
 function initScratchpad(canvas) {
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
-    let lastX = 0,
-        lastY = 0;
+    let lastX = 0, lastY = 0;
     let color = '#000000';
     let lineWidth = 4;
     let isEraser = false;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = canvas.parentElement.clientWidth || 600;
-    const h = 160;
+
+    // ✅ NEW: mutable height + expand state
+    const BASE_HEIGHT = 160;
+    const EXPANDED_HEIGHT = BASE_HEIGHT * 3;   // 480
+    let currentHeight = BASE_HEIGHT;
+    let isExpanded = false;
+
     canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    canvas.height = currentHeight * dpr;
     canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    canvas.style.height = currentHeight + 'px';
     ctx.scale(dpr, dpr);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -19217,7 +19222,7 @@ function initScratchpad(canvas) {
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
         if (clientX == null) return { x: 0, y: 0 };
         const scaleX = w / rect.width;
-        const scaleY = h / rect.height;
+        const scaleY = currentHeight / rect.height;   // ✅ uses live height
         const x = (clientX - rect.left) * scaleX;
         const y = (clientY - rect.top) * scaleY;
         return { x, y };
@@ -19306,6 +19311,63 @@ function initScratchpad(canvas) {
     tools.querySelector('.clear-scratch').addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
+
+    /* ===== ✅ NEW: Expand / Shrink handler ===== */
+    const expandBtn = tools.querySelector('.expand-btn');
+    if (expandBtn) {
+        expandBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const targetHeight = isExpanded ? BASE_HEIGHT : EXPANDED_HEIGHT;
+
+            // When shrinking, warn if the user drew inside the area that will be cut off
+            if (isExpanded) {
+                const startY = BASE_HEIGHT * dpr;
+                const cutoffH = canvas.height - startY;
+                if (cutoffH > 0) {
+                    const imgData = ctx.getImageData(0, startY, canvas.width, cutoffH);
+                    const data = imgData.data;
+                    let hasContent = false;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] > 0) { hasContent = true; break; }
+                    }
+                    if (hasContent && !confirm('Shrinking will discard any drawing in the extra space. Continue?')) {
+                        return;
+                    }
+                }
+            }
+
+            // 1) Snapshot the current drawing so it survives the resize
+            const buffer = document.createElement('canvas');
+            buffer.width  = canvas.width;
+            buffer.height = canvas.height;
+            buffer.getContext('2d').drawImage(canvas, 0, 0);
+
+            // 2) Resize the real canvas
+            currentHeight = targetHeight;
+            canvas.width  = w * dpr;
+            canvas.height = currentHeight * dpr;
+            canvas.style.height = currentHeight + 'px';
+
+            // 3) Resizing resets the context → reapply transform & styles
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            ctx.lineCap  = 'round';
+            ctx.lineJoin = 'round';
+
+            // 4) Paste the old drawing back on top (pixel-perfect, no stretching)
+            ctx.drawImage(buffer, 0, 0, buffer.width / dpr, buffer.height / dpr);
+
+            // 5) Flip the toggle & button label
+            isExpanded = !isExpanded;
+            expandBtn.innerHTML = isExpanded
+                ? '<i class="fas fa-compress"></i> Shrink'
+                : '<i class="fas fa-expand"></i> Expand';
+        });
+    }
+    /* ===== end expand handler ===== */
+
     const key = canvas.id.replace('scratch-', '');
     scratchpads[key] = { canvas, ctx, color, lineWidth, isEraser };
 }
