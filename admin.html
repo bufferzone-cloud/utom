@@ -376,17 +376,19 @@
             transform: scale(1.06);
         }
         /* ===== SCROLLING CONTENT ===== */
-       .app-content {
-    flex: 1 1 0%;                 /* ← was: flex: 1;  (more explicit) */
+     .app-content {
+    flex: 1 1 0%;
+    height: 0;                          /* ← ADD — forces correct flex sizing */
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
     padding: 0 16px 100px 16px;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;   /* ← ADD — prevents scroll chaining */
+    /* overscroll-behavior-y: contain;  ← REMOVED — can break scroll */
     scroll-behavior: auto;
     width: 100%;
     display: block;
+    touch-action: pan-y;                /* ← ADD — explicitly allows vertical pan */
 }
         .app-content::-webkit-scrollbar {
             width: 4px;
@@ -6691,6 +6693,49 @@ body.dark-mode .program-card .program-img-wrapper { background-color: #1a1a1a !i
     pointer-events: none;
     filter: grayscale(0.5);
 }
+
+        /* ===== SCROLL FIX: neutralize backdrop-filter inside scroll containers ===== */
+/* backdrop-filter on children breaks scroll-height calc in some browsers */
+.form-card,
+.card,
+.card-glow,
+.dash-card,
+.user-card,
+.video-card,
+.course-card-wrapper,
+.course-folder,
+.doc-item,
+.tx-card,
+.account-page,
+.stat-card,
+.history-student-card,
+.history-assessment-card,
+.popup-choice-btn,
+.popup-user-list,
+.test-register-item,
+.promo-pic-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Restore the visual frosted-glass look via slightly higher bg opacity */
+.form-card,
+.card,
+.card-glow,
+.account-page,
+.stat-card,
+.popup-choice-btn {
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.dark-mode .form-card,
+body.dark-mode .card,
+body.dark-mode .card-glow,
+body.dark-mode .account-page,
+body.dark-mode .stat-card,
+body.dark-mode .popup-choice-btn {
+    background: rgba(31, 31, 31, 0.94) !important;
+}
     </style>
 </head>
 <body>
@@ -12119,7 +12164,11 @@ function loadCommentsForVideo(videoId, onChange) {
         }
 
         function navigateToSection(sectionId, params) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // Reset scroll so newly-shown sections always start at the top
+    const appContent = document.querySelector('.app-content');
+    if (appContent) appContent.scrollTop = 0;
+
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
 
             if (sectionId === 'programView') {
     const programId = params.programId;
