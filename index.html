@@ -13,6 +13,241 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         /* ==========================================================
+           GLOBAL APP LOADER  (first paint — before anything else)
+           ========================================================== */
+        .app-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background:
+                radial-gradient(circle at 50% 35%, #2a1f0f 0%, #14100a 55%, #050403 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        visibility 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .app-loader.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Ambient warm glow */
+        .app-loader::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 50% 45%, rgba(245, 176, 66, 0.18) 0%, transparent 55%),
+                radial-gradient(circle at 85% 15%, rgba(245, 176, 66, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 15% 85%, rgba(245, 176, 66, 0.08) 0%, transparent 40%);
+            animation: loaderGlow 6s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes loaderGlow {
+            from { opacity: 0.6; transform: scale(1); }
+            to   { opacity: 1;   transform: scale(1.06); }
+        }
+
+        /* Subtle moving dot grid */
+        .app-loader::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(245, 176, 66, 0.14) 1px, transparent 1px);
+            background-size: 42px 42px;
+            opacity: 0.35;
+            animation: dotDrift 22s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes dotDrift {
+            from { background-position: 0 0; }
+            to   { background-position: 42px 42px; }
+        }
+
+        .loader-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 24px;
+        }
+
+        /* Logo + pulsing rings */
+        .loader-logo-wrap {
+            position: relative;
+            width: 148px;
+            height: 148px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 176, 66, 0.45);
+            animation: loaderRing 2.6s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+            pointer-events: none;
+        }
+
+        .loader-ring.ring-1 { animation-delay: 0s; }
+        .loader-ring.ring-2 { animation-delay: 0.85s; }
+        .loader-ring.ring-3 { animation-delay: 1.7s; }
+
+        @keyframes loaderRing {
+            0%   { transform: scale(0.62); opacity: 0.85; border-color: rgba(245, 176, 66, 0.6); }
+            100% { transform: scale(1.55); opacity: 0;    border-color: rgba(245, 176, 66, 0); }
+        }
+
+        .loader-logo {
+            position: relative;
+            width: 98px;
+            height: 98px;
+            border-radius: 50%;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow:
+                0 0 60px rgba(245, 176, 66, 0.5),
+                0 0 120px rgba(245, 176, 66, 0.22),
+                inset 0 0 24px rgba(245, 176, 66, 0.12);
+            animation: loaderLogoPulse 2.2s ease-in-out infinite;
+        }
+
+        @keyframes loaderLogoPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 60px rgba(245,176,66,0.5), 0 0 120px rgba(245,176,66,0.22), inset 0 0 24px rgba(245,176,66,0.12);
+            }
+            50% {
+                transform: scale(1.045);
+                box-shadow: 0 0 85px rgba(245,176,66,0.7), 0 0 160px rgba(245,176,66,0.32), inset 0 0 28px rgba(245,176,66,0.18);
+            }
+        }
+
+        .loader-logo img {
+            width: 74px;
+            height: 74px;
+            object-fit: contain;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .loader-logo .loader-logo-fallback {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #1d1d1f 30%, #F5B042 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Brand wordmark with shimmer */
+        .loader-brand {
+            font-size: 2.3rem;
+            font-weight: 800;
+            letter-spacing: 8px;
+            margin-bottom: 8px;
+            padding-left: 8px; /* balance letter-spacing */
+            background: linear-gradient(
+                100deg,
+                #ffffff 0%,
+                #FFC868 30%,
+                #F5B042 50%,
+                #FFC868 70%,
+                #ffffff 100%
+            );
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: loaderShimmer 3.4s ease-in-out infinite;
+        }
+
+        @keyframes loaderShimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50%      { background-position: 100% 50%; }
+        }
+
+        .loader-tagline {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.42);
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            margin-bottom: 38px;
+        }
+
+        .loader-status {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(245, 176, 66, 0.92);
+            letter-spacing: 0.2px;
+            min-height: 20px;
+            margin-bottom: 14px;
+            transition: opacity 0.3s ease;
+        }
+
+        .loader-progress {
+            width: 230px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #E39B2B, #FFC868, #F5B042);
+            border-radius: 3px;
+            transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 0 14px rgba(245, 176, 66, 0.65);
+            position: relative;
+        }
+
+        .loader-progress-bar::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65));
+            animation: loaderBarSheen 1.3s ease-in-out infinite;
+        }
+
+        @keyframes loaderBarSheen {
+            0%   { opacity: 0; transform: translateX(-14px); }
+            50%  { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(14px); }
+        }
+
+        @media (max-width: 400px) {
+            .loader-brand { font-size: 1.9rem; letter-spacing: 6px; }
+            .loader-logo-wrap { width: 128px; height: 128px; }
+            .loader-logo { width: 84px; height: 84px; }
+            .loader-logo img { width: 62px; height: 62px; }
+            .loader-progress { width: 200px; }
+        }
+
+        /* ==========================================================
            DESIGN TOKENS
            ========================================================== */
         :root {
@@ -70,7 +305,7 @@
         }
 
         /* ==========================================================
-           GLOBAL LOADING OVERLAY
+           GLOBAL LOADING OVERLAY (in-app)
            ========================================================== */
         .global-loading-overlay {
             position: fixed;
@@ -500,7 +735,7 @@
         .slide-panel.active .segmented-control { animation: formEnter 0.55s var(--ease-out) 0.10s both; }
 
         /* ==========================================================
-           FORM BRAND MARK (logo on top of each form)
+           FORM BRAND MARK
            ========================================================== */
         .form-brand-mark {
             display: flex;
@@ -750,7 +985,6 @@
             color: var(--accent);
         }
 
-        /* The hidden native select */
         select.skinned-native {
             position: absolute !important;
             width: 1px !important;
@@ -766,7 +1000,6 @@
             top: 0 !important;
         }
 
-        /* The dropdown panel */
         .skinned-panel {
             position: fixed;
             z-index: 9999;
@@ -791,7 +1024,6 @@
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* Panel header with UTOM logo */
         .skinned-panel-header {
             padding: 12px 16px;
             background: linear-gradient(135deg, #fffaf2 0%, #ffffff 100%);
@@ -848,7 +1080,6 @@
             flex-shrink: 0;
         }
 
-        /* Panel list */
         .skinned-panel-list {
             overflow-y: auto;
             padding: 6px;
@@ -867,7 +1098,6 @@
             border-radius: 4px;
         }
 
-        /* Option item */
         .skinned-option {
             background: transparent;
             border: none;
@@ -966,7 +1196,6 @@
             opacity: 1;
         }
 
-        /* Empty state */
         .skinned-empty {
             padding: 24px 16px;
             text-align: center;
@@ -1462,7 +1691,7 @@
         }
 
         /* ==========================================================
-           MODALS (logo header added)
+           MODALS
            ========================================================== */
         .modal-overlay {
             position: fixed;
@@ -1966,124 +2195,149 @@
                 transition-duration: 0.001ms !important;
             }
         }
-        /* ==========================================================
-   NETWORK ACCESS BLOCK OVERLAY
-   ========================================================== */
-.network-block-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: rgba(0, 0, 0, 0.72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s var(--ease-out);
-}
-.network-block-overlay.open { display: flex; }
 
-.network-block-box {
-    background: #ffffff;
-    border-radius: 24px;
-    max-width: 440px;
-    width: 100%;
-    padding: 32px 26px 26px;
-    text-align: center;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
-    animation: modalIn 0.38s var(--spring);
-    position: relative;
-    overflow: hidden;
-}
-.network-block-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);
-}
-.network-block-icon {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #fee2e2, #fecaca);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 18px;
-    color: #dc2626;
-    font-size: 2.3rem;
-    box-shadow: 0 12px 28px -10px rgba(220, 38, 38, 0.35);
-    animation: pulseWarn 2s ease-in-out infinite;
-}
-@keyframes pulseWarn {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.05); }
-}
-.network-block-box h2 {
-    font-size: 1.32rem;
-    font-weight: 800;
-    margin-bottom: 10px;
-    color: #1d1d1f;
-    letter-spacing: -0.3px;
-}
-.network-block-box > p {
-    font-size: 0.88rem;
-    color: #6e6e73;
-    line-height: 1.55;
-    margin-bottom: 16px;
-}
-.network-block-allowed {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 18px;
-}
-.network-block-allowed .net-chip {
-    background: linear-gradient(135deg, #fff7ed, #ffedd5);
-    color: #c2410c;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 30px;
-    border: 1px solid rgba(245, 176, 66, 0.4);
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-.network-block-detected {
-    font-size: 0.8rem;
-    color: #6e6e73;
-    background: #f2f2f7;
-    padding: 11px 14px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.network-block-detected strong {
-    color: #1d1d1f;
-    font-weight: 700;
-    margin-left: 6px;
-}
-.network-block-detected strong.warning {
-    color: #dc2626;
-}
-#networkBlockRetryBtn {
-    width: 100%;
-    margin-top: 4px;
-}
+        /* ==========================================================
+           NETWORK ACCESS BLOCK OVERLAY
+           ========================================================== */
+        .network-block-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s var(--ease-out);
+        }
+        .network-block-overlay.open { display: flex; }
+
+        .network-block-box {
+            background: #ffffff;
+            border-radius: 24px;
+            max-width: 440px;
+            width: 100%;
+            padding: 32px 26px 26px;
+            text-align: center;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+            animation: modalIn 0.38s var(--spring);
+            position: relative;
+            overflow: hidden;
+        }
+        .network-block-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);
+        }
+        .network-block-icon {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            color: #dc2626;
+            font-size: 2.3rem;
+            box-shadow: 0 12px 28px -10px rgba(220, 38, 38, 0.35);
+            animation: pulseWarn 2s ease-in-out infinite;
+        }
+        @keyframes pulseWarn {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.05); }
+        }
+        .network-block-box h2 {
+            font-size: 1.32rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #1d1d1f;
+            letter-spacing: -0.3px;
+        }
+        .network-block-box > p {
+            font-size: 0.88rem;
+            color: #6e6e73;
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+        .network-block-allowed {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+        .network-block-allowed .net-chip {
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #c2410c;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid rgba(245, 176, 66, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .network-block-detected {
+            font-size: 0.8rem;
+            color: #6e6e73;
+            background: #f2f2f7;
+            padding: 11px 14px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .network-block-detected strong {
+            color: #1d1d1f;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .network-block-detected strong.warning {
+            color: #dc2626;
+        }
+        #networkBlockRetryBtn {
+            width: 100%;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 
 <!-- ==========================================================
-     GLOBAL LOADING OVERLAY
+     APP LOADER (unique, first paint)
+     ========================================================== -->
+<div class="app-loader" id="appLoader">
+    <div class="loader-content">
+        <div class="loader-logo-wrap">
+            <div class="loader-ring ring-1"></div>
+            <div class="loader-ring ring-2"></div>
+            <div class="loader-ring ring-3"></div>
+            <div class="loader-logo">
+                <img src="logo.png" alt="UTOM"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <span class="loader-logo-fallback" style="display:none;">UTOM</span>
+            </div>
+        </div>
+        <div class="loader-brand">UTOM</div>
+        <div class="loader-tagline">Learn Without Limits</div>
+        <div class="loader-status" id="loaderStatus">Initializing…</div>
+        <div class="loader-progress">
+            <div class="loader-progress-bar" id="loaderProgressBar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================
+     GLOBAL LOADING OVERLAY (in-app)
      ========================================================== -->
 <div class="global-loading-overlay" id="globalLoadingOverlay">
     <div class="spinner-large"></div>
@@ -2208,9 +2462,7 @@
                     Create your account
                 </div>
                 <form id="signupForm" novalidate>
-                    <div id="studentSignupFields">
-                        <!-- Filled dynamically from admin Registration Setup -->
-                    </div>
+                    <div id="studentSignupFields"></div>
                     <div id="signupError" class="error-msg"></div>
                     <div id="signupSuccessMsg" class="success-msg" style="display: none;"></div>
                     <div class="terms-check">
@@ -2336,9 +2588,7 @@
                     Submit your details. An admin will review your application.
                 </p>
                 <form id="lecSignupForm" novalidate>
-                    <div id="lecturerSignupFields">
-                        <!-- Filled dynamically from admin Registration Setup -->
-                    </div>
+                    <div id="lecturerSignupFields"></div>
                     <div id="lecSignupError" class="error-msg"></div>
                     <div id="lecSignupSuccess" class="success-msg" style="display: none;"></div>
 
@@ -2360,7 +2610,7 @@
 </div>
 
 <!-- ==========================================================
-     TERMS & CONDITIONS MODAL (with logo header)
+     TERMS & CONDITIONS MODAL
      ========================================================== -->
 <div class="modal-overlay" id="termsModalOverlay">
     <div class="modal-box" role="dialog" aria-modal="true">
@@ -2385,7 +2635,7 @@
 </div>
 
 <!-- ==========================================================
-     COMPLETE PROFILE OVERLAY (with logo)
+     COMPLETE PROFILE OVERLAY
      ========================================================== -->
 <div class="complete-profile-overlay" id="completeProfileOverlay">
     <div class="complete-profile-topbar">
@@ -2416,7 +2666,7 @@
 </div>
 
 <!-- ==========================================================
-     TERM RENEWAL MODAL (with logo)
+     TERM RENEWAL MODAL
      ========================================================== -->
 <div class="modal-overlay" id="termRenewalModal">
     <div class="modal-box" role="dialog" aria-modal="true" style="max-width:460px;">
@@ -2495,7 +2745,8 @@
         createUserWithEmailAndPassword,
         signInWithEmailAndPassword,
         sendPasswordResetEmail,
-        signOut
+        signOut,
+        onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
     import {
         getDatabase,
@@ -2509,7 +2760,7 @@
     /* ============================================================
        APPLICATION VERSION
        ============================================================ */
-    const APP_VERSION = '2.3.0';
+    const APP_VERSION = '2.4.0';
     const SESSION_KEY = 'utom-session-v1';
     const LOGIN_ATTEMPTS_KEY = 'utom-login-attempts';
     const MAX_LOGIN_ATTEMPTS = 5;
@@ -2539,7 +2790,7 @@
     const SETUP_REF = ref(database, 'system/registrationSetup');
     const LECTURER_TERMS_REF = ref(database, 'system/lecturerTerms');
     const STUDENT_TERMS_REF = ref(database, 'system/studentTerms');
-        const NETWORK_ACCESS_REF = ref(database, 'system/networkAccess');
+    const NETWORK_ACCESS_REF = ref(database, 'system/networkAccess');
 
     /* ============================================================
        FALLBACK DEFAULTS
@@ -2624,6 +2875,49 @@
 
     function isBlank(v) {
         return v === undefined || v === null || String(v).trim() === '';
+    }
+
+    function wait(ms) {
+        return new Promise(function(r) { setTimeout(r, ms); });
+    }
+
+    /* ---------- LOADER ---------- */
+    function updateLoader(progress, text) {
+        const bar = document.getElementById('loaderProgressBar');
+        const status = document.getElementById('loaderStatus');
+        if (bar && progress != null) bar.style.width = progress + '%';
+        if (status && text) status.textContent = text;
+    }
+
+    function hideLoader() {
+        const loader = document.getElementById('appLoader');
+        if (!loader) return;
+        loader.classList.add('hide');
+        setTimeout(function() {
+            loader.style.display = 'none';
+        }, 750);
+    }
+
+    function waitForAuthState(timeoutMs) {
+        timeoutMs = timeoutMs || 6000;
+        return new Promise(function(resolve) {
+            let resolved = false;
+            let unsubscribe = null;
+            const timer = setTimeout(function() {
+                if (resolved) return;
+                resolved = true;
+                if (unsubscribe) { try { unsubscribe(); } catch (e) { /* ignore */ } }
+                resolve(null);
+            }, timeoutMs);
+
+            unsubscribe = onAuthStateChanged(auth, function(user) {
+                if (resolved) return;
+                resolved = true;
+                clearTimeout(timer);
+                if (unsubscribe) { try { unsubscribe(); } catch (e) { /* ignore */ } }
+                resolve(user);
+            });
+        });
     }
 
     function setButtonLoading(button, isLoading, originalHtml) {
@@ -3113,7 +3407,7 @@
     }
 
     /* ============================================================
-       HIERARCHY OPTION BUILDERS (with data-meta for styled lists)
+       HIERARCHY OPTION BUILDERS
        ============================================================ */
     function collegeOptionsHTML(colleges, selectedId) {
         if (colleges.length === 0) {
@@ -3291,7 +3585,6 @@
                     'fa-clock', 'Study Mode');
             }
 
-            // Year
             {
                 const college = getCollegeById(values.collegeId);
                 const program = getProgramById(college, values.programId);
@@ -3300,7 +3593,6 @@
                     'fa-layer-group', 'Select Year');
             }
 
-            // Term
             {
                 const college = getCollegeById(values.collegeId);
                 const program = getProgramById(college, values.programId);
@@ -3310,7 +3602,6 @@
                 html += '<div class="select-preview" data-preview="term"></div>';
             }
 
-            // Class Category
             if (isOn('class')) {
                 const college = getCollegeById(values.collegeId);
                 const program = getProgramById(college, values.programId);
@@ -3319,13 +3610,11 @@
                     'fa-tag', 'Class Category');
             }
 
-            // Auto class code display
             html += '<div class="auto-class-code-display" data-auto-class-code>' +
                 '<span class="acc-label"><i class="fas fa-hashtag"></i> Class Code</span>' +
                 '<span class="acc-value empty">— select category —</span>' +
             '</div>';
 
-            // Intake
             if (isOn('intake')) {
                 const college = getCollegeById(values.collegeId);
                 html += selectWrap('intake', isReq('intake'),
@@ -3349,7 +3638,7 @@
     }
 
     /* ============================================================
-       PROGRAM PREVIEW
+       PREVIEWS
        ============================================================ */
     function updateProgramPreview(block) {
         if (!block) return;
@@ -3386,9 +3675,6 @@
             '</div>';
     }
 
-    /* ============================================================
-       TERM PREVIEW
-       ============================================================ */
     function updateTermPreview(block) {
         if (!block) return;
         const previewEl = block.querySelector('[data-preview="term"]');
@@ -3454,9 +3740,6 @@
             '</div>';
     }
 
-    /* ============================================================
-       AUTO CLASS CODE
-       ============================================================ */
     function updateAutoClassCode(block) {
         if (!block) return;
         const displayEl = block.querySelector('[data-auto-class-code] .acc-value');
@@ -3531,7 +3814,6 @@
         updateTermPreview(block);
         updateAutoClassCode(block);
 
-        // Refresh skinned dropdowns after option changes
         setTimeout(function() {
             enhanceSelects(block);
         }, 10);
@@ -4129,7 +4411,6 @@
             );
             if (!container) return;
 
-            // Cleanup old panels
             cleanupAllSkinnedPanels();
 
             const fields = sortFields(REG[role] && REG[role].fields).filter(function(f) { return f.enabled; });
@@ -4218,7 +4499,6 @@
             if (hierHtml) html += '<div class="complete-form-block">' + hierHtml + '</div>';
         }
 
-        // Cleanup old panels
         cleanupAllSkinnedPanels();
         container.innerHTML = html;
 
@@ -4589,7 +4869,6 @@
 
         yearSel.onchange = function() {
             termSel.innerHTML = termOptionsHTML(program, custom.studyMode, yearSel.value, '');
-            // Re-enhance after option rebuild
             setTimeout(function() {
                 enhanceSelects(document.getElementById('termRenewalModal'));
             }, 10);
@@ -4598,7 +4877,6 @@
         document.getElementById('renewalError').innerText = '';
         document.getElementById('termRenewalModal').classList.add('open');
 
-        // Enhance the renewal selects too
         enhanceSelects(document.getElementById('termRenewalModal'));
     }
 
@@ -5255,11 +5533,11 @@
             .catch(function(err) { console.error('[UTOM] SW failed', err); });
     }
 
-        /* ============================================================
+    /* ============================================================
        NETWORK ACCESS CONTROL
        ============================================================ */
     let networkCache = { result: null, timestamp: 0 };
-    const NETWORK_CACHE_MS = 5 * 60 * 1000;   // cache for 5 min
+    const NETWORK_CACHE_MS = 5 * 60 * 1000;
     let networkRetryInterval = null;
 
     function getConnType() {
@@ -5275,7 +5553,6 @@
 
         const connType = getConnType();
 
-        // Try IP lookup first to determine carrier
         let ipCarrier = null;
         let ispLabel = '';
 
@@ -5301,7 +5578,6 @@
             console.warn('[UTOM] IP lookup failed:', e);
         }
 
-        // Priority: detected Zambian carrier > WiFi > unknown
         let result;
         if (ipCarrier) {
             result = { provider: ipCarrier, label: ipCarrier.toUpperCase(), detected: true };
@@ -5322,19 +5598,15 @@
             const snap = await get(NETWORK_ACCESS_REF);
             const settings = snap.val();
 
-            // No config → allow
             if (!settings) return { allowed: true };
-            // Admin enabled "Everything" → allow
             if (settings.allowAll) return { allowed: true };
 
-            // Build list of allowed providers
             const allowed = [];
             if (settings.mtn)    allowed.push({ key: 'mtn',    label: 'MTN' });
             if (settings.airtel) allowed.push({ key: 'airtel', label: 'Airtel' });
             if (settings.zamtel) allowed.push({ key: 'zamtel', label: 'Zamtel' });
             if (settings.wifi)   allowed.push({ key: 'wifi',   label: 'WiFi' });
 
-            // Nothing selected → allow (safety fallback)
             if (allowed.length === 0) return { allowed: true };
 
             const network = await detectUserNetwork(force);
@@ -5344,7 +5616,6 @@
             return { allowed: false, network, allowed };
         } catch (err) {
             console.warn('[UTOM] Network check failed:', err);
-            // On error, don't block legit users — allow
             return { allowed: true };
         }
     }
@@ -5388,7 +5659,6 @@
 
         showNetworkBlock(result.allowed, result.network);
 
-        // Auto-retry every 20 seconds in case user switches network
         if (!networkRetryInterval) {
             networkRetryInterval = setInterval(async () => {
                 const retry = await checkNetworkAccess(true);
@@ -5398,7 +5668,6 @@
                     networkRetryInterval = null;
                     showSessionWelcome('Network verified — welcome!');
                 } else {
-                    // Update detected network label live
                     const detectedEl = document.getElementById('networkBlockDetected');
                     if (detectedEl && retry.network) {
                         detectedEl.textContent = retry.network.label || 'Unknown';
@@ -5410,7 +5679,31 @@
         return false;
     }
 
-    // Wire up retry button
+    /* Wait until network is approved (used during boot) */
+    async function waitForNetworkOK() {
+        return new Promise(function(resolve) {
+            const check = async function() {
+                const r = await checkNetworkAccess(true);
+                if (r.allowed) {
+                    hideNetworkBlock();
+                    if (networkRetryInterval) {
+                        clearInterval(networkRetryInterval);
+                        networkRetryInterval = null;
+                    }
+                    resolve();
+                } else {
+                    const detectedEl = document.getElementById('networkBlockDetected');
+                    if (detectedEl && r.network) {
+                        detectedEl.textContent = r.network.label || 'Unknown';
+                        detectedEl.className = r.network.detected ? '' : 'warning';
+                    }
+                    setTimeout(check, 2500);
+                }
+            };
+            check();
+        });
+    }
+
     document.getElementById('networkBlockRetryBtn').addEventListener('click', async function () {
         const btn = this;
         const orig = btn.innerHTML;
@@ -5422,7 +5715,6 @@
         if (ok) showSessionWelcome('Network verified — welcome!');
     });
 
-    // Re-check immediately when connection type changes
     (function watchConnectionChange() {
         const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (conn && conn.addEventListener) {
@@ -5436,38 +5728,212 @@
     })();
 
     /* ============================================================
+       AUTO-LOGIN (silent session restore)
+       ============================================================ */
+    async function tryAutoLogin() {
+        // 1. Wait for Firebase Auth to restore its persisted state
+        const fbUser = await waitForAuthState(7000);
+
+        if (!fbUser) {
+            // No authenticated user → clear any stale local session
+            clearSession();
+            return null;
+        }
+
+        const email = (fbUser.email || '').toLowerCase();
+        const uid = fbUser.uid;
+
+        // 2. College admin check
+        try {
+            if (await isCollegeAdminEmail(email)) {
+                return { redirect: 'management.html', name: 'Admin' };
+            }
+        } catch (e) { console.warn('[UTOM] admin lookup failed:', e); }
+
+        // 3. System admin check
+        if (email.startsWith('admin@')) {
+            return { redirect: 'admin.html', name: 'Admin' };
+        }
+
+        // 4. Student lookup
+        let studentData = null;
+        try {
+            const snap = await get(ref(database, 'users/' + uid));
+            if (snap.exists()) studentData = snap.val();
+        } catch (e) { console.warn('[UTOM] student lookup failed:', e); }
+
+        if (studentData) {
+            // Ban check
+            try {
+                const banSnap = await get(ref(database, 'bannedUsers/' + uid));
+                if (banSnap.exists()) {
+                    await signOut(auth);
+                    clearSession();
+                    return { error: true, message: 'Your account has been suspended.' };
+                }
+            } catch (e) { /* ignore */ }
+
+            // Missing profile check
+            const missing = findMissingFields(studentData, 'student');
+            if (missing.length > 0) {
+                return {
+                    showLanding: true,
+                    pendingUser: { user: fbUser, role: 'student', missing: missing, userData: studentData, kind: 'profile' }
+                };
+            }
+
+            // Term check
+            const custom = studentData.customFields || {};
+            const college = getCollegeById(custom.collegeId);
+            const program = getProgramById(college, custom.programId);
+            if (program && custom.studyMode && custom.cumulativeTerm) {
+                const dates = getTermDates(program, custom.studyMode, custom.cumulativeTerm);
+                if (dates && dates.end && new Date(dates.end).getTime() < Date.now()) {
+                    return {
+                        showLanding: true,
+                        pendingUser: { user: fbUser, role: 'student', userData: studentData, kind: 'term' }
+                    };
+                }
+            }
+
+            saveSession(fbUser, studentData, 'student');
+            return { redirect: 'user.html', name: studentData.firstName || 'Student' };
+        }
+
+        // 5. Lecturer lookup
+        let lecturerData = null;
+        try {
+            const snap = await get(ref(database, 'lecturers/' + uid));
+            if (snap.exists()) lecturerData = snap.val();
+        } catch (e) { console.warn('[UTOM] lecturer lookup failed:', e); }
+
+        if (lecturerData) {
+            if (lecturerData.banned) {
+                await signOut(auth);
+                clearSession();
+                return { error: true, message: 'Your account has been banned.' };
+            }
+            if (lecturerData.status !== 'approved' && lecturerData.status !== 'active') {
+                await signOut(auth);
+                clearSession();
+                return null;
+            }
+
+            const missing = findMissingFields(lecturerData, 'lecturer');
+            if (missing.length > 0) {
+                return {
+                    showLanding: true,
+                    pendingUser: { user: fbUser, role: 'lecturer', missing: missing, userData: lecturerData, kind: 'profile' }
+                };
+            }
+
+            const custom = lecturerData.customFields || {};
+            const college = getCollegeById(custom.collegeId);
+            const program = getProgramById(college, custom.programId);
+            if (program && custom.studyMode && custom.cumulativeTerm) {
+                const dates = getTermDates(program, custom.studyMode, custom.cumulativeTerm);
+                if (dates && dates.end && new Date(dates.end).getTime() < Date.now()) {
+                    return {
+                        showLanding: true,
+                        pendingUser: { user: fbUser, role: 'lecturer', userData: lecturerData, kind: 'term' }
+                    };
+                }
+            }
+
+            saveSession(fbUser, lecturerData, 'lecturer');
+            localStorage.setItem('lecturerUid', uid);
+            localStorage.setItem('lecturerEmail', lecturerData.email || email);
+            return { redirect: 'dashboard.html', name: lecturerData.firstName || 'Lecturer' };
+        }
+
+        // 6. Authenticated but no DB record — treat as stale
+        await signOut(auth);
+        clearSession();
+        return null;
+    }
+
+    /* ============================================================
        BOOT
        ============================================================ */
     (async function boot() {
-        console.log('%c🎓 UTOM v' + APP_VERSION + ' — Landing booting',
+        const bootStart = Date.now();
+        const MIN_LOADER_MS = 950;
+
+        console.log('%c🎓 UTOM v' + APP_VERSION + ' — Booting',
             'color:#F5B042;font-weight:bold;font-size:14px');
-                // Check network access FIRST — block if not allowed
-        const networkOK = await enforceNetworkAccess();
-        if (!networkOK) {
-            console.log('[UTOM] Network access blocked — showing overlay');
-            // Still load config in background so it's ready when network is fixed
-            try { await loadRegistrationConfig(); } catch (e) {}
-            try { await loadAdminTerms(); } catch (e) {}
+
+        updateLoader(6, 'Initializing UTOM…');
+
+        /* 1. Network verification */
+        updateLoader(14, 'Verifying network…');
+        const netResult = await checkNetworkAccess();
+        if (!netResult.allowed) {
+            showNetworkBlock(netResult.allowed, netResult.network);
+            updateLoader(16, 'Awaiting approved network…');
+            await waitForNetworkOK();
+            updateLoader(28, 'Network verified');
+        } else {
+            updateLoader(28, 'Network verified');
+        }
+
+        /* 2. Load config & terms */
+        updateLoader(42, 'Loading configuration…');
+        try { await loadRegistrationConfig(); } catch (e) { /* ignore */ }
+        try { await loadAdminTerms(); } catch (e) { /* ignore */ }
+
+        /* 3. Auto-login check */
+        updateLoader(62, 'Checking your session…');
+        let result = null;
+        try {
+            result = await tryAutoLogin();
+        } catch (err) {
+            console.warn('[UTOM] Auto-login check failed:', err);
+            result = null;
+        }
+
+        /* 4a. Redirect straight to dashboard */
+        if (result && result.redirect) {
+            updateLoader(100, result.name ? ('Welcome back, ' + result.name + '!') : 'Welcome back!');
+            const elapsed = Date.now() - bootStart;
+            if (elapsed < MIN_LOADER_MS) await wait(MIN_LOADER_MS - elapsed);
+            window.location.href = result.redirect;
             return;
         }
 
-        try { await loadRegistrationConfig(); }
-        catch (err) { console.warn('[UTOM] Registration config load failed:', err); }
+        /* 4b. Show landing page */
+        updateLoader(78, 'Preparing portal…');
+        try { renderSignupForm('student'); } catch (e) { console.warn(e); }
+        try { renderSignupForm('lecturer'); } catch (e) { console.warn(e); }
+        try { enhanceSelects(document); } catch (e) { console.warn(e); }
 
-        try { await loadAdminTerms(); }
-        catch (err) { console.warn('[UTOM] Admin terms load failed:', err); }
+        const elapsed = Date.now() - bootStart;
+        if (elapsed < MIN_LOADER_MS) await wait(MIN_LOADER_MS - elapsed);
 
-        try { renderSignupForm('student'); }
-        catch (err) { console.error('[UTOM] Student signup render failed:', err); }
+        updateLoader(100, result && result.error ? result.message : 'Welcome to UTOM');
+        await wait(180);
+        hideLoader();
 
-        try { renderSignupForm('lecturer'); }
-        catch (err) { console.error('[UTOM] Lecturer signup render failed:', err); }
+        /* 5. Handle pending overlays from auto-login */
+        if (result && result.showLanding && result.pendingUser) {
+            const pu = result.pendingUser;
+            if (pu.kind === 'profile') {
+                PENDING_USER = { user: pu.user, role: pu.role, missing: pu.missing, userData: pu.userData };
+                setTimeout(function() {
+                    openCompleteProfileOverlay(pu.user, pu.role, pu.missing, pu.userData);
+                }, 400);
+            } else if (pu.kind === 'term') {
+                PENDING_TERM_RENEWAL = { user: pu.user, userData: pu.userData, role: pu.role };
+                setTimeout(function() {
+                    openTermRenewalModal();
+                }, 400);
+            }
+        }
 
-        // Enhance any pre-rendered selects on modals
-        try { enhanceSelects(document); }
-        catch (err) { console.warn('[UTOM] Modal select enhancement failed:', err); }
+        if (result && result.error) {
+            setTimeout(function() { showSessionWelcome(result.message); }, 500);
+        }
 
-        setTimeout(refreshAllPreviews, 100);
+        setTimeout(refreshAllPreviews, 150);
         prefillEmailFromSession();
 
         console.log(
@@ -5477,7 +5943,7 @@
             'lecturer fields: ' + Object.keys(REG.lecturer.fields).length,
             'color:#1f8a3b;font-weight:bold'
         );
-        console.log('%c📋 New: Custom dropdowns with rich list UI + UTOM logo header',
+        console.log('%c🔄 Auto-login enabled — returning users skip this screen',
             'color:#3b82f6;font-weight:bold');
     })();
 </script>
