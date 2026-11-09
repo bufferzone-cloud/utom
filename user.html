@@ -19379,14 +19379,31 @@ function renderAssessmentTake(assessment) {
                     initScratchpad(canvas);
                     const key = canvas.id.replace('scratch-', '');
                     if (savedScratch[key]) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const ctx = canvas.getContext('2d');
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        };
-                        img.src = savedScratch[key];
-                    }
+    const entry = savedScratch[key];
+    const dataUrl        = typeof entry === 'string' ? entry : (entry && entry.dataUrl);
+    const savedCssHeight = (typeof entry === 'object' && entry && entry.cssHeight)
+                            ? entry.cssHeight
+                            : null;
+
+    if (dataUrl) {
+        const img = new Image();
+        img.onload = function() {
+            const sp = scratchpads[key];
+
+            /* Restore the size the user had when they saved */
+            if (savedCssHeight && sp && typeof sp.setHeight === 'function') {
+                sp.setHeight(savedCssHeight);
+            }
+
+            const ctx  = canvas.getContext('2d');
+            const cssW = canvas.width / (Math.min(window.devicePixelRatio || 1, 1.5));
+            const cssH = parseFloat(canvas.style.height) || 160;
+            ctx.clearRect(0, 0, cssW, cssH);
+            ctx.drawImage(img, 0, 0, cssW, cssH);
+        };
+        img.src = dataUrl;
+    }
+}
                 }
             }
         }
@@ -19654,12 +19671,23 @@ function initScratchpad(canvas) {
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = canvas.parentElement.clientWidth || 600;
 
-    // ✅ NEW: mutable height + expand state
+    /* ===== Multi-level expand (base + 3 expansions) ===== */
     const BASE_HEIGHT = 160;
-    const EXPANDED_HEIGHT = BASE_HEIGHT * 3;   // 480
-    let currentHeight = BASE_HEIGHT;
-    let isExpanded = false;
+    const EXPANSION_LEVELS = [
+        BASE_HEIGHT,          // 160  – level 0 (default)
+        BASE_HEIGHT * 2,      // 320  – level 1
+        BASE_HEIGHT * 3,      // 480  – level 2
+        BASE_HEIGHT * 4       // 640  – level 3 (max)
+    ];
+    let expandLevel = 0;
+    let currentHeight = EXPANSION_LEVELS[0];
 
+    /* ===== Eraser settings ===== */
+    const ERASER_WIDTH_MULT = 4;   // eraser is 4× the pen width
+    const ERASER_MIN_WIDTH   = 20; // minimum eraser width (CSS px)
+    const getEraserWidth = () => Math.max(ERASER_MIN_WIDTH, lineWidth * ERASER_WIDTH_MULT);
+
+    /* ===== Initial canvas setup ===== */
     canvas.width = w * dpr;
     canvas.height = currentHeight * dpr;
     canvas.style.width = w + 'px';
@@ -19674,22 +19702,37 @@ function initScratchpad(canvas) {
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
         if (clientX == null) return { x: 0, y: 0 };
         const scaleX = w / rect.width;
-        const scaleY = currentHeight / rect.height;   // ✅ uses live height
+        const scaleY = currentHeight / rect.height;
         const x = (clientX - rect.left) * scaleX;
         const y = (clientY - rect.top) * scaleY;
         return { x, y };
     }
 
+    /* ============================================================
+       DRAWING HANDLERS — fixed eraser (dot + stroke) + bigger size
+       ============================================================ */
     function startDraw(e) {
         e.preventDefault();
         isDrawing = true;
         const pos = getPos(e);
         lastX = pos.x;
         lastY = pos.y;
+
         ctx.beginPath();
-        ctx.arc(lastX, lastY, lineWidth / 2, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
+        if (isEraser) {
+            /* 🔧 FIX: erase the initial dot instead of drawing a coloured one */
+            const ew = getEraserWidth();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.arc(lastX, lastY, ew / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = color;
+            ctx.arc(lastX, lastY, lineWidth / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
     function draw(e) {
@@ -19699,14 +19742,17 @@ function initScratchpad(canvas) {
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
         ctx.lineTo(pos.x, pos.y);
+
         if (isEraser) {
+            /* 🔧 Eraser: true erase (destination-out) + wider stroke */
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.strokeStyle = 'rgba(255,255,255,1)';
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.lineWidth = getEraserWidth();
         } else {
             ctx.globalCompositeOperation = 'source-over';
             ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
         }
-        ctx.lineWidth = lineWidth;
         ctx.stroke();
         ctx.globalCompositeOperation = 'source-over';
         lastX = pos.x;
@@ -19714,7 +19760,7 @@ function initScratchpad(canvas) {
     }
 
     function stopDraw(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
         isDrawing = false;
         ctx.globalCompositeOperation = 'source-over';
     }
@@ -19727,7 +19773,11 @@ function initScratchpad(canvas) {
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', stopDraw, { passive: false });
 
+    /* ============================================================
+       TOOLBAR WIRING
+       ============================================================ */
     const tools = canvas.parentElement.querySelector('.scratchpad-tools');
+
     tools.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             tools.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
@@ -19737,6 +19787,7 @@ function initScratchpad(canvas) {
             tools.querySelector('.eraser-btn')?.classList.remove('active');
         });
     });
+
     tools.querySelectorAll('.size-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             tools.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
@@ -19744,6 +19795,7 @@ function initScratchpad(canvas) {
             lineWidth = parseInt(btn.dataset.size);
         });
     });
+
     const eraserBtn = tools.querySelector('.eraser-btn');
     if (eraserBtn) {
         eraserBtn.addEventListener('click', () => {
@@ -19758,70 +19810,112 @@ function initScratchpad(canvas) {
             }
         });
     }
+
     const defaultColor = tools.querySelector('.color-btn[data-color="#000000"]');
     if (defaultColor) defaultColor.classList.add('active');
+
     tools.querySelector('.clear-scratch').addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
 
-    /* ===== ✅ NEW: Expand / Shrink handler ===== */
+    /* ============================================================
+       MULTI-LEVEL EXPAND / SHRINK
+       ============================================================ */
     const expandBtn = tools.querySelector('.expand-btn');
+
+    function updateExpandBtnLabel() {
+        if (!expandBtn) return;
+        if (expandLevel === 0) {
+            expandBtn.innerHTML = '<i class="fas fa-expand"></i> Expand';
+        } else if (expandLevel < EXPANSION_LEVELS.length - 1) {
+            expandBtn.innerHTML = '<i class="fas fa-expand"></i> Expand Again';
+        } else {
+            expandBtn.innerHTML = '<i class="fas fa-compress"></i> Shrink';
+        }
+    }
+
+    function hasContentBelow(thresholdCssY) {
+        const thresholdPx = thresholdCssY * dpr;
+        const h = canvas.height - thresholdPx;
+        if (h <= 0) return false;
+        const imgData = ctx.getImageData(0, thresholdPx, canvas.width, h);
+        const data = imgData.data;
+        for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) return true;
+        }
+        return false;
+    }
+
+    function applyCanvasSize(newCssHeight) {
+        /* 1) snapshot the current drawing */
+        const buffer = document.createElement('canvas');
+        buffer.width = canvas.width;
+        buffer.height = canvas.height;
+        buffer.getContext('2d').drawImage(canvas, 0, 0);
+
+        /* 2) resize the real canvas */
+        currentHeight = newCssHeight;
+        canvas.width  = w * dpr;
+        canvas.height = currentHeight * dpr;
+        canvas.style.height = currentHeight + 'px';
+
+        /* 3) reset & reapply transform (resizing wiped it) */
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        ctx.lineCap  = 'round';
+        ctx.lineJoin = 'round';
+
+        /* 4) paste the old drawing back, top-anchored, pixel-perfect */
+        ctx.drawImage(buffer, 0, 0, buffer.width / dpr, buffer.height / dpr);
+    }
+
     if (expandBtn) {
         expandBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
 
-            const targetHeight = isExpanded ? BASE_HEIGHT : EXPANDED_HEIGHT;
-
-            // When shrinking, warn if the user drew inside the area that will be cut off
-            if (isExpanded) {
-                const startY = BASE_HEIGHT * dpr;
-                const cutoffH = canvas.height - startY;
-                if (cutoffH > 0) {
-                    const imgData = ctx.getImageData(0, startY, canvas.width, cutoffH);
-                    const data = imgData.data;
-                    let hasContent = false;
-                    for (let i = 3; i < data.length; i += 4) {
-                        if (data[i] > 0) { hasContent = true; break; }
-                    }
-                    if (hasContent && !confirm('Shrinking will discard any drawing in the extra space. Continue?')) {
+            if (expandLevel < EXPANSION_LEVELS.length - 1) {
+                /* expand to the next level */
+                expandLevel++;
+                applyCanvasSize(EXPANSION_LEVELS[expandLevel]);
+            } else {
+                /* at max level → shrink back to base (with safety check) */
+                if (hasContentBelow(EXPANSION_LEVELS[0])) {
+                    if (!confirm('Shrinking will discard any drawing below the base height. Continue?')) {
                         return;
                     }
                 }
+                expandLevel = 0;
+                applyCanvasSize(EXPANSION_LEVELS[0]);
             }
-
-            // 1) Snapshot the current drawing so it survives the resize
-            const buffer = document.createElement('canvas');
-            buffer.width  = canvas.width;
-            buffer.height = canvas.height;
-            buffer.getContext('2d').drawImage(canvas, 0, 0);
-
-            // 2) Resize the real canvas
-            currentHeight = targetHeight;
-            canvas.width  = w * dpr;
-            canvas.height = currentHeight * dpr;
-            canvas.style.height = currentHeight + 'px';
-
-            // 3) Resizing resets the context → reapply transform & styles
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.scale(dpr, dpr);
-            ctx.lineCap  = 'round';
-            ctx.lineJoin = 'round';
-
-            // 4) Paste the old drawing back on top (pixel-perfect, no stretching)
-            ctx.drawImage(buffer, 0, 0, buffer.width / dpr, buffer.height / dpr);
-
-            // 5) Flip the toggle & button label
-            isExpanded = !isExpanded;
-            expandBtn.innerHTML = isExpanded
-                ? '<i class="fas fa-compress"></i> Shrink'
-                : '<i class="fas fa-expand"></i> Expand';
+            updateExpandBtnLabel();
         });
     }
-    /* ===== end expand handler ===== */
 
+    /* ============================================================
+       REGISTER INSTANCE (with setHeight for restoring saved size)
+       ============================================================ */
     const key = canvas.id.replace('scratch-', '');
-    scratchpads[key] = { canvas, ctx, color, lineWidth, isEraser };
+    scratchpads[key] = {
+        canvas,
+        ctx,
+        get color()     { return color; },
+        get lineWidth() { return lineWidth; },
+        get isEraser()  { return isEraser; },
+
+        /** Restore the canvas to a saved CSS height (used when re-loading a saved scratchpad). */
+        setHeight: function (cssH) {
+            let closestIdx = 0;
+            let minDiff = Infinity;
+            EXPANSION_LEVELS.forEach((h, i) => {
+                const diff = Math.abs(h - cssH);
+                if (diff < minDiff) { minDiff = diff; closestIdx = i; }
+            });
+            expandLevel = closestIdx;
+            applyCanvasSize(EXPANSION_LEVELS[expandLevel]);
+            updateExpandBtnLabel();
+        }
+    };
 }
 
 function collectAnswers() {
@@ -19878,10 +19972,32 @@ function collectAnswers() {
 function collectScratchData() {
     const scratchData = {};
     for (const [key, sp] of Object.entries(scratchpads)) {
-        if (sp.canvas) {
-            const dataUrl = sp.canvas.toDataURL('image/png');
-            scratchData[key] = dataUrl;
+        if (!sp.canvas) continue;
+
+        /* Only save pads that actually have something drawn on them */
+        const ctx = sp.canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, sp.canvas.width, sp.canvas.height);
+        const data = imgData.data;
+        let hasContent = false;
+        for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) { hasContent = true; break; }
         }
+        if (!hasContent) continue;
+
+        /* Flatten onto white so the saved PNG has white background
+           (erased areas stay visibly erased when re-displayed). */
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width  = sp.canvas.width;
+        tempCanvas.height = sp.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(sp.canvas, 0, 0);
+
+        scratchData[key] = {
+            dataUrl: tempCanvas.toDataURL('image/png'),
+            cssHeight: parseFloat(sp.canvas.style.height) || 160
+        };
     }
     return scratchData;
 }
