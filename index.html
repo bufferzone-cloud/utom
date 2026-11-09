@@ -2108,7 +2108,7 @@
     /* ============================================================
        APP VERSION
        ============================================================ */
-    const APP_VERSION = '2.5.1';
+    const APP_VERSION = '2.5.2';
     const SESSION_KEY = 'utom-session-v1';
     const LOGIN_ATTEMPTS_KEY = 'utom-login-attempts';
     const MAX_LOGIN_ATTEMPTS = 5;
@@ -2251,7 +2251,19 @@
     }
 
     /* ============================================================
-       NETWORK ACCESS CONTROL — IMPROVED DETECTION
+       NETWORK ACCESS CONTROL — KEYWORD-BASED DETECTION
+       ------------------------------------------------------------
+       Carrier keywords we recognise (searched anywhere in the ISP
+       string returned by IP geolocation):
+
+         MTN     → mtn
+         Airtel  → airtel   (Airtel was formerly Zain — both map to airtel)
+         Zain    → airtel
+         Zamtel  → zamtel   (also matches "Zambia Telecommunications")
+
+       Examples that all work:
+         "MTN ZM", "MTN Internet", "Airtel Zambia", "AIRTEL ZM",
+         "ZAIN", "Zain Zambia", "Zamtel Ltd", "ZAMBIA TELECOMMUNICATIONS"
        ============================================================ */
 
     // Cache so we don't hammer the IP service
@@ -2264,14 +2276,42 @@
     }
 
     /**
+     * Classify an ISP string into a carrier key.
+     * Returns { provider, label } or null if no carrier keyword matched.
+     *
+     * The matching is intentionally broad and case-insensitive:
+     *   - MTN     → mtn
+     *   - AIRTEL  → airtel
+     *   - ZAIN    → airtel   (Zain is the former brand name of Airtel)
+     *   - ZAMTEL  → zamtel
+     *   - ZAMBIA TELECOM / ZAMBIA TELE → zamtel
+     */
+    function classifyCarrier(ispString) {
+        if (!ispString) return null;
+        const s = String(ispString).toUpperCase();
+
+        if (s.indexOf('MTN') !== -1) {
+            return { provider: 'mtn', label: 'MTN' };
+        }
+        if (s.indexOf('AIRTEL') !== -1 || s.indexOf('ZAIN') !== -1) {
+            return { provider: 'airtel', label: 'Airtel' };
+        }
+        if (
+            s.indexOf('ZAMTEL') !== -1 ||
+            s.indexOf('ZAMBIA TELECOM') !== -1 ||
+            s.indexOf('ZAMBIA TELE') !== -1
+        ) {
+            return { provider: 'zamtel', label: 'Zamtel' };
+        }
+        return null;
+    }
+
+    /**
      * Detect what network the user is on.
      *
-     * The ISP name returned by IP geolocation services can appear in many
-     * forms — "MTN ZM", "Airtel Zambia", "Zamtel Ltd", "MTN Internet",
-     * "ZAMBIA TELECOMMUNICATIONS", etc. What matters is whether one of the
-     * key carrier keywords appears *anywhere* in the name.
-     *
      * Returns { provider, label, rawIsp, detected }
+     * provider is one of: 'mtn' | 'airtel' | 'zamtel' | 'wifi' | 'unknown'
+     * label is always a human-readable, non-empty string.
      */
     async function detectUserNetwork(force = false) {
         const now = Date.now();
@@ -2282,7 +2322,7 @@
         const connType = getConnType();
         let rawIsp = '';
 
-        // ── 1. IP-based carrier lookup with multiple services for reliability ──
+        // ── 1. IP-based carrier lookup — try multiple services for reliability ──
         const lookups = [
             {
                 url: 'https://ipwhois.app/json/',
@@ -2333,40 +2373,23 @@
         }
 
         // ── 2. Match carrier keywords anywhere in the ISP string ──
-        //    The ISP may be "MTN ZM", "Airtel Zambia", "Zamtel", "MTN Internet",
-        //    "ZAMBIA TELECOMMUNICATIONS", etc. We only care that the keyword appears.
+        const carrier = classifyCarrier(rawIsp);
+
         let provider = 'unknown';
         let label = '';
 
-        if (rawIsp) {
-            if (rawIsp.indexOf('MTN') !== -1) {
-                provider = 'mtn';
-                label = 'MTN';
-            } else if (rawIsp.indexOf('AIRTEL') !== -1) {
-                provider = 'airtel';
-                label = 'Airtel';
-            } else if (
-                rawIsp.indexOf('ZAMTEL') !== -1 ||
-                rawIsp.indexOf('ZAMBIA TELECOM') !== -1 ||
-                rawIsp.indexOf('ZAMBIA TELE') !== -1
-            ) {
-                provider = 'zamtel';
-                label = 'Zamtel';
-            }
-        }
-
-        // ── 3. If no carrier keyword matched, decide between WiFi and unknown ──
-        if (provider === 'unknown') {
-            if (connType === 'wifi' || connType === 'ethernet') {
-                provider = 'wifi';
-                label = rawIsp || 'WiFi';
-            } else if (connType === 'cellular') {
-                // Cellular but carrier not recognised — still show the real ISP name
-                label = rawIsp || 'Cellular Connection';
-            } else {
-                // Never claim "Unknown" — show whatever we do know
-                label = rawIsp || 'Your Current Network';
-            }
+        if (carrier) {
+            provider = carrier.provider;
+            label = carrier.label;
+        } else if (connType === 'wifi' || connType === 'ethernet') {
+            provider = 'wifi';
+            label = rawIsp || 'WiFi';
+        } else if (connType === 'cellular') {
+            // Cellular but carrier keyword wasn't recognised — still show real ISP name
+            label = rawIsp || 'Cellular Connection';
+        } else {
+            // Never claim "Unknown" — show whatever info we do have
+            label = rawIsp || 'Your Current Network';
         }
 
         const result = {
@@ -2389,6 +2412,10 @@
      *     allowAll: false,
      *     mtn: true, airtel: true, zamtel: true, wifi: true
      *   }
+     *
+     * Because Zain is now Airtel, any device whose ISP string contains
+     * "ZAIN" is classified as airtel and will be permitted/denied based
+     * on the admin's "Airtel" toggle.
      */
     async function checkNetworkAccess(force = false) {
         try {
@@ -5454,7 +5481,7 @@
         );
         console.log('%c🔄 Auto-login enabled — returning users skip this screen',
             'color:#3b82f6;font-weight:bold');
-        console.log('%c🌐 Network gate active — full-page block, keyword-based carrier detection',
+        console.log('%c🌐 Network gate active — full-page block, keywords: MTN · Airtel/Zain · Zamtel',
             'color:#d4952a;font-weight:bold');
     })();
 </script>
