@@ -17143,10 +17143,23 @@ async function renderOfflinePage() {
                 const videoMeta = allVideos.find(v => v.id === id) || { title: record.title || 'Offline Video',
                     instructor: 'Saved offline', price: 0, videoUrl: '' };
 
-                if (videoMeta.courseId && !approvedCourses.has(videoMeta.courseId)) {
-                    await deleteOfflineVideo(id);
-                    continue;
-                }
+                // Only remove offline videos when a PAID course has expired
+// or the student no longer has valid access.
+if (videoMeta.courseId) {
+    const course = allCourses.find(c => c.id === videoMeta.courseId);
+
+    // Free courses must not be deleted because they have no purchase record.
+    if (course && Number(course.price || 0) > 0) {
+        const access = approvedCoursesData[course.id];
+
+        if (!approvedCourses.has(course.id) ||
+            (access?.expiresAt && Date.now() >= access.expiresAt)) {
+
+            await deleteOfflineVideo(id);
+            continue;
+        }
+    }
+}
 
                 if (videoMeta.subfolderId) {
                     const sf = allSubfolders.find(s => s.id === videoMeta.subfolderId);
@@ -21925,3 +21938,4 @@ console.log('✅ UTOM Student — dual-source assessments & payments ready (admi
 </script>
 </body>
 </html>
+
